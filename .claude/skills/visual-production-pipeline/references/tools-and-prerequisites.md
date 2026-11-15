@@ -1,10 +1,10 @@
-# ツールと前提（visual-production-pipeline の正本）
+# ツールと前提（visual-production-pipeline の元になる文書）
 
 - 確認日: 2026-09-19（0 円化の観点で調べ直し。6 観点 + 反証役 + 批評役。結論を左右する 6 件は Claude が一次情報で再確認。読む用: `docs/reports/2026-09-19-visual-production-survey.html`）。前回 2026-09-14（survey の 6 観点 + 反証役 4 + 批評役。外部の主張 265 件のうち、確認 231 / 訂正 30 / 未確認 4。結論を左右する 5 件は Claude が一次情報を直接開いて再確認した）
 - 判断の回答: 2026-09-14（§9 #1〜#17。戦闘の所感の反映と合わせて回答済み）と 2026-09-16（§9 #18〜#29。色・アート・運用の 12 件）と 2026-10-07（§9 #30〜#34。#82 で残っていた 0 円化の判断と、指示文の書き方）
 - 前提の更新: 2026-10-08（#407）。2026-10-07 の回答を本文に書き戻した。CLIP STUDIO PAINT PRO は買わず 0 円で続ける。絵の生成の主な道筋は手元の Krita AI で、クラウドの生成 API は手元で通らないときの保険にする。ボスの動きは Unity の 2D Animation で始める。§1〜§5・§9・§11・§12 を直した
 - 読む用のレポート: `docs/reports/2026-09-14-visual-production-survey.html`（回答前のスナップショット）
-- 数字の更新: 2026-09-23（#146）。人型の枠を Depiction の 210 × 450 に、原本と書き出しを 640 × 1536 に、台帳を 15 列に直した。正本は `.claude/docs/art_document/style-guide.md` §2 と `asset-intake.md` §1.2・§7
+- 数字の更新: 2026-09-23（#146）。人型の枠を Depiction の 210 × 450 に、原本と書き出しを 640 × 1536 に、台帳を 15 列に直した。元になる文書は `.claude/docs/art_document/style-guide.md` §2 と `asset-intake.md` §1.2・§7
 - 間合いの更新: 2026-10-04（#167）。間合いの記述を横 1 列のマスの間合い N（`battle_core_v4.md` §7、`battle_ui_ux_v2.md` v2.2）に直した。人型の枠の向きを、敵の絵を反転しない実装（#288）に合わせた
 - 背景の更新: 2026-10-19（#609）。1 層の背景が明るい若草と陽になったので、§6 の 1 層の数字を旧い記録と書き分けた
 - 価格・ライセンスは変わります。使う直前に `terms_url` を開き、台帳の `terms_checked_on` を書き換えます。
@@ -29,7 +29,7 @@
 | 主人公 | 見た目は固定 1 体。世代の違いは小物と色の差分で出す（2026-09-14 決定）。世代ごとに名前を持ち、小物と色は前の生の到達階層で決まる（2026-09-16 決定） | §9 #5 / #20 / #21 |
 | 絵柄 | アニメ 2.5D（Live2D は主人公。ボスは 2D Animation で始め、パーツ 30 以内なら Live2D FREE も可。2026-10-07 決定）。モチーフは瘴気と手記（和紙・墨・筆線） | `v2:511`、`art-plan:19`、§9 #32 |
 | 画面の見た目 | A「霧と灯り」の A+。色は役割にだけ使う。omen は予兆・敵・被弾・敵の作用だけ | `v2:535-540`、`v2:544-591` |
-| 間合い | 横 1 列のマスの上の距離 N（自分と相手のあいだの空きマスの数。隣り合えば 0）。素の効果は無く、カードと敵の行動が届く間合いと境目で読む。場は戦闘ごとに 5〜8 マスで、1 マスに 1 体。敵は大きさ（使うマスの数。1〜3）を持つ。画面では人型が自分のマスに立ち、選んでいる相手との N を間合いの数字 1 つで出す。札を持ち上げると届くマスが光り、予兆の狙うマスは床に斜線で出す（2026-09-22 / 09-23 決定）。8 マスの場（1 マス 168 px）で人型を縮めるかは #56 で決める | `core` §7.1〜§7.2、`v2` §1.1 A2・§2.1・§13.3 |
+| 間合い | 横 1 列のマスの上の距離 N（自分と相手のあいだの空きマスの数。隣り合えば 0）。素の効果は無く、カードと敵の行動が届く間合いと境目で読む。場は戦闘ごとに 5〜8 マスで、1 マスに 1 体。敵は大きさ（使うマスの数。1〜3）を持つ。画面では人型が自分のマスに立ち、選んでいる相手との N を間合いの数字 1 つで出す。札を持ち上げると届くマスが光り、予兆の狙うマスは床に斜線で出す（2026-09-22 / 09-23 決定）。8 マスの場（1 マス 168 px）で人型を縮めるかは #56 で決める | `core` §7.1〜§7.2、`v2` §1.1 A2・§2.1・§13.3 <!-- words-ok: A2 は battle_ui_ux_v2.md §1.1 の表の行の名前 --> |
 | 人型の枠 | 210 × 450（Canvas の参照単位。実画素は 1080p で 450、4K で 900）、足元 pivot (0.5, 0)、`preserveAspect = true`。塗った絵は画面で向く向きのまま描き、Unity では反転しない。右向きの影絵（仮素材）を敵に使うときだけ `localScale.x = −1` で反転する（#288） | `Depiction/Editor/DepictionPrefabBuilder.cs:219,223`、`Depiction/Script/FigureMotion.cs:61-64`、`style-guide.md` §4.2 |
 | 人型の描き方 | Rim（warm α0.5、1.5 px ずらし）/ Fill / Flash（白）/ Ghost（α0.35）が同じ Sprite を色の乗算で使う。塗った絵には白シルエットが要る | `ArenaView.cs:207-212`、`ProceduralArt.cs:57` |
 | 演出の作り | Particle System を使ってよい（2026-09-14 決定）。靄と火の粉は `Image` の手動アニメでもよい。トゥイーンは `UiTween` | `v2` §10.8 |
@@ -72,7 +72,7 @@
 | アイコン | game-icons.net の SVG を着色し、chromium で PNG に焼く | Kenney（CC0） | game-icons.net は CC BY 3.0 で、アイコンごとの作者表記が必須 | 可 |
 | Unity の操作 | Unity CLI の MCP（導入済み）。Unity 公式の Claude Code プラグイン（2026-09-09 公開、29 スキル + Unity CLI + MCP） | CoplayDev/unity-mcp（MIT） | 公式プラグインと公式 MCP に Unity AI の契約が要るかは**未確認**（https://unity.com/blog/unity-plugin-for-claude-code） | Editor 起動中は可 |
 | 検証 | visual-inspect、`scripts/color_check.py`、ビルド撮影 `-captureDir -captureEvery -demoUi` | Playwright の CDP で色覚模擬（Chromium のみ、Experimental） | 0 円 | 可 |
-| 記録 | `templates/asset-ledger.csv`（15 列。列の正本は `asset-intake.md` §7）。AI の区分は IPTC Digital Source Type | — | 0 円 | 可 |
+| 記録 | `templates/asset-ledger.csv`（15 列。列の元になる文書は `asset-intake.md` §7）。AI の区分は IPTC Digital Source Type | — | 0 円 | 可 |
 | バージョン管理 | 取り込む素材は RPG-by-card の LFS（`*.psb` `*.moc3` を追加済み）。作業ファイル（`.clip` / `.kra` / `.cmo3` / `.can3`）は OneDrive に置く | 容量が足りなければ C: のローカル | GitHub Free の LFS は保存 10 GiB・帯域 10 GiB、超過は従量課金。OneDrive の容量は未確認 | 可 |
 
 **使わないもの**: Midjourney（規約が自動ツールでの生成を禁じる）、NoobAI 系（生成物の商用化を禁じる）、CMU OpenPose（非商用の研究目的に限る）、rembg の既定モデル `bria-rmbg`、VFX Graph、Figma MCP、Yuji Syuku。
@@ -124,7 +124,7 @@
 
 ## 8. 台帳の列（15 列）
 
-**列の正本は `.claude/docs/art_document/asset-intake.md` §7 です。** ここには一覧だけを写します。形は `templates/asset-ledger.csv`（`art_document/asset-ledger.template.csv` と同じ中身）です。
+**列の元になる文書は `.claude/docs/art_document/asset-intake.md` §7 です。** ここには一覧だけを写します。形は `templates/asset-ledger.csv`（`art_document/asset-ledger.template.csv` と同じ中身）です。
 
 `asset_id, file, sha256, date, status, model, ai_role, seed, recipe, source_file, export, ref_source, human_work, similarity_check, notes`
 
@@ -159,7 +159,7 @@
 | 23 | ローカル画像生成 | 条件が来たら測る（月 $30 に届く、または参照画像で同じ顔を保てないとき）。#31 と #33 で、ローカルが主になり実測も先に進んだ |
 | 24 | 測る範囲 | LoRA 学習まで |
 | 25 | 配布先 | Windows 主で進める（ブラウザ版は後回し） |
-| 26 | C# の正本 | いまのまま同期（`unity-port/` が正本、Unity 側へ写す） |
+| 26 | C# の元になるコード | いまのまま同期（`unity-port/` が元、Unity 側へ写す） |
 | 27 | 写しの扱い | 写しもコミットする |
 | 28 | 初回コミット | いま入れる（RPG-by-card） |
 | 29 | URP の版 | 17.5.0 に直す（manifest と PHASE3-KICKOFF の記述） |
@@ -169,12 +169,12 @@
 | 33 | ローカルの実測を先にするか | 錆槍の竜兵と上級の槍の竜兵 2 体の候補を手元で作ったので、実際には先に進んだ。残りは 1 体ぶんの所要時間の実測（#82） |
 | 34 | 指示文の書き方 | 正確な条件を細かく書き込まない。基本だけを押さえ、細部はニュアンスの噛み合わせなので、候補を見てこうだいさんが直観で選ぶ（`style-guide.md` §4） |
 
-#18〜#29 の出典は 2026-09-16 のこうだいさんの回答です（一覧の K1〜K12）。同じ日の回答のうち、戦闘の規則は `battle_core_v4.md` §17、UI は `battle_ui_ux_v2.md` §11 が持ちます。#30〜#33 の出典は #82 の 2026-10-07 のコメントで、#34 は #326 の同じ日のコメントです。どちらもこうだいさんの回答を chat-main が確かめたものです。
+#18〜#29 の出典は 2026-09-16 のこうだいさんの回答です（`docs/reports/2026-09-16-v4-2-decisions.html` の回答の一覧）。同じ日の回答のうち、戦闘の規則は `battle_core_v4.md` §17、UI は `battle_ui_ux_v2.md` §11 が持ちます。#30〜#33 の出典は #82 の 2026-10-07 のコメントで、#34 は #326 の同じ日のコメントです。どちらもこうだいさんの回答を chat-main が確かめたものです。
 
 ## 10. 未確認
 
 - OpenAI `gpt-image-2` 系の 1 枚あたりの価格（公式はトークン単価と計算機のみ）と、透過出力の扱い（版で違う）。
-- isnet-anime / BiRefNet の重みのライセンス、Illustrious XL の版ごとの正本ライセンス。
+- isnet-anime / BiRefNet の重みのライセンス、Illustrious XL の、配布元に書かれた版ごとのライセンス。
 - Unity 公式 Claude Code プラグインと公式 MCP に Unity AI の契約が要るか。
 - Canvas Shader Graph が Overlay の Canvas で動くか。Live2D を uGUI に直接出せるか。Sprite Resolver が UGUI の `Image` を切り替えられるか。
 - ParticleEffectForUGUI が Unity 6000.5 と URP 2D で動くか。
@@ -216,7 +216,7 @@
   - Illustrious / NoobAI のワークロードと、built-in の Illustrious 系スタイル（Nova Anime XL を読む）。NoobAI の部品は fair-ai-public-license-1.0-sd で、本体の README が生成物の商用化まで禁じています。noob_openpose と noob-ipa は表示がありません
   - Remove Content と、Custom の Fill「Inpaint」（MAT が CC BY-NC 4.0）
   - **SDXL で選択範囲に強度 80% を超えて描く操作**（Fill / Expand / Add Content / Replace Background の既定の 100% を含む）と、**Custom の「Seamless」**。どちらも Fooocus Inpaint を読み、その条文を確かめられません。選択範囲は強度 80% 以下の Refine で描き直すか、Custom で Seamless を外します（`workflow.py` の `detect_inpaint` は SDXL で `use_inpaint_model = strength > 0.8`）
-  - Depth と Hands のコントロールと、Depth / Scribble / Hands の From image（Depth Anything V2 Base が CC BY-NC 4.0、PiDiNet は研究目的の但し書きつき、Hands は MANO が非商用）
+  - Depth と Hands のコントロールと、Depth / Scribble / Hands の From image（Depth Anything V2 Base が CC BY-NC 4.0、PiDiNet は研究目的の但し書きつき、Hands は MANO が非商用）<!-- words-ok: Depth Anything V2 はモデルの名前 -->
   - Pose の From image（YOLO-NAS のライセンス未確認）
 - 使ってよくなったもの: Live と Hyper の preset（SDXL 用の Hyper-SD LoRA は CreativeML Open RAIL++-M）と、既定の Upscale（4x NMKD Superscale は WTFPL）。
 - **手順: Custom Generation では Seamless を外す。** 既定で入っています（`settings.json` の `document_defaults.inpaint_use_model: true`）。文書ごとに覚えるので、新しい文書を開くたびに確かめます。
@@ -236,14 +236,14 @@
 | `...\ComfyUI\ComfyUI\custom_nodes\comfyui_controlnet_aux\ckpts\` | From image の前処理の重みが初回に落ちる場所です。**フォルダがまだありません**（前処理を 1 度も使っていないため） |
 | `...\custom_nodes\comfyui_controlnet_aux\src\custom_mesh_graphormer\modeling\data\` | Hands の前処理に同梱のデータです。`MANO_LEFT.pkl` と `MANO_RIGHT.pkl` が、ノードを入れた時点から入っています |
 
-`upscale_models` には `4x_NMKD-Superscale-SP_178000_G.pth` と `OmniSR_X2/X3/X4_DIV2K.safetensors` の 4 つがあります。`inpaint` には `fooocus_inpaint_head.pth`・`inpaint_v26.fooocus.patch`・`MAT_Places512_G_fp16.safetensors` の 3 つがあります。`controlnet` の 7 つは §13.3 の表にあります。
+`upscale_models` には `4x_NMKD-Superscale-SP_178000_G.pth` と `OmniSR_X2/X3/X4_DIV2K.safetensors` の 4 つがあります。`inpaint` には `fooocus_inpaint_head.pth`・`inpaint_v26.fooocus.patch`・`MAT_Places512_G_fp16.safetensors` の 3 つがあります。`controlnet` の 7 つは §13.3 の表にあります。<!-- words-ok: OmniSR_X2/X3/X4_DIV2K はモデルのファイル名 -->
 
 ### 13.2 Issue #145 の 7 件
 
 | モデル | どこで読まれるか | 実機 | 確かめたライセンス | 判定 |
 | --- | --- | --- | --- | --- |
 | `4x_NMKD-Superscale-SP_178000_G.pth` | 既定の Upscale（`settings.json` の `upscale_model`） | 導入済み | WTFPL です。HF のミラー（`gemasai/...`）には表示がありません。OpenModelDB の「NMKD Superscale」（作者 nmkd）が WTFPL で、登録の SHA256（`1d1b0078…21bcc`）が手元のファイルと一致しました | **可**。作者本人の配布ページは残っておらず、見ていません |
-| `OmniSR_X2/X3/X4_DIV2K.safetensors` | キャンバスが上限を超えたときの自動の拡大 | 導入済み | Apache-2.0（`Acly/Omni-SR` のカード） | **可** |
+| `OmniSR_X2/X3/X4_DIV2K.safetensors` | キャンバスが上限を超えたときの自動の拡大 | 導入済み | Apache-2.0（`Acly/Omni-SR` のカード） | **可** <!-- words-ok: OmniSR_X2/X3/X4_DIV2K はモデルのファイル名 --> |
 | `control-lora-depth-rank` / `sai_xl_depth_` | SDXL の Depth（xinsir の depth が無いとき）と Hands | 未導入 | STABILITY AI CONTROL-LORA COMMUNITY LICENSE（`stabilityai/control-lora` の `LICENSE.MD`）です。月間利用者が 100 万人を超えると別の許諾が要ります | **未導入**。入れれば可ですが、Hands は前処理が不可（最下行） |
 | `depth_anything_v2_vitb.pth` | Depth の From image | 未導入 | CC BY-NC 4.0（`depth-anything/Depth-Anything-V2-Base` のカード） | **未導入**。不可なので入れません |
 | PiDiNet（`table5_pidinet.pth`） | Scribble の From image | 未導入 | 上流 `hellozhuo/pidinet` の LICENSE は MIT ですが、冒頭に「It is just for research purpose, and commercial use should be contacted with authors first.」とあります。ミラー `lllyasviel/Annotators` は `license: other` だけです | **未導入**。未確認なので使いません |
@@ -262,7 +262,7 @@ Issue の表は PiDiNet を「`sk_model.pth` 系」としていましたが、`s
 | `Hyper-SDXL-8steps-CFG-lora.safetensors` | Live と Hyper の preset | `ByteDance/Hyper-SD` の `LICENSE.md` は基準モデルごとに条項を分けています。FLUX.1 と SD3 以外の SD 系は CreativeML Open RAIL++-M です | **可**。§12 の「Live を使わない」を外しました |
 | `flux-2-klein-4b-fp8.safetensors` / `flux-2-klein-4B-outpaint-lora.safetensors` / `Qwen3-4B-Q4_K_M.gguf` | Flux 2 Klein 4B の編集 | Apache-2.0（`black-forest-labs/FLUX.2-klein-4b-fp8`、`fal/flux-2-klein-4B-outpaint-lora`、`unsloth/Qwen3-4B-GGUF` から `Qwen/Qwen3-4B`） | **可**。9B 版は商用不可なので入れません |
 | `flux2-vae.safetensors` | Flux 2 の VAE | Apache-2.0（再配布元 `Comfy-Org/vae-text-encorder-for-flux-klein-4b` のカード）。BFL の `FLUX.2-klein-4B`（Apache-2.0）も `vae/` を同梱していますが、同じファイルかは照合していません | **可** |
-| `RealVisXL_V5.0_fp16.safetensors` | built-in の写真調スタイル | openrail++（`SG161222/RealVisXL_V5.0`） | **可**。写真調なので使い道はありません |
+| `RealVisXL_V5.0_fp16.safetensors` | built-in の写真調スタイル | openrail++（`SG161222/RealVisXL_V5.0`） | **可**。写真調なので使い道はありません <!-- words-ok: SG161222 は配布元のリポジトリ名 --> |
 | `MAT_Places512_G_fp16.safetensors` | Remove Content と Custom の Fill = Inpaint | CC BY-NC 4.0（`Acly/MAT`） | **不可** |
 | `novaAnimeXL_ilV125.safetensors` | built-in の Illustrious 系スタイル | ミラー `Acly/SD-Checkpoints` は `creativeml-openrail-m` です。元の配布元の条項と、どの版の Illustrious から作ったかは確かめられませんでした | **未確認**。Illustrious のワークロードとして使いません |
 | `noob_sdxl_controlnet_canny.fp16` / `noob-sdxl-controlnet-depth_midas-v1-1.fp16` / `noob-sdxl-controlnet-lineart_anime.fp16` / `noob-sdxl-controlnet-scribble_pidinet.fp16` / `noobaiInpainting_v10.fp16` | Illustrious のコントロールと塗り直し | fair-ai-public-license-1.0-sd（`Eugeoter/...` 4 本と `Acly/NoobAI-Inpainting` のカード）。NoobAI 本体（`Laxhar/noobai-XL-1.1`）の README は「model-generated products」の商用化を禁じています | **不可** |
