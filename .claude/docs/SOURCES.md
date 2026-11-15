@@ -29,7 +29,7 @@ worktree ごとに設計書のコピーを持つので、main を取り込んで
 | 要件（支援） | `.claude/docs/requirements/tier2-support.md` | main | 現行 | all |
 | 要件（実験・凍結） | `.claude/docs/requirements/tier3-experimental.md` | main | 現行 | audit |
 | 実装規約・凍結範囲 | `.claude/CLAUDE.md` | main | 現行 | all |
-| レーンの定義と worktree の手順 | `.claude/skills/worktree-policy/SKILL.md` | main | 現行 | all |
+| レーンの定義と worktree の決まり | `.claude/CLAUDE.md`（「並行作業は worktree のレーン」の節。手順は共通の `worktree-policy` スキル） | main | 現行 | all |
 | ラベルの一覧 | GitHub のラベル（`gh label list -R sunbreak-pro/original-card-battle`） | main | — | all |
 
 ### battle が書く正本
@@ -146,4 +146,4 @@ worktree ごとに設計書のコピーを持つので、main を取り込んで
 - **新しい設計書は §2 の自分の表に行を足してから PR にする。** `npm run sources -- --check` が、台帳に無い設計書を検出します
 - **版を上げても本書を書かない。** 版の番号と経緯は正本の冒頭の Status と改訂履歴に書きます。状態の欄に経緯を書き足すと、その行が毎回の PR で書き換わり、並行する PR とぶつかります（2026-10-04 の実測で、9/24 以降のコンフリクト 9 件のうち 6 件が本書でした）
 - **表の桁を揃えない。** 1 マスが長くなるたびに全行の空白が変わり、表に触る他の PR がすべてぶつかります。Markdown は prettier の対象から外してあり（`.prettierrc.json` の `requirePragma`）、表の空白は `npm run md:tables` で詰めます。`npm run md:tables -- --check` が残った桁揃えを検出します
-- **同じ正本を触る PR を続けて出すときは、前の PR の上に積む。** 版の行と改訂履歴の末尾は、同じ担当の 2 本の PR でも必ずぶつかります。手順は `worktree-policy` スキルの「続きの PR は積む」です
+- **同じ正本を触る PR を続けて出すときは、前の PR の上に積む。** 版の行と改訂履歴の末尾は、同じ担当の 2 本の PR でも必ずぶつかります。決まりは `.claude/CLAUDE.md` の「並行作業は worktree のレーン」の「続きの PR は積む」です

@@ -9,7 +9,7 @@ import { execFileSync } from 'node:child_process';
 import { lstatSync, readFileSync, writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
-// Per-chat tracker files go through task-tracker on their own branch (pre-commit-tracker-guard.sh).
+// Per-chat tracker files go through task-tracker on their own branch (the shared bash-guards hook enforces it).
 const SKIPPED = ['.claude/memory/', '.claude/history/'];
 const FENCE = /^ {0,3}(`{3,}|~{3,})/;
 const TABLE_ROW = /^\s*\|.*\|\s*$/;
