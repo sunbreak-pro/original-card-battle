@@ -71,6 +71,8 @@ npx vitest run src/domain/cards/decks/__tests__/deck.test.ts  # Single file
 | 宛先を付ける | どの担当に回すかのラベルを付ける |
 | 起票する / 退役させる | Issue を作る / 使わなくする |
 
+「こうだいさんの作業」と書くときは、何をするかまで書く。
+
 スキル名・ラベル名・ファイル名は、何をするものかを先に言ってから添える。
 
 ### React 19 Patterns
