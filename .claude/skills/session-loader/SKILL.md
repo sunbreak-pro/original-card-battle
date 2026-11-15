@@ -13,7 +13,7 @@ description: セッション開始時に original-card-battle のコンテキス
 
 ## Step 0: main を取り込む
 
-設計書は worktree ごとにコピーを持つので、取り込む前に読むと古い正本を読みます。メインは `git pull --ff-only`、レーンは `git fetch origin && git merge origin/main --no-edit`（`worktree-policy`）。
+設計書は worktree ごとにコピーを持つので、取り込む前に読むと、古い版の設計書を読みます。メインは `git pull --ff-only`、担当の worktree は `git fetch origin && git merge origin/main --no-edit`（`worktree-policy`）。
 
 ## Step 1: タスクの状態
 
@@ -33,7 +33,7 @@ description: セッション開始時に original-card-battle のコンテキス
   gh issue list -R sunbreak-pro/original-card-battle --state open --limit 30
   ```
 
-- **次にやることは `npm run issues:next`**（`prio:1`〜`4` → `sev:` → 番号の順。`--lane <slug>` でレーンに絞る）
+- **次にやることは `npm run issues:next`**（`prio:1`〜`4` → `sev:` → 番号の順。`--lane <slug>` で担当に絞る）
 - 過去の知見は `gh issue list --state closed --search <keyword>` と `.claude/docs/known-issues/INDEX.md` の grep の両輪
 
 ## Step 4: 進行中タスクの関連ファイル
@@ -42,15 +42,15 @@ description: セッション開始時に original-card-battle のコンテキス
 
 ## Step 5: このプロジェクト固有の追加読み込み（タスクの性質に応じて）
 
-**どの主題はどのファイルが正本かは `.claude/docs/SOURCES.md` が持ちます。** ここに表を写しません。
+**主題ごとに、どのファイルが元になる文書かは、`.claude/docs/SOURCES.md` が持ちます。** ここに表を写しません。
 
 ```bash
-npm run sources -- --lane <自分の slug>   # 書く正本と読む正本。メインは npm run sources で全件
+npm run sources -- --lane <自分の slug>   # 出力の見出しは「書く正本」と「読む正本」。メインは npm run sources で全件（words-ok: scripts/sources.mjs が出す見出しの引用）
 ```
 
 状態の欄に但し書き（「§N 未反映」「§N が本文より優先」）がある行は、その但し書きごと読みます。絵の制作は `visual-production-pipeline` スキルです。
 
-設計書と実装の差分は、設計書側か実装側へ寄せて解消します。正本どうしの食い違いは直さず、main への申し送りにします（台帳 §5）。Issue を立てるのは main だけです。
+設計書と実装の差分は、設計書側か実装側へ寄せて解消します。元になる文書どうしの食い違いは直さず、main への申し送りにします（`.claude/docs/SOURCES.md` §5）。Issue を立てるのは main だけです。
 
 ## Step 6: 要約表示
 
