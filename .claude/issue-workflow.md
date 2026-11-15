@@ -33,13 +33,13 @@
     "area:tooling": "audit"
   },
   "issueCreation": "main-only",
-  "mergePolicy": "merge は claude-dotfiles の docs/development-flow.md の「merge」に従います。条件を満たした PR は、メインのチャットか、issue-workflow の仕上げ役（work-finishers）が共通の merge-round で入れます。PR に CI が無いので、下の「全体確認」が通った記録を検証の条件にします。承認が要るファイルを変える PR は共通の hook が止め、メインのチャットが merge-round を回して、こうだいさんがその場で決めます。実装役と確認役は merge しません。"
+  "mergePolicy": "merge は claude-dotfiles の docs/development-flow.md の「merge」に従います。条件を満たした PR は、メインのチャットか、issue-workflow の仕上げ役（work-finishers）が共通の merge-round で入れます。PR に CI が無いので、issue-workflow の PR は、下の「全体確認」が通った記録を検証の条件にします。それ以外の PR は、merge する人が先に npm run build・npm run lint・npm run test:run を打って確かめます。承認が要るファイルを変える PR は共通の hook が止め、メインのチャットが merge-round を回して、こうだいさんがその場で決めます。実装役と確認役は merge しません。"
 }
 ```
 
 `mergeMethod` から `issueCreation` までの 7 項目は、claude-dotfiles の共通の `merge-round`・`issue-dispatch` と、共通の hook が読む値です。`ciCommand` と `ciWorkflow` が `null` なのは、PR に走る CI が無いためです。
 
-`mainCheckout` と `worktreeRoot` は、このファイルがある checkout から決める相対パスです。共通の道具は、`node ~/.claude/skills/issue-workflow/scripts/profile.mjs` で絶対パスに直してから使います。PC ごとのフォルダの場所を、設定に持たないためです。
+`mainCheckout` と `worktreeRoot` は、このファイルがある checkout から決める相対パスです。共通の道具は、`node ~/.claude/skills/issue-workflow/scripts/profile.mjs` で絶対パスに直してから使います。PC ごとのフォルダの場所を、設定に持たないためです。`profile.mjs` は main の checkout で打ちます。worktree の中で打つと、相対パスが worktree から決まり、違う場所を指すためです。
 
 担当ごとの作業場所と触るファイルの対応表（`workspaceMapPath`）は置きません。設計書の持ち主は `.claude/docs/SOURCES.md` の台帳（`npm run sources`）が決めていて、対応表を別に作ると、持ち主の元が 2 つになるためです。対応表が無いので、共通の `issue-workflow` と `issue-dispatch` は、重なりを Issue の Scope 欄で突き合わせます。このリポジトリでの比べ方は、下の「選び方」です。
 
@@ -51,7 +51,7 @@
 
 **`chore/tracker-*` ブランチの PR は数えません。** tracker の PR 本文は、その日に触った Issue を並べます。open PR や着地済み PR として数えると、未着手の Issue まで外れます。
 
-**revert の PR は `merge-round` の手順で作ります。** ブランチは `revert/pr-<元の PR>`、題は `revert: <元の題> (#<元の PR>)`、本文は `Reverts #<元の PR>. Refs #<Issue>` です。戻された元の PR は、merge 済みの revert PR の本文にある `Reverts #<元の PR>` で見分けます。open のままの revert PR と、merge せずに閉じた revert PR は数えません。番号の後ろに数字が続くものは当たりにしません（正規表現なら `#<n>(?!\d)`）。
+**revert の PR は `merge-round` の手順で作ります。** ブランチは `revert/pr-<元の PR>`、題は `revert: <元の題> (#<元の PR>)`、本文は `Reverts #<元の PR>. Refs #<Issue>` です。戻された元の PR は、merge 済みの revert PR の本文にある `Reverts #<元の PR>` で見分けます。open のままの revert PR と、merge せずに閉じた revert PR は数えません。番号の後ろに数字が続くものは当たりにしません（正規表現なら `#<n>(?!\d)`）。revert のあと、元の PR のブランチは origin と手元の両方で消します。ブランチが残っていると、reopen した Issue が「着手済み（ブランチあり）」に数えられ、次の回から外れるためです。
 
 **`type:human` の Issue は回しません。** 報告では「人手待ち」として番号を並べます。
 
@@ -180,7 +180,7 @@
 
 **push は資格情報の指定を付けて打ちます。** コマンドは `cd {{worktree}} && git -c credential.helper= -c "credential.helper=!gh auth git-credential" push -u origin {{branch}}` です。既定の資格情報マネージャーが止まることがあるためです。
 
-**Issue との結び付けは、Issue の Gate と Definition of Done から決めます。** `gh issue view {{n}} -R {{repo}}` で読み、試運転・実機・Unity Editor・画面での確認が要るなら `Refs #{{n}}`、要らなければ `Closes #{{n}}` にします（`.claude/CLAUDE.md` の「1 Issue = 1 ブランチ = 1 PR」）。どちらにしたかの理由を、本文に 1 行で書きます。
+**Issue との結び付けは、Issue の「人の作業」の欄（以前の Gate）と完了条件から決めます。** `gh issue view {{n}} -R {{repo}}` で読み、試運転・実機・Unity Editor・画面での確認が要るなら `Refs #{{n}}`、要らなければ `Closes #{{n}}` にします（`.claude/CLAUDE.md` の「1 Issue = 1 ブランチ = 1 PR」）。どちらにしたかの理由を、本文に 1 行で書きます。
 
 本文には次のものを書きます。
 
