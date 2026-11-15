@@ -37,7 +37,7 @@ npx vitest run src/domain/cards/decks/__tests__/deck.test.ts  # Single file
 
 - **不要な未マージ作業は `archive/<name>` タグで保全してから削除**（`git tag archive/<name> <branch>` → push → ブランチ削除。一覧を汚さず復元可能に）
 - **メイン（`C:\Users\user\orca\original-card-battle`）は `main` 専有**。feature 作業は worktree から行う。メインで `git checkout <feature>` をしない
-- **レーンのブランチは `<prefix>/<slug>-<issue>`**（例: `feat/battle-36`, `docs/cards-38`）。待機ブランチは `chore/lane-<slug>`、tracker 専用は `chore/tracker-<self>-YYYYMMDD`
+- **担当のブランチは `<prefix>/<slug>-<issue>`**（例: `feat/battle-36`, `docs/cards-38`）。待機ブランチは `chore/lane-<slug>`、tracker 専用は `chore/tracker-<self>-YYYYMMDD`
 
 ## Key Rules
 
@@ -63,16 +63,15 @@ npx vitest run src/domain/cards/decks/__tests__/deck.test.ts  # Single file
 
 ### こうだいさん向けの文章
 
-会話・報告・`docs/reports/` の HTML は、グローバルの `rules/japanese.md` と output style `tone-persona` に従う。本ファイルとスキルの文体（体言止め・内輪の語）を読み手向けの文章に持ち込まない。次の語は言い換える。
+会話・報告・`docs/reports/` の HTML は、グローバルの `rules/japanese.md` と output style `tone-persona` に従う。本ファイルとスキルの文体（体言止め・内輪の語）を読み手向けの文章に持ち込まない。内輪の語は、グローバルの `rules/japanese.md` の「内輪の語の言い換え」の表のとおりに言い換える。その表に無い、このリポジトリだけの語は、次のとおりに言い換える。
 
 | 内輪の語 | こうだいさん向けの書き方 |
 | --- | --- |
-| 正本 / 台帳 | 元になる文書 / 元になる文書の一覧 |
-| レーン | 担当ごとの作業場所（cards・design など） |
-| main の采配に落とす | メインのチャットで扱う |
-| こうだいさんの手番 | こうだいさんの作業（何をするかまで書く） |
+| 台帳 | 元になる文書の一覧（`docs/SOURCES.md`） |
 | 宛先を付ける | どの担当に回すかのラベルを付ける |
 | 起票する / 退役させる | Issue を作る / 使わなくする |
+
+「こうだいさんの作業」と書くときは、何をするかまで書く。
 
 スキル名・ラベル名・ファイル名は、何をするものかを先に言ってから添える。
 
@@ -184,7 +183,7 @@ Battle flow: Init phase queue (speed-sorted) → Player phase (draw, buffs, wait
 
 ### Game Loop Flow
 
-> 設計上の正本は `docs/vision/concept-v3.md`（「生と継承」）。下のループは設計の目標形。Web 版コード（`src/`）は旧ループ（キャンプ 5 施設 / ライフ制 / AP）のまま残っており、Unity 側で新ループを実装する。
+> 設計の元になる文書は `docs/vision/concept-v3.md`（「生と継承」）。下のループは設計の目標形。Web 版コード（`src/`）は旧ループ（キャンプ 5 施設 / ライフ制 / AP）のまま残っており、Unity 側で新ループを実装する。
 
 ```
 継承の間（遺産候補の確認 / 生存者ボーナス）→ 出立（ツール / 戦闘デッキ）→ ダンジョン（崩壊の暦 × 3 つの領域）→ 戦闘（間合い × スタミナ）
@@ -247,10 +246,10 @@ Tests live in `__tests__/` subdirectories adjacent to source files (e.g., `src/d
 GitHub は在庫棚（課題の正確な台帳）、life-editor は献立表（何を作るか決めて記録する場所）。**Issue の代替にはしない**（経緯は `.claude/decisions/2026-09-20-life-editor-workflow.md`）。
 
 - **置くもの**: 判断の控えと調査結果（Note）／次にやること（Todo）。プロジェクトを跨いで見たいものだけを上げる
-- **置かないもの**: 課題の状態・担当・PR との結線。ステータスが 2 値しかなく、コメントが無く、後勝ち同期で記録が消えるため、正本は GitHub Issue のまま
+- **置かないもの**: 課題の状態・担当・PR との結線。ステータスが 2 値しかなく、コメントが無く、後勝ち同期で記録が消えるため、元になる記録は GitHub Issue のまま
 - **ローカルの `.claude/memory/` は残す**。per-chat の進捗は従来どおり task-tracker が書く
 - **手順は `life-editor-bridge` スキル**。セッション頭に `node ~/.claude/skills/life-editor-bridge/scripts/le.mjs pull`、判断が出たら `note`、次にやることは `todo`
-- **タグ**: `proj/original-card-battle` と `開発` が自動で付く。プロジェクト名の正本は `.claude/life-editor.json`
+- **タグ**: `proj/original-card-battle` と `開発` が自動で付く。プロジェクト名の元になるファイルは `.claude/life-editor.json`
 - **落ちても止まらない**。life-editor は移行中で、失敗したらスクリプトが止まるだけ。作業は先へ進める
 
 ### タスクの進捗は per-chat ファイル
@@ -285,27 +284,27 @@ worktree はリポジトリの外、設定の `worktreeRoot`（`../workspaces/or
 | `dungeon` | 探索プログラム。刻限 / 瘴気 / ノード | `dungeon` | `src/domain/dungeon/`、探索の C# と設計書 |
 | `audit` | 監査。設計書と実装の整合、既知課題の棚卸し | `docs` `tooling` | 書かない（下の「読み取り専用」） |
 
-- **宛先ラベルは `lane:<slug>`**。付けなければ `issue-workflow` が上の `area:` から既定のレーンを決める（決め方は `.claude/issue-workflow.md` の「選び方」）
-- **書いてよい設計書は台帳が決める**。上の表の「主に触るパス」は目安で、設計書 1 本ごとの持ち主は `docs/SOURCES.md` §2 が決める。表と台帳が食い違えば台帳に従う。main を取り込んだあとに `npm run sources -- --lane <slug>` を打ち、自分が書く設計書と読む設計書を確かめる
+- **宛先ラベルは `lane:<slug>`**。付けなければ `issue-workflow` が上の `area:` から既定の担当を決める（決め方は `.claude/issue-workflow.md` の「選び方」）
+- **書いてよい設計書は、元になる文書の一覧が決める**。上の表の「主に触るパス」は目安で、設計書 1 本ごとの持ち主は `docs/SOURCES.md` §2 が決める。表と一覧が食い違えば一覧に従う。main を取り込んだあとに `npm run sources -- --lane <slug>` を打ち、自分が書く設計書と読む設計書を確かめる
 - **担当の境目はファイルの持ち主で切る**。敵の由来や呼び名の文章も、置き場が `docs/enemy_document/` なら `cards` が書く。`design` が見た目の約束を変えたいときは、案を Issue に書き、main が `docs/vision/` に取り込む
-- **世界観の正本は main（chat-main）**（経緯は `.claude/decisions/2026-09-21-world-owned-by-main.md`）。正典は `docs/vision/world-v1.md` で、**舞台は龍神の封印の地、敵は竜・寄生・亡霊の 3 系統、崩壊まで約 1 年**（v5、#884）。`docs/vision/` `docs/Overall_document/` `docs/journal_document/` は main が書き、`area:world` の Issue は `lane:` を付けず main の采配に落とす。敵の数値とロースター（`docs/enemy_document/`）は `cards` のまま
+- **世界観の元になる文書は main（chat-main）が持つ**（経緯は `.claude/decisions/2026-09-21-world-owned-by-main.md`）。正典は `docs/vision/world-v1.md` で、**舞台は龍神の封印の地、敵は竜・寄生・亡霊の 3 系統、崩壊まで約 1 年**（v5、#884）。`docs/vision/` `docs/Overall_document/` `docs/journal_document/` は main が書き、`area:world` の Issue は `lane:` を付けず main のチャットで扱う。敵の数値とロースター（`docs/enemy_document/`）は `cards` のまま
 - **`audit` は読み取り専用**。整合監査の結果は申し送りにして main へ回し、修正は main が Issue にして担当レーンへ配る。書いてよいのは、自分の tracker（`memory/` `history/`）と `comm/outbox/` `comm/handoff/` だけ。コードの修正を含む Issue には `lane:audit` を付けない
 - **待機ブランチは `chore/lane-<slug>`**。担当の作業場所はこのブランチで作り、ここに commit を積まない。Issue に着手するたびに、`<prefix>/<slug>-<issue>` を origin/main から切る
 - **続きの PR は積む**。同じ担当が同じ設計書を触る PR を続けて出すときは、2 本目のブランチを merge 待ちの 1 本目から切る。2 本の PR が、設計書の冒頭の版の行と末尾の改訂履歴を同じ位置で書くので、どちらも main から切ると、片方が merge された時点でもう片方が必ずぶつかるためである。宛先と入れ方は、共通の決まり（claude-dotfiles の `docs/development-flow.md` の「merge」の「方式」）に従う。前の PR に直しが入ったら、`git merge <前のブランチ>` で取り込む。触る設計書が重ならない PR は積まない
 - **試運転はメインだけ**。`npm run dev`・実ブラウザ検証・Unity Editor での手触り確認はメインで行い、各レーンは `npm run build` / `npm run lint` / `npm run test:run` / `dotnet test` の静的検証まで。C# を触ったら、`npm run unity:check` で Unity のコンパイルを Editor を開かずに確かめる。Unity の NUnit 3.5 と netstandard2.1 にだけ無い API は、`dotnet test` では見つからないためである。例外は chat-main の `issue-workflow` の仕上げ役（`work-finishers`）だけで、動作確認のために `wf-*` の worktree で Vite の dev サーバーを 1 本ずつ、固定のポート 5273 で起動し、終わったら止める（`.claude/issue-workflow.md` の「動作確認」）。Unity Editor はメインだけのまま
 - **worktree が消えないとき**。`git worktree remove` が `Permission denied` で失敗し、掴んでいるのが Orca のターミナルなら、`orca terminal list --json` でそのターミナルの handle を探し、`orca terminal close --terminal <handle>` で閉じてから消す
-- **one writer per artifact**。同じファイルを 2 レーンに触らせない
+- **one writer per artifact**。同じファイルを 2 つの担当に触らせない
 - **`.claude/comm/.session-name` と `.session-branch` を必ず書く**。ブランチを切り替えるたびに `.session-branch` を更新する。省略すると、共通の hook が担当の worktree からの merge と起票を止め、セッションの最初に警告を出す
 
 ## Document System
 
 - **フロー**: Vision（`docs/vision/core.md`）→ 実装プラン → 完了したら規約を本ファイルへ統合。計画書の置き場と完了後の移し先は、共通の `code-plan-editor` スキルに従います。進め方の決定は決定の記録（`.claude/decisions/`）に置きます。進捗 / 履歴は per-chat（`memory/` `history/`、task-tracker 経由）
 - **Known Issue**: `docs/known-issues/` に Root Cause + 再発防止を蓄積。発見時 `NNN-<slug>.md` 作成 + `INDEX.md` 更新、解決時 Status=Fixed。**類似バグはまず `INDEX.md` を grep**
-- **正本の台帳は `docs/SOURCES.md`**。主題ごとの正本・持ち主のレーン・旧版の一覧・食い違ったときに勝つ側を持つ。他の文書とスキルは同じ表を持たず、ここを指す。正本を足す / 退役させる / 持ち主を変えるコミットに台帳の行を含め、`npm run sources -- --check` を通す。版を上げるだけなら台帳は触らない（版は正本の冒頭の Status が持つ）
+- **元になる文書の一覧は `docs/SOURCES.md`**。主題ごとの元になる文書・持ち主の担当・旧版の一覧・食い違ったときに勝つ側を持つ。他の文書とスキルは同じ表を持たず、ここを指す。元になる文書を足す / 使わなくする / 持ち主を変えるコミットに一覧の行を含め、`npm run sources -- --check` を通す。版を上げるだけなら一覧は触らない（版は元になる文書の冒頭の Status が持つ）
 - **Markdown の表は桁を揃えない**。1 マスが伸びるたびに表の全行が書き換わり、並行する PR がぶつかるため（known-issues 003）。`.md` は `.prettierrc.json` の `requirePragma` で prettier の対象から外し、表の空白は `npm run md:tables` で詰める。同じ正本を触る PR を続けて出すときは前の PR の上に積む（上の「並行作業は worktree のレーン」）
-- **正本どうしの食い違いは直さず、main への申し送りにする**（`kind: conflict`、題は「正本の食い違い: 〜」）。他レーンの正本は書かない。どちらに従って進めたかを申し送りと PR 本文に 1 行で残す。Issue にするのは main。手順は `docs/SOURCES.md` §5
-- **決定は設計書の本文へ入れ込む**。末尾の「〜の決定」節は記録で、入れ込むまでは台帳の状態の欄に「未反映」と書く
-- **パスの読み方**: 本ファイルの `docs/…` は `.claude/docs/…` を指す。リポジトリ直下の `docs/`（`reports/` `briefs/` `mockups/` `prompts/`）は HTML レポートと制作物の置き場で、正本は置かない
+- **元になる文書どうしの食い違いは直さず、main への申し送りにする**（`kind: conflict`、題は「元になる文書の食い違い: 〜」）。他の担当の元になる文書は書かない。どちらに従って進めたかを申し送りと PR 本文に 1 行で残す。Issue にするのは main。手順は `docs/SOURCES.md` §5
+- **決定は設計書の本文へ入れ込む**。末尾の「〜の決定」節は記録で、入れ込むまでは、元になる文書の一覧の状態の欄に「未反映」と書く
+- **パスの読み方**: 本ファイルの `docs/…` は `.claude/docs/…` を指す。リポジトリ直下の `docs/`（`reports/` `briefs/` `mockups/` `prompts/`）は HTML レポートと制作物の置き場で、元になる文書は置かない
 - **設計書 vs 実装**: ゲーム数値は `docs/*_document/` の設計書を正とし、差分は設計書側か実装側へ寄せて解消
 
 ## References
@@ -317,7 +316,7 @@ worktree はリポジトリの外、設定の `worktreeRoot`（`../workspaces/or
 | `.github/ISSUE_TEMPLATE/` | Issue テンプレート 3 種（Known Issue / Roadmap Item / Human Task） |
 | `README.md` | プロジェクト概要 |
 | `.claude/decisions/` | 進め方の決定の記録（1 件 1 ファイル。ゲームの設計の決定は設計書の本文） |
-| `.claude/docs/SOURCES.md` | 正本の台帳（主題 → 正本 → 持ち主のレーン、旧版、食い違いの手順） |
+| `.claude/docs/SOURCES.md` | 元になる文書の一覧（主題 → 元になる文書 → 持ち主の担当、旧版、食い違いの手順） |
 | `.claude/docs/INDEX.md` | ドキュメント索引（標準構造 + ゲーム設計書） |
 | `.claude/docs/vision/core.md` | Vision・設計原則 |
 | `.claude/docs/*_document/` | Game design specs (battle, cards, camps, dungeon, enemies, items, journal) |
