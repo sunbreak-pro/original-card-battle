@@ -223,7 +223,7 @@ Tests live in `__tests__/` subdirectories adjacent to source files (e.g., `src/d
 
 ### 課題追跡は GitHub Issues が正
 
-- **Issue を立てるのは chat-main だけ**（#367。経緯は `.claude/decisions/2026-10-06-issues-created-by-main-only.md`）。レーンは `gh issue create` を打たず、課題を申し送りとして `.claude/comm/handoff/` に 1 件 1 ファイルで書いて先へ進む。main が全 worktree の申し送りを回収し、重複を確かめて `issue-dispatch` で Issue にし、処理したファイルを消す。レーンに許すのは自分宛て Issue へのコメントと PR の `Closes #n` だけ。共通の hook（`bash-guards.mjs`）が、設定の `issueCreation` が `main-only` なのを読んで、main 以外の `gh issue create` を止める。手順と書式は `.claude/comm/README.md`
+- **Issue を立てるのは chat-main だけ**（#367。経緯は `.claude/decisions/2026-10-06-issues-created-by-main-only.md`）。担当の作業場所のチャットは `gh issue create` を打たず、課題を申し送りとして `.claude/comm/handoff/` に 1 件 1 ファイルで書いて先へ進む。main が全 worktree の申し送りを回収し、重複を確かめて `issue-dispatch` で Issue にし、処理したファイルを消す。担当に許すのは自分宛て Issue へのコメントと PR の `Closes #n` だけ。共通の hook（`bash-guards.mjs`）が、設定の `issueCreation` が `main-only` なのを読んで、main 以外の `gh issue create` を止める。手順と書式は `.claude/comm/README.md`
 - **起票先**: `gh issue create -R sunbreak-pro/original-card-battle`（main だけ）。テンプレートは `.github/ISSUE_TEMPLATE/` の 3 種（Known Issue / Roadmap Item / Human Task）
 - **ラベル**: `type:` (bug / feature / task / human) × `prio:` (1 / 2 / 3 / 4) × `sev:` (blocking / important / minor) × `area:` (battle / cards / enemy / dungeon / world / ui / art / unity / docs / tooling) × `status:` (monitoring / workaround / frozen)
 - **スコープの境界**: Issue は**プロダクトの課題専用**。Claude Code 環境やハーネス起因の問題は `docs/known-issues/` に置き、Issue にしない
@@ -270,11 +270,11 @@ hook はこのリポジトリに置かず、claude-dotfiles の共通の 2 本�
 
 共通の禁止は、`git-workflow` スキルの「破壊的コマンドのガードレール」に従います。このリポジトリの `deny` は、共通の決まりでは確認だけで済む `git branch -D` も止めます。**merge のコマンドは、settings に allow も ask も置かず、共通の hook が振り分けます**。ask を置くと、hook の allow が効かないためです。
 
-### 並行作業は worktree のレーン
+### 並行作業は担当ごとの worktree
 
 > 置き場・作り方・ブランチの切り替え・main の取り込み・merge 済みの判定は、共通の `worktree-policy` スキルに従います。本節は、このリポジトリの担当の区分と決まりだけを持ちます。
 
-worktree はリポジトリの外、設定の `worktreeRoot`（`../workspaces/original-card-battle`）の下の `<slug>` に置く（絶対パスで作る）。**1 レーン = 1 worktree = 1 チャット**で、ブランチは Issue ごとに切り替える。
+worktree はリポジトリの外、設定の `worktreeRoot`（`../workspaces/original-card-battle`）の下の `<slug>` に置く（絶対パスで作る）。**1 つの担当の区分 = 1 worktree = 1 チャット**で、ブランチは Issue ごとに切り替える。
 
 | slug | 担当 | 既定の `area:` | 主に触るパス（目安） |
 | --- | --- | --- | --- |
@@ -288,10 +288,10 @@ worktree はリポジトリの外、設定の `worktreeRoot`（`../workspaces/or
 - **書いてよい設計書は、元になる文書の一覧が決める**。上の表の「主に触るパス」は目安で、設計書 1 本ごとの持ち主は `docs/SOURCES.md` §2 が決める。表と一覧が食い違えば一覧に従う。main を取り込んだあとに `npm run sources -- --lane <slug>` を打ち、自分が書く設計書と読む設計書を確かめる
 - **担当の境目はファイルの持ち主で切る**。敵の由来や呼び名の文章も、置き場が `docs/enemy_document/` なら `cards` が書く。`design` が見た目の約束を変えたいときは、案を Issue に書き、main が `docs/vision/` に取り込む
 - **世界観の元になる文書は main（chat-main）が持つ**（経緯は `.claude/decisions/2026-09-21-world-owned-by-main.md`）。正典は `docs/vision/world-v1.md` で、**舞台は龍神の封印の地、敵は竜・寄生・亡霊の 3 系統、崩壊まで約 1 年**（v5、#884）。`docs/vision/` `docs/Overall_document/` `docs/journal_document/` は main が書き、`area:world` の Issue は `lane:` を付けず main のチャットで扱う。敵の数値とロースター（`docs/enemy_document/`）は `cards` のまま
-- **`audit` は読み取り専用**。整合監査の結果は申し送りにして main へ回し、修正は main が Issue にして担当レーンへ配る。書いてよいのは、自分の tracker（`memory/` `history/`）と `comm/outbox/` `comm/handoff/` だけ。コードの修正を含む Issue には `lane:audit` を付けない
+- **`audit` は読み取り専用**。整合監査の結果は申し送りにして main へ回し、修正は main が Issue にして持ち主の担当へ配る。書いてよいのは、自分の tracker（`memory/` `history/`）と `comm/outbox/` `comm/handoff/` だけ。コードの修正を含む Issue には `lane:audit` を付けない
 - **待機ブランチは `chore/lane-<slug>`**。担当の作業場所はこのブランチで作り、ここに commit を積まない。Issue に着手するたびに、`<prefix>/<slug>-<issue>` を origin/main から切る
 - **続きの PR は積む**。同じ担当が同じ設計書を触る PR を続けて出すときは、2 本目のブランチを merge 待ちの 1 本目から切る。2 本の PR が、設計書の冒頭の版の行と末尾の改訂履歴を同じ位置で書くので、どちらも main から切ると、片方が merge された時点でもう片方が必ずぶつかるためである。宛先と入れ方は、共通の決まり（claude-dotfiles の `docs/development-flow.md` の「merge」の「方式」）に従う。前の PR に直しが入ったら、`git merge <前のブランチ>` で取り込む。触る設計書が重ならない PR は積まない
-- **試運転はメインだけ**。`npm run dev`・実ブラウザ検証・Unity Editor での手触り確認はメインで行い、各レーンは `npm run build` / `npm run lint` / `npm run test:run` / `dotnet test` の静的検証まで。C# を触ったら、`npm run unity:check` で Unity のコンパイルを Editor を開かずに確かめる。Unity の NUnit 3.5 と netstandard2.1 にだけ無い API は、`dotnet test` では見つからないためである。例外は chat-main の `issue-workflow` の仕上げ役（`work-finishers`）だけで、動作確認のために `wf-*` の worktree で Vite の dev サーバーを 1 本ずつ、固定のポート 5273 で起動し、終わったら止める（`.claude/issue-workflow.md` の「動作確認」）。Unity Editor はメインだけのまま
+- **試運転はメインだけ**。`npm run dev`・実ブラウザ検証・Unity Editor での手触り確認はメインで行い、各担当は `npm run build` / `npm run lint` / `npm run test:run` / `dotnet test` の静的検証まで。C# を触ったら、`npm run unity:check` で Unity のコンパイルを Editor を開かずに確かめる。Unity の NUnit 3.5 と netstandard2.1 にだけ無い API は、`dotnet test` では見つからないためである。例外は chat-main の `issue-workflow` の仕上げ役（`work-finishers`）だけで、動作確認のために `wf-*` の worktree で Vite の dev サーバーを 1 本ずつ、固定のポート 5273 で起動し、終わったら止める（`.claude/issue-workflow.md` の「動作確認」）。Unity Editor はメインだけのまま
 - **worktree が消えないとき**。`git worktree remove` が `Permission denied` で失敗し、掴んでいるのが Orca のターミナルなら、`orca terminal list --json` でそのターミナルの handle を探し、`orca terminal close --terminal <handle>` で閉じてから消す
 - **one writer per artifact**。同じファイルを 2 つの担当に触らせない
 - **`.claude/comm/.session-name` と `.session-branch` を必ず書く**。ブランチを切り替えるたびに `.session-branch` を更新する。省略すると、共通の hook が担当の worktree からの merge と起票を止め、セッションの最初に警告を出す
@@ -301,7 +301,7 @@ worktree はリポジトリの外、設定の `worktreeRoot`（`../workspaces/or
 - **フロー**: Vision（`docs/vision/core.md`）→ 実装プラン → 完了したら規約を本ファイルへ統合。計画書の置き場と完了後の移し先は、共通の `code-plan-editor` スキルに従います。進め方の決定は決定の記録（`.claude/decisions/`）に置きます。進捗 / 履歴は per-chat（`memory/` `history/`、task-tracker 経由）
 - **Known Issue**: `docs/known-issues/` に Root Cause + 再発防止を蓄積。発見時 `NNN-<slug>.md` 作成 + `INDEX.md` 更新、解決時 Status=Fixed。**類似バグはまず `INDEX.md` を grep**
 - **元になる文書の一覧は `docs/SOURCES.md`**。主題ごとの元になる文書・持ち主の担当・旧版の一覧・食い違ったときに勝つ側を持つ。他の文書とスキルは同じ表を持たず、ここを指す。元になる文書を足す / 使わなくする / 持ち主を変えるコミットに一覧の行を含め、`npm run sources -- --check` を通す。版を上げるだけなら一覧は触らない（版は元になる文書の冒頭の Status が持つ）
-- **Markdown の表は桁を揃えない**。1 マスが伸びるたびに表の全行が書き換わり、並行する PR がぶつかるため（known-issues 003）。`.md` は `.prettierrc.json` の `requirePragma` で prettier の対象から外し、表の空白は `npm run md:tables` で詰める。同じ正本を触る PR を続けて出すときは前の PR の上に積む（上の「並行作業は worktree のレーン」）
+- **Markdown の表は桁を揃えない**。1 マスが伸びるたびに表の全行が書き換わり、並行する PR がぶつかるため（known-issues 003）。`.md` は `.prettierrc.json` の `requirePragma` で prettier の対象から外し、表の空白は `npm run md:tables` で詰める。同じ元になる文書を触る PR を続けて出すときは前の PR の上に積む（上の「並行作業は担当ごとの worktree」）
 - **元になる文書どうしの食い違いは直さず、main への申し送りにする**（`kind: conflict`、題は「元になる文書の食い違い: 〜」）。他の担当の元になる文書は書かない。どちらに従って進めたかを申し送りと PR 本文に 1 行で残す。Issue にするのは main。手順は `docs/SOURCES.md` §5
 - **決定は設計書の本文へ入れ込む**。末尾の「〜の決定」節は記録で、入れ込むまでは、元になる文書の一覧の状態の欄に「未反映」と書く
 - **パスの読み方**: 本ファイルの `docs/…` は `.claude/docs/…` を指す。リポジトリ直下の `docs/`（`reports/` `briefs/` `mockups/` `prompts/`）は HTML レポートと制作物の置き場で、元になる文書は置かない
