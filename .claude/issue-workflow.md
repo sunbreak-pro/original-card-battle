@@ -61,18 +61,18 @@
 
 **並べる順は `prio:` の小さい順です。** 同じなら `sev:`（blocking → important → minor）、次に番号の順にします。下書きは `npm run issues:next -- --all` で出せます。このコマンドは PR の除外と本文の読み込みをしないので、ほかの決まりは省きません。
 
-**同じレーンに `prio:1` が残っているときは、そのレーンの `prio:3` 以下を同じ回に入れません。**
+**同じ担当に `prio:1` が残っているときは、その担当の `prio:3` 以下を同じ回に入れません。**
 
 **依存は本文を読んで決めます。** このリポジトリの書き方は、`依存` 節・`Parent: #<n>`・「〜が終わらないと」の 3 つです。ラベルでは代わりになりません。たとえば #39（竜）は #36 / #37 / #38 に依存していて、無視して回すと台本のまま「戦ってみる」に着手して空振りします。
 
-**レーンを決めます。** 決め方は下の表で、上の行から順に当てはめます。決まらない Issue は回さず、「chat-main 采配」として並べます。
+**担当を決めます。** 決め方は下の表で、上の行から順に当てはめます。決まらない Issue は回さず、「メインのチャットで扱うもの」として並べます。
 
 | 判定 | lane |
 | --- | --- |
 | `lane:<slug>` ラベルがある | その slug |
-| `lane:` が無く、`area:` が下の表で 1 つのレーンに決まる | そのレーン |
-| `area:` が複数のレーンにまたがる / どれにも当たらない | 決まらない（chat-main 采配） |
-| `area:world` で `lane:` が無い | 決まらない（世界観の正本は main が持つ） |
+| `lane:` が無く、`area:` が下の表で 1 つの担当に決まる | その担当 |
+| `area:` が複数の担当にまたがる / どれにも当たらない | 決まらない（メインのチャットで扱う） |
+| `area:world` で `lane:` が無い | 決まらない（世界観の元になる文書は main が持つ） |
 
 | area: | lane |
 | --- | --- |
@@ -82,11 +82,11 @@
 | `area:dungeon` | `dungeon` |
 | `area:docs` `area:tooling` | `audit` |
 
-**`audit` レーンの Issue は回しません。** `audit` は読み取り専用で、終わりは PR ではなく main への申し送りか元の Issue へのコメントです。こうした Issue は chat-main が手で扱い、報告では「chat-main 采配（audit）」として並べます。
+**`audit` 担当の Issue は回しません。** `audit` は読み取り専用で、終わりは PR ではなく main への申し送りか元の Issue へのコメントです。こうした Issue は chat-main が手で扱い、報告では「メインのチャットで扱うもの（audit）」として並べます。
 
-**Issue が名指しする設計書の持ち主と、決めたレーンが違えば回しません。** 持ち主は `.claude/docs/SOURCES.md` §2 が決めます（`npm run sources -- --lane <lane>` の「書く正本」）。違うレーンに書かせると、1 つのファイルに書き手が 2 人できます。こうした Issue は「chat-main 采配」に回します。
+**Issue が名指しする設計書の持ち主と、決めた担当が違えば回しません。** 持ち主は `.claude/docs/SOURCES.md` §2 が決めます（`npm run sources -- --lane <lane>` の「書く正本」）。違う担当に書かせると、1 つのファイルに書き手が 2 人できます。こうした Issue は「メインのチャットで扱うもの」に回します。<!-- words-ok: 「書く正本」は scripts/sources.mjs が出す見出しの引用 -->
 
-**重なりは、Issue の Scope とレーンの「書く正本」で比べます。** 同じ設計書を書く Issue は、同じ回に 2 件入れません。設計書は冒頭の版の行と末尾の改訂履歴を毎回書き換えるので、別々の worktree で書くと必ず衝突します。
+**重なりは、Issue の Scope と、担当の「書く正本」で比べます。** 同じ設計書を書く Issue は、同じ回に 2 件入れません。設計書は冒頭の版の行と末尾の改訂履歴を毎回書き換えるので、別々の worktree で書くと必ず衝突します。<!-- words-ok: 「書く正本」は scripts/sources.mjs が出す見出しの引用 -->
 
 選んだ Issue には `lane` と `prefix` を付けて実装役へ渡します。`prefix` は次のとおりです。
 
@@ -105,9 +105,9 @@
 
 **最初に、名前とブランチを書きます。** `echo wf-{{n}} > {{worktree}}/.claude/comm/.session-name` と `echo {{branch}} > {{worktree}}/.claude/comm/.session-branch` です。あとでこの worktree を Orca で開いたときに、hook が正しい名前を読むためです。
 
-**書いてよい設計書を確かめます。** `cd {{worktree}} && npm run sources -- --lane {{lane}}` を実行し、「書く正本」に出たものだけを書きます。表と台帳が違えば台帳が正です。`.claude/docs/vision/` `.claude/docs/Overall_document/` `.claude/docs/journal_document/` は main が持つので書きません。
+**書いてよい設計書を確かめます。** `cd {{worktree}} && npm run sources -- --lane {{lane}}` を実行し、「書く正本」に出たものだけを書きます。表と元になる文書の一覧が違えば、一覧に従います。`.claude/docs/vision/` `.claude/docs/Overall_document/` `.claude/docs/journal_document/` は main が持つので書きません。<!-- words-ok: 「書く正本」は scripts/sources.mjs が出す見出しの引用 -->
 
-**正本どうしの食い違いを見つけても、他のレーンの正本は直しません。** `.claude/comm/handoff/_TEMPLATE.md` を `{{worktree}}/.claude/comm/handoff/YYYY-MM-DD-wf-{{n}}-{{slug}}.md` に写し、`from: wf-{{n}}` と `kind: conflict` を書きます。題は「正本の食い違い: 〜」で始めます。どちらに従って進めたかを申し送りと notes に 1 行ずつ書き、作業を続けます。新しい Issue が要る課題も、同じ形の申し送りにします。
+**元になる文書どうしの食い違いを見つけても、他の担当の元になる文書は直しません。** `.claude/comm/handoff/_TEMPLATE.md` を `{{worktree}}/.claude/comm/handoff/YYYY-MM-DD-wf-{{n}}-{{slug}}.md` に写し、`from: wf-{{n}}` と `kind: conflict` を書きます。題は「元になる文書の食い違い: 〜」で始めます。どちらに従って進めたかを申し送りと notes に 1 行ずつ書き、作業を続けます。新しい Issue が要る課題も、同じ形の申し送りにします。
 
 次のものは書きません。
 
@@ -127,7 +127,7 @@
 | `unity-port/` の C#（`.cs` `.asmdef`） | 変えたアセンブリのテスト `dotnet test unity-port/<名前>.Tests/<名前>.Tests.csproj -p:UseSharedCompilation=false --disable-build-servers`。テストの無いアセンブリ（`Journal.Script` など）は `dotnet build unity-port/<名前>/<名前>.csproj -p:UseSharedCompilation=false --disable-build-servers`。続けて `npm run unity:check -- --allow-leftovers --allow-unbuilt` |
 | `scripts/*.mjs` | `npm run issues:test` |
 | Markdown | `npm run md:tables -- <変えた .md>` で表の空白を詰め、`npm run md:tables -- --check` |
-| `.claude/docs/SOURCES.md` か、正本の追加・退役・持ち主の変更 | `npm run sources -- --check` |
+| `.claude/docs/SOURCES.md` か、元になる文書の追加・廃止・持ち主の変更 | `npm run sources -- --check` |
 
 **`dotnet` の常駐ビルドサーバーは使いません。** `-p:UseSharedCompilation=false --disable-build-servers` を必ず付け、`dotnet build-server shutdown` も打ちません。`shutdown` は PC 上のすべての常駐ビルドサーバーを止めるので、ほかの実装役・確認役・chat-main・別のセッションのビルドを落とすためです。
 
@@ -137,7 +137,7 @@
 
 **commit の題は英語の conventional commit にし、題の末尾に Issue 番号を付けます。** 例は `feat(battle): drop the rest between chained battles (#{{n}})` です。
 
-**notes は日本語（です・ます）で書きます。** 入れるものは、置いた仮定、Scope の外で気づいたこと、書いた申し送りのファイル名、正本が食い違ったときに従った側です。chat-main に残す試運転（画面・Unity Editor での確認）があれば、それも書きます。
+**notes は日本語（です・ます）で書きます。** 入れるものは、置いた仮定、Scope の外で気づいたこと、書いた申し送りのファイル名、元になる文書が食い違ったときに従った側です。chat-main に残す試運転（画面・Unity Editor での確認）があれば、それも書きます。
 
 ## 全体確認
 
@@ -160,13 +160,13 @@
 
 **共通の `merge-round` が、衝突の直しを担当に頼む指示文にも、この節の確認を使います。** 設定の `ciCommand` が無いためです。衝突に C# が混じっても、足すコマンドはありません。4 の `dotnet test` はいつも打ち、衝突を解いたブランチが `.cs` か `.asmdef` を変えていれば 8 も当たるためです。
 
-**書き手を確かめます。** `git diff --name-only origin/main...HEAD` に出たファイルを、`npm run sources` の台帳と突き合わせます。台帳は 1 行に 1 つの正本を出し、括弧の中の先頭が持ち主です。持ち主が {{lane}} 以外の正本を変えていれば失敗です。パスが一致するものと、フォルダの正本の下にあるものを数えます。
+**書き手を確かめます。** `git diff --name-only origin/main...HEAD` に出たファイルを、`npm run sources` が出す元になる文書の一覧と突き合わせます。一覧は 1 行に 1 つの元になる文書を出し、括弧の中の先頭が持ち主です。持ち主が {{lane}} 以外の元になる文書を変えていれば失敗です。パスが一致するものと、元になる文書として載っているフォルダの下にあるものを数えます。
 
-`npm run sources -- --lane {{lane}}` の「読む正本」は、そのレーンが読む行しか出しません。そのため、この確認には台帳の全体を使います。
+`npm run sources -- --lane {{lane}}` の「読む正本」は、その担当が読む行しか出しません。そのため、この確認には一覧の全体を使います。<!-- words-ok: 「読む正本」は scripts/sources.mjs が出す見出しの引用 -->
 
 `.claude/memory/` か `.claude/history/` の下を変えていても失敗です。
 
-`.claude/docs/SOURCES.md` と `.claude/docs/known-issues/` は、台帳の行に無いので上の突き合わせには引っかかりません。Issue が台帳の行の変更や既知の課題の記録を求めているときだけ、変えてよいものとします。Issue が求めていないのに変えていれば失敗です。
+`.claude/docs/SOURCES.md` と `.claude/docs/known-issues/` は、一覧の行に無いので上の突き合わせには引っかかりません。Issue が一覧の行の変更や既知の課題の記録を求めているときだけ、変えてよいものとします。Issue が求めていないのに変えていれば失敗です。
 
 **合格の条件は、上のコマンドがすべて exit 0 で、書き手の確認に引っかかるものが無いことです。** 例外は `unity:check` の exit 2（Unity のビルドの記録が無く確かめられない）で、合格に数えます。そのときは「Unity での確認は chat-main に残す」と理由を記録します。
 
@@ -186,7 +186,7 @@
 
 - 変更の要約。
 - 全体確認のコマンドと終了コードの表。
-- 正本が食い違ったときにどちらに従ったか。実装役の notes と `{{worktree}}/.claude/comm/handoff/` の申し送りから写します。
+- 元になる文書が食い違ったときにどちらに従ったか。実装役の notes と `{{worktree}}/.claude/comm/handoff/` の申し送りから写します。
 - 申し送りがあれば「申し送り `<ファイル名>` を main に回した」の 1 行。
 
 **本文のファイルは worktree の外に書きます。** 置き場所は OS の一時フォルダ（Git Bash の `/tmp/pr-body-{{n}}.md` など）です。worktree の中に残すと、追跡されないファイルが残って `git worktree remove` が止まるためです。
@@ -274,7 +274,7 @@ chat-main が次の順に進めます。仕上げ役が「仕上げ」を回し�
 
 1. **回の前に、全 worktree の申し送りを集めて Issue にしておきます。** 集め方は `.claude/comm/README.md` の「main がすること」です。集める前に回すと、まだ Issue になっていない課題がどの回にも載りません。
 2. **回の後にも、`wf-*` を含む全 worktree の申し送りを集めます。** 1 件ずつ `issue-dispatch` で Issue にするか既存の Issue にコメントし、処理したファイルを消します。
-3. **回の結果をこうだいさんに報告します。** 並べるのは、開いた PR、失敗した Issue とその理由、回さなかった Issue の内訳（chat-main 采配・audit・人手待ち・優先順位なし・親 Issue と、共通の除外の理由）です。
+3. **回の結果をこうだいさんに報告します。** 並べるのは、開いた PR、失敗した Issue とその理由、回さなかった Issue の内訳（メインのチャットで扱うもの・audit・人手待ち・優先順位なし・親 Issue と、共通の除外の理由）です。
 4. **PR を開いた `wf-*` の worktree は、`merge-round` の `fixes` より前に必ず消します。** 仕上げ役が残した worktree（申し送りがあったもの）もここで扱います。`handoff/` が空になったのを確かめてから、main の checkout で `git worktree remove <パス>` を打って消します。ブランチは origin に残ります。
 5. **失敗した `wf-*` は、直すか捨てるかを決めるまで残します。** 手元のブランチが残っているあいだ、その Issue は次の回で「着手済み（ブランチあり）」として外れます。
 6. **merge は共通の `merge-round` の回で進めます。** 仕上げ役が「仕上げ」を回さなかった回の PR と、承認が要るファイルを変えるので仕上げ役が飛ばした PR は、chat-main が `merge-round` を回して入れます。`Refs` にした PR の Issue は、残った確認を chat-main が終えてから閉じます。
