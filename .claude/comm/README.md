@@ -56,5 +56,5 @@ worktree を消す前に、`handoff/` が空であることを確かめます。
 
 ## 規約
 
-- `outbox/` と `decisions/` の更新は、実装コミットに混ぜない（tracker と同じ理由で衝突する）
+- `outbox/` の更新は、実装コミットに混ぜない（tracker と同じ理由で衝突する）
 - `.session-name` が未宣言だと `task-tracker` が per-chat モードで止まります。`echo main > .claude/comm/.session-name` で宣言してください
