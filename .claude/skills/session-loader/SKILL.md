@@ -45,7 +45,7 @@ description: セッション開始時に original-card-battle のコンテキス
 **主題ごとに、どのファイルが元になる文書かは、`.claude/docs/SOURCES.md` が持ちます。** ここに表を写しません。
 
 ```bash
-npm run sources -- --lane <自分の slug>   # 出力の見出しは「書く正本」と「読む正本」。メインは npm run sources で全件（words-ok: scripts/sources.mjs が出す見出しの引用）
+npm run sources -- --lane <自分の slug>   # 書いてよい元になる文書と読む元になる文書（出力の見出しは「書く正本」「読む正本」）。メインは npm run sources で全件（words-ok: scripts/sources.mjs が出す見出しの引用）
 ```
 
 状態の欄に但し書き（「§N 未反映」「§N が本文より優先」）がある行は、その但し書きごと読みます。絵の制作は `visual-production-pipeline` スキルです。
