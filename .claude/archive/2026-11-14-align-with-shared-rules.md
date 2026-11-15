@@ -1,10 +1,11 @@
 # Plan: claude-dotfiles の共通の決まりに、このリポジトリを合わせる
 
-- **Status**: IN PROGRESS（Step 1〜4・6・7・9 が終わりました。決めてもらう点の 5 つすべてに答えが出ました。残りは Step 5・8・10 です）
+- **Status**: COMPLETED（2026-11-15 に、Step 1〜10 がすべて終わりました）
 - **Created**: 2026-11-14
+- **Completed**: 2026-11-15
 - **Task**: claude-dotfiles の共通の決まりと重なる決まり・道具をこのリポジトリから消し、文書の置き場を標準に合わせる
 - **Project**: original-card-battle
-- **計画書**: `.claude/docs/vision/plans/2026-11-14-align-with-shared-rules.md`
+- **計画書**: `.claude/archive/2026-11-14-align-with-shared-rules.md`（実行中は `.claude/docs/vision/plans/` に置いていました）
 - **元になる計画**: claude-dotfiles の `claude/docs/plans/2026-11-11-project-rollout.md`（下位のプロジェクトを共通の決まりに合わせる計画）の Step 12
 - **作業の大きさ**: PR 9 本と、スキルの語を直す PR が数本の見込みです。こうだいさんの確認が要る Step は 1・5・8 の 3 個です
 
@@ -148,7 +149,7 @@ claude-dotfiles の `claude/CLAUDE.md`・`claude/rules/`・`claude/skills/` は 
    - `## 設定値` に足す項目は、`mergeMethod`（`merge`）、`ciCommand` と `ciWorkflow`（どちらも `null`）、`harnessOnlyPaths`、`mechanicalFiles`、`areaWorkspaces`、`issueCreation`（`main-only`）です。値は「引き渡しの一覧」の案を使います。
    - この Step では、値を足すだけにします。いまの `issue-workflow` は、名前を挙げた項目だけを設定から読むので、増えた項目は読まれず、動きは変わりません。このリポジトリの merge の手順と hook は、自分の定数を使い続けます。
    - `mainCheckout` と `worktreeRoot` を相対パスに変える直し、`mergePolicy` の書き換え、「動作確認」と「仕上げ」の節は、Step 5 で行います。相対パスを絶対パスに直して渡す部品と、共通の merge の手順は、claude-dotfiles の PR #106 が main に入るまで使えないためです。先に書くと、`issue-workflow` が、まだ無い道具を呼びます。
-5. [ ] Step 5（こうだいさんの確認が要る）: 共通の道具と同じ名前のものと、hook の写しを消します。claude-dotfiles の PR #106 が main に入ったあとで、claude-dotfiles が 2 本の hook を登録する日と、同じ日に入れます。
+5. [x] Step 5（こうだいさんの確認が要る）: 共通の道具と同じ名前のものと、hook の写しを消します。claude-dotfiles の PR #106 が main に入ったあとで、claude-dotfiles が 2 本の hook を登録する日と、同じ日に入れます。PR #973「chore(harness): switch to the shared merge-round, worktree, issue tools and hooks」で、2026-11-15 に merge しました。
    - `.claude/settings.json` の hook の登録 7 本を消します。
    - 入口の文書の hook の表と、スキルの表の `merge-round`・`issue-dispatch`・`worktree-policy` の行を外します。Step 6 では、hook とスキルがまだ登録・配置されたままなので、これらの行を残しました。hook の表の `merge-gate.mjs` の行にある merge のコマンドの書き写し（警告 1 件）は、この Step で消えます。
    - `.claude/issue-workflow.md` の `mainCheckout` と `worktreeRoot` を、絶対パスから相対パス（`.` と `../workspaces/original-card-battle`）に変えます。個人の PC のパスを、設定から外すためです。
@@ -171,14 +172,14 @@ claude-dotfiles の `claude/CLAUDE.md`・`claude/rules/`・`claude/skills/` は 
    - `.claude/MEMORY.md`・`.claude/HISTORY.md`・`TODO.md` を消し、指しているファイル（現行の文書 3 本ほか）を直します。過去の記録（`.claude/HISTORY-archive.md`・`.claude/archive/`・日付つきの資料）の中の言及は直しません。
    - `.claude/comm/decisions/` を、決めてもらう点「使われていない部品」の答えに従って扱います。
    - `.claude/docs/INDEX.md` の案内を、新しい置き場に合わせます。
-8. [ ] Step 8（こうだいさんの確認が要る）: 語と番号を直します（決めてもらう点「語と番号をどこまで直すか」の答えに従います）。
+8. [x] Step 8（こうだいさんの確認が要る）: 語と番号を直します（決めてもらう点「語と番号をどこまで直すか」の答えに従います）。入口の文書と `.claude/issue-workflow.md` は PR #974「docs(harness): replace in-house words in the entry doc and issue-workflow settings」、スキルは PR #975「docs(skills): replace in-house words in the session-loader skill」・#976「docs(skills): replace in-house words in the session-successor skill」・#977「docs(skills): name the visual pipeline stages instead of stage codes」で、2026-11-15 に merge しました。#974 で残した 7 件と「台帳」は、PR #978「docs(harness): finish the shared-rules alignment and archive the plan」で直しました。
    - 検査の指摘を、言い換えるもの・コードとして残すもの・例外にするもの、の 3 つに分けた一覧を作り、こうだいさんに見せてから直します。
    - 直す順は、入口の文書、`.claude/issue-workflow.md`、スキルです。スキルは 1 本ずつ PR にします。
    - 例外にするものは、claude-dotfiles の例外の一覧（`claude/docs/exceptions.md`）に足す行の案を作り、claude-dotfiles の側へ渡します。このリポジトリからは書きません。
 9. [x] Step 9: `README.md` を書き直します。PR #968「docs(readme): rewrite the README to match the React and Unity layout」で、2026-11-15 に merge しました。
    - Python 版の説明を消し、いまの構成（React と Vite の版、Unity への移植）、起動のコマンド、文書の入口への案内を、60 行以内で書きます。
    - 入口の文書の「README の Development History に 1 行足す」決まりを外す作業は、Step 6 へ移しました。
-10. [ ] Step 10（確かめる役）: 検査を取り直し、結果を報告します。
+10. [x] Step 10（確かめる役）: 検査を取り直し、結果を報告します。PR #978「docs(harness): finish the shared-rules alignment and archive the plan」で、結果を Worklog に書き、この計画書を archive へ移しました。
     - `check-project.mjs` のエラーが、例外の一覧に載せたものを除いて 0 件であることを確かめます。
     - `npm run build`・`npm run lint`・`npm run test:run` が通ることを確かめます。文書と設定だけの変更でも、hook の切り替えのあとなので 1 回回します。
     - 検査が誤って指摘したものと、進め方で詰まった点を、claude-dotfiles の計画書の Worklog に書きます。ほかのプロジェクトを合わせるときに使います。
@@ -211,16 +212,16 @@ claude-dotfiles の `claude/CLAUDE.md`・`claude/rules/`・`claude/skills/` は 
 
 ## Verification
 
-- [ ] `node <claude-dotfiles>/check-project.mjs <このリポジトリ>` のエラーが、例外の一覧に載せたものを除いて 0 件である。
-- [ ] `git ls-files -s | grep ^120000` が何も出さない（外を指す symlink が無い）。
-- [ ] `git ls-files | grep settings.local` が何も出さない。
-- [ ] `ls .claude/feature_plans` が「無い」と返し、計画書の置き場が `.claude/docs/vision/plans/` の 1 か所である。
-- [ ] `grep -v "decisions/2026-" .claude/CLAUDE.md | grep -c "2026-"` が 0 を返す（決定の記録のファイル名に入る日付は数えません。共通の決まりの文書も、決定の記録をファイル名で指しています）。
-- [ ] `.claude/settings.json` に、`.claude/hooks/` を指す行が無い。
-- [ ] うまくいかない場合の確認: main の checkout で、merge の手順の回の外の `gh pr merge <開いている PR の番号>` を打つと、共通の hook が止める。担当の worktree で `gh issue create` を打つと、同じく止まる。
-- [ ] `node ~/.claude/skills/merge-round/scripts/merge-round.mjs status` が、設定の不足を表示せずに終わる。
-- [ ] `npm run build`・`npm run lint`・`npm run test:run` が通る。
-- [ ] セッションを新しく始めて、SessionStart の hook が、進捗の一覧（`.claude/memory/INDEX.md`）を作り直す。
+- [x] `node <claude-dotfiles>/check-project.mjs <このリポジトリ>` のエラーが、例外の一覧に載せたものを除いて 0 件である。
+- [x] `git ls-files -s | grep ^120000` が何も出さない（外を指す symlink が無い）。
+- [x] `git ls-files | grep settings.local` が何も出さない。
+- [x] `ls .claude/feature_plans` が「無い」と返し、計画書の置き場が `.claude/docs/vision/plans/` の 1 か所である。
+- [x] `grep -v "decisions/2026-" .claude/CLAUDE.md | grep -c "2026-"` が 0 を返す（決定の記録のファイル名に入る日付は数えません。共通の決まりの文書も、決定の記録をファイル名で指しています）。
+- [x] `.claude/settings.json` に、`.claude/hooks/` を指す行が無い。
+- [x] うまくいかない場合の確認: main の checkout で、merge の手順の回の外の `gh pr merge <開いている PR の番号>` を打つと、共通の hook が止める。担当の worktree で `gh issue create` を打つと、同じく止まる。
+- [x] `node ~/.claude/skills/merge-round/scripts/merge-round.mjs status` が、設定の不足を表示せずに終わる。
+- [x] `npm run build`・`npm run lint`・`npm run test:run` が通る。
+- [x] セッションを新しく始めて、SessionStart の hook が、進捗の一覧（`.claude/memory/INDEX.md`）を作り直す。
 
 ## Worklog
 
@@ -242,3 +243,9 @@ claude-dotfiles の `claude/CLAUDE.md`・`claude/rules/`・`claude/skills/` は 
 - **こうだいさんの答え。** 決めてもらう点の 4（語と番号）と 5（使われていない部品）に答えが出ました。語と番号は、文章を言い換え、コードは残し、直す前に一覧を見せます。使われていない部品は、ループのスキル 4 本と判断待ちの置き場を、どちらも消します。消す作業は PR #971 です。
 - **共通の道具が無い PC。** こうだいさんは、Mac（claude-dotfiles を入れていない PC）を当面そのままにすると決めました。Step 5 で hook とスキルの写しを消すと、Mac ではこれらが動かなくなります。このリポジトリも、claude-dotfiles を入れた PC で作業する前提で進めます。
 - **PR #971 の検査の前後。** エラーは 226 件から 207 件に減りました。警告は 1 件のままです。減った分は、消したスキル 4 本の中の語と番号と、決定の記録の置き場の 1 件です。
+- **#971〜#977 の merge。** 7 本が merge commit で main に入りました。`gh pr view <n> --json state,mergeCommit` の出力は、#971 が `MERGED 7b45161b`、#972 が `MERGED 64860429`、#973 が `MERGED 022079c1`、#974 が `MERGED ebc61936`、#975 が `MERGED 8dc37d77`、#976 が `MERGED 4ec74931`、#977 が `MERGED 40609ca2` です。#957 は `CLOSED` で、中身は #973 に取り込みました。
+- **Step 5 で決まったこと。** 担当ごとの作業場所の対応表（設定の `workspaceMapPath`）は作りません。こうだいさんが 2026-11-15 に、推奨の「作らない」を選びました。設計書の持ち主は `.claude/docs/SOURCES.md` だけが決めます。共通の `scope-overlap.mjs` は対応表が無いと終了コード 4 で止まるので、重なりは Issue の Scope 欄で突き合わせます。
+- **hook の切り替え。** #973 と同じ日に、claude-dotfiles の共通の hook 2 本（`bash-guards.mjs` と `project-session-start.mjs`）が登録されました。メインのチャットが新しいプロセスで、merge-round の回の外の `gh pr merge` と、担当の worktree からの `gh issue create` を、共通の hook が止めることを確かめました。main の checkout の `.claude/memory/INDEX.md` は、2026-11-15 19:12 に `project-session-start.mjs` が作り直していました。
+- **Step 8 の結果。** 検査の指摘を、#974 で 43 件、#975 で 6 件、#976 で 4 件、#977 で 70 件直しました。#974 で残した `.claude/CLAUDE.md` の 7 件は、#978 で直しました。見出し「並行作業は worktree のレーン」を「並行作業は担当ごとの worktree」に変え、名前で指している 3 か所も直しました。検査に出ない「台帳」（`docs/SOURCES.md` を指すもの）は、`.claude/comm/README.md` の 2 か所と `.claude/issue-workflow.md` の 1 か所を「元になる文書の一覧」に直しました。例外に回したものは無いので、claude-dotfiles の例外の一覧に足す行もありません。
+- **Step 10 の結果。** `check-project.mjs` を #978 の worktree に当てると、エラー 0 件・警告 0 件・例外 0 件でした。main の `ebc61936` では、エラー 7 件でした。`npm run build` と `npm run test:run`（11 ファイル・148 件）は通りました。`npm run lint` はエラー 0 件・警告 2 件で、警告は製品のコードにある使われていない eslint-disable です。Verification の 10 項目は、すべて確かめました。
+- **検査が読まない文書に残る語。** 内輪の語の検査は、入口の文書・`.claude/rules`・`.claude/skills`・`.claude/issue-workflow.md` だけを読みます。そのため、`.claude/comm/README.md`・`.claude/docs/SOURCES.md`・`.claude/docs/INDEX.md`・申し送りのひな形には、「レーン」が 24 行、「正本」が 38 行残っています。この計画では、`SOURCES.md` を触らない文書にしていたので、直していません。
