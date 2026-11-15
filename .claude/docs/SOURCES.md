@@ -122,7 +122,7 @@ worktree ごとに設計書のコピーを持つので、main を取り込んで
 
 上の段が語っている点は、上の段が正です。上の段が黙っている点は、下の段が決めます。
 
-1. こうだいさんの決定（Issue のコメント、`.claude/comm/decisions/ANSWERS.md`）
+1. こうだいさんの決定（Issue のコメント、`.claude/decisions/` の決定の記録）
 2. `concept-v3.md` と `core.md`
 3. `world-v1.md`（呼び名と設定）、`battle_core_v4.md`（ルールと数値）、`dungeon_exploration_v4.md`（探索）
 4. `swordsman_cards_v4.md` と `enemy_roster_v4.md`（3 のルールを使う側のデータ）

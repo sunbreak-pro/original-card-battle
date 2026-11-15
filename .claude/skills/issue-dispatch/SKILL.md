@@ -11,7 +11,6 @@ description: プロダクトの課題を GitHub Issue として起票し、ラ�
 
 - **起票 = chat-main だけ**（2026-10-06 こうだいさん決定、#367。life-editor の 2026-07-11 の決定を移植）。レーンのチャットでこのスキルが呼ばれたら起票せず、`.claude/comm/handoff/` に申し送りを書いて終えます（書式は `.claude/comm/README.md`）。`pre-issue-create-guard.sh` が main 以外の `gh issue create` を止めます
 - **正本 = GitHub Issues**（`gh -R sunbreak-pro/original-card-battle`）。`docs/vision/plans/` の計画書は大型仕様の詳細だけに使い、**作業分配・進捗追跡の台帳 .md は新規作成しない**
-- **消化 = `loop-triage` → `loop-implement`**。本スキルは実装しません
 - **並べ直しと実装への回し方 = グローバルの `issue-workflow`**（設定は `.claude/issue-workflow.md`）。本スキルは `prio:` を付けるところまでで、どの Issue を回すかは決めません
 
 ## ラベル（`gh label list` が正本）

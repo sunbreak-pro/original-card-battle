@@ -108,7 +108,7 @@
 次のものは書きません。
 
 - `.claude/memory/` と `.claude/history/`（tracker）。tracker は chat-main が別ブランチでまとめます。
-- `.claude/comm/outbox/` と `.claude/comm/decisions/`。
+- `.claude/comm/outbox/`。
 - `.mcp.json`。
 
 **画面を動かす確認はしません。** `npm run dev`・ブラウザ・Unity Editor は使わず、試運転は chat-main が merge の後にします。`npm run unity:sync` も打ちません。同期先の Unity プロジェクトは全員で 1 つなので、並行して写すと互いの変更を上書きするためです。
