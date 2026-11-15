@@ -4,5 +4,5 @@
 unity-port/BattleCore.Tests/Fixtures/parity-fixture.json text eol=lf
 
 # Shell scripts must stay LF — CRLF breaks the shebang line under bash
-# (Claude Code hooks in .claude/hooks/ run via bash on macOS and Windows Git Bash).
+# (on macOS and under Windows Git Bash alike).
 *.sh text eol=lf

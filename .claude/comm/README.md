@@ -15,7 +15,7 @@
 
 レーンは自分の担当範囲しか見ていないので、同じ課題が別々のレーンから立ち、ラベルの付け方もばらつきます。正本の食い違いは、どちらの文書を直すかをレーン単独では決められません。2026-10-03〜06 には、立った Issue の約半分がレーン発の「正本の食い違い」でした。
 
-`.claude/hooks/pre-issue-create-guard.sh` が、`.session-name` が `main` でないチャットの `gh issue create` を止めます。
+共通の hook（claude-dotfiles の `bash-guards.mjs`）が、`.claude/issue-workflow.md` の `issueCreation` が `main-only` なのを読んで、`.session-name` が `main` でないチャットの `gh issue create` を止めます。
 
 ### レーンがすること
 
@@ -38,7 +38,31 @@ git worktree list --porcelain | sed -n 's/^worktree //p' | while read -r wt; do
 done
 ```
 
-1 件ずつ `issue-dispatch` の手順 2（重複チェック）と 3（起票）を通します。既存の Issue と重なれば、新しく立てずにその Issue へコメントします。前提がコードで否定されたら Issue にしません。どの場合も、処理を終えたファイルは main が消します。Issue の本文には「申し送り: `<lane>/<ファイル名>`」と 1 行残します。
+1 件ずつ、共通の `issue-dispatch` の手順 2 から 4（重複・ファイルの重なり・起票）を通します。既存の Issue と重なれば、新しく立てずにその Issue へコメントします。前提がコードで否定されたら Issue にしません。どの場合も、処理を終えたファイルは main が消します。Issue の本文には「申し送り: `<lane>/<ファイル名>`」と 1 行残します。
+
+起票するときは、このリポジトリだけの次の決まりも当てます。
+
+- **frontmatter の `prio` と `lane` は案です。** main が、台帳（`.claude/docs/SOURCES.md` §2）とほかの open な Issue を見て決め直します。
+- **Scope に設計書を書くときは、台帳の持ち主と `lane:` を揃えます。** 持ち主でない担当に設計書を書かせる Issue は立てません。
+- **設計書どうしの食い違いは、題を「正本の食い違い: <何と何が>」で始めます。** 本文には両方の `file:§` と、直し方ごとに変わる結果を書きます。どちらを直すかが決まるまで `lane:` を付けません。#116「正本の食い違い: 鈍足と予兆の一字が長柄の歪み兵と噛み合わない（battle_core_v4 §5 / §6 と roster §2.1）」が型です。
+
+### `pdca:auto` を付ける判断
+
+進行役（pdca-harness）に任せる Issue には `pdca:auto` を付けます。付けるのは chat-main だけで、担当の作業場所のチャットは付けません。付いた Issue は、`issue-workflow` が実装に回しません。
+
+付けてよい Issue は、コードだけで完結し、完了条件を `dotnet build` `dotnet test` `npm run lint` `npm run build` `npm run test:run` で確かめられるものです。次の Issue には付けません。
+
+- 本文が `.claude/` のパスを挙げるもの（設計書を直す Issue を含む）。進行役は `.claude/` に書けず、機械の足切りで外れます。本文に `.claude/` のパスを書くと拾われないので、付けたい Issue では、参照先を設計書の名前だけにするか、Scope に書きません。
+- `area:art` `area:world` `type:human` `status:frozen` が付いたもの、題が判断を求めるもの、子 Issue を持つ親。
+- 判断（数値・規則・画面の流れ）を Issue が決めていないもの。進行役は仮定を置かず、`state:needs-human` にします。
+
+Unity Editor での確認が要る完了条件があっても、付けてかまいません。その条件は PR の本文の「人が確かめること」に回り、こうだいさんが確かめます。`unity:check` と `parity:check` は、進行役が動かせません。
+
+試運転が済むまでは、付ける Issue を少なくします。いまの試運転は #457「[戦闘] 試験台 BattleCore.Sim で層ごとの難しさ（M1・M2・M3）を測れるようにする」です。#99「[探索] 探索と戦闘を繋ぐ（BattleInit へ渡す、結果を持ち帰る）」は、試運転に問題がなければ足します。2 件とも、2026-11-15 の時点で close 済みです。広げるときは、PR の質と merge の手間を見てから決めます（merge 待ちの上限は 3 件です）。
+
+### 起票しない範囲
+
+`.claude/CLAUDE.md` で凍結した範囲は Issue にしません。アーマー（AP / 装備耐久 / 修理）、装備・Gold・ソウル経済、ショップ / 鍛冶屋 / サンクチュアリが当たります。防御は Guard だけです。TS 側の `src/ui/battle-lab/core/` も凍結していて、戦闘コアの正は `unity-port/BattleCore/` です。
 
 ### なぜ git で追跡しないか
 
