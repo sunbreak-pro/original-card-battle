@@ -38,14 +38,15 @@ namespace Depiction.View
             // #288: the art is the script's to name; the figure looks it up and keeps it while the id stays.
             playerFigure.ShowArt(frame.Player.ArtId);
             playerFigure.SetDown(frame.Player.Down);
-            // §4.3 (#455): 226 px tall, 264 for an elite on two cells (the script's sizes).
+            // §4.3 (#455): 226 px tall, 264 for an elite on two cells (the script's sizes); an enemy with
+            // a height of its own on FigureHeights stands that tall (#843).
             playerFigure.StandTall(FigureFrame.HeightFor(frame.Floor.PlayerSize));
             for (int k = 0; k < _enemyCount; k++)
             {
                 UnitFrame unit = EnemyScreen.UnitOf(frame, k);
                 _enemies[k].Figure.ShowArt(unit.ArtId);
                 _enemies[k].Figure.SetDown(unit.Down);
-                _enemies[k].Figure.StandTall(FigureFrame.HeightFor(EnemyScreen.SizeOf(frame, k)));
+                _enemies[k].Figure.StandTall(FigureFrame.HeightOf(unit.ArtId, EnemyScreen.SizeOf(frame, k)));
             }
             _staminaTag?.SetDivider(frame.StanceDivider); // before the bind below shows the stamina
             _staminaTag?.SetNextRecovery(frame.Player.NextRecovery); // §4.7 (#455): the dashed dots

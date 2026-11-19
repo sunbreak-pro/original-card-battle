@@ -173,6 +173,44 @@ namespace Depiction.Tests
             Assert.That(OmenRowLayout.RowBottom(570f, new[] { FigureFrame.StandardHeight }), Is.EqualTo(570f - 226f - 14f));
         }
 
+        // ---- battle-visual-v1 §4.3 大型の敵 (#843) ----
+
+        [TestCase(226f)]
+        [TestCase(264f)]
+        [TestCase(400f)]
+        public void UpToFourHundredPixels_TheBadgeStands14PxOverTheHead(float height)
+        {
+            Assert.That(OmenRowLayout.BadgeBottom(570f, height), Is.EqualTo(570f - height - 14f));
+        }
+
+        [TestCase(401f)]
+        [TestCase(520f)]
+        [TestCase(700f)]
+        public void PastFourHundredPixels_TheBadgesTopIsFixedOnY162_AndOnTheScreen(float height)
+        {
+            float bottom = OmenRowLayout.BadgeBottom(570f, height);
+            float top = bottom - OmenRowLayout.BadgeHeight;
+            Assert.That(top, Is.EqualTo(162f));
+            // The plan stacks 8 px over it (y 88〜154), still under the corner info that ends at y 76.
+            float planTop = top - OmenRowLayout.PlanGap - OmenRowLayout.PlanHeight;
+            Assert.That(planTop, Is.EqualTo(88f));
+            Assert.That(planTop, Is.GreaterThan(76f));
+        }
+
+        [Test]
+        public void TheFixedPlace_KeepsItsTop_ForABadgeOfAnotherHeight()
+        {
+            Assert.That(OmenRowLayout.BadgeBottom(570f, 520f, 120f), Is.EqualTo(162f + 120f));
+            Assert.That(OmenRowLayout.BadgeBottom(570f, 226f, 120f), Is.EqualTo(570f - 226f - 14f), "the head rule does not read the badge's height");
+        }
+
+        [Test]
+        public void ATallEnemyInTheRow_TakesTheRowToTheFixedPlace()
+        {
+            float bottom = OmenRowLayout.RowBottom(570f, new[] { FigureFrame.StandardHeight, 520f, FigureFrame.LargeHeight });
+            Assert.That(bottom - OmenRowLayout.BadgeHeight, Is.EqualTo(OmenRowLayout.TallBadgeTop));
+        }
+
         [Test]
         public void OneBadge_StandsOnItsHead_KeptInsideTheEdges()
         {

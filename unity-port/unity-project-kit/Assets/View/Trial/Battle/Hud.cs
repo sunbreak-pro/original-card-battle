@@ -573,7 +573,7 @@ namespace Trial.Battle
                 {
                     int size = isPrimary ? Math.Max(1, o.EnemySize) : Math.Max(1, v.Share != null ? v.Share.Size : 0);
                     row.X = isPrimary || cells <= 0 || v.Share == null ? o.EnemyX : FloorSpec.FeetX(cells, v.Share.Cell, size);
-                    row.Top = isPrimary ? o.EnemyTop : L.FeetY - FigureFrame.HeightFor(size);
+                    row.Top = isPrimary ? o.EnemyTop : L.FeetY - FigureFrame.HeightOf(v.Frame != null ? v.Frame.ArtId : null, size);
                     row.W = StatusPanelLayout.EnemyPanelWidth(cells, size);
                     row.Walking = false;
                 }
@@ -768,11 +768,16 @@ namespace Trial.Battle
                     ? off
                     : v.BadgeOff.Value + (off - v.BadgeOff.Value) * slideShare;
                 float left = home + edgeFree + v.BadgeOff.Value;
-                float bottom = (rowTop ?? r.Top) - L.Omen.OverHead;
+                // battle-visual-v1 §4.3 大型の敵 (#843): over an enemy taller than 400 px (the row's tallest, with several) the
+                // badge's top is fixed on y 162 instead of 14 px over a head that may be off the screen.
+                float headTop = rowTop ?? r.Top;
+                bool tall = FigureFrame.IsTall(L.FeetY - headTop);
+                float bottom = tall ? OmenRowLayout.TallBadgeTop + HudOmenBadge.BadgeH : headTop - L.Omen.OverHead;
                 // DS tag.lift (review 19): a badge over a frame showing the held card's prediction tag (on the frame's top edge) rises
-                // just clear of the tag, eased over OMEN_LIFT_MS; every other badge rests on the row.
+                // just clear of the tag, eased over OMEN_LIFT_MS; every other badge rests on the row. §4.3 fixes a tall row's place, so
+                // its badges never lift: the tag on a head that high is under the badge or off the screen either way.
                 float tagTop = r.Top - L.MarkPad.Top - L.PredTagH / 2f;
-                float need = v.Tagged ? HudUtil.Clamp(bottom - (tagTop - L.TagLiftGap), 0f, L.TagLift) : 0f;
+                float need = v.Tagged && !tall ? HudUtil.Clamp(bottom - (tagTop - L.TagLiftGap), 0f, L.TagLift) : 0f;
                 v.Lift = snap || Math.Abs(need - v.Lift) < 0.25f ? need : v.Lift + (need - v.Lift) * liftShare;
                 v.Omen.Place(left, bottom - HudOmenBadge.BadgeH - v.Lift);
                 // Review 17: the ▼ ties every badge to its enemy's head, one enemy too (battle_ui_ux_v2 §5.8 「▼ で敵に結びます」,

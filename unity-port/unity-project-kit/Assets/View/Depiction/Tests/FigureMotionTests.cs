@@ -71,6 +71,53 @@ namespace Depiction.Tests
             Assert.That(FigureFrame.StandardHeight / 300f, Is.EqualTo(0.75f).Within(0.01f), "about 75% of battle_ui_ux_v2's 300 px");
         }
 
+        // ---- an enemy's own height (§4.3 大型の敵, #843) ----
+
+        [TestCase(1, 226f)]
+        [TestCase(2, 264f)]
+        [TestCase(3, 264f)]
+        public void AFigureWithNoHeightOfItsOwn_KeepsTheHeightItsCellsGive(int cells, float expected)
+        {
+            Assert.That(FigureFrame.HeightFor(cells, 0f), Is.EqualTo(expected));
+            Assert.That(FigureFrame.HeightFor(cells, -5f), Is.EqualTo(expected), "a height below zero is no height");
+            Assert.That(FigureFrame.HeightOf(null, cells), Is.EqualTo(expected), "no art id");
+            Assert.That(FigureFrame.HeightOf("", cells), Is.EqualTo(expected), "an empty art id");
+            Assert.That(FigureFrame.HeightOf("no_such_enemy_843", cells), Is.EqualTo(expected), "an id off the list");
+        }
+
+        [TestCase(1, 520f)]
+        [TestCase(3, 520f)]
+        [TestCase(1, 640f)]
+        [TestCase(2, 200f)]
+        public void AFigureWithAHeightOfItsOwn_StandsThatTall_WhateverItsCells(int cells, float own)
+        {
+            // Past 570 px the head leaves the top of the screen: §4.3 lets it, so nothing caps the height.
+            Assert.That(FigureFrame.HeightFor(cells, own), Is.EqualTo(own));
+            float scale = FigureFrame.ScaleFor(FigureFrame.HeightFor(cells, own), FrameHeight);
+            Assert.That(FrameHeight * scale, Is.EqualTo(own).Within(1e-3f), "the 450 frame is drawn at that height about its feet");
+        }
+
+        [Test]
+        public void EveryHeightOnTheList_IsFiledUnderAnArtId_AndIsAHeight()
+        {
+            foreach (var entry in FigureHeights.All)
+            {
+                Assert.That(entry.Key, Is.Not.Null.And.Not.Empty);
+                Assert.That(entry.Value, Is.GreaterThan(0f), entry.Key);
+                Assert.That(FigureHeights.Of(entry.Key), Is.EqualTo(entry.Value), entry.Key);
+                Assert.That(FigureFrame.HeightOf(entry.Key, 1), Is.EqualTo(entry.Value), entry.Key + " stands at its own height");
+            }
+        }
+
+        [TestCase(226f, false)]
+        [TestCase(400f, false)]
+        [TestCase(400.5f, true)]
+        [TestCase(520f, true)]
+        public void PastFourHundredPixels_AFigureIsTall(float height, bool tall)
+        {
+            Assert.That(FigureFrame.IsTall(height), Is.EqualTo(tall));
+        }
+
         [Test]
         public void The450Frame_IsDrawnAtTheHeightOnScreen()
         {
