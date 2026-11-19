@@ -1,23 +1,25 @@
 // The exploration scene's backdrop (port of src/scenes/explore/backdrop.js; explore.css:14-23; explore.md §5.2): the
 // layer's sky, haze and drifting motes, crossfaded over 400 ms when the layer changes, a veil of the ground colour over
-// it, the interlude's warm lull, and the miasma shade closing in from the corners; plus skyStrip, the interlude's look at
-// the next layer. Every value and motion is the ported bridge's (BackdropSpec / BackdropMotion / BackdropSwitch /
-// ExplorationBackdropSpec / MiasmaLook); this file only lays them out. Owned by EX-LEAF.
+// it, and the interlude's warm lull; plus skyStrip, the interlude's look at the next layer. Every value and motion is
+// the ported bridge's (BackdropSpec / BackdropMotion / BackdropSwitch / ExplorationBackdropSpec); this file only lays
+// them out. Owned by EX-LEAF.
 //
-// How the two canvases of the JS map onto uGUI:
+// The place is picked by the layer's backdrop slot (LayerProfile.BackdropLayer, 1..7), not by its depth: the map has
+// three regions under the two shared layers, and a region's layer borrows the backdrop of a named place
+// (seven_layers_v4.md §3.2, #888). The JS's miasma shade is gone with the miasma (dungeon_exploration_v4.md §6.10).
+//
+// How the JS's place canvas maps onto uGUI:
 // - The place canvas (960 × 540, scaled up 2×) is redrawn every frame. Here each layer is a "slot": a full-stage element
 //   holding the sky, the hazes and the motes as vertex-coloured meshes built once. A frame only writes what the canvas
 //   frame changes: the slot's alpha (canvas globalAlpha: a CanvasGroup, which like globalAlpha multiplies every draw on
 //   its own), each haze's breath (BackdropMotion.FlickerAlpha: the haze graphic's opacity, since every stop of a haze is
 //   scaled by the same `lit`), and each mote's place and alpha. Sizes are the JS's canvas sizes divided by RES (0.5), so
 //   in stage px: radial radius Size·H/2, shafts Size·W wide and 1.6·H tall, motes SizePx × 2.2 across.
-// - The shade canvas (240 × 135, scaled to the stage) is a Texture2D of the same size on a RawImage, filtered bilinear,
-//   redrawn only when (Strength, InnerRadius) changes, as the JS does.
 // - The veil and the lull are the explore.css rules, with their CSS transitions run by the kit's CssStates.
 // - Unity additions of 2026-11-03 (こうだいさん's request; the JS has neither): the layer's far view (BackdropScenery)
 //   between the sky and the hazes, of the slot and of the strip, and every set of specks of BackdropSpec.Specks in the
 //   slot, not only the layer's Motes. Once a layer's art is painted (#858, Resources/Backdrops/layer-n, BackdropArt), it
-//   takes the far view's place in the slot and the strip, and the hazes, the motes, the veil and the shade stay on top.
+//   takes the far view's place in the slot and the strip, and the hazes, the motes and the veil stay on top.
 // The meshes: gradients along one axis are split at their stops (exact), radial ones are fans of 128 segments whose
 // colour runs linearly along each radius (the canvas gradient's), so no mesh refinement is needed for the large hazes.
 using System;
@@ -38,8 +40,6 @@ using ExplorationBackdropSpec = global::Backdrop.ExplorationBackdropSpec;
 using Haze = global::Backdrop.Haze;
 using HazeShape = global::Backdrop.HazeShape;
 using LayerBackdrop = global::Backdrop.LayerBackdrop;
-using MiasmaLook = global::Backdrop.MiasmaLook;
-using MiasmaShade = global::Backdrop.MiasmaShade;
 using Motes = global::Backdrop.Motes;
 using SceneryMesh = global::Backdrop.SceneryMesh;
 using SceneryVertex = global::Backdrop.SceneryVertex;
@@ -62,10 +62,6 @@ namespace Trial.Explore
         /// <summary>js: scenes/explore/backdrop.js:18 SHAFT_SPACING (Unity BackdropLayers.ShaftSpacing): shafts of one haze stand 0.18 of the width apart.</summary>
         public const float ShaftSpacing = 0.18f;
 
-        /// <summary>js: scenes/explore/backdrop.js:19 SHADE_W / SHADE_H.</summary>
-        public const int ShadeW = 240;
-        public const int ShadeH = 135;
-
         /// <summary>js: scenes/explore/backdrop.js:136: a mote is SizePx × 2.2 stage px across here (the battle's are SizePx).</summary>
         public const float MoteScale = 2.2f;
 
@@ -79,9 +75,6 @@ namespace Trial.Explore
 
         /// <summary>explore.css:17 .ocbg-explore .ocbg-explore-veil (its colour is set inline by show()).</summary>
         public const string VeilCss = "position: absolute; inset: 0; transition: background-color 400ms ease-in-out;";
-
-        /// <summary>explore.css:18 .ocbg-explore .ocbg-explore-shade.</summary>
-        public const string ShadeCss = "position: absolute; left: 0; top: 0; width: 1920px; height: 1080px;";
 
         /// <summary>explore.css:19-22 .ocbg-explore .ocbg-explore-lull.</summary>
         public const string LullCss =
@@ -150,28 +143,19 @@ namespace Trial.Explore
         }
 
         private RectTransform _host;
-        private RectTransform _canvas, _veil, _lull, _shade;
+        private RectTransform _canvas, _veil, _lull;
         private CssStates _veilStates, _lullStates;
-        private RawImage _shadeImage;
-        private Texture2D _shadeTex;
-        private bool _shadeLinear;
-        private readonly Color32[] _shadePx = new Color32[ShadeW * ShadeH];
-        private readonly float[] _dist = new float[ShadeW * ShadeH];
 
         private readonly BackdropSwitch _sw = new BackdropSwitch();
         private Slot _shown;
         private Slot _leaving;
-        private int _miasmaTarget;
-        private float _miasmaFrom;
-        private float _miasmaAt;
-        private string _lastShadeKey = "";
         private bool _destroyed;
 
         private ExploreBackdrop() { }
 
         // js: scenes/explore/backdrop.js:44
         /// <summary>
-        /// createBackdrop(host): the place, the veil, the lull and the shade, in that order, into host (a full-stage
+        /// createBackdrop(host): the place, the veil and the lull, in that order, into host (a full-stage
         /// element; the backdrop fills it from the bottom of the scene's stack).
         /// </summary>
         public static ExploreBackdrop Create(RectTransform host)
@@ -199,32 +183,15 @@ namespace Trial.Explore
             BuildBackgrounds(_lull, LullCss, W, H);
             _lullStates = CssStates.Of(_lull).Base(LullCss).State(".is-on", LullOnCss);
             _lullStates.Apply(instant: true);
-
-            // the shade canvas, and the distance of every shade pixel from the centre (MiasmaLook.CornerDistance)
-            _shade = Ui.Div(_host, "ocbg-explore-shade", 0f, 0f, W, H);
-            _shadeImage = _shade.gameObject.AddComponent<RawImage>();
-            _shadeImage.raycastTarget = false;
-            _shadeImage.color = Materials.VertexColor(Rgba.White);
-            _shadeImage.enabled = false;
-            for (int y = 0; y < ShadeH; y++)
-            {
-                for (int x = 0; x < ShadeW; x++)
-                    _dist[TexIndex(x, y)] = MiasmaLook.CornerDistance((x + 0.5f) / ShadeW, (y + 0.5f) / ShadeH, (float)(1920.0 / 1080.0));
-            }
-            MakeShadeTexture();
-            Materials.GammaEncodingChanged += OnEncodingChanged;
         }
 
-        /// <summary>Pixel (x, y) of the canvas (y down) in the texture's rows (row 0 at the bottom).</summary>
-        private static int TexIndex(int x, int yDown) => (ShadeH - 1 - yDown) * ShadeW + x;
-
         // js: scenes/explore/backdrop.js:68
-        /// <summary>slot(layer): the layer's place, built under the canvas (on top of the slots there), shown at 0 until a frame draws it.</summary>
-        private Slot MakeSlot(int layer)
+        /// <summary>slot(backdropLayer): the place's slot, built under the canvas (on top of the slots there), shown at 0 until a frame draws it.</summary>
+        private Slot MakeSlot(int backdropLayer)
         {
-            LayerBackdrop spec = BackdropSpec.For(layer);
+            LayerBackdrop spec = BackdropSpec.For(backdropLayer);
             var s = new Slot { Spec = spec };
-            s.Root = Ui.Div(_canvas, "slot " + layer.ToString(Inv), 0f, 0f, W, H);
+            s.Root = Ui.Div(_canvas, "slot " + backdropLayer.ToString(Inv), 0f, 0f, W, H);
             s.Group = s.Root.gameObject.AddComponent<CanvasGroup>();
             s.Group.blocksRaycasts = false;
             s.Group.interactable = false;
@@ -292,14 +259,15 @@ namespace Trial.Explore
 
         // js: scenes/explore/backdrop.js:73
         /// <summary>
-        /// show(layer, now): turns the place to a layer (BackdropSwitch: the first is drawn at once, a later one fades in over
-        /// 400 ms, a third one mid-fade drops the oldest) and sets the veil's colour (its own 400 ms transition). False when
-        /// the layer is already shown.
+        /// show(backdropLayer, now): turns the place to a backdrop slot (LayerProfile.BackdropLayer, 1..7; BackdropSwitch:
+        /// the first is drawn at once, a later one fades in over 400 ms, a third one mid-fade drops the oldest) and sets the
+        /// veil's colour (its own 400 ms transition). False when that place is already shown, so two layers that share a
+        /// backdrop do not fade into themselves.
         /// </summary>
-        public bool Show(int layer, float now)
+        public bool Show(int backdropLayer, float now)
         {
             if (_destroyed) return false;
-            BackdropSwitch.Change change = _sw.Show(layer, now);
+            BackdropSwitch.Change change = _sw.Show(backdropLayer, now);
             if (change == BackdropSwitch.Change.None) return false;
             if (change == BackdropSwitch.Change.FadeDroppingOldest)
             {
@@ -310,12 +278,12 @@ namespace Trial.Explore
             if (_leaving != null) DropSlot(_leaving);
             _leaving = _shown;
             _shown = MakeSlot(_sw.Shown);
-            // The veil follows the layer (ExplorationBackdropSpec.For(layer).Veil) with the same 400 ms crossfade.
+            // The veil follows the place (ExplorationBackdropSpec.For(backdropLayer).Veil) with the same 400 ms crossfade.
             _veilStates.Base(VeilCss + " background-color: " + RgbaCss(ExplorationBackdropSpec.For(_sw.Shown).Veil) + ";");
             return true;
         }
 
-        /// <summary>get layer(): the layer shown (sw.Shown; 0 before the first).</summary>
+        /// <summary>get layer(): the backdrop slot shown (sw.Shown; 0 before the first).</summary>
         public int Layer => _sw.Shown;
 
         // js: scenes/explore/backdrop.js:84
@@ -351,81 +319,6 @@ namespace Trial.Explore
             }
         }
 
-        // js: scenes/explore/backdrop.js:145
-        /// <summary>drawShade(percent, now): the shade at the reading, its inner edge drawn in by <paramref name="breath"/>, redrawn only when its strength or inner edge moved.</summary>
-        private void DrawShade(float percent, float breath)
-        {
-            MiasmaShade sh = MiasmaLook.ShadeBreathing(percent, breath);
-            string key = sh.Strength.ToString("F4", Inv) + "/" + sh.InnerRadius.ToString("F4", Inv);
-            if (key == _lastShadeKey) return;
-            _lastShadeKey = key;
-            if (!_shadeTex) return;
-            if (sh.Strength <= 0f)
-            {
-                Array.Clear(_shadePx, 0, _shadePx.Length);
-                _shadeTex.SetPixels32(_shadePx);
-                _shadeTex.Apply(false, false);
-                _shadeImage.enabled = false;
-                return;
-            }
-            BdRgba sc = MiasmaLook.ShadeColor;
-            BdRgba se = MiasmaLook.SeepColor;
-            for (int i = 0; i < _dist.Length; i++)
-            {
-                double a1 = MiasmaLook.ShadeAlphaAt(sh, _dist[i]);
-                double a2 = sh.SeepAlpha * (double)MiasmaLook.EdgeFalloff(sh, _dist[i]);
-                double o = a2 + a1 * (1.0 - a2);
-                if (o <= 0.0)
-                {
-                    _shadePx[i] = new Color32(0, 0, 0, 0);
-                    continue;
-                }
-                _shadePx[i] = new Color32(
-                    Byte((se.R * a2 + sc.R * a1 * (1.0 - a2)) / o),
-                    Byte((se.G * a2 + sc.G * a1 * (1.0 - a2)) / o),
-                    Byte((se.B * a2 + sc.B * a1 * (1.0 - a2)) / o),
-                    Byte(o));
-            }
-            _shadeTex.SetPixels32(_shadePx);
-            _shadeTex.Apply(false, false);
-            _shadeImage.enabled = true;
-        }
-
-        /// <summary>Math.round(v * 255) into a Uint8ClampedArray.</summary>
-        private static byte Byte(double v)
-        {
-            double r = Math.Floor(v * 255.0 + 0.5);
-            return (byte)(r < 0 ? 0 : r > 255 ? 255 : r);
-        }
-
-        // js: scenes/explore/backdrop.js:175
-        /// <summary>setMiasma(percent, now, instant): the gauge's reading the shade follows; it eases there with MiasmaLook.Rise like the gauge.</summary>
-        public void SetMiasma(int percent, float now, bool instant = false)
-        {
-            if (percent == _miasmaTarget && !instant) return;
-            _miasmaFrom = instant ? percent : MiasmaNow(now);
-            _miasmaTarget = percent;
-            _miasmaAt = now;
-        }
-
-        // js: scenes/explore/backdrop.js:181
-        /// <summary>
-        /// miasmaNow(now): MiasmaLook.Rise(miasmaFrom, miasmaTarget, now − miasmaAt) as the JS evaluates it on a start
-        /// that may fall between whole numbers (a rise interrupted mid-way): the JS port of Rise (bridge/backdrop/
-        /// MiasmaLook.js:184) gives `from` before the rise, `to` once RiseMs has passed, and in between
-        /// from + ((to − from) | 0) × smoothstep — the span is cut to a whole number, so an interrupted rise steps the last
-        /// fraction at the end, exactly as the gauge does (ExploreScene.Band GaugeRise). The C# Rise takes whole readings.
-        /// </summary>
-        public float MiasmaNow(float now)
-        {
-            double elapsedMs = (double)now - _miasmaAt;
-            if (elapsedMs <= 0) return _miasmaFrom;
-            if (elapsedMs >= MiasmaLook.RiseMs) return _miasmaTarget;
-            double t = elapsedMs / MiasmaLook.RiseMs;
-            int span = (int)((double)_miasmaTarget - _miasmaFrom);   // (to - from) | 0: truncated toward zero
-            return (float)(_miasmaFrom + span * (t * t * (3.0 - 2.0 * t)));
-        }
-
         // js: scenes/explore/backdrop.js:184
         /// <summary>setLull(on): the interlude's warm lull (lull.classList.toggle('is-on'): opacity, 900 ms ease-in-out).</summary>
         public void SetLull(bool on)
@@ -435,8 +328,8 @@ namespace Trial.Explore
         }
 
         // js: scenes/explore/backdrop.js:185
-        /// <summary>frame(now): one frame of the place (the leaving layer at 1, the shown one fading in over it) and the shade at <paramref name="breath"/> (the scene's MiasmaBreath, shared with the gauge).</summary>
-        public void Frame(float now, float breath)
+        /// <summary>frame(now): one frame of the place (the leaving place at 1, the shown one fading in over it).</summary>
+        public void Frame(float now)
         {
             if (_destroyed || _shown == null) return;
             float a = _sw.Tick(now);
@@ -447,79 +340,35 @@ namespace Trial.Explore
             }
             if (_leaving != null) DrawSlot(_leaving, 1f, now);
             DrawSlot(_shown, _leaving != null ? a : 1f, now);
-            DrawShade(MiasmaNow(now), breath);
         }
 
         // js: scenes/explore/backdrop.js:193
-        /// <summary>destroy(): removes the canvas, the veil, the lull and the shade.</summary>
+        /// <summary>destroy(): removes the canvas, the veil and the lull.</summary>
         public void Destroy()
         {
             if (_destroyed) return;
             _destroyed = true;
-            Materials.GammaEncodingChanged -= OnEncodingChanged;
             if (_canvas) Ui.Remove(_canvas);
             if (_veil) Ui.Remove(_veil);
             if (_lull) Ui.Remove(_lull);
-            if (_shade) Ui.Remove(_shade);
-            Kill(_shadeTex);
-            _shadeTex = null;
             _shown = null;
             _leaving = null;
         }
 
-        // ---- the shade texture ------------------------------------------------------------------------------------------
-
-        // A colour texture under the gamma target is read without the sRGB decode (Materials.ColorTexturesLinear).
-        private void MakeShadeTexture()
-        {
-            Kill(_shadeTex);
-            _shadeLinear = Materials.ColorTexturesLinear;
-            _shadeTex = new Texture2D(ShadeW, ShadeH, TextureFormat.RGBA32, false, _shadeLinear)
-            {
-                name = "ocbg-explore-shade",
-                filterMode = FilterMode.Bilinear,
-                wrapMode = TextureWrapMode.Clamp,
-                hideFlags = HideFlags.DontSave,
-            };
-            Array.Clear(_shadePx, 0, _shadePx.Length);
-            _shadeTex.SetPixels32(_shadePx);
-            _shadeTex.Apply(false, false);
-            _shadeImage.texture = _shadeTex;
-            _shadeImage.enabled = false;
-            _lastShadeKey = "";
-        }
-
-        private void OnEncodingChanged()
-        {
-            if (_destroyed || !_shadeImage)
-            {
-                Materials.GammaEncodingChanged -= OnEncodingChanged;
-                return;
-            }
-            if (_shadeLinear != Materials.ColorTexturesLinear) MakeShadeTexture();
-        }
-
-        private static void Kill(UnityEngine.Object o)
-        {
-            if (!o) return;
-            if (Application.isPlaying) UnityEngine.Object.Destroy(o);
-            else UnityEngine.Object.DestroyImmediate(o);
-        }
-
         // js: scenes/explore/backdrop.js:198
         /// <summary>
-        /// skyStrip(layer, w, ht): a small strip of a layer's sky and haze (the interlude's look ahead at the next layer), as
+        /// skyStrip(backdropLayer, w, ht): a small strip of a place's sky and haze (the interlude's look ahead at the next layer), as
         /// a w × ht element at (0, 0) of parent, clipped to itself as the canvas is. No motes and no breath; radial hazes are
         /// Size·ht/2 across, shafts max(4, Size·w) wide and 2·ht tall with a 0 → full → 0 ramp, the top glow and band in 11
         /// stops; then the layer's veil at 0.6× its alpha. The window's drift (explore.css:359 ocbg-explore-window) is the
         /// caller's, on the element returned. Unity addition of 2026-11-03 (こうだいさん's request): the layer's far view,
         /// scaled into the strip, between the sky and the haze.
         /// </summary>
-        public static RectTransform SkyStrip(RectTransform parent, int layer, float w, float ht)
+        public static RectTransform SkyStrip(RectTransform parent, int backdropLayer, float w, float ht)
         {
             RectTransform c = Ui.Div(parent, "ocbg-explore-strip", 0f, 0f, w, ht);
             c.gameObject.AddComponent<RectMask2D>();
-            LayerBackdrop spec = BackdropSpec.For(layer);
+            LayerBackdrop spec = BackdropSpec.For(backdropLayer);
             AddSky(c, spec, w, ht);
             // the art or the far view as the slot has it, over w × ht (Unity additions of 2026-11-03, こうだいさん's requests, #858)
             AddArtOrScenery(c, spec, w, ht);
@@ -547,7 +396,7 @@ namespace Trial.Explore
                 }
             }
             // the same ground veil the map would have, so the strip reads as "that place, seen from here"
-            Rgba veil = RgbaOf(ExplorationBackdropSpec.For(layer).Veil, 0.6f);
+            Rgba veil = RgbaOf(ExplorationBackdropSpec.For(backdropLayer).Veil, 0.6f);
             VectorGraphic.Draw(c, 0f, 0f, w, ht, (mb, box, f) => Bands(mb, box, true, new[] { 0f }, new[] { veil }), "veil");
             return c;
         }

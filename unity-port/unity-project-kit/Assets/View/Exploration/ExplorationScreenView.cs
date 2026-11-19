@@ -5,10 +5,10 @@
 //
 // The look is a stand-in: grey squares with one character for the kind, shades of grey and a single
 // accent colour (§6.10). The design lane and #90 own the real look; replacing it touches this file
-// and ExplorationPalette only. The backdrop of each layer with its veil, the 瘴気 gauge and the shade
-// that closes in on the screen are already the real look (battle-visual-v1 §2.5, #614 and #613): the
-// backdrop is Backdrop.View.BackdropLayers, the veil is Backdrop.ExplorationBackdropSpec's, and every
-// colour, alpha and timing of the gauge and the shade is Backdrop.MiasmaLook's.
+// and ExplorationPalette only. The backdrop of each layer with its veil is already the real look
+// (battle-visual-v1 §2.5, #614): the backdrop is Backdrop.View.BackdropLayers, picked by the profile's
+// backdrop slot, and the veil is Backdrop.ExplorationBackdropSpec's. The collapse calendar in the band is
+// plain text until the design lane gives it a look (#888 removed the 瘴気 gauge and its shade).
 //
 // #626: the pick screen (an elite's two cards, the card pile's three, a 習熟訓練 mark's card) is drawn
 // from the CardPick Exploration.Bridge built, each card the battle's own CardView bound to its face.
@@ -30,6 +30,15 @@ using UnityEngine.UI;
 
 namespace Exploration.View
 {
+    /// <summary>
+    /// A card button that carries an argument (CardButton.Arg): the region the layer-two interlude descends into
+    /// (ScreenAction.ChooseRegion, #888). Kept beside IExplorationActions, which takes the action alone.
+    /// </summary>
+    public interface IExplorationArgActions
+    {
+        void Act(ScreenAction action, string arg);
+    }
+
     public sealed class ExplorationScreenView
     {
         // The map is drawn in a fixed-size area so a node's fraction maps to the same place on any screen.
@@ -50,18 +59,12 @@ namespace Exploration.View
         private const float HeritagePageRow = 0.085f;
         private const float HeritagePagesWithCards = 0.26f;
         private const float HeritageMark = 6f;
-        // The shade is drawn into a texture this small and stretched over the screen: it is a smooth falloff.
-        private const int ShadeWidth = 64;
-        private const int ShadeHeight = 36;
 
         private readonly IExplorationActions _actions;
 
         private readonly Text _layerTitle;
-        private readonly Text _timeLabel;
-        private readonly RectTransform _timePips;
-        private readonly Text _miasmaLabel;
-        private readonly Text _miasmaForecast;
-        private readonly RectTransform _gauge;
+        private readonly Text _daysLabel;
+        private readonly Text _daysNote;
         private readonly Text _hpLabel;
         private readonly Text _staminaLabel;
         private readonly Text _maxStaminaLabel;
@@ -95,24 +98,6 @@ namespace Exploration.View
         private Color _veilTo;
         private double _veilSince;
 
-        // The 瘴気 gauge (§6.2) and the shade (battle-visual-v1 §2.5), moved every frame by Tick.
-        private readonly RectTransform _root;
-        private Image _gaugeAhead;
-        private Image _gaugeFill;
-        private int _gaugeFrom;
-        private int _gaugeTo = -1;
-        private int _gaugeNext;
-        private double _gaugeSince;
-        // The breath follows the settled reading, not the one easing up, so a rise only changes its pace.
-        private readonly MiasmaBreath _breath = new MiasmaBreath();
-        private Image _shade;
-        private Image _seep;
-        private Color32[] _shadePixels;
-        private Color32[] _seepPixels;
-        private float _shadeAspect;
-        private float _shadeRadius = -1f;
-        private float _shadeStrength = -1f;
-
         private ExplorationScreen _screen;
         private int _pinned = -1;
         private int _hovered = -1;
@@ -127,25 +112,23 @@ namespace Exploration.View
             _actions = actions ?? throw new ArgumentNullException(nameof(actions));
 
             RectTransform root = UiKit.Box(canvas, "Exploration", 0f, 0f, 1f, 1f);
-            _root = root;
             UiKit.Fill(root, "Ground", ExplorationPalette.Ground);
 
-            // Back to front: the layer's backdrop, the veil of the ground colour over it, the miasma's shade,
-            // then everything the screen is for (battle-visual-v1 §2.5). The backdrop is made by the first
-            // Render, once the screen says which layer it is on.
+            // Back to front: the layer's backdrop, the veil of the ground colour over it, then everything the
+            // screen is for (battle-visual-v1 §2.5). The backdrop is made by the first Render, once the screen
+            // says which backdrop slot it is on.
             _backdropHost = UiKit.Box(root, "Backdrop", 0f, 0f, 1f, 1f);
             _veil = UiKit.Fill(root, "Veil", Color.clear);
-            BuildShade(root);
 
             // Sibling order is draw order. The map and the detail go first, then the card layer that
             // covers them; the band, the carried items and 「この生を終える」 sit above a card so the
-            // gauge stays readable and an item can still be used at the interlude. Whether those
+            // calendar stays readable and an item can still be used at the interlude. Whether those
             // buttons work is the screen's CanUse / CanEndLife, not the layering. 所持カード and
             // 設定・セーブ cover all of that but the band, whose buttons switch between them.
 
             // ---- the map ----
             // The map, its links and its labels are drawn straight on the veiled backdrop, not on a panel
-            // (battle-visual-v1 §2.5), over the shade and under the band and the right column.
+            // (battle-visual-v1 §2.5), under the band and the right column.
             _mapPanel = UiKit.Box(root, "Map", 0.015f, 0.11f, 0.665f, 0.89f);
             _mapArea = UiKit.Point(_mapPanel, "Area", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
                 new Vector2(MapWidth, MapHeight), Vector2.zero);
@@ -164,20 +147,15 @@ namespace Exploration.View
             // ---- the card layer ----
             _cardLayer = UiKit.Box(root, "Cards", 0f, 0f, 1f, 1f);
 
-            // ---- top band: layer, 刻限, 瘴気, HP / stamina, then journal / cards / settings ----
+            // ---- top band: layer, the collapse calendar, HP / stamina, then journal / cards / settings ----
             RectTransform band = UiKit.Box(root, "Band", 0f, 0.905f, 1f, 1f);
             UiKit.Fill(band, "Back", ExplorationPalette.Band);
             _layerTitle = UiKit.Text(UiKit.Box(band, "Layer", 0.01f, 0f, 0.20f, 1f), "Text", 30, TextAnchor.MiddleLeft, ExplorationPalette.Ink);
 
-            RectTransform time = UiKit.Box(band, "Time", 0.21f, 0f, 0.31f, 1f);
-            _timeLabel = UiKit.Text(UiKit.Box(time, "Label", 0f, 0.45f, 1f, 1f), "Text", 24, TextAnchor.MiddleLeft, ExplorationPalette.Ink);
-            _timePips = UiKit.Box(time, "Pips", 0.04f, 0.14f, 0.96f, 0.40f);
-
-            RectTransform miasma = UiKit.Box(band, "Miasma", 0.32f, 0f, 0.53f, 1f);
-            _miasmaLabel = UiKit.Text(UiKit.Box(miasma, "Label", 0f, 0.45f, 0.4f, 1f), "Text", 24, TextAnchor.MiddleLeft, ExplorationPalette.Ink);
-            _miasmaForecast = UiKit.Text(UiKit.Box(miasma, "Forecast", 0.4f, 0.45f, 1f, 1f), "Text", 18, TextAnchor.MiddleRight, ExplorationPalette.InkSoft);
-            _gauge = UiKit.Box(miasma, "Gauge", 0.02f, 0.14f, 0.98f, 0.40f);
-            BuildGauge();
+            // The calendar (§6.2): the days left on top, and under them what stops it or what the next day costs.
+            RectTransform calendar = UiKit.Box(band, "Calendar", 0.21f, 0f, 0.53f, 1f);
+            _daysLabel = UiKit.Text(UiKit.Box(calendar, "Days", 0f, 0.45f, 1f, 1f), "Text", 24, TextAnchor.MiddleLeft, ExplorationPalette.Ink);
+            _daysNote = UiKit.Text(UiKit.Box(calendar, "Note", 0f, 0f, 1f, 0.45f), "Text", 16, TextAnchor.MiddleLeft, ExplorationPalette.InkSoft);
 
             // Three short lines: HP and the training marks, stamina, and how max stamina is made up.
             RectTransform body = UiKit.Box(band, "Body", 0.54f, 0f, 0.77f, 1f);
@@ -226,7 +204,7 @@ namespace Exploration.View
         public void Render(ExplorationScreen screen)
         {
             _screen = screen;
-            DrawBackdrop(screen.Layer);
+            DrawBackdrop(screen.BackdropLayer);
             if (screen.CurrentNodeId != _lastCurrent)
             {
                 // After a step the detail follows the player to where they now stand.
@@ -237,11 +215,9 @@ namespace Exploration.View
             _hovered = -1;
 
             _layerTitle.text = screen.LayerTitle;
-            _timeLabel.text = screen.TimeLabel;
-            DrawPips(screen.TimeLeft, screen.TimeLimit);
-            _miasmaLabel.text = screen.Miasma.Label;
-            _miasmaForecast.text = screen.Miasma.ForecastLabel;
-            SetGauge(screen.Miasma);
+            _daysLabel.text = screen.DaysLabel;
+            // While a king is down the note says so; otherwise what the next day costs (§6.4).
+            _daysNote.text = screen.CalendarFrozen ? screen.CalendarNote : screen.DaysForecastLabel;
             _hpLabel.text = screen.HpLabel;
             _staminaLabel.text = screen.StaminaLabel;
             _maxStaminaLabel.text = screen.MaxStaminaLabel;
@@ -267,12 +243,12 @@ namespace Exploration.View
         // ---- the backdrop and its veil (battle-visual-v1 §2.5, #614) ----
 
         /// <summary>
-        /// Lays the backdrop of <paramref name="layer"/> behind the map. A new layer crossfades over
-        /// BackdropSpec.CrossfadeMs, the veil's alpha with it, so the map never jumps between two veils.
+        /// Lays the backdrop of slot <paramref name="slot"/> (LayerProfile.BackdropLayer) behind the map. A new slot
+        /// crossfades over BackdropSpec.CrossfadeMs, the veil's alpha with it, so the map never jumps between two veils.
         /// </summary>
-        private void DrawBackdrop(int layer)
+        private void DrawBackdrop(int slot)
         {
-            int at = BackdropSpec.Clamp(layer);
+            int at = BackdropSpec.Clamp(slot);
             Color veil = ExplorationPalette.Of(ExplorationBackdropSpec.For(at).Veil);
             if (_backdrop == null)
             {
@@ -296,144 +272,12 @@ namespace Exploration.View
             _veil.color = Color.Lerp(_veilFrom, _veilTo, BackdropMotion.Crossfade(NowMs - _veilSince));
         }
 
-        // ---- top band ----
-
-        private void DrawPips(int left, int limit)
-        {
-            UiKit.ClearChildren(_timePips);
-            if (limit <= 0) return;
-            float width = 1f / limit;
-            for (int i = 0; i < limit; i++)
-            {
-                Image pip = UiKit.Image(_timePips, "Pip" + i, ProceduralArt.White,
-                    i < left ? ExplorationPalette.Accent : ExplorationPalette.Empty,
-                    new Vector2(i * width, 0f), new Vector2((i + 1) * width, 1f));
-                pip.rectTransform.offsetMin = new Vector2(2f, 0f);
-                pip.rectTransform.offsetMax = new Vector2(-2f, 0f);
-            }
-        }
-
-        // ---- the 瘴気 gauge and the shade (battle-visual-v1 §2.5, #613) ----
-
         private static double NowMs => Time.unscaledTimeAsDouble * 1000.0;
 
-        /// <summary>Moves the gauge's rise and breath and the shade to this frame. Call once a frame.</summary>
+        /// <summary>Moves the backdrop's veil on to this frame. Call once a frame.</summary>
         public void Tick()
         {
             FadeVeil();
-            if (_gaugeTo < 0) return;
-            double now = NowMs;
-            float shown = MiasmaLook.Rise(_gaugeFrom, _gaugeTo, now - _gaugeSince);
-            float fill = Mathf.Clamp01(shown / MiasmaLook.DeathAt);
-            float next = Mathf.Clamp01(_gaugeNext / (float)MiasmaLook.DeathAt);
-            float breath = _breath.Advance(now, _gaugeTo);
-
-            Color colour = ExplorationPalette.Of(MiasmaLook.FillAt(Mathf.RoundToInt(shown)));
-            colour.a *= MiasmaLook.FillAlphaOf(breath);
-            _gaugeFill.color = colour;
-            _gaugeFill.rectTransform.anchorMax = new Vector2(fill, 1f);
-            _gaugeAhead.rectTransform.anchorMin = new Vector2(fill, 0f);
-            _gaugeAhead.rectTransform.anchorMax = new Vector2(Mathf.Max(fill, next), 1f);
-
-            DrawShade(MiasmaLook.ShadeBreathing(shown, breath));
-        }
-
-        /// <summary>The track, the fill, the share ahead and the nine ticks, made once; Tick moves them.</summary>
-        private void BuildGauge()
-        {
-            UiKit.Fill(_gauge, "Track", ExplorationPalette.Of(MiasmaLook.Track));
-            _gaugeAhead = UiKit.Image(_gauge, "Ahead", ProceduralArt.White, Color.clear, Vector2.zero, new Vector2(0f, 1f));
-            _gaugeFill = UiKit.Image(_gauge, "Fill", ProceduralArt.White, Color.clear, Vector2.zero, new Vector2(0f, 1f));
-            Color tickColour = ExplorationPalette.Of(MiasmaLook.Tick);
-            foreach (GaugeTick tick in MiasmaLook.Ticks())
-            {
-                // Full height at the 20% lines, 4/10 between, standing on the track's floor.
-                float at = tick.Percent / (float)MiasmaLook.DeathAt;
-                Image mark = UiKit.Image(_gauge, "Tick" + tick.Percent, ProceduralArt.White, tickColour,
-                    new Vector2(at, 0f), new Vector2(at, tick.Height));
-                mark.rectTransform.offsetMin = new Vector2(-1f, 0f);
-                mark.rectTransform.offsetMax = new Vector2(1f, 0f);
-            }
-            UiKit.Frame(_gauge, ExplorationPalette.Of(MiasmaLook.Frame), 1f);
-        }
-
-        /// <summary>Takes a new reading: the fill climbs (or falls) to it over MiasmaLook.RiseMs from where it is drawn now.</summary>
-        private void SetGauge(MiasmaGauge gauge)
-        {
-            double now = NowMs;
-            if (_gaugeTo < 0)
-            {
-                _gaugeFrom = gauge.Percent;
-                _gaugeTo = gauge.Percent;
-                _gaugeSince = now - MiasmaLook.RiseMs;
-            }
-            else if (gauge.Percent != _gaugeTo)
-            {
-                _gaugeFrom = Mathf.RoundToInt(MiasmaLook.Rise(_gaugeFrom, _gaugeTo, now - _gaugeSince));
-                _gaugeTo = gauge.Percent;
-                _gaugeSince = now;
-            }
-            _gaugeNext = gauge.NextPercent;
-            _gaugeAhead.color = ExplorationPalette.Of(MiasmaLook.AheadColor(gauge.Percent, gauge.NextPercent));
-            Tick();
-        }
-
-        /// <summary>
-        /// The shade over the whole screen: the dark (MiasmaLook.ShadeColor) and the violet seep on top,
-        /// each a small texture stretched over the screen. Their pixels are redrawn only when the shade moves.
-        /// </summary>
-        private void BuildShade(RectTransform root)
-        {
-            _shadePixels = new Color32[ShadeWidth * ShadeHeight];
-            _seepPixels = new Color32[ShadeWidth * ShadeHeight];
-            _shade = UiKit.Image(root, "MiasmaShade", ShadeSprite(), Color.white, Vector2.zero, Vector2.one);
-            _seep = UiKit.Image(root, "MiasmaSeep", ShadeSprite(), Color.white, Vector2.zero, Vector2.one);
-        }
-
-        private static Sprite ShadeSprite()
-        {
-            var texture = new Texture2D(ShadeWidth, ShadeHeight, TextureFormat.RGBA32, false)
-            {
-                filterMode = FilterMode.Bilinear,
-                wrapMode = TextureWrapMode.Clamp,
-            };
-            return Sprite.Create(texture, new Rect(0, 0, ShadeWidth, ShadeHeight), new Vector2(0.5f, 0.5f), 100f);
-        }
-
-        private void DrawShade(MiasmaShade shade)
-        {
-            Rect area = _root.rect;
-            float aspect = area.height > 0f ? area.width / area.height : 16f / 9f;
-            if (Mathf.Abs(aspect - _shadeAspect) < 0.001f
-                && Mathf.Abs(shade.InnerRadius - _shadeRadius) < 0.0005f
-                && Mathf.Abs(shade.Strength - _shadeStrength) < 0.0005f) return;
-            _shadeAspect = aspect;
-            _shadeRadius = shade.InnerRadius;
-            _shadeStrength = shade.Strength;
-
-            Color32 dark = ExplorationPalette.Of(MiasmaLook.ShadeColor);
-            Color32 seep = ExplorationPalette.Of(MiasmaLook.SeepColor);
-            for (int y = 0; y < ShadeHeight; y++)
-            {
-                for (int x = 0; x < ShadeWidth; x++)
-                {
-                    float distance = MiasmaLook.CornerDistance((x + 0.5f) / ShadeWidth, (y + 0.5f) / ShadeHeight, aspect);
-                    int i = y * ShadeWidth + x;
-                    dark.a = (byte)Mathf.RoundToInt(255f * MiasmaLook.ShadeAlphaAt(shade, distance));
-                    seep.a = (byte)Mathf.RoundToInt(255f * shade.SeepAlpha * MiasmaLook.EdgeFalloff(shade, distance));
-                    _shadePixels[i] = dark;
-                    _seepPixels[i] = seep;
-                }
-            }
-            Upload(_shade, _shadePixels);
-            Upload(_seep, _seepPixels);
-        }
-
-        private static void Upload(Image image, Color32[] pixels)
-        {
-            Texture2D texture = image.sprite.texture;
-            texture.SetPixels32(pixels);
-            texture.Apply();
         }
 
         // ---- the map ----
@@ -592,7 +436,12 @@ namespace Exploration.View
             {
                 CardButton button = card.Buttons[i];
                 ScreenAction action = button.Action;
-                UiKit.Button(buttons, "Button" + i, button.Label, () => _actions.Act(action),
+                string arg = button.Arg;
+                // A button that names what it chooses (the region at the layer-two interlude) needs its argument.
+                Action press = arg != null && _actions is IExplorationArgActions withArg
+                    ? () => withArg.Act(action, arg)
+                    : () => _actions.Act(action);
+                UiKit.Button(buttons, "Button" + i, button.Label, press,
                     i == 0 ? ExplorationPalette.Accent : ExplorationPalette.Button,
                     i == 0 ? ExplorationPalette.InkOnAccent : ExplorationPalette.Ink, 24,
                     new Vector2(i * width, 0f), new Vector2((i + 1) * width - 0.02f, 1f));

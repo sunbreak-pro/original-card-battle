@@ -517,7 +517,8 @@ namespace Trial.Boot
         private void ResumeFight(RecordedSource source)
         {
             _screen = "battle";
-            _audio?.SetAmbience(Live.Raw.Session.State.Profile.Layer, 1200);
+            // the place's sound: a region's layer borrows a named place's backdrop and its ambience (#888)
+            _audio?.SetAmbience(Live.Raw.Session.State.Profile.BackdropLayer, 1200);
             RunEncounter(source).Then(() =>
             {
                 if (Stale || Live == null) return;
@@ -613,8 +614,9 @@ namespace Trial.Boot
         private ExploreTaken Take(Expedition raw, IReadOnlyList<string> picks)
         {
             if (!InSync()) return null;       // another instance collected or moved on: nothing is taken here
-            // A life that is over takes nothing (the 瘴気死 on the trace's own step): the trace stays for a living heir
-            // (INHERITANCE R-09 / R-10, EXTENSIONS X-3). The scene never offers it then; this is the second guard.
+            // A life that is over takes nothing (the calendar running out on the trace's own step ends it like a death):
+            // the trace stays (INHERITANCE R-09 / R-10, EXTENSIONS X-3). The scene never offers it then; this is the
+            // second guard.
             if (Live == null || raw.Session.State.IsOver) return null;
             int layer = raw.Session.State.Profile.Layer;
             TraceNodeView view = Inheritance.TraceNodeView(Save.Lineage, layer);
@@ -704,7 +706,8 @@ namespace Trial.Boot
                 Source = fight.Source,
                 Layer = raw.Session.State.Profile.Layer,
                 LayerTitle = raw.Session.Screen().LayerTitle,
-                MiasmaPercent = battle.HandIn.MiasmaPercent,
+                // the miasma left exploration (#888); the battle HUD's corner keeps its slot and reads its own 0
+                MiasmaPercent = null,
                 NodeKind = BattleSceneCtx.NodeKindOf(battle.HandIn.Kind.ToString()),
                 Chain = new BattleChain(battle.Index + 1, battle.Count),
                 DisclosureOf = id => raw.DisclosureOf(id),
@@ -759,7 +762,11 @@ namespace Trial.Boot
         }
 
         // js: app/main.js:485
-        /// <summary>endLife(): the life's end goes on the lineage (recordEnd) and is saved before the ending mounts.</summary>
+        /// <summary>
+        /// endLife(): the life's end goes on the lineage (recordEnd), the lineage's calendar moves on by the life's days
+        /// and the hand-over (Life.CloseLife), and it is saved before the ending mounts. A calendar that ran out ends the
+        /// world: the save starts over on a brand-new lineage as はじめから does, and the ending shows the world's end.
+        /// </summary>
         private void EndLife()
         {
             if (Live == null || !InSync()) return;         // another instance holds a newer save: this death or survival is not recorded here
@@ -769,7 +776,10 @@ namespace Trial.Boot
             LifePlace place = Inheritance.PlaceFromState(state);
             var journal = Names.LifeJournal(raw, Live);
             EndOptions opts = Names.EndOptions(raw, state);
-            Save.Lineage = Inheritance.RecordEnd(Save.Lineage, null, place, raw.Mastery, journal, opts);
+            Lineage recorded = Inheritance.RecordEnd(Save.Lineage, null, place, raw.Mastery, journal, opts);
+            LifeClose close = Trial.Bridge.Life.CloseLife(recorded, state, () => Inheritance.NewLineage(NewSeed()));
+            if (close.WorldEnded) Save = new TrialSave(close.Next);
+            else Save.Lineage = close.Next;
             Save.Life = null;
             Live = null;
             Persist();
@@ -777,8 +787,8 @@ namespace Trial.Boot
             _screen = "ending";
             Show(host => EndingScene.Mount(host, Base(new EndingCtx
             {
-                Ending = Inheritance.EndingView(Save.Lineage),
-                Lineage = Save.Lineage,
+                Ending = Inheritance.EndingView(close.Recorded),
+                Lineage = close.Recorded,
                 OnHall = ToHall,
             })), "ocbg-ending");
         }

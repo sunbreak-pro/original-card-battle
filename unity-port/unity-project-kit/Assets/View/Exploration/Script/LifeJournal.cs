@@ -88,7 +88,7 @@ namespace Exploration
         public bool Surveyed(string enemyId)
         {
             if (_session == null || enemyId == null) return false;
-            for (int layer = 1; layer <= SevenLayers.Count; layer++)
+            for (int layer = 1; layer <= Lair.LayerCount; layer++)
             {
                 if (_session.HasSurveyed(layer) && SurveyTarget(layer) == enemyId) return true;
             }

@@ -13,7 +13,7 @@ namespace Exploration.Bridge
     /// <summary>
     /// Everything a combat node hands the battle (#99): the layer and the node's kind, who is fought
     /// (the line of enemies of each fight), the cells each fight is fought on, HP and current stamina,
-    /// the max stamina the exploration's 瘴気 and temporary changes leave, the journal's 開示度 for each
+    /// the max stamina the exploration's temporary changes leave, the journal's 開示度 for each
     /// enemy, the deck as this life has grown it, and the in-battle tools as amounts.
     /// </summary>
     public sealed class BattleHandIn
@@ -32,7 +32,6 @@ namespace Exploration.Bridge
             int maxHp,
             int stamina,
             int maxStamina,
-            int miasmaPercent,
             IReadOnlyDictionary<string, int> disclosure,
             IReadOnlyList<CardInstance> deck,
             Departure tools,
@@ -55,7 +54,6 @@ namespace Exploration.Bridge
             MaxHp = maxHp;
             Stamina = stamina;
             MaxStamina = maxStamina;
-            MiasmaPercent = miasmaPercent;
             Seed = seed;
             Limits = limits;
         }
@@ -77,11 +75,8 @@ namespace Exploration.Bridge
 
         public int Stamina { get; }
 
-        /// <summary>The exploration's max stamina (DungeonCore.ExplorationState.MaxStamina): 瘴気 and the temporary changes.</summary>
+        /// <summary>The exploration's max stamina (DungeonCore.ExplorationState.MaxStamina): the base and the temporary changes.</summary>
         public int MaxStamina { get; }
-
-        /// <summary>The gauge itself, for the record. The battle reads it only through <see cref="MaxStamina"/>.</summary>
-        public int MiasmaPercent { get; }
 
         /// <summary>The journal's 開示度 by enemy id, for every enemy of the encounter (−1〜2).</summary>
         public IReadOnlyDictionary<string, int> Disclosure { get; }

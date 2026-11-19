@@ -1,11 +1,11 @@
 // The exploration scene (port of src/scenes/explore/ExploreScene.js; dungeon_exploration_v4 §6; explore.md). It renders
 // ExplorationScreenBuilder's view-model and forwards the player's input to the ported ExplorationSession / Expedition.
 // It computes no rule and no number: every value and line comes from the bridge (or the scene-text table,
-// ExploreText). What it adds is presentation: the per-layer backdrop under its veil and the miasma shade, the map drawn
+// ExploreText). What it adds is presentation: the place's backdrop under its veil, the map drawn
 // on it, a walker that travels each step, number roll-ups, the cards over the map, the battle hand-off and the reward
 // pick, the trace pick, the interlude, and keyboard support. Trial mode (docs/EXTENSIONS.md 「探索の持ち物とイベント」)
 // adds the tools with their notes, consumable slots that act (標の石 aims on the map), the swap card, the event cards and
-// their result, 写しの帳's survey pick, and 刻限の砂 / 防瘴の面 in the band.
+// their result, and 写しの帳's survey pick. The band shows the collapse calendar (dungeon_exploration_v4 §6.2, #888).
 //
 // ExploreScene.Mount(host, ctx) → IScene { Destroy(), Refresh() }: see ExploreContracts.cs for the ctx. The router
 // destroys this scene to show a battle and mounts a fresh one afterwards (main.js:390, 398); a scene mounted while the
@@ -185,11 +185,9 @@ namespace Trial.Explore
         private void OnClockFrame(float now)
         {
             if (InBattle || !Alive) return;
-            // The breath follows the settled reading, not the one easing up, so a rise only changes its pace.
-            float breath = MiasmaBreathing.Advance(now, GaugeTo);
-            Backdrop?.Frame(now, breath);
+            Backdrop?.Frame(now);
             foreach (RollLabel r in Rollers.ToArray()) r.Tick(now);
-            PaintGauge(now, breath);
+            FollowRolledBoxes();
             WalkerAnim?.Invoke(now);
         }
 
@@ -307,7 +305,8 @@ namespace Trial.Explore
                     }
                 }
                 if (live && Screen.Aiming) Key(ExploreText.StopAim, "Esc");
-                if (Screen != null && Plate == null && !Busy && Session.State.Phase == RunPhase.Interlude && Screen.Card.Buttons.Count > 0)
+                if (Screen != null && Plate == null && !Busy && Session.State.Phase == RunPhase.Interlude && Screen.Card.Buttons.Count > 0 &&
+                    Screen.Card.Buttons[0].Action != ScreenAction.ChooseRegion)
                     Key(Screen.Card.Buttons[0].Label, ExploreText.KeyEnter);
             }
             if (Screen != null && Screen.Consumables.Any(c => c.CanUse) && (Plate == null || Plate.Kind == ExploreStyle.PlateScreen))
@@ -434,6 +433,8 @@ namespace Trial.Explore
             Screen = Session.Screen();
             ExplorationState state = Session.State;
             int layer = state.Profile.Layer;
+            // The place drawn and heard is the layer's backdrop slot: a region's layer borrows a named place (#888).
+            int place = state.Profile.BackdropLayer;
 
             if (state.CurrentNodeId != LastCurrent)
             {
@@ -442,7 +443,7 @@ namespace Trial.Explore
             }
             if (Screen.Node(Pinned) == null) Pinned = Screen.CurrentNodeId;
 
-            if (layer != LastLayer) Backdrop.Show(layer, now);
+            if (layer != LastLayer) Backdrop.Show(place, now);
             bool mapChanged = !ReferenceEquals(state.Map, MapRef);
             if (mapChanged)
             {
@@ -465,7 +466,7 @@ namespace Trial.Explore
             bool interlude = state.Phase == RunPhase.Interlude;
             SetRootClass(".is-interlude", interlude);
             Backdrop.SetLull(interlude);
-            object amb = interlude ? (object)"interlude" : layer;
+            object amb = interlude ? (object)"interlude" : place;
             if (!Equals(amb, LastAmbience))
             {
                 LastAmbience = amb;
@@ -547,7 +548,8 @@ namespace Trial.Explore
             if (Session.State.Phase == RunPhase.Interlude && (k == "Enter" || k == " "))
             {
                 CardButton first = Screen.Card.Buttons.Count > 0 ? Screen.Card.Buttons[0] : null;
-                if (first != null) OnCardAction(first.Action).Forget();
+                // a region is chosen for the whole life (seven_layers_v4.md §3.1): only a click picks one, not Enter
+                if (first != null && first.Action != ScreenAction.ChooseRegion) OnCardAction(first.Action, first.Arg).Forget();
                 return true;
             }
             if (!Screen.MapIsLive) return false;
@@ -834,7 +836,7 @@ namespace Trial.Explore
 
         // js: scenes/explore/ExploreScene.js:165
         /// <summary>
-        /// What ctx.onLifeEnd receives: the phase the life ended in (RunPhase: MiasmaDeath / Fallen / Completed /
+        /// What ctx.onLifeEnd receives: the phase the life ended in (RunPhase: Expired / Fallen / Completed /
         /// Survived), the end card ExplorationScreenBuilder wrote, and where it happened.
         /// </summary>
         private static ExploreLifeEnd LifeEnd(RecordedSession session, ExplorationScreen screen)

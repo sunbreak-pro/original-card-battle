@@ -144,7 +144,7 @@ namespace Trial.Bridge.Tests
             Assert.That(Json.Stringify(data.Loadout), Is.EqualTo(Json.Stringify(Loadouts.RunLoadoutToData(Loadouts.ToRunLoadout(choice.Loadout, ls.ToolSlots)))));
             RunLoadout back = Loadouts.RunLoadoutFromData(Json.Parse(Json.Stringify(data.Loadout)));
             Assert.That(back.Trial, Is.True, "the trial flag rides along");
-            Assert.That(back.Tools.Select(t => t.Id), Is.EqualTo(new[] { "bosho_no_men", "kokugen_no_suna", "ikitsugi_no_fue" }));
+            Assert.That(back.Tools.Select(t => t.Id), Is.EqualTo(new[] { "kaerimichi_no_ito", "hiyomi_no_suna", "ikitsugi_no_fue" }));
 
             // no loadout: the empty RunLoadout; a RunLoadout: kept as it is
             ChoiceData none = Life.ChoiceToData(new DepartureChoice { Deck = PrototypeDeck.Build() });
@@ -214,7 +214,7 @@ namespace Trial.Bridge.Tests
             LifeSetupResult setup = Life.LifeSetup(start);
             ExplorationSession s = setup.Expedition.Session;
             Assert.That(s.State.Map.CountOf(NodeKind.Trace), Is.EqualTo(1), "layer 1 holds the trace node");
-            LayerProfile two = SevenLayers.Of(2);
+            LayerProfile two = Lair.Of(2);
             Assert.That(s.MapOf(two, 1).CountOf(NodeKind.Trace), Is.EqualTo(1));
             Assert.That(s.MapOf(two, 1).CountOf(NodeKind.Carving), Is.EqualTo(0), "the known carving is gone");
             Assert.That(s.CarvingTaken, Is.True, "the session reads the carving as known");
@@ -227,6 +227,91 @@ namespace Trial.Bridge.Tests
             ExplorationSession p = Life.LifeSetup(plain).Expedition.Session;
             Assert.That(p.State.Map.CountOf(NodeKind.Trace), Is.EqualTo(0));
             Assert.That(p.MapOf(two, 1).CountOf(NodeKind.Carving), Is.EqualTo(two.MapSpec.Quotas.TryGetValue(NodeKind.Carving, out int q) ? q : 0));
+        }
+
+        // ================================================================== the collapse calendar (#888)
+
+        /// <summary>A refusal for the fresh lineage a life that did not run the calendar out never asks for.</summary>
+        private static Lineage NoNewLineage() => throw new AssertionException("only an expired calendar starts a new lineage");
+
+        // seven_layers_v4.md §2.1: the hand-over to the next heir is 3 days after a survival (1 with 帰り道の糸) and 10
+        // after a death; the lineage's calendar carries the life's own days and the hand-over into the next life.
+        [Test]
+        public void TheEndOfALife_MovesTheLineagesCalendar_ASurvivalThreeDays_OneWithTheThread_ADeathTen()
+        {
+            LifeStart ls = Inheritance.StartLife(Inheritance.NewLineage(13));
+            Expedition raw = Life.LifeSetup(Life.MakeStart(ls, Departure(ls, 2))).Expedition;
+            ExplorationState plain = raw.Session.State;
+            ExplorationState thread = Life.LifeSetup(Life.MakeStart(ls, Departure(ls, 1))).Expedition.Session.State;
+            Assert.That(plain.Loadout.ShortHandover, Is.False);
+            Assert.That(thread.Loadout.ShortHandover, Is.True, "帰り道の糸 is carried");
+
+            int DaysAfter(ExplorationState final)
+            {
+                LifeClose close = Life.CloseLife(ls.Lineage, final, NoNewLineage);
+                Assert.That(close.WorldEnded, Is.False);
+                Assert.That(close.Recorded, Is.SameAs(ls.Lineage), "the ending reads the lineage as RecordEnd wrote it");
+                return close.Next.Calendar.DaysLeft;
+            }
+            Assert.That(DaysAfter(plain.With(phase: RunPhase.Survived)), Is.EqualTo(plain.DaysLeft - Calendar.HandoverSurvivedDays));
+            Assert.That(DaysAfter(thread.With(phase: RunPhase.Survived)), Is.EqualTo(thread.DaysLeft - Calendar.HandoverShortDays));
+            Assert.That(DaysAfter(plain.With(phase: RunPhase.Fallen)), Is.EqualTo(plain.DaysLeft - Calendar.HandoverFallenDays));
+            Assert.That(DaysAfter(thread.With(phase: RunPhase.Fallen)), Is.EqualTo(thread.DaysLeft - Calendar.HandoverFallenDays), "the thread only shortens a survival");
+
+            // a real death: the end on the lineage, the calendar moved on, and the next heir walks on it
+            ExplorationState fallen = plain.With(phase: RunPhase.Fallen);
+            Lineage recorded = Inheritance.RecordEnd(ls.Lineage, null, Inheritance.PlaceFromState(fallen), raw.Mastery, Names.LifeJournal(raw), Names.EndOptions(raw, fallen));
+            LifeClose died = Life.CloseLife(recorded, fallen, NoNewLineage);
+            Assert.That(died.Ending, Is.EqualTo(LifeEnding.Fallen));
+            Assert.That(died.Next.Lives.Count, Is.EqualTo(recorded.Lives.Count), "only the calendar changes");
+            Assert.That(died.Next.Traces.Count, Is.EqualTo(recorded.Traces.Count));
+            Assert.That(died.Next.Calendar.DaysLeft, Is.EqualTo(fallen.DaysLeft - Calendar.HandoverFallenDays));
+            Assert.That(Inheritance.FromJson(Json.Parse(Json.Stringify(Inheritance.ToJson(died.Next)))).Calendar.DaysLeft,
+                Is.EqualTo(died.Next.Calendar.DaysLeft), "the save keeps the calendar");
+
+            LifeStart next = Inheritance.StartLife(died.Next);
+            Assert.That(next.Lineage.Calendar.DaysLeft, Is.EqualTo(died.Next.Calendar.DaysLeft), "setting out moves no day");
+            LifeStartData nextStart = Life.MakeStart(next, Departure(next, 2));
+            int onFresh = Life.LifeSetup(Clone(nextStart)).Expedition.Session.State.DaysLeft;
+            LiveLife live = Life.BeginLife(Clone(nextStart), new LifeLog(), "", null, next.Lineage);
+            Assert.That(died.Next.Calendar.DaysLeft - live.Raw.Session.State.DaysLeft, Is.EqualTo(Calendar.TotalDays - onFresh),
+                "the heir starts on the lineage's calendar, not a fresh one");
+        }
+
+        [Test]
+        public void WhileAKingIsDown_TheHandOverLowersTheKingsCounter_NotTheDays()
+        {
+            LifeStart ls = Inheritance.StartLife(Inheritance.NewLineage(13));
+            ExplorationState st = Life.LifeSetup(Life.MakeStart(ls, Departure(ls, 2))).Expedition.Session.State;
+            var frozen = new CalendarState(200, new Dictionary<Region, int> { [Region.Dragon] = 41 });
+            LifeClose close = Life.CloseLife(ls.Lineage, st.With(phase: RunPhase.Survived, calendar: frozen), NoNewLineage);
+            Assert.That(close.Next.Calendar.DaysLeft, Is.EqualTo(200));
+            Assert.That(close.Next.Calendar.KingReturns[Region.Dragon], Is.EqualTo(41 - Calendar.HandoverSurvivedDays));
+        }
+
+        // dungeon_exploration_v4.md §6.9: the calendar run out ends the world; the game starts over on a new lineage.
+        [Test]
+        public void ACalendarThatRanOut_StartsABrandNewLineage_AndTheEndingStillReadsTheOldOne()
+        {
+            LifeStart ls = Inheritance.StartLife(Inheritance.NewLineage(13));
+            Expedition raw = Life.LifeSetup(Life.MakeStart(ls, Departure(ls, 2))).Expedition;
+            ExplorationState expired = raw.Session.State.With(phase: RunPhase.Expired, calendar: new CalendarState(0));
+            Lineage recorded = Inheritance.RecordEnd(ls.Lineage, null, Inheritance.PlaceFromState(expired), raw.Mastery, Names.LifeJournal(raw), Names.EndOptions(raw, expired));
+            Lineage fresh = Inheritance.NewLineage(99);
+            LifeClose close = Life.CloseLife(recorded, expired, () => fresh);
+            Assert.That(close.WorldEnded, Is.True);
+            Assert.That(close.Ending, Is.EqualTo(LifeEnding.Expired));
+            Assert.That(close.Recorded, Is.SameAs(recorded));
+            Assert.That(close.Next.Seed, Is.EqualTo(fresh.Seed), "the new lineage, not the old one");
+            Assert.That(close.Next.Lives, Is.Empty);
+            Assert.That(close.Next.Traces, Is.Empty);
+            Assert.That(close.Next.Calendar.DaysLeft, Is.EqualTo(Calendar.TotalDays));
+            Assert.That(close.Next.Calendar.IsFrozen, Is.False);
+            EndingView view = Inheritance.EndingView(close.Recorded);
+            Assert.That(view.Ending, Is.EqualTo(LifeEnding.Expired), "the ending scene shows the world's end");
+
+            Assert.Throws<ArgumentNullException>(() => Life.CloseLife(recorded, expired, null));
+            Assert.Throws<ArgumentException>(() => Life.CloseLife(recorded, raw.Session.State, NoNewLineage), "a life still exploring has not ended");
         }
 
         // ================================================================== survivor.test.mjs

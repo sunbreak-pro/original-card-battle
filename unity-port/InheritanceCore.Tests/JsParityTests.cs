@@ -121,8 +121,10 @@ namespace InheritanceCore.Tests
             Assert.That(InheritanceText.TraceRules, Is.EqualTo((List<object?>)t["TraceRules"]!));
             foreach (CandidateKind k in Enum.GetValues(typeof(CandidateKind)))
                 Assert.That(InheritanceText.KindLabel(k), Is.EqualTo(((JsonObject)t["KindLabel"]!)[k.ToString()]), k.ToString());
-            foreach (LifeEnding e in Enum.GetValues(typeof(LifeEnding)))
+            // Expired is the C#'s own ending (#888): the JS has no such title.
+            foreach (LifeEnding e in Enum.GetValues(typeof(LifeEnding)).Cast<LifeEnding>().Where(e => e != LifeEnding.Expired))
                 Assert.That(InheritanceText.EndingTitle(e), Is.EqualTo(((JsonObject)t["EndingTitle"]!)[e.ToString()]), e.ToString());
+            Assert.That(((JsonObject)t["EndingTitle"]!).ContainsKey("Expired"), Is.False);
             foreach (NodeKind n in Enum.GetValues(typeof(NodeKind)))
                 Assert.That(InheritanceText.NodeKindLabel(n), Is.EqualTo(((JsonObject)t["NodeKindLabel"]!)[n.ToString()]), n.ToString());
             Assert.That(new[] { LifeEnding.MiasmaDeath, LifeEnding.Fallen, LifeEnding.Completed, LifeEnding.Survived }
@@ -215,7 +217,7 @@ namespace InheritanceCore.Tests
             h = SurviveAt(h, 2);
             var hs = Inheritance.StartLife(h, 1);
             var ht = Inheritance.TakeTrace(hs.Lineage, "trace-1", new[] { "card:kansatsu" }, 3);
-            h = Inheritance.RecordDeath(ht.Lineage, null, new LifePlace(5, 3, NodeKind.Boss, RunPhase.MiasmaDeath), FullDeck,
+            h = Inheritance.RecordDeath(ht.Lineage, null, new LifePlace(5, 3, NodeKind.Boss, LifeEnding.MiasmaDeath), FullDeck,
                 new Journal(memo: new string('x', 25)));
             Assert.That(Json.Stringify(Inheritance.HallView(h).ToJson()), Is.EqualTo(O("hall")));
             Assert.That(Json.Stringify(Inheritance.EndingView(h).ToJson()), Is.EqualTo(O("ending")));

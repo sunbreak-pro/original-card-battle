@@ -22,7 +22,7 @@ namespace Exploration.Bridge
         /// <summary>The slot pressed, as Expedition.SwapConsumable names it. −1 for a slot freed since the item was found.</summary>
         public int Index { get; }
 
-        /// <summary>「浄化の香と入れ替える」, or 「（空き）」 for a free slot.</summary>
+        /// <summary>「早駆けの丸薬と入れ替える」, or 「（空き）」 for a free slot.</summary>
         public string Label { get; }
 
         /// <summary>What the item in the slot does, to weigh it against the one found. Empty for a free slot.</summary>
@@ -54,7 +54,7 @@ namespace Exploration.Bridge
         /// <summary>What was found and what the choice does.</summary>
         public string Prompt { get; }
 
-        /// <summary>「浄化の香: 瘴気を 10% 下げる」: the item found and what it does.</summary>
+        /// <summary>「早駆けの丸薬: 次の新しいノード 1 つで日が進まない」: the item found and what it does.</summary>
         public string ItemLine { get; }
 
         /// <summary>The slots, in order.</summary>

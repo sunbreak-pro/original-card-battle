@@ -234,6 +234,7 @@ namespace Exploration.Bridge.Tests
             {
                 WalkToAndWin(expedition, NodeKind.Boss);
                 Assert.That(session.Act(ScreenAction.GoToInterlude), Is.True);
+                if (session.NeedsRegion) Assert.That(session.Act(ScreenAction.ChooseRegion, (int)Region.Dragon), Is.True);
                 Assert.That(session.Act(ScreenAction.Descend), Is.True);
                 Assert.That(session.ConfirmingDescend, Is.False, "the descent does not end the life");
             }

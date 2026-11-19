@@ -10,11 +10,17 @@ namespace DungeonCore
     /// </summary>
     public enum ReliefKind
     {
-        /// <summary>Lowers the layer's density for as long as the life lasts (防瘴の面).</summary>
-        Density,
+        /// <summary>日読みの砂 (tool): the entry node of every layer costs no day (tools_and_consumables_v4.md §2.4).</summary>
+        EntryDay,
 
-        /// <summary>Pulls the gauge back down once, then the item is gone (浄化の香).</summary>
-        Gauge,
+        /// <summary>
+        /// 帰り道の糸 (tool): a life that comes back alive hands over in 1 day instead of 3 (§2.4). The calendar's
+        /// handover reads it (CalendarState.Handover); the exploration itself does nothing with it.
+        /// </summary>
+        Return,
+
+        /// <summary>早駆けの丸薬 (consumable): the next new node costs no day (§3).</summary>
+        Haste,
 
         /// <summary>HP back by Amount percent of the maximum, never past it (薬草).</summary>
         HealHp,
@@ -28,16 +34,13 @@ namespace DungeonCore
         /// <summary>
         /// A jump to an unresolved node of the layer (標の石). It needs a node to jump to, which no
         /// screen picks yet: it rides in a slot but cannot be used. Trial extension: the trial's map
-        /// picks the node, and ExplorationReducer.Teleport spends it there, paying the node's 刻限.
+        /// picks the node, and ExplorationReducer.Teleport spends it there, paying the node's day.
         /// </summary>
         Teleport,
 
         // Trial extension (docs/EXTENSIONS.md 「探索の持ち物とイベント」): the rest of the departure's tools, so the
         // exploration can carry every tool of tools_and_consumables_v4.md §2. Only a trial RunLoadout holds tools
-        // of these kinds; the C# shape (Density tools, any consumable) is unchanged.
-
-        /// <summary>刻限の砂: every layer's 刻限 + Amount (§2).</summary>
-        Time,
+        // of these kinds.
 
         /// <summary>写しの帳: the player picks the 情報収集 target (§2.2).</summary>
         Survey,
@@ -52,9 +55,11 @@ namespace DungeonCore
     /// <summary>One carried item, reduced to its effect on the run. Name and art live elsewhere.</summary>
     public sealed record ReliefItem(string Id, ReliefKind Kind, int Amount)
     {
-        public static ReliefItem Density(string id, int amount) => new ReliefItem(id, ReliefKind.Density, amount);
+        public static ReliefItem EntryDay(string id) => new ReliefItem(id, ReliefKind.EntryDay, 1);
 
-        public static ReliefItem Gauge(string id, int amount) => new ReliefItem(id, ReliefKind.Gauge, amount);
+        public static ReliefItem Return(string id) => new ReliefItem(id, ReliefKind.Return, 1);
+
+        public static ReliefItem Haste(string id) => new ReliefItem(id, ReliefKind.Haste, 1);
 
         public static ReliefItem HealHp(string id, int percent) => new ReliefItem(id, ReliefKind.HealHp, percent);
 
@@ -78,15 +83,18 @@ namespace DungeonCore
         public const int ConsumableSlots = 3;
         public const int SurvivorBonusToolSlots = ToolSlots + 1;
 
+        /// <summary>The tools the exploration core itself acts on: the two that work on the calendar.</summary>
+        private static readonly ReliefKind[] CalendarToolKinds = { ReliefKind.EntryDay, ReliefKind.Return };
+
         /// <summary>The tool kinds a trial RunLoadout may hold (ReliefKind's trial extension).</summary>
         private static readonly ReliefKind[] TrialToolKinds =
-            { ReliefKind.Density, ReliefKind.Time, ReliefKind.Survey, ReliefKind.Interlude, ReliefKind.Battle };
+            { ReliefKind.EntryDay, ReliefKind.Return, ReliefKind.Survey, ReliefKind.Interlude, ReliefKind.Battle };
 
         private readonly List<ReliefItem> _consumables;
 
         /// <param name="trial">
         /// Trial extension (js: core/dungeon/RunLoadout.js:63): a trial loadout may also carry the tools of kind
-        /// Time / Survey / Interlude / Battle. False keeps the C# rule that every tool lowers density.
+        /// Survey / Interlude / Battle. False keeps the C# rule that a tool is one the calendar reads.
         /// </param>
         public RunLoadout(
             IReadOnlyList<ReliefItem>? tools = null,
@@ -103,8 +111,8 @@ namespace DungeonCore
             if (consumableList.Count > ConsumableSlots)
                 throw new ArgumentException(
                     $"{consumableList.Count} consumables do not fit in {ConsumableSlots} slots", nameof(consumables));
-            if (!trial && toolList.Any(t => t.Kind != ReliefKind.Density))
-                throw new ArgumentException("a tool thins the air for the whole life, so it lowers density", nameof(tools));
+            if (!trial && toolList.Any(t => Array.IndexOf(CalendarToolKinds, t.Kind) < 0))
+                throw new ArgumentException("outside trial mode a tool is one the calendar reads (日読みの砂 / 帰り道の糸)", nameof(tools));
             if (trial && toolList.Any(t => Array.IndexOf(TrialToolKinds, t.Kind) < 0))
                 throw new ArgumentException("a trial tool is one of the eight tools of tools_and_consumables_v4.md §2", nameof(tools));
 
@@ -123,18 +131,13 @@ namespace DungeonCore
         /// <summary>Trial extension: this loadout carries the trial items (see the constructor).</summary>
         public bool Trial { get; }
 
-        /// <summary>
-        /// How much every layer's density drops for this life. A C# loadout holds density tools only, so its
-        /// sum is over every tool; a trial loadout counts its density tools.
-        /// </summary>
-        // js: core/dungeon/RunLoadout.js:92
-        public int DensityRelief => Trial ? SumOf(ReliefKind.Density) : Tools.Sum(t => t.Amount);
+        /// <summary>日読みの砂 is carried: the entry node of every layer costs no day (§2.4). A second copy adds nothing.</summary>
+        public bool EntryDayFree => Tools.Any(t => t.Kind == ReliefKind.EntryDay);
+
+        /// <summary>帰り道の糸 is carried: a life that comes back alive hands over in 1 day (§2.4).</summary>
+        public bool ShortHandover => Tools.Any(t => t.Kind == ReliefKind.Return);
 
         // ---- Trial extension: what the other exploration tools add (tools_and_consumables_v4.md §2).
-
-        /// <summary>刻限の砂: 刻限 every layer gains. Copies stack, like Loadout.TimeLimitBonus. 0 outside trial.</summary>
-        // js: core/dungeon/RunLoadout.js:99
-        public int TimeBonus => Trial ? SumOf(ReliefKind.Time) : 0;
 
         /// <summary>灯芯の欠片: points of the HP maximum 階層間の休憩 heals on top of its 30%. 0 outside trial.</summary>
         // js: core/dungeon/RunLoadout.js:102

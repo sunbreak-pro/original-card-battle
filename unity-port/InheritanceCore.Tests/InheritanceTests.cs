@@ -48,10 +48,11 @@ namespace InheritanceCore.Tests
 
         /// <summary>Starts a life and kills it at <paramref name="layer"/> with the given deck and journal.</summary>
         internal static Lineage DieAt(Lineage lineage, int layer, LifeDeck? d = null, Journal? j = null,
-            RunPhase ending = RunPhase.Fallen, int nodeId = 4, ulong seed = 1)
+            RunPhase ending = RunPhase.Fallen, int nodeId = 4, ulong seed = 1, LifeEnding? named = null)
         {
             var s = Inheritance.StartLife(lineage, seed);
-            return Inheritance.RecordDeath(s.Lineage, s.Life, new LifePlace(layer, nodeId, null, ending), d ?? FullDeck, Pick(j));
+            var place = named.HasValue ? new LifePlace(layer, nodeId, null, named.Value) : new LifePlace(layer, nodeId, null, ending);
+            return Inheritance.RecordDeath(s.Lineage, s.Life, place, d ?? FullDeck, Pick(j));
         }
 
         internal static Lineage SurviveAt(Lineage lineage, int layer, Journal? j = null, EndOptions? opts = null,
@@ -174,7 +175,7 @@ namespace InheritanceCore.Tests
         [Test]
         public void R04_Candidates_EveryCardAt1DanOrMoreAndEveryFilledPage_NothingElse()
         {
-            var l = DieAt(Inheritance.NewLineage(Seed), 4, ending: RunPhase.MiasmaDeath);
+            var l = DieAt(Inheritance.NewLineage(Seed), 4, named: LifeEnding.MiasmaDeath);
             var ids = l.Traces[0].Candidates.Select(c => c.Id).ToList();
             Assert.That(ids, Is.EqualTo(new[]
             {
@@ -503,7 +504,7 @@ namespace InheritanceCore.Tests
             Assert.That(s.ToolSlots, Is.EqualTo(RunLoadout.SurvivorBonusToolSlots));
             Assert.That(s.DeckMax, Is.EqualTo(Constants.DeckMax + 5));
             Assert.That(s.Loadout.ToolSlotCount, Is.EqualTo(4));
-            var four = Enumerable.Range(0, 4).Select(_ => ReliefItem.Density("bosho_no_men", 1)).ToList();
+            var four = Enumerable.Range(0, 4).Select(_ => ReliefItem.Return("kaerimichi_no_ito")).ToList();
             Assert.DoesNotThrow(() => new RunLoadout(four, null, s.ToolSlots));
             Assert.That(s.Life.SurvivorFrom, Is.EqualTo(1));
             var next = Inheritance.StartLife(NoLifeDeath(s.Lineage, 1), 1);
@@ -746,7 +747,7 @@ namespace InheritanceCore.Tests
             var j = Journal.WithPageCount(2, D(("sabiyari", 2), ("shoga", 1), ("shokou", 0)), "門竜は押すと崩れる", carvingTaken: true);
             var l = DieAt(Inheritance.NewLineage(Seed), 2, j: j);
             Assert.That(l.Player.CarvingTaken, Is.True);
-            Assert.That(Inheritance.HallView(l).Traces[0].PlaceLine, Is.EqualTo("第 2 層　竜神の秘跡"));
+            Assert.That(Inheritance.HallView(l).Traces[0].PlaceLine, Is.EqualTo("第 2 層　龍神の秘跡"));
             Assert.That(Inheritance.StartLife(l, 1).CarvingKnown, Is.True);
             var noted = Inheritance.NoteCarving(Inheritance.NewLineage(Seed));
             Assert.That(noted.Player.CarvingTaken, Is.True);
@@ -759,10 +760,10 @@ namespace InheritanceCore.Tests
             var l = Inheritance.NewLineage(Seed);
             foreach (var layer in new[] { 1, 2, 3, 4, 5, 6, 7 }) l = DieAt(l, layer);
             l = Inheritance.StartLife(l, 1).Lineage;
-            foreach (var profile in SevenLayers.All)
+            foreach (var profile in Lair.Profiles)
             {
                 var spec = Inheritance.MapSpecFor(l, profile);
-                Assert.That(spec.Quotas[NodeKind.Trace], Is.EqualTo(1), $"layer {profile.Layer}");
+                Assert.That(spec.Quotas[NodeKind.Trace], Is.EqualTo(1), $"{profile}");
                 int battles(LayerMapSpec x) => x.Quotas.TryGetValue(NodeKind.Battle, out int n) ? n : 0;
                 Assert.That(battles(spec), Is.EqualTo(battles(profile.MapSpec) - 1));
                 foreach (ulong seed in new ulong[] { 1, 2, 3 })
@@ -772,10 +773,10 @@ namespace InheritanceCore.Tests
                 }
             }
             var carving = Inheritance.NoteCarving(Inheritance.NewLineage(Seed));
-            var layer2 = Inheritance.MapSpecFor(carving, SevenLayers.Of(2));
+            var layer2 = Inheritance.MapSpecFor(carving, Lair.Of(2));
             Assert.That(layer2.Quotas.ContainsKey(NodeKind.Carving), Is.False);
-            Assert.That(layer2.Quotas[NodeKind.Battle], Is.EqualTo(SevenLayers.Of(2).MapSpec.Quotas[NodeKind.Battle] + 1));
-            Assert.That(Inheritance.MapSpecFor(Inheritance.NewLineage(Seed), SevenLayers.Of(1)), Is.SameAs(SevenLayers.Of(1).MapSpec),
+            Assert.That(layer2.Quotas[NodeKind.Battle], Is.EqualTo(Lair.Of(2).MapSpec.Quotas[NodeKind.Battle] + 1));
+            Assert.That(Inheritance.MapSpecFor(Inheritance.NewLineage(Seed), Lair.Of(1)), Is.SameAs(Lair.Of(1).MapSpec),
                 "nothing to change, the same spec");
         }
 
@@ -874,7 +875,7 @@ namespace InheritanceCore.Tests
         [Test]
         public void R24_EndingCard_TheEndSentenceWhatStaysAndTheNextHeir()
         {
-            var miasma = Inheritance.EndingView(DieAt(Inheritance.NewLineage(Seed), 4, ending: RunPhase.MiasmaDeath));
+            var miasma = Inheritance.EndingView(DieAt(Inheritance.NewLineage(Seed), 4, named: LifeEnding.MiasmaDeath));
             Assert.That(miasma.Title, Is.EqualTo("瘴気死"));
             Assert.That(miasma.Sentence, Is.EqualTo("瘴気が 100% に達し、第 4 層でこの生が終わった。"));
             Assert.That(miasma.Lines, Is.EqualTo(new[]
@@ -944,8 +945,8 @@ namespace InheritanceCore.Tests
         [Test]
         public void R26_PlaceFromStateAndRecordEndCloseALifeStraightFromAFinishedExplorationState()
         {
-            var profile = SevenLayers.Of(1);
-            var entered = ExplorationReducer.Enter(profile, profile.Map(3), RunLoadout.Empty, 50, 50, 10);
+            var profile = Lair.Of(1);
+            var entered = ExplorationReducer.Enter(profile, profile.Map(3), RunLoadout.Empty, 50, 50, 10, CalendarState.Fresh);
             var fallen = ExplorationReducer.ReportBattle(entered, 0, 0);
             Assert.That(fallen.Phase, Is.EqualTo(RunPhase.Fallen));
             var s = Inheritance.StartLife(Inheritance.NewLineage(Seed), 3);

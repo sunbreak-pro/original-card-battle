@@ -39,7 +39,7 @@ namespace Exploration.Bridge.Tests
             Assert.Multiple(() =>
             {
                 Assert.That(expedition.WaitingConsumables, Is.EqualTo(new[] { found }));
-                Assert.That(expedition.Session.State.Loadout.Consumables.Select(c => c.Id), Is.EqualTo(Enumerable.Repeat("joka_no_ko", 3)));
+                Assert.That(expedition.Session.State.Loadout.Consumables.Select(c => c.Id), Is.EqualTo(Enumerable.Repeat("hayagake_no_gan", 3)));
                 Assert.That(expedition.Session.MapIsLive, Is.True, "the exploration does not stop for the swap");
             });
         }
@@ -54,7 +54,7 @@ namespace Exploration.Bridge.Tests
             Assert.That(expedition.SwapConsumable(found, 1), Is.True);
             Assert.Multiple(() =>
             {
-                Assert.That(expedition.Session.State.Loadout.Consumables.Select(c => c.Id), Is.EqualTo(new[] { "joka_no_ko", found, "joka_no_ko" }));
+                Assert.That(expedition.Session.State.Loadout.Consumables.Select(c => c.Id), Is.EqualTo(new[] { "hayagake_no_gan", found, "hayagake_no_gan" }));
                 Assert.That(expedition.WaitingConsumables, Is.Empty);
                 Assert.That(expedition.SwapConsumable(found, 1), Is.False, "it is no longer waiting");
             });
@@ -137,7 +137,7 @@ namespace Exploration.Bridge.Tests
                 Assert.That(swap.Prompt, Does.StartWith(name + "を拾った。"));
                 Assert.That(swap.ItemLine, Does.StartWith(name + ": "));
                 Assert.That(swap.Slots.Select(s => s.Index), Is.EqualTo(new[] { 0, 1, 2 }));
-                Assert.That(swap.Slots[0].Label, Is.EqualTo("浄化の香と入れ替える"));
+                Assert.That(swap.Slots[0].Label, Is.EqualTo("早駆けの丸薬と入れ替える"));
                 Assert.That(swap.Slots[0].Note, Is.Not.Empty);
                 Assert.That(swap.DiscardLabel, Is.EqualTo("諦める"));
             });
@@ -154,7 +154,7 @@ namespace Exploration.Bridge.Tests
             Assert.That(ConsumableSwaps.Swap(expedition, 2), Is.True);
             Assert.Multiple(() =>
             {
-                Assert.That(expedition.Session.State.Loadout.Consumables.Select(c => c.Id), Is.EqualTo(new[] { "joka_no_ko", "joka_no_ko", found }));
+                Assert.That(expedition.Session.State.Loadout.Consumables.Select(c => c.Id), Is.EqualTo(new[] { "hayagake_no_gan", "hayagake_no_gan", found }));
                 Assert.That(expedition.WaitingConsumables, Is.Empty);
                 Assert.That(ConsumableSwaps.For(expedition).IsShown, Is.False);
             });
@@ -171,7 +171,7 @@ namespace Exploration.Bridge.Tests
             Assert.Multiple(() =>
             {
                 Assert.That(expedition.WaitingConsumables, Is.Empty);
-                Assert.That(expedition.Session.State.Loadout.Consumables.Select(c => c.Id), Is.EqualTo(Enumerable.Repeat("joka_no_ko", 3)));
+                Assert.That(expedition.Session.State.Loadout.Consumables.Select(c => c.Id), Is.EqualTo(Enumerable.Repeat("hayagake_no_gan", 3)));
                 Assert.That(ConsumableSwaps.For(expedition).IsShown, Is.False);
             });
         }
@@ -206,7 +206,7 @@ namespace Exploration.Bridge.Tests
             Assert.That(swap.Slots.Last().Label, Is.EqualTo(ExplorationText.EmptySlot));
 
             Assert.That(ConsumableSwaps.Swap(expedition, -1), Is.True);
-            Assert.That(expedition.Session.State.Loadout.Consumables.Select(c => c.Id), Is.EqualTo(new[] { "joka_no_ko", "joka_no_ko", found }));
+            Assert.That(expedition.Session.State.Loadout.Consumables.Select(c => c.Id), Is.EqualTo(new[] { "hayagake_no_gan", "hayagake_no_gan", found }));
         }
 
         [Test]
@@ -229,7 +229,7 @@ namespace Exploration.Bridge.Tests
         // ---- helpers ----
 
         private static RunLoadout Full() =>
-            new RunLoadout(null, Enumerable.Repeat(RunStart.Consumable("joka_no_ko"), RunLoadout.ConsumableSlots).ToList());
+            new RunLoadout(null, Enumerable.Repeat(RunStart.Consumable("hayagake_no_gan"), RunLoadout.ConsumableSlots).ToList());
 
         /// <summary>The first seed whose entry battle, won, drops a consumable; the reward depends on the seed alone.</summary>
         private static ulong SeedWhoseEntryBattleDropsAConsumable(out string found)

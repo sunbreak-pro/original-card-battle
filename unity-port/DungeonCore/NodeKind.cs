@@ -35,7 +35,7 @@ namespace DungeonCore
         Trace,
 
         /// <summary>
-        /// 秘跡の彫り. The layer-two carving that names 竜神の秘跡 (world-v1 §5).
+        /// 秘跡の彫り. The layer-two carving that names 龍神の秘跡 (world-v1 §5).
         /// Picking it up has no combat effect (world-v1 §5.2) — it only reveals the layer's name.
         /// </summary>
         Carving,

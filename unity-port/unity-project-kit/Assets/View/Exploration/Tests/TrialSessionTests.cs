@@ -29,9 +29,9 @@ namespace Exploration.Tests
             Assert.That(s.Trial, Is.False);
             Assert.That(s.Keeper, Is.Null);
             Assert.That(s.State.Trial, Is.False);
-            Assert.That(s.State.TimeLimit, Is.EqualTo(SevenLayers.Of(1).TimeLimit));
+            Assert.That(s.State.DaysLeft, Is.EqualTo(Calendar.TotalDays - 1));
             s.Act(ScreenAction.WinBattle);
-            Assert.That(s.State.Loadout.Consumables.Select(c => c.Id), Is.EqualTo(new[] { "joka_no_ko", "joka_no_ko" }));
+            Assert.That(s.State.Loadout.Consumables.Select(c => c.Id), Is.EqualTo(new[] { "hayagake_no_gan", "hayagake_no_gan" }));
             s.Receive(new[] { "yakuso" });
             Assert.That(s.HasPendingFound, Is.False, "a C# session takes no find");
             Assert.That(s.State.Loadout.Consumables.Count, Is.EqualTo(2));
@@ -40,8 +40,6 @@ namespace Exploration.Tests
             var ev = screen.Nodes.FirstOrDefault(n => n.Kind == NodeKind.Event && n.Lines.Count > 0);
             if (ev != null) Assert.That(ev.Lines, Is.EqualTo(new[] { "泉 / 重い宝箱 / 特殊な食事 のどれかが起きる" }));
             Assert.That(screen.ToolCards, Is.Empty);
-            Assert.That(screen.TimeBonusLabel, Is.EqualTo(""));
-            Assert.That(screen.ReliefLabel, Is.EqualTo(""));
             Assert.That(screen.Aiming, Is.False);
             Assert.That(screen.Events, Is.Empty);
             Assert.That(s.Screen().Consumables[0].Forecast, Is.Null);
@@ -70,55 +68,66 @@ namespace Exploration.Tests
         public void TrialItems_CarryEveryToolAndConsumable_AsTheKindTheCoreReads()
         {
             // js: test/ext/world.test.mjs:154 (TrialItems' half; the Loadout conversion is Exploration.Bridge's)
-            var tools = new[] { Mask, Sand, Book, Wick }.Select(TrialItems.Tool).ToList();
-            Assert.That(tools.Select(t => (t.Id, t.Kind, t.Amount)), Is.EqualTo(new[]
+            var tools = new[] { Thread, Sand, Book, Wick }.Select(TrialItems.Tool).ToList();
+            Assert.That(tools.Select(t => (t.Id, t.Kind)), Is.EqualTo(new[]
             {
-                (Mask, ReliefKind.Density, 1), (Sand, ReliefKind.Time, 1), (Book, ReliefKind.Survey, 1), (Wick, ReliefKind.Interlude, 15),
+                (Thread, ReliefKind.Return), (Sand, ReliefKind.EntryDay), (Book, ReliefKind.Survey), (Wick, ReliefKind.Interlude),
             }));
-            var consumables = new[] { "joka_no_ko", "yakuso", "shirube_no_ishi", "koi_hoshiniku", "wasuremizu" }.Select(TrialItems.Consumable).ToList();
-            Assert.That(consumables.Select(t => (t.Id, t.Kind, t.Amount)), Is.EqualTo(new[]
+            Assert.That(TrialItems.Tool(Wick).Amount, Is.EqualTo(15));
+            var consumables = new[] { "hayagake_no_gan", "yakuso", "shirube_no_ishi", "koi_hoshiniku", "wasuremizu" }.Select(TrialItems.Consumable).ToList();
+            Assert.That(consumables.Select(t => (t.Id, t.Kind)), Is.EqualTo(new[]
             {
-                ("joka_no_ko", ReliefKind.Gauge, 10), ("yakuso", ReliefKind.HealHp, 20), ("shirube_no_ishi", ReliefKind.Teleport, 1),
-                ("koi_hoshiniku", ReliefKind.MaxStamina, 1), ("wasuremizu", ReliefKind.RefillStamina, 1),
+                ("hayagake_no_gan", ReliefKind.Haste), ("yakuso", ReliefKind.HealHp), ("shirube_no_ishi", ReliefKind.Teleport),
+                ("koi_hoshiniku", ReliefKind.MaxStamina), ("wasuremizu", ReliefKind.RefillStamina),
             }));
+            Assert.That(consumables.Skip(1).Select(t => t.Amount), Is.EqualTo(new[] { 20, 1, 1, 1 }));
             var battle = new[] { "maai_no_kutsu", "ikitsugi_no_fue", "ryurin_no_kakera", "ryugo_no_fu" }.Select(TrialItems.Tool).ToList();
             Assert.That(battle.All(t => t.Kind == ReliefKind.Battle), Is.True);
-            Assert.That(new RunLoadout(battle, null, 4, trial: true).DensityRelief, Is.EqualTo(0));
+            var carried = new RunLoadout(battle, null, 4, trial: true);
+            Assert.That(carried.EntryDayFree || carried.ShortHandover, Is.False);
         }
 
-        // ---------------------------------------------------------------- tools (§2)
+        // ---------------------------------------------------------------- tools (§2, §2.4)
 
         [Test]
-        public void 刻限の砂_AddsItsTimeToEveryLayer_AndTheBandSaysSo()
+        public void 日読みの砂_MakesEveryLayersEntryFree_AndTheInventorySaysSo()
         {
-            // js: test/ext/world.test.mjs:172
+            // tools_and_consumables_v4.md §2.4: 「層の入口のノードで日が進まない」.
             var s = Trial(1, new[] { Sand });
-            Assert.That(s.State.TimeLimit, Is.EqualTo(11));
-            Assert.That(s.State.TimeLeft, Is.EqualTo(10), "the entry node took one");
-            var screen = s.Screen();
-            Assert.That(screen.TimeLabel, Is.EqualTo("刻限 10 / 11"));
-            Assert.That(screen.TimeLimit, Is.EqualTo(11));
-            Assert.That(screen.TimeBonusLabel, Is.EqualTo("刻限の砂 +1"));
-            Assert.That(Trial(1, new[] { Sand, Sand }).State.TimeLimit, Is.EqualTo(12));
-            var off = new ExplorationSession(new RunStart { Seed = 1, Loadout = new RunLoadout(new[] { TrialItems.Tool(Sand) }, null, 3, trial: true) });
-            Assert.That(off.State.TimeLimit, Is.EqualTo(10));
+            Assert.That(s.State.Loadout.EntryDayFree, Is.True);
+            Assert.That(s.State.DaysLeft, Is.EqualTo(Calendar.TotalDays), "the entry node took no day");
+            Assert.That(s.Screen().ToolCards.Single().Effect, Is.EqualTo(ExplorationText.EntryDayEffect));
+            Assert.That(Trial(1).State.DaysLeft, Is.EqualTo(Calendar.TotalDays - 1));
         }
 
         [Test]
-        public void 刻限の砂_ReachesTheNextLayer_ThroughTheDescent()
+        public void 日読みの砂_ReachesTheNextLayer_ThroughTheDescent()
         {
-            // js: test/ext/world.test.mjs:188
             var s = Trial(2, new[] { Sand });
             WalkTo(s, n => n.Kind == NodeKind.Boss);
             Win(s);
             ClearChoices(s);
             Assert.That(s.Act(ScreenAction.GoToInterlude), Is.True);
-            Assert.That(s.Screen().Card.Lines.Any(l => l.EndsWith("刻限 11（刻限の砂 +1）", StringComparison.Ordinal)), Is.True);
+            int days = s.State.DaysLeft;
+            Assert.That(s.Screen().Card.Lines, Has.Member(CalendarText.DescendFree));
+            Assert.That(s.Screen().DaysForecastLabel, Is.EqualTo(CalendarText.DescendFree));
             Assert.That(s.Act(ScreenAction.Descend), Is.True);
             Assert.That(s.State.Profile.Layer, Is.EqualTo(2));
-            Assert.That(s.State.TimeLimit, Is.EqualTo(11));
-            Assert.That(s.State.TimeLeft, Is.EqualTo(10));
+            Assert.That(s.State.DaysLeft, Is.EqualTo(days));
             Assert.That(s.State.Trial, Is.True);
+        }
+
+        [Test]
+        public void 帰り道の糸_ShortensTheHandOver_AndTheEndLifeCardSaysSo()
+        {
+            // tools_and_consumables_v4.md §2.4: surviving hands over in 1 day instead of 3.
+            var s = Trial(1, new[] { Thread });
+            Win(s);
+            ClearChoices(s);
+            Assert.That(s.State.Loadout.ShortHandover, Is.True);
+            Assert.That(s.Screen().ToolCards.Single().Effect, Is.EqualTo(ExplorationText.ReturnEffect));
+            Assert.That(s.Act(ScreenAction.AskEndLife), Is.True);
+            Assert.That(s.Screen().Card.Lines, Has.Member(CalendarText.Handover(Calendar.HandoverShortDays)));
         }
 
         [Test]
@@ -210,15 +219,11 @@ namespace Exploration.Tests
         public void TheBattleTools_StayBattleOnly_ButShowInTheInventory()
         {
             // js: test/ext/world.test.mjs:299
-            var s = Trial(1, new[] { Flute, Mask });
+            var s = Trial(1, new[] { Flute, Thread });
             var tools = s.Screen().ToolCards;
-            Assert.That(tools.Select(t => (t.Name, t.Side, t.Effect)), Is.EqualTo(new[] { ("息継ぎの笛", "戦闘", ""), ("防瘴の面", "探索", "濃さ −1") }));
-            Assert.That(s.Screen().ToolsLabel, Is.EqualTo("ツール: 息継ぎの笛・防瘴の面（2 / 3）"));
-            Assert.That(s.State.Loadout.DensityRelief, Is.EqualTo(1));
-            Assert.That(s.Screen().ReliefLabel, Is.EqualTo("防瘴の面 濃さは下限 1 のまま"));
-            var deep = Trial(1, new[] { Mask });
-            WalkToLayer(deep, 3);
-            Assert.That(deep.Screen().ReliefLabel, Is.EqualTo("防瘴の面 濃さ 2 → 1"));
+            Assert.That(tools.Select(t => (t.Name, t.Side, t.Effect)),
+                Is.EqualTo(new[] { ("息継ぎの笛", "戦闘", ""), ("帰り道の糸", "探索", ExplorationText.ReturnEffect) }));
+            Assert.That(s.Screen().ToolsLabel, Is.EqualTo("ツール: 息継ぎの笛・帰り道の糸（2 / 3）"));
         }
 
         // ---------------------------------------------------------------- consumables (§3)
@@ -263,24 +268,25 @@ namespace Exploration.Tests
         }
 
         [Test]
-        public void 濃い干し肉_OnTheFloorOfThree_ChangesNothingNow_SoItsSlotIsNotLit()
+        public void 濃い干し肉_AtTheTemporaryFour_ChangesNothingNow_SoItsSlotIsNotLit()
         {
-            // js: test/ext/world.test.mjs:347
-            var s = Trial(3, consumables: new[] { "koi_hoshiniku" }, miasma: 80);
+            // js: test/ext/world.test.mjs:347 tested the floor of 3, which 瘴気 reached; without it the temporary +4 is
+            // where a 濃い干し肉 changes nothing.
+            var s = Trial(3, consumables: new[] { "koi_hoshiniku" });
             Win(s, 50, 2);
             ClearChoices(s);
-            s.State = s.State.With(tempMaxStaminaMod: -4);
-            Assert.That(s.State.MaxStamina, Is.EqualTo(3));
+            s.State = s.State.With(tempMaxStaminaMod: 4);
+            Assert.That(s.State.MaxStamina, Is.EqualTo(StaminaRules.BaseMaxStamina + 4));
             var slot = s.Screen().Consumables[0];
             Assert.That(slot.CanUse, Is.False);
             Assert.That(slot.Forecast, Is.Null);
             Assert.That(slot.Reason, Is.EqualTo(ExplorationText.NoEffectNow));
             Assert.That(s.UseConsumable(0), Is.False);
-            Assert.That(s.State.TempMaxStaminaMod, Is.EqualTo(-4), "nothing spent");
-            s.State = s.State.With(tempMaxStaminaMod: -3);
+            Assert.That(s.State.TempMaxStaminaMod, Is.EqualTo(4), "nothing spent");
+            s.State = s.State.With(tempMaxStaminaMod: 3);
             var lit = s.Screen().Consumables[0];
             Assert.That(lit.CanUse, Is.True);
-            Assert.That(lit.Forecast, Is.EqualTo(new[] { ExplorationText.MaxStaminaChange(3, 4) }));
+            Assert.That(lit.Forecast, Is.EqualTo(new[] { ExplorationText.MaxStaminaChange(13, 14) }));
         }
 
         [Test]
@@ -288,14 +294,14 @@ namespace Exploration.Tests
         {
             // js: test/ext/world.test.mjs:368 (試作で決めたこと 1)
             int checkedSlots = 0;
-            foreach (var carried in new[] { new[] { "koi_hoshiniku", "yakuso", "wasuremizu" }, new[] { "joka_no_ko" } })
+            foreach (var carried in new[] { new[] { "koi_hoshiniku", "yakuso", "wasuremizu" }, new[] { "hayagake_no_gan" } })
             {
                 var s = Trial(3, consumables: carried);
                 Win(s, 50, 2);
                 ClearChoices(s);
                 var start = s.State;
                 Assert.That(start.Loadout.Consumables.Count, Is.EqualTo(carried.Length));
-                foreach (int miasma in new[] { 0, 5, 20, 59, 80, 95 })
+                foreach (bool free in new[] { false, true })
                 {
                     for (int temp = -4; temp <= 4; temp++)
                     {
@@ -303,12 +309,12 @@ namespace Exploration.Tests
                         {
                             foreach (int stamina in new[] { 0, 3, 14 })
                             {
-                                int max = start.With(miasmaPercent: miasma, tempMaxStaminaMod: temp).MaxStamina;
-                                s.State = start.With(miasmaPercent: miasma, tempMaxStaminaMod: temp, hp: hp, stamina: Math.Min(stamina, max));
+                                int max = start.With(tempMaxStaminaMod: temp).MaxStamina;
+                                s.State = start.With(nextStepFree: free, tempMaxStaminaMod: temp, hp: hp, stamina: Math.Min(stamina, max));
                                 foreach (var slot in s.Screen().Consumables)
                                 {
                                     Assert.That(slot.CanUse, Is.EqualTo(slot.Forecast != null),
-                                        $"{slot.Name} at 瘴気 {miasma}% temp {temp} HP {hp}: lit ⇔ forecast");
+                                        $"{slot.Name} free {free} temp {temp} HP {hp}: lit ⇔ forecast");
                                     checkedSlots++;
                                 }
                             }
@@ -332,14 +338,21 @@ namespace Exploration.Tests
         }
 
         [Test]
-        public void 浄化の香_PullsTheGaugeBackTen_AsInTheCSharp()
+        public void 早駆けの丸薬_MakesTheNextNewNodeFree_AndCannotBeStacked()
         {
-            // js: test/ext/world.test.mjs:405
-            var s = Trial(1, consumables: new[] { "joka_no_ko" }, miasma: 30);
+            // tools_and_consumables_v4.md §2.4 / §3: 「次に踏む新しいノード 1 つで日が進まない」.
+            var s = Trial(1, consumables: new[] { "hayagake_no_gan", "hayagake_no_gan" });
             Win(s);
             ClearChoices(s);
+            Assert.That(s.Screen().Consumables[0].Forecast, Is.EqualTo(new[] { ExplorationText.HasteEffect }));
             Assert.That(s.UseConsumable(0), Is.True);
-            Assert.That(s.State.MiasmaPercent, Is.EqualTo(21));
+            Assert.That(s.State.NextStepFree, Is.True);
+            Assert.That(s.CanUseSlot(0), Is.False, "a second one would change nothing yet");
+            Assert.That(s.Screen().Consumables[0].Reason, Is.EqualTo(ExplorationText.NoEffectNow));
+            int days = s.State.DaysLeft;
+            WalkTo(s, n => s.State.Map.Neighbours(s.State.CurrentNodeId).Contains(n.Id));
+            Assert.That(s.State.DaysLeft, Is.EqualTo(days));
+            Assert.That(s.State.NextStepFree, Is.False);
         }
 
         [Test]
@@ -358,7 +371,7 @@ namespace Exploration.Tests
         }
 
         [Test]
-        public void 標の石_AimsFirst_ThenJumpsToAnyUnresolvedNode_PayingItsTime()
+        public void 標の石_AimsFirst_ThenJumpsToAnyUnresolvedNode_PayingItsDay()
         {
             // js: test/ext/world.test.mjs:427
             var s = Trial(4, consumables: new[] { "shirube_no_ishi" });
@@ -392,8 +405,7 @@ namespace Exploration.Tests
             var before = s.State;
             Assert.That(s.Jump(far.Id), Is.True);
             Assert.That(s.State.CurrentNodeId, Is.EqualTo(far.Id));
-            Assert.That(s.State.TimeLeft, Is.EqualTo(before.TimeLeft - 1));
-            Assert.That(s.State.MiasmaPercent, Is.EqualTo(before.MiasmaPercent + before.EffectiveDensity));
+            Assert.That(s.State.DaysLeft, Is.EqualTo(before.DaysLeft - 1));
             Assert.That(s.State.Loadout.Consumables.Count, Is.EqualTo(carried - 1));
             Assert.That(s.IsAiming, Is.False);
             Assert.That(s.State.HasResolved(far.Id), Is.True);
@@ -413,20 +425,20 @@ namespace Exploration.Tests
         }
 
         [Test]
-        public void 標の石_LandingOnABattle_StartsIt_AndALethalJumpAsksFirst()
+        public void 標の石_LandingOnABattle_StartsIt_AndAJumpThatRunsTheCalendarOutAsksFirst()
         {
             // js: test/ext/world.test.mjs:465
-            var s = Trial(4, consumables: new[] { "shirube_no_ishi" }, miasma: 98);
+            var s = Trial(4, consumables: new[] { "shirube_no_ishi" }, days: 2);
             Win(s);
             ClearChoices(s);
             var battle = s.State.Map.Nodes.First(n => n.Kind == NodeKind.Battle && !s.State.HasResolved(n.Id) && n.Id != s.State.CurrentNodeId);
             s.UseConsumable(0);
             Assert.That(s.Jump(battle.Id), Is.True);
-            Assert.That(s.HasPendingStep, Is.True, "99% + 1 reaches 100%");
+            Assert.That(s.HasPendingStep, Is.True, "the last day of the calendar");
             Assert.That(s.PendingJumpSlot, Is.EqualTo(0));
             Assert.That(s.Screen().Card.Kind, Is.EqualTo(CardKind.ConfirmStep));
             Assert.That(s.Act(ScreenAction.ConfirmStep), Is.True);
-            Assert.That(s.State.Phase, Is.EqualTo(RunPhase.MiasmaDeath));
+            Assert.That(s.State.Phase, Is.EqualTo(RunPhase.Expired));
             Assert.That(s.HasPendingBattle, Is.False);
             Assert.That(s.State.Loadout.Consumables, Is.Empty, "the stone was spent");
 
@@ -440,9 +452,9 @@ namespace Exploration.Tests
         }
 
         [Test]
-        public void 標の石_ALethalJumpCancelled_KeepsTheStone()
+        public void 標の石_AJumpThatRunsTheCalendarOut_Cancelled_KeepsTheStone()
         {
-            var s = Trial(4, consumables: new[] { "shirube_no_ishi" }, miasma: 98);
+            var s = Trial(4, consumables: new[] { "shirube_no_ishi" }, days: 2);
             Win(s);
             s.UseConsumable(0);
             Assert.That(s.Jump(s.State.Map.BossId), Is.True);
@@ -455,7 +467,7 @@ namespace Exploration.Tests
         }
 
         [Test]
-        public void 標の石_CannotJumpOnTheLayerBreak_OrWithNoTimeLeft()
+        public void 標の石_CannotJumpOnTheLayerBreak()
         {
             // js: test/ext/world.test.mjs:488
             var s = Trial(2, consumables: new[] { "shirube_no_ishi" });
@@ -573,8 +585,8 @@ namespace Exploration.Tests
             // js: test/ext/world.test.mjs:599
             var s = Trial(1, consumables: new[] { "yakuso", "wasuremizu", "koi_hoshiniku" });
             Win(s);
-            s.Receive(new[] { "joka_no_ko" });
-            Assert.That(s.PendingFound, Is.EqualTo(new[] { "joka_no_ko" }));
+            s.Receive(new[] { "hayagake_no_gan" });
+            Assert.That(s.PendingFound, Is.EqualTo(new[] { "hayagake_no_gan" }));
             Assert.That(s.IsIdle, Is.False);
             Assert.That(s.MapIsLive, Is.False);
             var card = s.Screen().Card;
@@ -589,19 +601,19 @@ namespace Exploration.Tests
             }));
             Assert.That(card.Lines, Is.EqualTo(new[]
             {
-                "浄化の香を拾った。入れ替える枠を選ぶか、諦める。消耗品は拠点へ持ち帰らない。",
-                $"浄化の香: {ExplorationText.PlayerNote("joka_no_ko")}",
+                "早駆けの丸薬を拾った。入れ替える枠を選ぶか、諦める。消耗品は拠点へ持ち帰らない。",
+                $"早駆けの丸薬: {ExplorationText.PlayerNote("hayagake_no_gan")}",
             }));
             Assert.That(s.Act(ScreenAction.TakeFound, "7"), Is.False, "no such slot");
             Assert.That(s.Act(ScreenAction.TakeFound, "x"), Is.False, "not a slot");
             Assert.That(s.Act(ScreenAction.TakeFound, "1"), Is.True);
-            Assert.That(s.State.Loadout.Consumables.Select(c => c.Id), Is.EqualTo(new[] { "yakuso", "joka_no_ko", "koi_hoshiniku" }));
+            Assert.That(s.State.Loadout.Consumables.Select(c => c.Id), Is.EqualTo(new[] { "yakuso", "hayagake_no_gan", "koi_hoshiniku" }));
             Assert.That(s.HasPendingFound, Is.False);
             Assert.That(s.MapIsLive, Is.True);
 
             var other = Trial(1, consumables: new[] { "yakuso", "wasuremizu", "koi_hoshiniku" });
             Win(other);
-            other.Receive(new[] { "joka_no_ko" });
+            other.Receive(new[] { "hayagake_no_gan" });
             Assert.That(other.Act(ScreenAction.LeaveFound), Is.True);
             Assert.That(other.State.Loadout.Consumables.Select(c => c.Id), Is.EqualTo(new[] { "yakuso", "wasuremizu", "koi_hoshiniku" }));
             Assert.That(other.Act(ScreenAction.LeaveFound), Is.False, "nothing waits any more");
@@ -613,9 +625,9 @@ namespace Exploration.Tests
             // Number(null) is 0 in the browser trial, so TakeFound without a slot swaps the first one (a JS quirk, ported).
             var s = Trial(1, consumables: new[] { "yakuso", "wasuremizu", "koi_hoshiniku" });
             Win(s);
-            s.Receive(new[] { "joka_no_ko", "shirube_no_ishi" });
+            s.Receive(new[] { "hayagake_no_gan", "shirube_no_ishi" });
             Assert.That(s.Act(ScreenAction.TakeFound), Is.True);
-            Assert.That(s.State.Loadout.Consumables[0].Id, Is.EqualTo("joka_no_ko"));
+            Assert.That(s.State.Loadout.Consumables[0].Id, Is.EqualTo("hayagake_no_gan"));
             Assert.That(s.Act(ScreenAction.TakeFound, "1.5"), Is.False);
             Assert.That(s.Act(ScreenAction.TakeFound, " 2 "), Is.True);
             Assert.That(s.State.Loadout.Consumables[2].Id, Is.EqualTo("shirube_no_ishi"));
@@ -673,10 +685,10 @@ namespace Exploration.Tests
             // js: ExplorationSession.js:399 (Number(arg)); the cases are the browser's own answers.
             var s = Trial(1, consumables: new[] { "yakuso", "wasuremizu", "koi_hoshiniku" });
             Win(s);
-            s.Receive(new[] { "joka_no_ko" });
+            s.Receive(new[] { "hayagake_no_gan" });
             Assert.That(s.Act(ScreenAction.TakeFound, arg), Is.EqualTo(slot >= 0));
             var ids = s.State.Loadout.Consumables.Select(c => c.Id).ToList();
-            if (slot >= 0) Assert.That(ids[slot], Is.EqualTo("joka_no_ko"));
+            if (slot >= 0) Assert.That(ids[slot], Is.EqualTo("hayagake_no_gan"));
             else Assert.That(ids, Is.EqualTo(new[] { "yakuso", "wasuremizu", "koi_hoshiniku" }));
         }
 
@@ -713,13 +725,13 @@ namespace Exploration.Tests
             {
                 foreach (int layer in new[] { 1, 2, 3 })
                 {
-                    var map = SevenLayers.Of(layer).Map(seed);
+                    var map = Lair.Of(layer, Region.Dragon).Map(seed);
                     var kinds = LayerEvents.Draw(map, layer, id => ExplorationSession.EventSeed(seed, layer, id)).Values.ToList();
                     Assert.That(kinds.Count, Is.EqualTo(2));
                     Assert.That(kinds[0], Is.Not.EqualTo(kinds[1]), $"layer {layer} seed {seed}");
                     if (layer == 1) foreach (var k in kinds) counts[k]++;
                 }
-                var map7 = SevenLayers.Of(7).Map(seed);
+                var map7 = Lair.Of(7, Region.Dragon).Map(seed);
                 var k7 = LayerEvents.Draw(map7, 7, id => ExplorationSession.EventSeed(seed, 7, id)).Values.ToList();
                 Assert.That(k7.Count, Is.EqualTo(1));
                 Assert.That(k7[0], Is.Not.EqualTo(EventKind.Spring));
@@ -829,7 +841,7 @@ namespace Exploration.Tests
             Assert.That(s.State.TempMaxStaminaMod, Is.EqualTo(before.TempMaxStaminaMod - 2));
             Assert.That(s.State.MaxStamina, Is.EqualTo(before.MaxStamina - 2));
             Assert.That(s.State.Stamina, Is.LessThanOrEqualTo(s.State.MaxStamina), "current stamina follows the lower maximum");
-            Assert.That(s.State.TimeLeft, Is.EqualTo(before.TimeLeft), "the 刻限 was paid by the step");
+            Assert.That(s.State.DaysLeft, Is.EqualTo(before.DaysLeft), "the day was paid by the step");
             Assert.That(keeper.Chests, Is.EqualTo(new[] { (1, node, new ChestContents(1, 1, 0)) }));
             var last = s.Events[s.Events.Count - 1];
             Assert.That(last.Cards.Count, Is.EqualTo(3), "the keeper lays out three");
@@ -864,7 +876,7 @@ namespace Exploration.Tests
             for (; seed <= 200; seed++)
             {
                 ulong at = seed;
-                var map = SevenLayers.Of(2).Map(ExplorationSession.LayerSeed(at, 2));
+                var map = Lair.Of(2).Map(ExplorationSession.LayerSeed(at, 2));
                 if (LayerEvents.Draw(map, 2, id => ExplorationSession.EventSeed(at, 2, id)).Values.Contains(EventKind.HeavyChest)) break;
             }
             Assert.That(seed, Is.LessThanOrEqualTo(200UL));
@@ -900,17 +912,17 @@ namespace Exploration.Tests
         }
 
         [Test]
-        public void 受けない_ChangesNothing_ButTheStepAlreadyPaidItsTime()
+        public void 受けない_ChangesNothing_ButTheStepAlreadyPaidItsDay()
         {
             // js: test/ext/world.test.mjs:778
             var (seed, node) = SeedWithEvent(EventKind.StrangeMeal);
             var s = Trial(seed);
             Win(s);
             ClearChoices(s);
-            int t0 = s.State.TimeLeft;
+            int d0 = s.State.DaysLeft;
             WalkTo(s, n => n.Id == node);
             var before = s.State;
-            Assert.That(before.TimeLeft, Is.LessThan(t0));
+            Assert.That(before.DaysLeft, Is.LessThan(d0));
             Assert.That(s.Act(ScreenAction.DeclineEvent), Is.True);
             Assert.That(s.State, Is.SameAs(before));
             Assert.That(s.Events[s.Events.Count - 1].Lines, Is.EqualTo(new[] { "受けずに通り過ぎた" }));
@@ -920,19 +932,19 @@ namespace Exploration.Tests
         }
 
         [Test]
-        public void AnEventOnTheLastTime_StillWaits_BeforeTheLayerBreakCard()
+        public void AnEventWaiting_StillWaits_BeforeTheLayerBreakCard()
         {
-            // js: test/ext/world.test.mjs:796
+            // js: test/ext/world.test.mjs:796 (the phase is set by hand: an event node never ends the layer itself)
             var (seed, node) = SeedWithEvent(EventKind.HeavyChest);
             var s = Trial(seed);
             Win(s);
             ClearChoices(s);
             WalkTo(s, n => n.Id == node);
-            s.State = s.State.With(phase: RunPhase.PushedOut);
+            s.State = s.State.With(phase: RunPhase.LayerCleared);
             Assert.That(s.Screen().Card.Kind, Is.EqualTo(CardKind.EventChoice));
             Assert.That(s.Act(ScreenAction.GoToInterlude), Is.False, "the event is answered first");
             s.Act(ScreenAction.DeclineEvent);
-            Assert.That(s.Screen().Card.Kind, Is.EqualTo(CardKind.PushedOut));
+            Assert.That(s.Screen().Card.Kind, Is.EqualTo(CardKind.LayerCleared));
         }
 
         [Test]
@@ -996,7 +1008,7 @@ namespace Exploration.Tests
         public void TheTraceNode_SaysItWasCollected_OnceTheLayersTraceIsTaken()
         {
             // js: ExplorationScreenBuilder.js:169 (X-3)
-            var map = SevenLayers.Of(1).MapSpec.With(NodeKind.Trace, 1);
+            var map = Lair.Of(1).MapSpec.With(NodeKind.Trace, 1);
             var s = Trial(1, mapFor: (profile, seed) => profile.Layer == 1 ? MapGenerator.Generate(map, seed) : profile.Map(seed));
             var keeper = (TrialKeeper)s.Keeper;
             Win(s);
@@ -1041,21 +1053,30 @@ namespace Exploration.Tests
     /// <summary>The trial tests' helpers: the stand-in keeper and intels, and the walks (js: test/ext/world.test.mjs:37-106).</summary>
     internal static class TrialTestKit
     {
-        public const string Sand = "kokugen_no_suna";
+        /// <summary>日読みの砂 (tools_and_consumables_v4.md §2.4).</summary>
+        public const string Sand = "hiyomi_no_suna";
         public const string Book = "utsushi_no_tobari";
         public const string Wick = "toshin_no_kakera";
-        public const string Mask = "bosho_no_men";
+
+        /// <summary>帰り道の糸 (tools_and_consumables_v4.md §2.4).</summary>
+        public const string Thread = "kaerimichi_no_ito";
         public const string Flute = "ikitsugi_no_fue";
 
-        /// <summary>A trial session from a departure's choice, the way the game builds one, with a stand-in keeper.</summary>
-        public static ExplorationSession Trial(ulong seed, string[] tools = null, string[] consumables = null, int hp = 50, int miasma = 0,
-            IEnemyIntel intel = null, Func<LayerProfile, ulong, LayerMap> mapFor = null, bool? carvingKnown = null)
+        /// <summary>
+        /// A trial session from a departure's choice, the way the game builds one, with a stand-in keeper.
+        /// <paramref name="days"/> is the collapse calendar the life starts on.
+        /// </summary>
+        public static ExplorationSession Trial(ulong seed, string[] tools = null, string[] consumables = null, int hp = 50,
+            int days = Calendar.TotalDays, IEnemyIntel intel = null, Func<LayerProfile, ulong, LayerMap> mapFor = null, bool? carvingKnown = null)
         {
             tools = tools ?? new string[0];
             consumables = consumables ?? new string[0];
             int slots = Math.Max(RunLoadout.ToolSlots, tools.Length);
             var loadout = new RunLoadout(tools.Select(TrialItems.Tool).ToList(), consumables.Select(TrialItems.Consumable).ToList(), slots, trial: true);
-            var start = new RunStart { Seed = seed, Loadout = loadout, Hp = hp, MiasmaPercent = miasma, Trial = true, MapFor = mapFor, CarvingKnown = carvingKnown };
+            var start = new RunStart
+            {
+                Seed = seed, Loadout = loadout, Hp = hp, Calendar = new CalendarState(days), Trial = true, MapFor = mapFor, CarvingKnown = carvingKnown,
+            };
             var session = new ExplorationSession(start, intel);
             session.Keeper = new TrialKeeper();
             return session;
@@ -1131,7 +1152,10 @@ namespace Exploration.Tests
             return path[path.Count - 1];
         }
 
-        /// <summary>Clears layers to the boss until the given layer's entry is reported (js: world.test.mjs:867).</summary>
+        /// <summary>
+        /// Clears layers to the boss until the given layer's entry is reported (js: world.test.mjs:867), going down into
+        /// the dragon's region at the layer-two interlude.
+        /// </summary>
         public static void WalkToLayer(ExplorationSession s, int layer)
         {
             while (s.State.Profile.Layer < layer)
@@ -1140,6 +1164,7 @@ namespace Exploration.Tests
                 Win(s);
                 ClearChoices(s);
                 Assert.That(s.Act(ScreenAction.GoToInterlude), Is.True);
+                if (s.NeedsRegion) Assert.That(s.Act(ScreenAction.ChooseRegion, (int)Region.Dragon), Is.True);
                 Assert.That(s.Act(ScreenAction.Descend), Is.True);
                 if (s.HasPendingBattle) Win(s);
                 ClearChoices(s);

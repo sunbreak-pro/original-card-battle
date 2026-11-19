@@ -154,14 +154,17 @@ namespace Trial.Bridge.Tests
             app.Persist("出立");
         }
 
-        /// <summary>main.js endLife: the end is recorded on the lineage and the life dropped, in one write.</summary>
+        /// <summary>main.js endLife: the end is recorded on the lineage, its calendar moved on (Life.CloseLife), and the life dropped, in one write.</summary>
         private static Lineage EndLife(App app)
         {
             Expedition raw = app.Live.Raw;
             ExplorationState state = raw.Session.State;
             Assert.That(state.IsOver && state.Phase != RunPhase.Exploring, Is.True);
             LifePlace place = Inheritance.PlaceFromState(state);
-            app.Lineage = Inheritance.RecordEnd(app.Lineage, null, place, raw.Mastery, Names.LifeJournal(raw, app.Live), Names.EndOptions(raw, state));
+            Lineage recorded = Inheritance.RecordEnd(app.Lineage, null, place, raw.Mastery, Names.LifeJournal(raw, app.Live), Names.EndOptions(raw, state));
+            LifeClose close = Life.CloseLife(recorded, state, () => throw new AssertionException("the calendar did not run out in three lives"));
+            Assert.That(close.Next.Calendar.DaysLeft, Is.EqualTo(Life.HandoverCalendar(state).DaysLeft));
+            app.Lineage = close.Next;
             app.Keeper.Save.Life = null;
             app.Live = null;
             app.Keeper.Live = null;
@@ -293,10 +296,18 @@ namespace Trial.Bridge.Tests
                         s.Act(ScreenAction.ConfirmEndLife);
                         continue;
                     }
+                    if (NeedsRegion(s)) { s.Act(ScreenAction.ChooseRegion, RegionArg(Region.Dragon)); continue; }
                     s.Act(ScreenAction.Descend);
                     continue;
                 }
                 if (ExplorationReducer.CanInterlude(st)) { s.Act(ScreenAction.GoToInterlude); continue; }
+                // a king down with the others standing: no way down from the king's room, the life ends alive (#888)
+                if (st.Phase == RunPhase.LayerCleared && st.Profile.IsKingLayer)
+                {
+                    s.Act(ScreenAction.AskEndLife);
+                    s.Act(ScreenAction.ConfirmEndLife);
+                    continue;
+                }
                 List<MapNode> open = st.Map.Nodes.Where(n => ExplorationReducer.CanStep(st, n.Id)).ToList();
                 List<MapNode> fresh = open.Where(n => !st.HasResolved(n.Id)).ToList();
                 List<MapNode> pick = fresh.Count > 0 ? fresh : open;
@@ -368,7 +379,7 @@ namespace Trial.Bridge.Tests
             LifeStart ls3 = Inheritance.StartLife(app.Lineage);
             Assert.That(ls3.SurvivorBonus && ls3.ToolSlots == 4 && ls3.DeckMax == 45, Is.True);
             DepartureChoice choice3 = Departure(ls3, 1);
-            choice3.Loadout = Loadout.Of(new[] { "bosho_no_men", "kokugen_no_suna", "ikitsugi_no_fue", "maai_no_kutsu" },
+            choice3.Loadout = Loadout.Of(new[] { "kaerimichi_no_ito", "hiyomi_no_suna", "ikitsugi_no_fue", "maai_no_kutsu" },
                 new[] { "shirube_no_ishi", "yakuso", "koi_hoshiniku" }, 4);
             choice3.BattleToolIds = new[] { "ikitsugi_no_fue", "maai_no_kutsu" };
             SetOut(app, ls3, choice3);

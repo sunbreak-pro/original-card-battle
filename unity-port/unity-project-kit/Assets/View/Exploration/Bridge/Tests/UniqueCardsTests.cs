@@ -125,7 +125,7 @@ namespace Exploration.Bridge.Tests
             var deck = PrototypeDeck.Build();
             return new BattleHandIn(
                 2, NodeKind.Elite, encounter, encounter.Fights.Select(_ => 7).ToList(),
-                Constants.PlayerMaxHp, Constants.PlayerMaxHp, Constants.BaseMaxStamina, Constants.BaseMaxStamina, 0,
+                Constants.PlayerMaxHp, Constants.PlayerMaxHp, Constants.BaseMaxStamina, Constants.BaseMaxStamina,
                 disclosure, deck, Departure.Plain(deck), 11);
         }
     }

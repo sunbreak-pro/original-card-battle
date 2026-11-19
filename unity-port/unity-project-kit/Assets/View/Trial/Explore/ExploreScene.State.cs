@@ -146,18 +146,6 @@ namespace Trial.Explore
         /// <summary>The walk's per-frame step (now), or null.</summary>
         private Action<float> WalkerAnim;
 
-        /// <summary>The gauge's rise (float: a rise interrupted mid-way starts from where it stood).</summary>
-        private float GaugeFrom;
-        private float GaugeTo;
-        private float GaugeAt;
-        private float GaugeNext;
-
-        /// <summary>
-        /// The miasma's breath the gauge and the shade share (#773): its phase is carried from frame to frame, so a
-        /// new reading only changes the pace. The JS reads the phase off the clock, which jumps when the percent moves.
-        /// </summary>
-        private readonly global::Backdrop.MiasmaBreath MiasmaBreathing = new global::Backdrop.MiasmaBreath();
-
         private bool FirstRender = true;
         private string HintOverride;
 
@@ -412,8 +400,8 @@ namespace Trial.Explore
         internal static IconSpec ForecastIcon(string line)
         {
             string l = line ?? "";
-            if (l.StartsWith("刻限", StringComparison.Ordinal)) return new IconSpec("hourglass", ExploreStyle.Ink);
-            if (l.StartsWith("瘴気", StringComparison.Ordinal)) return new IconSpec("miasma", ExploreStyle.Phosphor);
+            // 暦 is the collapse calendar's line (dungeon_exploration_v4.md §6.4); the hourglass the 刻限 had stays its icon
+            if (l.StartsWith("暦", StringComparison.Ordinal)) return new IconSpec("hourglass", ExploreStyle.Ink);
             if (l.StartsWith("最大スタミナ", StringComparison.Ordinal)) return new IconSpec("pip", ExploreStyle.Amber, outline: true);
             if (l.StartsWith("スタミナ", StringComparison.Ordinal)) return new IconSpec("pip", ExploreStyle.Amber);
             if (l.StartsWith("HP", StringComparison.Ordinal)) return new IconSpec("heart", ExploreStyle.Crimson);

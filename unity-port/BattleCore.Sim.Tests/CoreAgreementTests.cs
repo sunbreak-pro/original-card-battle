@@ -8,7 +8,8 @@ namespace BattleCore.Sim.Tests;
 /// <summary>
 /// #594: the battle core and the exploration core do not reference each other (#97), so each writes its
 /// own copy of the numbers a life carries across the two: the max stamina and its bounds, the rest
-/// between layers, the seeded generator and each layer's 瘴気 density. They agree today. This is the one
+/// between layers and the seeded generator. The exploration dropped its 瘴気 densities in #888, so only the
+/// battle core's ChainOrder still holds them. They agree today. This is the one
 /// place that sees both, so a value changed on one side only fails here instead of making the same
 /// character's max stamina or rest differ between the map and the battle (#99).
 /// It lives in BattleCore.Sim.Tests for the same reason as EncounterTableTests: the project is dotnet-only.
@@ -20,12 +21,12 @@ public class CoreAgreementTests
     {
         Assert.Multiple(() =>
         {
-            Assert.That(Miasma.BaseMaxStamina, Is.EqualTo(Constants.BaseMaxStamina));
-            Assert.That(Miasma.MaxStaminaFloor, Is.EqualTo(Constants.MaxStaminaFloor));
+            Assert.That(StaminaRules.BaseMaxStamina, Is.EqualTo(Constants.BaseMaxStamina));
+            Assert.That(StaminaRules.MaxStaminaFloor, Is.EqualTo(Constants.MaxStaminaFloor));
             // #822 raised the battle's ceiling to 20. The exploration's stays 14 (its temporary
             // modifiers stop at +4), so every maximum it hands a battle is one the battle takes.
-            Assert.That(Miasma.MaxStaminaCeil, Is.LessThanOrEqualTo(Constants.MaxStaminaCeil));
-            Assert.That(Miasma.MaxStamina(Miasma.TempModClamp, 0), Is.LessThanOrEqualTo(Constants.MaxStaminaCeil));
+            Assert.That(StaminaRules.MaxStaminaCeil, Is.LessThanOrEqualTo(Constants.MaxStaminaCeil));
+            Assert.That(StaminaRules.MaxStamina(StaminaRules.TempModClamp), Is.LessThanOrEqualTo(Constants.MaxStaminaCeil));
         });
     }
 
@@ -41,12 +42,6 @@ public class CoreAgreementTests
                 Assert.That(dungeon.NextDouble(), Is.EqualTo(battle.NextDouble()), $"seed {seed}, draw {i}");
             }
         }
-    }
-
-    [Test]
-    public void EachLayersDensity_IsTheSameOnBothSides()
-    {
-        Assert.That(SevenLayers.All.Select(layer => layer.Density), Is.EqualTo(ChainOrder.Densities));
     }
 
     /// <summary>

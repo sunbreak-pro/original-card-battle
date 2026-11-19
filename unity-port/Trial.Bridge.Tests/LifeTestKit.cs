@@ -36,6 +36,9 @@ namespace Trial.Bridge.Tests
 
         /// <summary>Answer the explore scene's own cards too (result cards closed, a chest's pick learned, training put off, the receipt closed).</summary>
         public bool Screens { get; set; }
+
+        /// <summary>The region the walk goes down into at the layer-two interlude (seven_layers_v4.md §3.1).</summary>
+        public Region Region { get; set; } = Region.Dragon;
     }
 
     internal static class LifeTestKit
@@ -159,10 +162,22 @@ namespace Trial.Bridge.Tests
                         s.Act(ScreenAction.ConfirmEndLife);
                         continue;
                     }
+                    if (NeedsRegion(s))
+                    {
+                        Assert.That(s.Act(ScreenAction.ChooseRegion, RegionArg(opts.Region)), Is.True, "the region is chosen at the layer-two interlude");
+                        continue;
+                    }
                     Assert.That(s.Act(ScreenAction.Descend), Is.True);
                     continue;
                 }
                 if (ExplorationReducer.CanInterlude(st)) { Assert.That(s.Act(ScreenAction.GoToInterlude), Is.True); continue; }
+                // A king down with the other two standing: the king's room has no way down, so the life ends alive (§2.2).
+                if (st.Phase == RunPhase.LayerCleared && st.Profile.IsKingLayer)
+                {
+                    s.Act(ScreenAction.AskEndLife);
+                    s.Act(ScreenAction.ConfirmEndLife);
+                    continue;
+                }
                 List<MapNode> open = st.Map.Nodes.Where(n => ExplorationReducer.CanStep(st, n.Id)).ToList();
                 Assert.That(open.Count, Is.GreaterThan(0), "no open node");
                 List<MapNode> fresh = open.Where(n => !st.HasResolved(n.Id)).ToList();
@@ -171,6 +186,17 @@ namespace Trial.Bridge.Tests
                 Assert.That(s.Step(node.Id), Is.True, "step refused");
             }
         }
+
+        /// <summary>The layer-two interlude waits on the choice of a region (its card offers the three ways down).</summary>
+        public static bool NeedsRegion(RecordedSession s) =>
+            s.State.Phase == RunPhase.Interlude && s.State.Profile.Layer == Lair.SacramentLayer && s.Region == null;
+
+        /// <summary><see cref="NeedsRegion(RecordedSession)"/> on the raw session.</summary>
+        public static bool NeedsRegion(ExplorationSession s) =>
+            s.State.Phase == RunPhase.Interlude && s.State.Profile.Layer == Lair.SacramentLayer && s.Region == null;
+
+        /// <summary>ScreenAction.ChooseRegion's argument: the region as an invariant-culture integer.</summary>
+        public static string RegionArg(Region region) => ((int)region).ToString(CultureInfo.InvariantCulture);
 
         /// <summary>life.test.mjs preferTrace: a trace node when one is open, else the first.</summary>
         public static MapNode PreferTrace(IReadOnlyList<MapNode> open, ExplorationState st) =>
@@ -184,8 +210,8 @@ namespace Trial.Bridge.Tests
         /// </summary>
         public static DepartureChoice Departure(LifeStart lifeStart, int g = 1)
         {
-            string[] tools = g % 2 == 1 ? new[] { "bosho_no_men", "kokugen_no_suna", "ikitsugi_no_fue" } : new[] { "toshin_no_kakera", "utsushi_no_tobari" };
-            string[] consumables = g % 2 == 1 ? new[] { "yakuso", "joka_no_ko" } : new[] { "koi_hoshiniku", "shirube_no_ishi", "wasuremizu" };
+            string[] tools = g % 2 == 1 ? new[] { "kaerimichi_no_ito", "hiyomi_no_suna", "ikitsugi_no_fue" } : new[] { "toshin_no_kakera", "utsushi_no_tobari" };
+            string[] consumables = g % 2 == 1 ? new[] { "yakuso", "hayagake_no_gan" } : new[] { "koi_hoshiniku", "shirube_no_ishi", "wasuremizu" };
             return new DepartureChoice
             {
                 Deck = PrototypeDeck.Build(),
@@ -278,8 +304,9 @@ namespace Trial.Bridge.Tests
                 }
                 Assert.That(session.Act(ScreenAction.GoToInterlude), Is.True);
                 onInterlude?.Invoke(session.State.Profile.Layer);
+                if (NeedsRegion(session)) Assert.That(session.Act(ScreenAction.ChooseRegion, RegionArg(Region.Dragon)), Is.True);
                 Assert.That(session.Act(ScreenAction.Descend), Is.True);
-                Assert.That(session.ConfirmingDescend, Is.False, "the walk would end the life by 瘴気");
+                Assert.That(session.ConfirmingDescend, Is.False, "the walk would run the calendar out");
             }
         }
 

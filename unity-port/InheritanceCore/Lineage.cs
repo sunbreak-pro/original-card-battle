@@ -29,10 +29,17 @@ namespace InheritanceCore
     // js: core/inheritance/Inheritance.js:28
     public enum LifeEnding
     {
+        /// <summary>
+        /// 瘴気死. The gauge left the exploration (#888) and no life ends this way any more, but lineages saved before
+        /// still hold it (dungeon_exploration_v4.md §7.9): it reads, and counts as a death.
+        /// </summary>
         MiasmaDeath,
         Fallen,
         Completed,
         Survived,
+
+        /// <summary>期限切れ: the calendar ran out while the life was in the lair (RunPhase.Expired).</summary>
+        Expired,
     }
 
     /// <summary>What a trace holds (concept-v3.md §8.3 / §14, tier1-core.md R1-10 / R1-12).</summary>
@@ -54,7 +61,7 @@ namespace InheritanceCore
             RootDefeated = rootDefeated;
         }
 
-        /// <summary>The layer-two carving was read: layer 2 shows 竜神の秘跡 from now on.</summary>
+        /// <summary>The layer-two carving was read: layer 2 shows 龍神の秘跡 from now on.</summary>
         public bool CarvingTaken { get; }
 
         /// <summary>歪みの根 was defeated once (the out-of-game unlock of 根の裂け目).</summary>
@@ -480,11 +487,13 @@ namespace InheritanceCore
     }
 
     /// <summary>
-    /// A lineage (R-01): the closed lives, the life in progress, the untaken traces, the one survivor and the
-    /// player's own knowledge. No lives counter, no reset. Seed is a decimal string (it draws the heirs' names).
+    /// A lineage (R-01): the closed lives, the life in progress, the untaken traces, the one survivor, the
+    /// player's own knowledge and 崩壊の暦 every life shares. No lives counter, no reset. Seed is a decimal string
+    /// (it draws the heirs' names).
     /// </summary>
     public sealed class Lineage
     {
+        /// <param name="calendar">Null is <see cref="CalendarState.Fresh"/>: a world with every day left.</param>
         public Lineage(
             int version,
             string seed,
@@ -492,7 +501,8 @@ namespace InheritanceCore
             LifeRecord? current,
             IEnumerable<Trace> traces,
             Survivor? survivor,
-            PlayerKnowledge player)
+            PlayerKnowledge player,
+            CalendarState? calendar = null)
         {
             Version = version;
             Seed = seed ?? throw new ArgumentNullException(nameof(seed));
@@ -501,6 +511,7 @@ namespace InheritanceCore
             Traces = Frozen.List(traces);
             Survivor = survivor;
             Player = player ?? throw new ArgumentNullException(nameof(player));
+            Calendar = calendar ?? CalendarState.Fresh;
         }
 
         public int Version { get; }
@@ -511,23 +522,50 @@ namespace InheritanceCore
         public Survivor? Survivor { get; }
         public PlayerKnowledge Player { get; }
 
-        public Lineage WithLives(IEnumerable<LifeRecord> lives) => new Lineage(Version, Seed, lives, Current, Traces, Survivor, Player);
-        public Lineage WithCurrent(LifeRecord? current) => new Lineage(Version, Seed, Lives, current, Traces, Survivor, Player);
-        public Lineage WithTraces(IEnumerable<Trace> traces) => new Lineage(Version, Seed, Lives, Current, traces, Survivor, Player);
-        public Lineage WithSurvivor(Survivor? survivor) => new Lineage(Version, Seed, Lives, Current, Traces, survivor, Player);
-        public Lineage WithPlayer(PlayerKnowledge player) => new Lineage(Version, Seed, Lives, Current, Traces, Survivor, player);
+        /// <summary>
+        /// 崩壊の暦 (seven_layers_v4.md §2): it outlives every life. The rules here never move it; whoever closes a
+        /// life counts the life's days and the handover (CalendarState.Handover) and hands the result to
+        /// <see cref="WithCalendar"/>.
+        /// </summary>
+        public CalendarState Calendar { get; }
 
-        /// <summary>The lineage as the JS writes it (Inheritance.toJSON): a fresh JSON value.</summary>
-        public JsonObject ToJson() => new JsonObject
+        public Lineage WithLives(IEnumerable<LifeRecord> lives) => new Lineage(Version, Seed, lives, Current, Traces, Survivor, Player, Calendar);
+        public Lineage WithCurrent(LifeRecord? current) => new Lineage(Version, Seed, Lives, current, Traces, Survivor, Player, Calendar);
+        public Lineage WithTraces(IEnumerable<Trace> traces) => new Lineage(Version, Seed, Lives, Current, traces, Survivor, Player, Calendar);
+        public Lineage WithSurvivor(Survivor? survivor) => new Lineage(Version, Seed, Lives, Current, Traces, survivor, Player, Calendar);
+        public Lineage WithPlayer(PlayerKnowledge player) => new Lineage(Version, Seed, Lives, Current, Traces, Survivor, player, Calendar);
+
+        public Lineage WithCalendar(CalendarState calendar) =>
+            new Lineage(Version, Seed, Lives, Current, Traces, Survivor, Player, calendar ?? throw new ArgumentNullException(nameof(calendar)));
+
+        /// <summary>
+        /// The lineage as the JS writes it (Inheritance.toJSON): a fresh JSON value. The calendar is the C#'s own
+        /// (#888) and is written only once it has moved from <see cref="CalendarState.Fresh"/>, so a lineage on an
+        /// untouched calendar is still the JS's byte for byte.
+        /// </summary>
+        public JsonObject ToJson()
         {
-            ["Version"] = Version,
-            ["Seed"] = Seed,
-            ["Lives"] = Lives.Select(l => (object?)l.ToJson()).ToList(),
-            ["Current"] = Current?.ToJson(),
-            ["Traces"] = Traces.Select(t => (object?)t.ToJson()).ToList(),
-            ["Survivor"] = Survivor?.ToJson(),
-            ["Player"] = Player.ToJson(),
-        };
+            var o = new JsonObject
+            {
+                ["Version"] = Version,
+                ["Seed"] = Seed,
+                ["Lives"] = Lives.Select(l => (object?)l.ToJson()).ToList(),
+                ["Current"] = Current?.ToJson(),
+                ["Traces"] = Traces.Select(t => (object?)t.ToJson()).ToList(),
+                ["Survivor"] = Survivor?.ToJson(),
+                ["Player"] = Player.ToJson(),
+            };
+            if (!Calendar.Equals(CalendarState.Fresh)) o["Calendar"] = CalendarJson(Calendar);
+            return o;
+        }
+
+        /// <summary>{ "DaysLeft": n, "KingReturns": { "dragon": n, … } }, the kings in Region order.</summary>
+        internal static JsonObject CalendarJson(CalendarState calendar)
+        {
+            var kings = new JsonObject();
+            foreach (var pair in calendar.KingReturns) kings[pair.Key.ToToken()] = pair.Value;
+            return new JsonObject { ["DaysLeft"] = calendar.DaysLeft, ["KingReturns"] = kings };
+        }
     }
 
     /// <summary>An heir by generation and name: the writer of a survivor's memo (startLife's JournalFrom).</summary>
@@ -653,10 +691,29 @@ namespace InheritanceCore
             Ending = ending;
         }
 
+        /// <summary>
+        /// A place whose ending is named as a LifeEnding. This is how the legacy MiasmaDeath, which has no RunPhase
+        /// since #888, is still handed in (a JS lineage's calls, an old replay).
+        /// </summary>
+        public LifePlace(int layer, int? nodeId, NodeKind? nodeKind, LifeEnding ending)
+        {
+            Layer = layer;
+            NodeId = nodeId;
+            NodeKind = nodeKind;
+            Ending = Inheritance.PhaseOf(ending);
+            NamedEnding = ending;
+        }
+
         public int Layer { get; }
         public int? NodeId { get; }
         public NodeKind? NodeKind { get; }
-        /// <summary>Null: recordDeath reads it as MiasmaDeath, recordSurvival as Survived, recordEnd refuses it.</summary>
+
+        /// <summary>The ending as a LifeEnding when the place was built from one; null when it was built from a RunPhase.</summary>
+        public LifeEnding? NamedEnding { get; }
+        /// <summary>
+        /// Null: recordDeath reads it as MiasmaDeath (the JS's default, kept so the lineage stays the JS's byte for
+        /// byte), recordSurvival as Survived, recordEnd refuses it.
+        /// </summary>
         public RunPhase? Ending { get; }
     }
 

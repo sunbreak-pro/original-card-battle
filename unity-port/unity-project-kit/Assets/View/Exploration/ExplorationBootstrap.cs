@@ -23,18 +23,18 @@ using UnityEngine.SceneManagement;
 
 namespace Exploration.View
 {
-    public class ExplorationBootstrap : MonoBehaviour, IExplorationActions
+    public class ExplorationBootstrap : MonoBehaviour, IExplorationActions, IExplorationArgActions
     {
         [Header("Run")]
         [Tooltip("Fixes every layer's map. The same seed draws the same maps here and under dotnet test.")]
         public int seed = 1;
         [Tooltip("Draws a fresh seed on every Play and logs it, so a run worth replaying can be typed back in.")]
         public bool randomSeed;
-        [Tooltip("Sets out with 防瘴の面 and two 浄化の香, the items the exploration core already honours.")]
+        [Tooltip("Sets out with 帰り道の糸 and two 早駆けの丸薬, items whose effect the exploration core honours.")]
         public bool trialLoadout = true;
-        [Tooltip("The 瘴気 gauge the life starts at, to try the deep end of the gauge without walking there.")]
-        [Range(0, 99)]
-        public int startMiasma;
+        [Tooltip("Days left on the collapse calendar the life starts on, to try the end of the calendar without walking there.")]
+        [Range(1, Calendar.TotalDays)]
+        public int startDays = Calendar.TotalDays;
 
         [Header("Battle (#99)")]
         [Tooltip("Fights each combat node in the battle scene, loaded on top of this one. Off: the stand-in card's 「勝ったことにする」 / 「倒れたことにする」.")]
@@ -62,7 +62,7 @@ namespace Exploration.View
             {
                 Seed = (ulong)used,
                 Loadout = trialLoadout ? RunStart.TrialLoadout() : RunLoadout.Empty,
-                MiasmaPercent = startMiasma,
+                Calendar = new CalendarState(startDays),
                 ResolvesEvents = true,
             });
             _session = _expedition.Session;
@@ -74,7 +74,7 @@ namespace Exploration.View
         }
 
         // J, C and Esc do what the band's three buttons do; Esc's order is the session's (§6.2).
-        // Every frame the 瘴気 gauge and the shade move on (their rise and breath, #613).
+        // Every frame the backdrop's veil moves on (its crossfade between layers, #614).
         private void Update()
         {
             if (_view == null || _inBattle) return;
@@ -99,6 +99,12 @@ namespace Exploration.View
             if (!_session.Act(action)) return;
             if (action == ScreenAction.NewLife) Debug.Log("[ExplorationBootstrap] new life " + _session.Life + " / seed " + _session.RunSeed);
             Render();
+        }
+
+        // #888: a card button that names what it chooses — the region at the layer-two interlude.
+        public void Act(ScreenAction action, string arg)
+        {
+            if (_session.Act(action, arg)) Render();
         }
 
         public void UseConsumable(int index)

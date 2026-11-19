@@ -87,11 +87,16 @@ namespace InheritanceCore.Tests
             return opts;
         }
 
-        private static LifePlace PlaceOf(JsonObject p) => new LifePlace(
-            (int)p["Layer"]!,
-            p["NodeId"] as int?,
-            p["NodeKind"] is string k ? (NodeKind?)Enum.Parse<NodeKind>(k) : null,
-            p["Ending"] is string e ? (RunPhase?)Enum.Parse<RunPhase>(e) : null);
+        // The JS still hands in MiasmaDeath, which RunPhase lost in #888: that ending is named as a LifeEnding.
+        private static LifePlace PlaceOf(JsonObject p)
+        {
+            int layer = (int)p["Layer"]!;
+            int? nodeId = p["NodeId"] as int?;
+            NodeKind? kind = p["NodeKind"] is string k ? Enum.Parse<NodeKind>(k) : null;
+            if (p["Ending"] is string e && !Enum.TryParse<RunPhase>(e, out _))
+                return new LifePlace(layer, nodeId, kind, Enum.Parse<LifeEnding>(e));
+            return new LifePlace(layer, nodeId, kind, p["Ending"] is string r ? Enum.Parse<RunPhase>(r) : null);
+        }
 
         // ---- what the JS printed, the C# way ---------------------------------------------------------------
 
@@ -139,6 +144,9 @@ namespace InheritanceCore.Tests
         });
 
         private static string ErrorOf(Exception e) => $"{e.GetType().Name}: {e.Message}";
+
+        // The carving now names 龍神 (seven_layers_v4.md §8, #888), while the JS golden still says 竜神.
+        private static string TheJsCarvingName(string text) => text.Replace("龍神の秘跡", "竜神の秘跡");
 
         [Test]
         public void RandomLineages_GiveTheJsLineageViewsAndRefusals()
@@ -238,7 +246,7 @@ namespace InheritanceCore.Tests
                     {
                         if (!step.TryGet(key, out var expected)) continue;
                         string want = expected is string w ? w : S(expected);
-                        string have = got[key] as string ?? "(none)";
+                        string have = TheJsCarvingName(got[key] as string ?? "(none)");
                         if (want.StartsWith("sha:", StringComparison.Ordinal) && got.ContainsKey(key)) have = Sha(have);
                         if (want != have) failures.Add($"{where} {key}\n  js: {want}\n  c#: {got[key] as string ?? "(none)"}");
                     }
