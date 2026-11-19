@@ -21,7 +21,7 @@ const OUTSIDE_LEDGER = [
   'SOURCES.md',
 ];
 const BANNER = /SUPERSEDED|FROZEN|WEB VERSION RECORD|正本は v2 に移った/;
-const BANNER_EXPECTED = /SUPERSEDED|FROZEN|WEB VERSION RECORD|旧正本/;
+const BANNER_EXPECTED = /SUPERSEDED|FROZEN|WEB VERSION RECORD|旧版（/;
 
 function cells(line) {
   return line
@@ -142,9 +142,9 @@ function main(argv) {
       console.error(`no ledger row names the lane "${lane}"`);
       process.exit(1);
     }
-    console.log(`# ${lane} が書く正本（他のレーンはここを書かない）`);
+    console.log(`# ${lane} が書く元になる文書（他の担当はここを書かない）`);
     console.log(writes.map(line).join('\n') || '  なし（読み取り専用）');
-    console.log(`\n# ${lane} が読む正本（食い違いは直さず Issue にする。手順は ${LEDGER} §5）`);
+    console.log(`\n# ${lane} が読む元になる文書（食い違いは直さず Issue にする。手順は ${LEDGER} §5）`);
     console.log(reads.map(line).join('\n') || '  なし');
     return;
   }

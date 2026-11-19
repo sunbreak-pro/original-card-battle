@@ -6,18 +6,18 @@
 | --- | --- | --- |
 | `.session-name` | 自分（git 非追跡） | 自分のチャット名 1 行。`chat-` 接頭辞は付けない（例: `main`） |
 | `.session-branch` | 自分（git 非追跡） | いま作業しているブランチ名。切り替えるたびに書き換える |
-| `handoff/` | 作るのはレーン、消すのは main（git 非追跡） | main への申し送り。Issue にしてほしい課題を 1 件 1 ファイルで置く |
-| `outbox/chat-<self>/` | 自分だけ | 他チャットへの連絡、PR 本文の下書き、停止したループの仮説。起票の依頼は置かない |
+| `handoff/` | 作るのは担当のチャット、消すのは main（git 非追跡） | main への申し送り。Issue にしてほしい課題を 1 件 1 ファイルで置く |
+| `outbox/chat-<self>/` | 自分だけ | 他チャットへの連絡、PR 本文の下書き。起票の依頼は置かない |
 
 ## 申し送り（Issue を立てるのは main だけ）
 
-**GitHub Issue を立てる（`gh issue create`）のは chat-main だけです**（2026-10-06 こうだいさん決定、#367）。レーンは Issue を立てず、課題を申し送りとして `handoff/` に書いて先へ進みます。main が申し送りを回収し、重複を確かめてから `issue-dispatch` で Issue にします。life-editor の「起票は chat-main 一元」（2026-07-11）を移植したものです。
+**GitHub Issue を立てる（`gh issue create`）のは chat-main だけです**（#367。経緯は `.claude/decisions/2026-10-06-issues-created-by-main-only.md`）。担当のチャットは Issue を立てず、課題を申し送りとして `handoff/` に書いて先へ進みます。main が申し送りを回収し、重複を確かめてから `issue-dispatch` で Issue にします。
 
-レーンは自分の担当範囲しか見ていないので、同じ課題が別々のレーンから立ち、ラベルの付け方もばらつきます。正本の食い違いは、どちらの文書を直すかをレーン単独では決められません。2026-10-03〜06 には、立った Issue の約半分がレーン発の「正本の食い違い」でした。
+担当のチャットは自分の担当範囲しか見ていないので、同じ課題が別々の担当から立ち、ラベルの付け方もばらつきます。元になる文書の食い違いは、どちらの文書を直すかを 1 つの担当だけでは決められません。この決まりを入れる前の 4 日間には、立った Issue の約半分が、担当のチャットが立てた元になる文書の食い違いでした。
 
 共通の hook（claude-dotfiles の `bash-guards.mjs`）が、`.claude/issue-workflow.md` の `issueCreation` が `main-only` なのを読んで、`.session-name` が `main` でないチャットの `gh issue create` を止めます。
 
-### レーンがすること
+### 担当のチャットがすること
 
 1. `cp .claude/comm/handoff/_TEMPLATE.md .claude/comm/handoff/YYYY-MM-DD-<self>-<slug>.md` で 1 件 1 ファイルを作る
 2. frontmatter の `kind` を選び、`area` `lane` `prio` に案を書く。値は案で、main が決め直す
@@ -26,7 +26,7 @@
 
 書いた後のファイルは書き換えません。直したいときは新しいファイルを足します。main が読んでいる最中に中身が変わるのを避けるためです。
 
-レーンがしてよいことは、自分宛ての Issue へのコメント（進捗・調査結果・PR へのリンク）と、PR の `Closes #n` による close です。Issue の作成、他レーン宛ての Issue のラベル変更、`gh api` で issues へ直接書き込むことはしません。
+担当のチャットがしてよいことは、自分宛ての Issue へのコメント（進捗・調査結果・PR へのリンク）と、PR の `Closes #n` による close です。Issue の作成、他の担当宛ての Issue のラベル変更、`gh api` で issues へ直接書き込むことはしません。
 
 ### main がすること
 
@@ -66,7 +66,7 @@ Unity Editor での確認が要る完了条件があっても、付けてかま�
 
 ### なぜ git で追跡しないか
 
-申し送りは各 worktree に置いたまま、main が `git worktree list` のパスを直接読みます。追跡すると PR がマージされるまで main に届かず、レーンが Issue ごとにブランチを切り替えるたびに付いて回ります。life-editor は outbox を追跡していて、マージ前のエントリを main が取りこぼしました（2026-07-31）。
+申し送りは各 worktree に置いたまま、main が `git worktree list` のパスを直接読みます。追跡すると PR がマージされるまで main に届かず、担当のチャットが Issue ごとにブランチを切り替えるたびに付いて回ります。life-editor は outbox を追跡していて、マージ前のエントリを main が取りこぼしました。
 
 worktree を消す前に、`handoff/` が空であることを確かめます。`git worktree remove` は無視されたファイルを黙って消します。
 

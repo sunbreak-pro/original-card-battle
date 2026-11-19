@@ -7,9 +7,9 @@ import { check, forLane, parseLedger } from '../sources.mjs';
 
 const LEDGER = `# SOURCES
 
-## 2. 現行の正本
+## 2. 現行の元になる文書
 
-| 主題 | 正本 | 持ち主 | 状態 | 読むレーン |
+| 主題 | 元になる文書 | 持ち主 | 状態 | 読む担当 |
 | --- | --- | --- | --- | --- |
 | 構想 | \`.claude/docs/vision/concept.md\` | design | APPROVED | all |
 | ルール | \`.claude/docs/battle_document/core.md\` | battle | v4 | cards, design |
@@ -79,22 +79,36 @@ test('check reports a missing file, an unlisted doc and a retired doc without a 
   ]);
 });
 
+test('check expects a banner on a retired row whose status starts with 旧版（', () => {
+  const ledger = parseLedger(
+    LEDGER.replace(
+      '## 4. 次の節',
+      '| `.claude/docs/battle_document/ui_old.md` | 旧版（実装の記録） | `ui.md` |\n\n## 4. 次の節',
+    ),
+  );
+  const path = '.claude/docs/battle_document/ui_old.md';
+  assert.deepEqual(check(ledger, tree({ ...COMPLETE, [path]: '# old ui' })), [
+    `retired without a banner in its first 8 lines: ${path}`,
+  ]);
+  assert.deepEqual(check(ledger, tree({ ...COMPLETE, [path]: '> 正本は v2 に移った' })), []);
+});
+
 test('parseLedger reads one table per owner under §2 and drops each header', () => {
   const split = `# SOURCES
 
-## 2. 現行の正本
+## 2. 現行の元になる文書
 
-### main が書く正本
+### main が書く元になる文書
 
-| 主題 | 正本 | 持ち主 | 状態 | 読むレーン |
+| 主題 | 元になる文書 | 持ち主 | 状態 | 読む担当 |
 | --- | --- | --- | --- | --- |
 | 構想 | \`.claude/docs/vision/concept.md\` | main | APPROVED | all |
 
 注記の段落は表ではありません。
 
-### battle が書く正本
+### battle が書く元になる文書
 
-| 主題 | 正本 | 持ち主 | 状態 | 読むレーン |
+| 主題 | 元になる文書 | 持ち主 | 状態 | 読む担当 |
 | :--- | --- | --- | --- | --- |
 | ルール | \`.claude/docs/battle_document/core.md\` | battle | 現行 | cards |
 

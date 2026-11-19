@@ -1,25 +1,25 @@
-# SOURCES — 正本の台帳
+# SOURCES — 元になる文書の一覧
 
-> **役割**: 「どの主題は、どのファイルが正本で、どのレーンが書くか」を 1 か所に集めた台帳です。図書館の蔵書目録にあたります。本の中身は持たず、棚の場所と貸出係だけを持ちます。
-> **この台帳が正本であるもの**: 正本の場所、持ち主のレーン、食い違ったときの手順。他の文書とスキルは同じ表を持たず、ここを指します。
-> **引き方**: `npm run sources -- --lane <slug>` が、そのレーンの書くものと読むものを出します。`npm run sources -- --check` が台帳と実ファイルのずれを検出します。
-> **更新**: 正本を足す・退役させる・持ち主を変えるコミットで、同じコミットに本書の行を含めます。**版を上げるだけのコミットでは本書を触りません**（版の番号は各正本の冒頭の Status が持ちます）。書き手は chat-main です。レーンは自分の PR で自分の表の行だけを直します。
+> **役割**: 「どの主題は、どのファイルが元になる文書で、どの担当が書くか」を 1 か所に集めた一覧です。図書館の蔵書目録にあたります。本の中身は持たず、棚の場所と貸出係だけを持ちます。
+> **この一覧が決めるもの**: 元になる文書の場所、持ち主の担当、食い違ったときの手順。他の文書とスキルは同じ表を持たず、ここを指します。
+> **引き方**: `npm run sources -- --lane <slug>` が、その担当の書くものと読むものを出します。`npm run sources -- --check` が一覧と実ファイルのずれを検出します。
+> **更新**: 元になる文書を足す・使わなくする・持ち主を変えるコミットで、同じコミットに本書の行を含めます。**版を上げるだけのコミットでは本書を触りません**（版の番号はそれぞれの元になる文書の冒頭の Status が持ちます）。書き手は chat-main です。担当は自分の PR で自分の表の行だけを直します。
 
 ## 1. 読む前に main を取り込む
 
-worktree ごとに設計書のコピーを持つので、main を取り込んでいないレーンは古い正本を読みます。2026-09-21 の実測では、レーンが最大 37 コミット、メインのチェックアウトも 16 コミット遅れていました。着手前に `git fetch origin && git merge origin/main --no-edit`（メインは `git pull --ff-only`）を済ませてから本書を引きます。
+worktree ごとに設計書のコピーを持つので、main を取り込んでいない担当は古い元になる文書を読みます。2026-09-21 の実測では、担当が最大 37 コミット、メインのチェックアウトも 16 コミット遅れていました。着手前に `git fetch origin && git merge origin/main --no-edit`（メインは `git pull --ff-only`）を済ませてから本書を引きます。
 
-## 2. 現行の正本
+## 2. 現行の元になる文書
 
 持ち主の `main` は chat-main、`人` はこうだいさんです。パスはリポジトリのルートからの相対です。
 
 **表は持ち主ごとに分けています。** 担当の違う PR が隣り合う行を同時に直すと、git が自動で合流できずにぶつかるためです。行を足すときは自分の持ち主の表に足し、表の桁は揃えません（§6）。
 
-**状態の欄には種類と未反映の印だけを書きます。** 種類は APPROVED / 正典 / 確定 / 現行 / DRAFT / PROPOSED のどれかです。版の番号と改訂の経緯は、各正本の冒頭の Status と改訂履歴を読みます。
+**状態の欄には種類と未反映の印だけを書きます。** 種類は APPROVED / 正典 / 確定 / 現行 / DRAFT / PROPOSED のどれかです。版の番号と改訂の経緯は、それぞれの元になる文書の冒頭の Status と改訂履歴を読みます。
 
-### main が書く正本
+### main が書く元になる文書
 
-| 主題 | 正本 | 持ち主 | 状態 | 読むレーン |
+| 主題 | 元になる文書 | 持ち主 | 状態 | 読む担当 |
 | --- | --- | --- | --- | --- |
 | 構想（生と継承） | `.claude/docs/vision/concept-v3.md` | main | APPROVED | all |
 | 設計原則 | `.claude/docs/vision/core.md` | main | APPROVED | all |
@@ -32,29 +32,29 @@ worktree ごとに設計書のコピーを持つので、main を取り込んで
 | 担当の区分と worktree の決まり | `.claude/CLAUDE.md`（「並行作業は担当ごとの worktree」の節。手順は共通の `worktree-policy` スキル） | main | 現行 | all |
 | ラベルの一覧 | GitHub のラベル（`gh label list -R sunbreak-pro/original-card-battle`） | main | — | all |
 
-### battle が書く正本
+### battle が書く元になる文書
 
-| 主題 | 正本 | 持ち主 | 状態 | 読むレーン |
+| 主題 | 元になる文書 | 持ち主 | 状態 | 読む担当 |
 | --- | --- | --- | --- | --- |
 | 戦闘のルールと数値 | `.claude/docs/battle_document/battle_core_v4.md` | battle | 現行。§19.4 の位置と特性の噛み合い（S9〜S11）未反映 | cards, design |
 | 戦闘の画面と操作 | `.claude/docs/battle_document/battle_ui_ux_v2.md` | battle | 現行。本文が正で、§10 / §11 / §13 は記録。狙うマスの色は `battle-visual-v1.md` を指す（#356） | design |
 | 戦闘コアの実装 | `unity-port/BattleCore/` | battle | C# が正 | cards |
 | 戦闘描写の台本と View | `unity-port/unity-project-kit/Assets/View/Depiction/` | battle | C# はこのリポが正 | design |
 
-`battle_core_v4.md` は §19（2026-09-21 の決定）のうち、§19.4 の S9〜S11 が本文に入っていません（§21.5 の表）。間合いと属性の規則が他の正本と食い違ったら、`battle_core_v4.md` が勝ちます。
+`battle_core_v4.md` は §19（2026-09-21 の決定）のうち、§19.4 の S9〜S11 が本文に入っていません（§21.5 の表）。間合いと属性の規則が他の元になる文書と食い違ったら、`battle_core_v4.md` が勝ちます。
 
 **`battle_ui_ux_v2.md` と `View/Depiction/` の持ち主は battle です**（2026-10-05、縦切りの振り返り #80 で仮を外しました）。見た目の値（色・部品・配置）は design の `battle-visual-v1.md` が持ち、battle は操作の流れ・演出の時間・View の実装を持ちます。縦切りの後の画面の Issue（#348 / #349 / #242）もこの分け方で、見た目の文書の直し（#350）だけを design に置いています。
 
-### cards が書く正本
+### cards が書く元になる文書
 
-| 主題 | 正本 | 持ち主 | 状態 | 読むレーン |
+| 主題 | 元になる文書 | 持ち主 | 状態 | 読む担当 |
 | --- | --- | --- | --- | --- |
 | カード（剣士） | `.claude/docs/card_document/swordsman_cards_v4.md` | cards | 現行 | battle, design |
 | 敵の数値とロースター | `.claude/docs/enemy_document/enemy_roster_v4.md` | cards | DRAFT | battle, design |
 
-### dungeon が書く正本
+### dungeon が書く元になる文書
 
-| 主題 | 正本 | 持ち主 | 状態 | 読むレーン |
+| 主題 | 元になる文書 | 持ち主 | 状態 | 読む担当 |
 | --- | --- | --- | --- | --- |
 | 探索（崩壊の暦・ノード・画面） | `.claude/docs/danjeon_document/dungeon_exploration_v4.md` | dungeon | PROPOSED | design |
 | concept-v3 の未確定の棚卸し | `.claude/docs/danjeon_document/concept_v3_open_items.md` | dungeon | PROPOSED（決定ではない） | design |
@@ -63,9 +63,9 @@ worktree ごとに設計書のコピーを持つので、main を取り込んで
 | ツールと消耗品（出立の枠の中身） | `.claude/docs/danjeon_document/tools_and_consumables_v4.md` | dungeon | PROPOSED | battle |
 | 層ごとの出会い・報酬・イベント | `.claude/docs/danjeon_document/encounters_and_rewards_v4.md` | dungeon | PROPOSED | battle, cards |
 
-### design が書く正本
+### design が書く元になる文書
 
-| 主題 | 正本 | 持ち主 | 状態 | 読むレーン |
+| 主題 | 元になる文書 | 持ち主 | 状態 | 読む担当 |
 | --- | --- | --- | --- | --- |
 | 継承の間の画面と導線 | `.claude/docs/camp_document/CAMP_FACILITIES_DESIGN.md` | design | 現行 | dungeon |
 | 戦闘画面とカードの見た目（色・部品・数字の置き場・意味の伝え方） | `.claude/docs/art_document/battle-visual-v1.md` | design | 確定 | battle, cards |
@@ -78,7 +78,7 @@ worktree ごとに設計書のコピーを持つので、main を取り込んで
 
 ### こうだいさんと各チャットが書くもの
 
-| 主題 | 正本 | 持ち主 | 状態 | 読むレーン |
+| 主題 | 元になる文書 | 持ち主 | 状態 | 読む担当 |
 | --- | --- | --- | --- | --- |
 | 課題の状態・担当・優先順位 | GitHub Issues（`npm run issues:next`） | 人 + main | — | all |
 | タスクの進捗（チャットごと） | `.claude/memory/` | 各チャット | task-tracker 経由 | — |
@@ -92,7 +92,7 @@ worktree ごとに設計書のコピーを持つので、main を取り込んで
 | `.claude/docs/vision/2026-06-11-realism-concept-kickoff.md` | SUPERSEDED | `concept-v3.md` |
 | `.claude/docs/battle_document/battle_core_v3.md` | SUPERSEDED | `battle_core_v4.md` |
 | `.claude/docs/battle_document/battle_logic.md` | PARTIALLY SUPERSEDED | `battle_core_v4.md` |
-| `.claude/docs/battle_document/battle_ui_ux_v1.md` | 旧正本（View v1.1 の実装記録） | `battle_ui_ux_v2.md` |
+| `.claude/docs/battle_document/battle_ui_ux_v1.md` | 旧版（View v1.1 の実装記録） | `battle_ui_ux_v2.md` |
 | `.claude/docs/battle_document/buff_debuff_system.md` | WEB VERSION RECORD | `battle_core_v4.md` §5 |
 | `.claude/docs/battle_document/element_system_spec.md` | WEB VERSION RECORD | `battle_core_v4.md` |
 | `.claude/docs/card_document/SWORDSMAN_CARDS_40.md` | Web 版の記録（バナーなし） | `swordsman_cards_v4.md` |
@@ -116,7 +116,7 @@ worktree ごとに設計書のコピーを持つので、main を取り込んで
 | `src/` | 旧ループの Web 版 | `unity-port/` |
 | `src/ui/battle-lab/core/` | 凍結 | `unity-port/BattleCore/` |
 
-台帳の外に置くもの: `vision/plans/`（計画書）、`art_document/briefs/`（制作指示）、`handover/`、`known-issues/`、`code-explanation/`、リポジトリ直下の `docs/`（レポート・ブリーフ・モック・プロンプト）。これらは正本を引用する側で、食い違えば正本が勝ちます。
+一覧の外に置くもの: `vision/plans/`（計画書）、`art_document/briefs/`（制作指示）、`handover/`、`known-issues/`、`code-explanation/`、リポジトリ直下の `docs/`（レポート・ブリーフ・モック・プロンプト）。これらは元になる文書を引用する側で、食い違えば元になる文書が勝ちます。
 
 ## 4. 食い違ったときに勝つ側
 
@@ -133,17 +133,17 @@ worktree ごとに設計書のコピーを持つので、main を取り込んで
 
 ## 5. 食い違いを見つけたときの手順
 
-1. **他のレーンの正本を直さない。** 直してよいのは自分が持ち主の行だけです（one writer per artifact）
-2. **main への申し送りにする。** レーンは Issue を立てません（`.claude/comm/README.md`「申し送り」）。`kind: conflict` で `.claude/comm/handoff/` に書き、題を「元になる文書の食い違い: <何と何が>」で始め、両方の `file:§` と、直し方ごとに変わる結果を書きます。Issue にするのは main で、ラベルは `type:task` と両方の `area:`、`lane:` は書く側が決まるまで付けません。重複は main が `gh issue list -R sunbreak-pro/original-card-battle --search "元になる文書の食い違い in:title"` と `gh issue list -R sunbreak-pro/original-card-battle --search "正本の食い違い in:title"` の 2 つで確かめます。#116 や #197 など、書き出しを変える前の Issue は旧い題のままだからです
+1. **他の担当の元になる文書を直さない。** 直してよいのは自分が持ち主の行だけです（one writer per artifact）
+2. **main への申し送りにする。** 担当は Issue を立てません（`.claude/comm/README.md`「申し送り」）。`kind: conflict` で `.claude/comm/handoff/` に書き、題を「元になる文書の食い違い: <何と何が>」で始め、両方の `file:§` と、直し方ごとに変わる結果を書きます。Issue にするのは main で、ラベルは `type:task` と両方の `area:`、`lane:` は書く側が決まるまで付けません。重複は main が `gh issue list -R sunbreak-pro/original-card-battle --search "元になる文書の食い違い in:title"` と `gh issue list -R sunbreak-pro/original-card-battle --search "正本の食い違い in:title"` の 2 つで確かめます。#116 や #197 など、書き出しを変える前の Issue は旧い題のままだからです
 3. **止まらずに進む。** どちらに従って進めたかを申し送りと PR 本文に 1 行で書きます。既定は「自分の Issue の Scope が名指しする文書の字義どおり」です
-4. **決着したら、持ち主のレーンが自分の正本を直します。** 同じコミットで本書の状態の欄を直します
+4. **決着したら、持ち主の担当が自分の元になる文書を直します。** 同じコミットで本書の状態の欄を直します
 
-## 6. 正本を腐らせない書き方
+## 6. 元になる文書を腐らせない書き方
 
 - **決定は本文へ入れ込む。** 「§N 20XX-XX-XX の決定」を末尾に積むのは記録としてだけです。積んだ時点で §2 の状態の欄に「§N 未反映」と書き、入れ込んだら消します。`battle_core_v4.md` §16〜§18 と `battle_ui_ux_v2.md` §11 で同じ形の食い違いが 2 回起きました
-- **他の文書の節番号と数値を写さない。** 「戦闘の正本は §16〜§18」のような案内は、相手が改訂されると嘘になります。ファイル名までを書き、節は相手の目次に任せます
-- **正本を新しいファイルに替えたら、旧版にバナーを付けて §3 へ行を移す。** バナーの 1 行目に SUPERSEDED / FROZEN / WEB VERSION RECORD のいずれかと、代わりに読むファイルを書きます
-- **新しい設計書は §2 の自分の表に行を足してから PR にする。** `npm run sources -- --check` が、台帳に無い設計書を検出します
-- **版を上げても本書を書かない。** 版の番号と経緯は正本の冒頭の Status と改訂履歴に書きます。状態の欄に経緯を書き足すと、その行が毎回の PR で書き換わり、並行する PR とぶつかります（2026-10-04 の実測で、9/24 以降のコンフリクト 9 件のうち 6 件が本書でした）
+- **他の文書の節番号と数値を写さない。** 「戦闘の元になる文書は §16〜§18」のような案内は、相手が改訂されると嘘になります。ファイル名までを書き、節は相手の目次に任せます
+- **元になる文書を新しいファイルに替えたら、旧版にバナーを付けて §3 へ行を移す。** バナーの 1 行目に SUPERSEDED / FROZEN / WEB VERSION RECORD のいずれかと、代わりに読むファイルを書きます
+- **新しい設計書は §2 の自分の表に行を足してから PR にする。** `npm run sources -- --check` が、一覧に無い設計書を検出します
+- **版を上げても本書を書かない。** 版の番号と経緯は元になる文書の冒頭の Status と改訂履歴に書きます。状態の欄に経緯を書き足すと、その行が毎回の PR で書き換わり、並行する PR とぶつかります（2026-10-04 の実測で、9/24 以降のコンフリクト 9 件のうち 6 件が本書でした）
 - **表の桁を揃えない。** 1 マスが長くなるたびに全行の空白が変わり、表に触る他の PR がすべてぶつかります。Markdown は prettier の対象から外してあり（`.prettierrc.json` の `requirePragma`）、表の空白は `npm run md:tables` で詰めます。`npm run md:tables -- --check` が残った桁揃えを検出します
-- **同じ正本を触る PR を続けて出すときは、前の PR の上に積む。** 版の行と改訂履歴の末尾は、同じ担当の 2 本の PR でも必ずぶつかります。決まりは `.claude/CLAUDE.md` の「並行作業は担当ごとの worktree」の「続きの PR は積む」です
+- **同じ元になる文書を触る PR を続けて出すときは、前の PR の上に積む。** 版の行と改訂履歴の末尾は、同じ担当の 2 本の PR でも必ずぶつかります。決まりは `.claude/CLAUDE.md` の「並行作業は担当ごとの worktree」の「続きの PR は積む」です
