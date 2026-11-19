@@ -84,9 +84,9 @@
 
 **`audit` 担当の Issue は回しません。** `audit` は読み取り専用で、終わりは PR ではなく main への申し送りか元の Issue へのコメントです。こうした Issue は chat-main が手で扱い、報告では「メインのチャットで扱うもの（audit）」として並べます。
 
-**Issue が名指しする設計書の持ち主と、決めた担当が違えば回しません。** 持ち主は `.claude/docs/SOURCES.md` §2 が決めます（`npm run sources -- --lane <lane>` の「書く元になる文書」）。違う担当に書かせると、1 つのファイルに書き手が 2 人できます。こうした Issue は「メインのチャットで扱うもの」に回します。<!-- words-ok: 「書く元になる文書」は scripts/sources.mjs が出す見出しの引用 -->
+**Issue が名指しする設計書の持ち主と、決めた担当が違えば回しません。** 持ち主は `.claude/docs/SOURCES.md` §2 が決めます（`npm run sources -- --lane <lane>` の「書く元になる文書」）。違う担当に書かせると、1 つのファイルに書き手が 2 人できます。こうした Issue は「メインのチャットで扱うもの」に回します。
 
-**重なりは、Issue の Scope と、担当の「書く元になる文書」で比べます。** 同じ設計書を書く Issue は、同じ回に 2 件入れません。設計書は冒頭の版の行と末尾の改訂履歴を毎回書き換えるので、別々の worktree で書くと必ず衝突します。<!-- words-ok: 「書く元になる文書」は scripts/sources.mjs が出す見出しの引用 -->
+**重なりは、Issue の Scope と、担当の「書く元になる文書」で比べます。** 同じ設計書を書く Issue は、同じ回に 2 件入れません。設計書は冒頭の版の行と末尾の改訂履歴を毎回書き換えるので、別々の worktree で書くと必ず衝突します。
 
 選んだ Issue には `lane` と `prefix` を付けて実装役へ渡します。`prefix` は次のとおりです。
 
@@ -105,7 +105,7 @@
 
 **最初に、名前とブランチを書きます。** `echo wf-{{n}} > {{worktree}}/.claude/comm/.session-name` と `echo {{branch}} > {{worktree}}/.claude/comm/.session-branch` です。あとでこの worktree を Orca で開いたときに、hook が正しい名前を読むためです。
 
-**書いてよい設計書を確かめます。** `cd {{worktree}} && npm run sources -- --lane {{lane}}` を実行し、「書く元になる文書」に出たものだけを書きます。表と元になる文書の一覧が違えば、一覧に従います。`.claude/docs/vision/` `.claude/docs/Overall_document/` `.claude/docs/journal_document/` は main が持つので書きません。<!-- words-ok: 「書く元になる文書」は scripts/sources.mjs が出す見出しの引用 -->
+**書いてよい設計書を確かめます。** `cd {{worktree}} && npm run sources -- --lane {{lane}}` を実行し、「書く元になる文書」に出たものだけを書きます。表と元になる文書の一覧が違えば、一覧に従います。`.claude/docs/vision/` `.claude/docs/Overall_document/` `.claude/docs/journal_document/` は main が持つので書きません。
 
 **元になる文書どうしの食い違いを見つけても、他の担当の元になる文書は直しません。** `.claude/comm/handoff/_TEMPLATE.md` を `{{worktree}}/.claude/comm/handoff/YYYY-MM-DD-wf-{{n}}-{{slug}}.md` に写し、`from: wf-{{n}}` と `kind: conflict` を書きます。題は「元になる文書の食い違い: 〜」で始めます。どちらに従って進めたかを申し送りと notes に 1 行ずつ書き、作業を続けます。新しい Issue が要る課題も、同じ形の申し送りにします。
 
@@ -162,7 +162,7 @@
 
 **書き手を確かめます。** `git diff --name-only origin/main...HEAD` に出たファイルを、`npm run sources` が出す元になる文書の一覧と突き合わせます。一覧は 1 行に 1 つの元になる文書を出し、括弧の中の先頭が持ち主です。持ち主が {{lane}} 以外の元になる文書を変えていれば失敗です。パスが一致するものと、元になる文書として載っているフォルダの下にあるものを数えます。
 
-`npm run sources -- --lane {{lane}}` の「読む元になる文書」は、その担当が読む行しか出しません。そのため、この確認には一覧の全体を使います。<!-- words-ok: 「読む正本」は scripts/sources.mjs が出す見出しの引用 -->
+`npm run sources -- --lane {{lane}}` の「読む元になる文書」は、その担当が読む行しか出しません。そのため、この確認には一覧の全体を使います。
 
 `.claude/memory/` か `.claude/history/` の下を変えていても失敗です。
 

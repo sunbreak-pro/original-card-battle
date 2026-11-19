@@ -16,7 +16,7 @@ SessionStart の hook が、次の 2 種類の警告を毎回出します。
 ## Root Cause
 
 - Workflow（`wf_*`）の実行で作られた worktree が、終わった後も `.claude/worktrees/` に残っていました。dirty の中身は `.claude/settings.local.json` の数行で、本体の作業ではありませんでした。
-- 警告の一覧には、既に消えた worktree（`wf_e67aa560-68e-*`）も残っていました。hook が古い状態を読み直していません。
+- 警告の一覧には、既に消えた worktree（`wf_e67aa560-68e-*`）も残っていました。旧い hook は、古い状態を読み直していませんでした。
 - `.session-name` の警告は、最終 commit の日付だけを見て判定しています。main は作業の少ない期間があるため、正しい名前でも警告が出ます。
 
 ## 再発防止

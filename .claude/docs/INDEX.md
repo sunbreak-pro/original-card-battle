@@ -16,7 +16,7 @@
 
 | Directory | Description |
 | --- | --- |
-| `vision/` | 抽象構想・設計原則（`core.md` + 元になる文書の `concept-v3.md`「生と継承」。`concept-v2.md` は SUPERSEDED）。`vision/plans/` は計画書の置き場で、進行中の計画と、保留中の将来機能（title・NPC・dark market・PixiJS）を置きます。終えた計画書は `.claude/archive/` へ移します |
+| `vision/` | 抽象構想・設計原則（`core.md` と、元になる文書の `concept-v3.md`「生と継承」。`concept-v2.md` は SUPERSEDED）。`vision/plans/` は計画書の置き場で、進行中の計画と、保留中の将来機能（title・NPC・dark market・PixiJS）を置きます。終えた計画書は `.claude/archive/` へ移します |
 | `requirements/` | 機能要件定義（Tier 別）。`tier1-core.md` v6（生と継承ループの必須要件 R1-1〜R1-17）/ `tier2-support.md` v3 / `tier3-experimental.md` v2（実験・凍結・廃棄） |
 | `known-issues/` | Root Cause + 再発防止知見（`INDEX.md` で索引、`LESSONS_LEARNED.md` に 8 知見） |
 | `code-explanation/` | コード解析・脆弱性トラッカー（`vulnerability-remediation-guide.md`）・テスト分析 |
