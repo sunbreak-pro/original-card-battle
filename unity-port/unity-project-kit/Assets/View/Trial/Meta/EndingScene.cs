@@ -111,7 +111,9 @@ namespace Trial.Meta
         /// <summary>meta.css:288 the dot, 8 × 8, lifted 4.</summary>
         private const float DotSize = 8f, DotLift = -4f;
 
-        private static readonly LifeEnding[] Deaths = { LifeEnding.Fallen, LifeEnding.MiasmaDeath };
+        // The legacy 瘴気死 of a lineage saved before #888 still reads as a death; the calendar run out (Expired) ends the
+        // world, which closes as darkly.
+        private static readonly LifeEnding[] Deaths = { LifeEnding.Fallen, LifeEnding.MiasmaDeath, LifeEnding.Expired };
 
         // ---- the scene --------------------------------------------------------------------------------------------
 
@@ -166,7 +168,8 @@ namespace Trial.Meta
             _glow = BoxGraphic.Make(_root, GlowCss + (_died ? GlowDeathCss : ""), GlowX, GlowY, GlowW, GlowH, "ocbg-meta-ending-glow");
 
             // ---- where it ended (ending.js:65-68) ----
-            string placeName = InheritanceText.LayerTitle(layer, SevenLayers.Of(layer).DisplayName(lineage != null && lineage.Player.CarvingTaken));
+            // a life's record keeps its depth, not its region: a deep layer reads 「第 N 層」 (MetaLines.PlaceTitle)
+            string placeName = MetaLines.PlaceTitle(layer, lineage != null && lineage.Player.CarvingTaken);
             _caption = MakePlace(placeName);
 
             // ---- the sheet (ending.js:70-92) ----
@@ -187,7 +190,9 @@ namespace Trial.Meta
             BoxGraphic mark = BoxGraphic.Make(header, MarkCss, 0f, (headerH - MarkSize) / 2f, MarkSize, MarkSize, "ocbg-meta-ending-mark");
             _mark = mark.rectTransform;
             string iconName = _view.Ending == LifeEnding.MiasmaDeath ? "miasma" : _view.Ending == LifeEnding.Completed ? "star" : "person";
-            PathGraphic icon = MetaUtil.Icon(_mark, iconName, MarkIcon, DsTokens.WashiInk);
+            // the calendar run out: the heir's figure, dimmed (the world ended with them)
+            Rgba iconColor = _view.Ending == LifeEnding.Expired ? DsTokens.Steel : DsTokens.WashiInk;
+            PathGraphic icon = MetaUtil.Icon(_mark, iconName, MarkIcon, iconColor);
             Ui.Place(icon.rectTransform, (MarkSize - MarkIcon) / 2f, (MarkSize - MarkIcon) / 2f);
             RectTransform h1 = Ui.Div(header, "h1", MarkSize + Space24, (headerH - h1Style.LineHeightPx) / 2f, 0f, h1Style.LineHeightPx);
             float hx = 0f;

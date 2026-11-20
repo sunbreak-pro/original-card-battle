@@ -29,41 +29,78 @@ namespace Exploration.Tests
             var interlude = session.Screen();
             Assert.That(interlude.Card.Kind, Is.EqualTo(CardKind.Interlude));
             Assert.That(interlude.Card.Buttons.Select(b => b.Action), Is.EqualTo(new[] { ScreenAction.Descend, ScreenAction.AskEndLife }));
-            Assert.That(interlude.Card.Lines.Last(), Is.EqualTo("次は第 2 層　■■の秘跡: 1 刻限ごとに増える瘴気 +1%、刻限 10"));
-            Assert.That(interlude.Miasma.ForecastLabel, Is.EqualTo("降りると +1%"));
+            Assert.That(interlude.Card.Lines.Last(), Is.EqualTo("次は第 2 層　■■の秘跡: ノード 11、真っ直ぐ抜けると 5 日"));
+            Assert.That(interlude.DaysForecastLabel, Is.EqualTo("降りると 1 日進む"));
 
-            int miasma = session.State.MiasmaPercent;
+            int days = session.State.DaysLeft;
             Assert.That(session.Act(ScreenAction.Descend), Is.True);
             var below = session.Screen();
             Assert.That(below.LayerTitle, Is.EqualTo("第 2 層　■■の秘跡"));
-            Assert.That(session.State.MiasmaPercent, Is.EqualTo(interlude.Miasma.NextPercent), "the interlude's forecast is the descent");
-            Assert.That(session.State.MiasmaPercent, Is.EqualTo(miasma + 1));
+            Assert.That(session.State.DaysLeft, Is.EqualTo(interlude.NextDaysLeft), "the interlude's forecast is the descent");
+            Assert.That(session.State.DaysLeft, Is.EqualTo(days - 1), "the entry node takes its day at once");
             Assert.That(below.Card.Kind, Is.EqualTo(CardKind.Battle), "every layer opens on its entry battle");
         }
 
         [Test]
-        public void BeingPushedOutOfTheLastLayerLeavesOnlyTheSurvivorRoute()
+        public void TheLayerTwoInterludeOffersTheThreeRegions_AndDescendWaitsForTheChoice()
         {
             var session = new ExplorationSession();
-            WalkToLayer(session, 7);
-            int entry = session.State.CurrentNodeId;
-            var middle = session.State.Map.Row(1).Select(n => n.Id).ToList();
-            foreach (int id in middle)
-            {
-                Step(session, id);
-                if (session.State.Phase != RunPhase.Exploring) break;
-                Assert.That(session.Step(entry), Is.True);
-            }
-
-            Assert.That(session.State.Phase, Is.EqualTo(RunPhase.PushedOut));
-            Assert.That(session.Screen().Card.Kind, Is.EqualTo(CardKind.PushedOut));
+            WalkToLayer(session, Lair.SacramentLayer);
+            WalkToBoss(session);
             Assert.That(session.Act(ScreenAction.GoToInterlude), Is.True);
 
+            Assert.That(session.NeedsRegion, Is.True);
+            Assert.That(session.Region, Is.Null);
             var card = session.Screen().Card;
             Assert.That(card.Kind, Is.EqualTo(CardKind.Interlude));
-            Assert.That(card.Buttons.Select(b => b.Action), Is.EqualTo(new[] { ScreenAction.AskEndLife }));
-            Assert.That(card.Lines, Has.Member("これより下の層はありません。"));
-            Assert.That(session.Act(ScreenAction.Descend), Is.False);
+            Assert.That(card.Buttons.Select(b => b.Action),
+                Is.EqualTo(new[] { ScreenAction.ChooseRegion, ScreenAction.ChooseRegion, ScreenAction.ChooseRegion, ScreenAction.AskEndLife }));
+            Assert.That(card.Buttons.Take(3).Select(b => b.Label), Is.EqualTo(new[] { "竜の領域", "寄生の領域", "亡霊の領域" }));
+            Assert.That(card.Buttons.Take(3).Select(b => b.Arg),
+                Is.EqualTo(Lair.Regions.Select(r => ((int)r).ToString(System.Globalization.CultureInfo.InvariantCulture))));
+            Assert.That(card.Buttons[0].Note, Is.EqualTo("第 3 層　大黒蛇の住処（竜の領域）: ノード 11、真っ直ぐ抜けると 5 日"));
+
+            Assert.That(session.Act(ScreenAction.Descend), Is.False, "the way down is one of the three");
+            Assert.That(session.TryDescend(), Is.Null);
+            Assert.That(session.Act(ScreenAction.ChooseRegion, (int)Region.Common), Is.False, "layer 3 belongs to a region");
+            Assert.That(session.Act(ScreenAction.ChooseRegion, "nowhere"), Is.False);
+
+            Assert.That(session.Act(ScreenAction.ChooseRegion, (int)Region.Parasite), Is.True);
+            Assert.That(session.Region, Is.EqualTo(Region.Parasite));
+            Assert.That(session.NeedsRegion, Is.False);
+            Assert.That(session.Act(ScreenAction.ChooseRegion, (int)Region.Ghost), Is.False, "the region holds for the life");
+            var chosen = session.Screen().Card;
+            Assert.That(chosen.Buttons.Select(b => b.Action), Is.EqualTo(new[] { ScreenAction.Descend, ScreenAction.AskEndLife }));
+            Assert.That(chosen.Buttons[0].Label, Is.EqualTo("寄生の領域へ降りる"));
+
+            Assert.That(session.Act(ScreenAction.Descend), Is.True);
+            Assert.That(session.State.Profile.Layer, Is.EqualTo(3));
+            Assert.That(session.State.Profile.Region, Is.EqualTo(Region.Parasite));
+        }
+
+        [Test]
+        public void TheRouteFollowsTheChosenRegion_DownToItsKingRoom()
+        {
+            var session = new ExplorationSession();
+            WalkToLayer(session, Lair.KingLayer, Region.Ghost);
+            Assert.That(session.Region, Is.EqualTo(Region.Ghost));
+            Assert.That(session.State.Profile.Name, Is.EqualTo(Lair.Route(Region.Ghost).Last().Name));
+            Assert.That(session.State.Profile.Region, Is.EqualTo(Region.Ghost));
+            Assert.That(session.TryDescend(), Is.Null, "nothing below the king room yet");
+        }
+
+        [Test]
+        public void ARegionHandedInWithTheStart_SkipsTheChoice()
+        {
+            var session = new ExplorationSession(new RunStart { Region = Region.Ghost });
+            Assert.That(session.Region, Is.EqualTo(Region.Ghost));
+            WalkToLayer(session, Lair.SacramentLayer);
+            WalkToBoss(session);
+            session.Act(ScreenAction.GoToInterlude);
+
+            Assert.That(session.NeedsRegion, Is.False);
+            Assert.That(session.Act(ScreenAction.Descend), Is.True);
+            Assert.That(session.State.Profile.Name, Is.EqualTo(Lair.Of(3, Region.Ghost).Name));
         }
 
         [Test]
@@ -127,17 +164,17 @@ namespace Exploration.Tests
         }
 
         [Test]
-        public void ADescentThatEndsTheLifeIsWarnedAndAsksFirst()
+        public void ADescentThatRunsTheCalendarOutIsWarnedAndAsksFirst()
         {
-            // 94% + the five nodes of layer one's straight route = 99%; layer two's entry tips it to 100%.
-            var session = new ExplorationSession(new RunStart { MiasmaPercent = 94 });
+            // Six days: the five nodes of layer one's straight route leave one; layer two's entry takes it.
+            var session = new ExplorationSession(new RunStart { Calendar = new CalendarState(6) });
             WalkToBoss(session);
-            Assert.That(session.State.MiasmaPercent, Is.EqualTo(99));
+            Assert.That(session.State.DaysLeft, Is.EqualTo(1));
             session.Act(ScreenAction.GoToInterlude);
 
             var interlude = session.Screen();
-            Assert.That(interlude.Card.Lines, Has.Member("！ 降りると入口で瘴気が 100% に達し、この生が終わります"));
-            Assert.That(interlude.Miasma.NextPercent, Is.EqualTo(100));
+            Assert.That(interlude.Card.Lines, Has.Member("！ 降りると入口で暦が尽き、世界が終わります"));
+            Assert.That(interlude.NextDaysLeft, Is.EqualTo(0));
 
             Assert.That(session.Act(ScreenAction.Descend), Is.True);
             Assert.That(session.Screen().Card.Kind, Is.EqualTo(CardKind.ConfirmDescend));
@@ -148,29 +185,46 @@ namespace Exploration.Tests
 
             session.Act(ScreenAction.Descend);
             Assert.That(session.Act(ScreenAction.ConfirmDescend), Is.True);
-            Assert.That(session.State.Phase, Is.EqualTo(RunPhase.MiasmaDeath));
+            Assert.That(session.State.Phase, Is.EqualTo(RunPhase.Expired));
             Assert.That(session.State.Profile.Layer, Is.EqualTo(2));
-            Assert.That(session.Screen().Card.Kind, Is.EqualTo(CardKind.MiasmaDeath), "瘴気死 comes before the entry battle");
+            Assert.That(session.Screen().Card.Kind, Is.EqualTo(CardKind.Expired), "the world ends before the entry battle");
         }
 
         [Test]
-        public void AConsumableAtTheInterludeCanSaveTheDescent()
+        public void WithTheEntryDayFree_TheDescentTakesNoDay_AndAsksNothing()
         {
-            var session = new ExplorationSession(new RunStart { MiasmaPercent = 94, Loadout = RunStart.TrialLoadout() });
+            // 日読みの砂 (tools_and_consumables_v4.md §2.4): a layer's entry node takes no day, layer one's included.
+            var sand = new RunLoadout(new[] { ReliefItem.EntryDay("hiyomi_no_suna") }, null, RunLoadout.ToolSlots, true);
+            var session = new ExplorationSession(new RunStart { Calendar = new CalendarState(5), Loadout = sand });
+            Assert.That(session.State.DaysLeft, Is.EqualTo(5), "layer one's entry was free");
+            WalkToBoss(session);
+            Assert.That(session.State.DaysLeft, Is.EqualTo(1));
+            session.Act(ScreenAction.GoToInterlude);
+
+            var interlude = session.Screen();
+            Assert.That(interlude.Card.Lines, Has.None.StartsWith("！"));
+            Assert.That(interlude.Card.Lines, Has.Member("降りても入口では日が進まない"));
+            Assert.That(interlude.NextDaysLeft, Is.EqualTo(1));
+
+            Assert.That(session.Act(ScreenAction.Descend), Is.True);
+            Assert.That(session.ConfirmingDescend, Is.False);
+            Assert.That(session.State.Profile.Layer, Is.EqualTo(2));
+            Assert.That(session.State.Phase, Is.EqualTo(RunPhase.Exploring));
+            Assert.That(session.State.DaysLeft, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void ConsumablesStayUsableAtTheInterlude()
+        {
+            var session = new ExplorationSession(new RunStart { Loadout = RunStart.TrialLoadout() });
             WalkToBoss(session);
             session.Act(ScreenAction.GoToInterlude);
 
             var interlude = session.Screen();
             Assert.That(interlude.Consumables[0].CanUse, Is.True, "items stay usable while the interlude card is up");
             Assert.That(interlude.CanEndLife, Is.True);
-
             Assert.That(session.UseConsumable(0), Is.True);
-            Assert.That(session.State.MiasmaPercent, Is.EqualTo(89));
-            Assert.That(session.Screen().Card.Lines, Has.None.StartsWith("！"));
-
-            Assert.That(session.Act(ScreenAction.Descend), Is.True);
-            Assert.That(session.State.Profile.Layer, Is.EqualTo(2));
-            Assert.That(session.State.Phase, Is.EqualTo(RunPhase.Exploring));
+            Assert.That(session.Screen().Card.Kind, Is.EqualTo(CardKind.Interlude));
         }
 
         [Test]
@@ -195,8 +249,7 @@ namespace Exploration.Tests
 
             Assert.That(session.State.Hp, Is.EqualTo(before.Hp));
             Assert.That(session.State.Stamina, Is.EqualTo(before.Stamina));
-            Assert.That(session.State.TimeLeft, Is.EqualTo(before.TimeLeft));
-            Assert.That(session.State.MiasmaPercent, Is.EqualTo(before.MiasmaPercent));
+            Assert.That(session.State.DaysLeft, Is.EqualTo(before.DaysLeft));
         }
 
         [Test]
@@ -247,7 +300,28 @@ namespace Exploration.Tests
             Assert.That(session.State.Hp, Is.EqualTo(RunStart.DefaultMaxHp));
             // The fall left a trace on layer 1 (#106), so the new life's layer 1 is drawn with it.
             Assert.That(session.State.Map.Fingerprint(),
-                Is.EqualTo(MapGenerator.Generate(Heritage.WithTrace(SevenLayers.Of(1).MapSpec), ExplorationSession.LayerSeed(6UL, 1)).Fingerprint()));
+                Is.EqualTo(MapGenerator.Generate(Heritage.WithTrace(Lair.Of(1).MapSpec), ExplorationSession.LayerSeed(6UL, 1)).Fingerprint()));
+            // A death hands over in 10 days (seven_layers_v4.md §2.1); the new life's entry takes one more.
+            Assert.That(session.Calendar.DaysLeft, Is.EqualTo(Calendar.TotalDays - 1 - Calendar.HandoverFallenDays - 1));
+        }
+
+        [Test]
+        public void ANewLifeAfterSurviving_HandsOverInThreeDays_OrOneWithTheThread()
+        {
+            var plain = Explorable(new ExplorationSession());
+            plain.Act(ScreenAction.AskEndLife);
+            Assert.That(plain.Screen().Card.Lines, Has.Member("次の代の出立までに暦が 3 日進む"));
+            plain.Act(ScreenAction.ConfirmEndLife);
+            Assert.That(plain.Act(ScreenAction.NewLife), Is.True);
+            Assert.That(plain.Calendar.DaysLeft, Is.EqualTo(Calendar.TotalDays - 1 - Calendar.HandoverSurvivedDays - 1));
+
+            // 帰り道の糸 (tools_and_consumables_v4.md §2.4): 3 days become 1.
+            var thread = Explorable(new ExplorationSession(new RunStart { Loadout = RunStart.TrialLoadout() }));
+            thread.Act(ScreenAction.AskEndLife);
+            Assert.That(thread.Screen().Card.Lines, Has.Member("次の代の出立までに暦が 1 日進む"));
+            thread.Act(ScreenAction.ConfirmEndLife);
+            Assert.That(thread.Act(ScreenAction.NewLife), Is.True);
+            Assert.That(thread.Calendar.DaysLeft, Is.EqualTo(Calendar.TotalDays - 1 - Calendar.HandoverShortDays - 1));
         }
 
         [Test]
@@ -277,7 +351,7 @@ namespace Exploration.Tests
         public void TheCarvingRevealsLayerTwosName()
         {
             var session = new ExplorationSession();
-            WalkToLayer(session, SevenLayers.SacramentLayer);
+            WalkToLayer(session, Lair.SacramentLayer);
             var map = session.State.Map;
             int carving = map.Nodes.Single(n => n.Kind == NodeKind.Carving).Id;
 
@@ -285,7 +359,7 @@ namespace Exploration.Tests
             foreach (int id in RouteTo(map, session.State.CurrentNodeId, carving)) Step(session, id);
 
             Assert.That(session.CarvingTaken, Is.True);
-            Assert.That(session.Screen().LayerTitle, Is.EqualTo("第 2 層　竜神の秘跡"));
+            Assert.That(session.Screen().LayerTitle, Is.EqualTo("第 2 層　龍神の秘跡"));
             Assert.That(session.Screen().Node(carving).Lines, Has.Member("読んだ。この層の名前が分かった"));
         }
 

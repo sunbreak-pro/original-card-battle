@@ -198,7 +198,7 @@ namespace Exploration.Bridge.Tests
         // ---- helpers ----
 
         private static RunLoadout Full() =>
-            new RunLoadout(null, Enumerable.Repeat(RunStart.Consumable("joka_no_ko"), RunLoadout.ConsumableSlots).ToList());
+            new RunLoadout(null, Enumerable.Repeat(RunStart.Consumable("hayagake_no_gan"), RunLoadout.ConsumableSlots).ToList());
 
         private static Expedition OnWith(EventKind kind, RunLoadout loadout = null, int hp = RunStart.DefaultMaxHp) =>
             new Expedition(new RunStart { Seed = SeedWithEvent(kind), ResolvesEvents = true, Loadout = loadout ?? RunLoadout.Empty, Hp = hp });

@@ -9,14 +9,14 @@ namespace DungeonContent
     /// </summary>
     public enum ItemEffect
     {
-        /// <summary>Lowers every layer's 瘴気 density for the whole life. Floored at 1.</summary>
-        MiasmaDensity,
+        /// <summary>The entry node of every layer costs no day (日読みの砂, tools_and_consumables_v4.md §2.4).</summary>
+        EntryDayFree,
 
-        /// <summary>Pulls the 瘴気 gauge back down once, by a flat percentage.</summary>
-        MiasmaGauge,
+        /// <summary>A life that comes back alive hands over to the next heir in 1 day instead of 3 (帰り道の糸, §2.4).</summary>
+        ShortHandover,
 
-        /// <summary>Adds 刻限 to every layer.</summary>
-        TimeLimit,
+        /// <summary>The next new node costs no day (早駆けの丸薬, §3).</summary>
+        NextStepFree,
 
         /// <summary>Lets the player pick which enemy a 情報収集 node raises to disclosure 2.</summary>
         ChooseSurveyTarget,
@@ -33,7 +33,7 @@ namespace DungeonContent
         /// <summary>Refills current stamina.</summary>
         RefillStamina,
 
-        /// <summary>Moves to any unresolved node of the current layer. Still costs one 刻限.</summary>
+        /// <summary>Moves to any unresolved node of the current layer. Still costs one day.</summary>
         Teleport,
 
         /// <summary>
@@ -55,7 +55,7 @@ namespace DungeonContent
     /// <summary>Which core reads the effect. The slots are shared, the plumbing is not.</summary>
     public enum EffectSide
     {
-        /// <summary>DungeonCore reads it: 瘴気, 刻限, nodes, the interlude.</summary>
+        /// <summary>DungeonCore reads it: the calendar, nodes, the interlude.</summary>
         Exploration,
 
         /// <summary>BattleCore reads it: position, stamina, Guard, enemy states.</summary>
@@ -66,9 +66,9 @@ namespace DungeonContent
     {
         public static EffectSide Side(this ItemEffect effect) => effect switch
         {
-            ItemEffect.MiasmaDensity => EffectSide.Exploration,
-            ItemEffect.MiasmaGauge => EffectSide.Exploration,
-            ItemEffect.TimeLimit => EffectSide.Exploration,
+            ItemEffect.EntryDayFree => EffectSide.Exploration,
+            ItemEffect.ShortHandover => EffectSide.Exploration,
+            ItemEffect.NextStepFree => EffectSide.Exploration,
             ItemEffect.ChooseSurveyTarget => EffectSide.Exploration,
             ItemEffect.InterludeHeal => EffectSide.Exploration,
             ItemEffect.HealHp => EffectSide.Exploration,
@@ -85,9 +85,9 @@ namespace DungeonContent
         /// <summary>Stable lowercase token, for saves and for the loadout screen's bindings.</summary>
         public static string ToToken(this ItemEffect effect) => effect switch
         {
-            ItemEffect.MiasmaDensity => "miasma_density",
-            ItemEffect.MiasmaGauge => "miasma_gauge",
-            ItemEffect.TimeLimit => "time_limit",
+            ItemEffect.EntryDayFree => "entry_day_free",
+            ItemEffect.ShortHandover => "short_handover",
+            ItemEffect.NextStepFree => "next_step_free",
             ItemEffect.ChooseSurveyTarget => "choose_survey_target",
             ItemEffect.InterludeHeal => "interlude_heal",
             ItemEffect.HealHp => "heal_hp",

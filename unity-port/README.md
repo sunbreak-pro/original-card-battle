@@ -62,11 +62,13 @@ unity-port/
 │   ├── MapGenerator.cs         仕様 + 種 → 地図
 │   ├── MapValidator.cs         到達できないノードが無いことなどの検査
 │   ├── LayerMap.cs             生成された地図（ノード・辺・指紋）
-│   ├── SevenLayers.cs          七層の濃度・刻限・ノード数（seven_layers_v4.md §2）
-│   ├── Miasma.cs               蓄積・20% ごとの最大スタミナ・和らげる手段の計算
+│   ├── Region.cs               共通の 1〜2 層と、竜・寄生・亡霊の 3 つの領域（seven_layers_v4.md §3.1）
+│   ├── Lair.cs                 領域ごとの 7 層の並び・層の名前・地図（seven_layers_v4.md §3）
+│   ├── Calendar.cs             崩壊の暦。残りの日数・倒した王が戻るまでの日数・次の生への引き継ぎの日数（seven_layers_v4.md §2）
+│   ├── StaminaRules.cs         探索側の最大スタミナ（一時的な増減の ±4 の上限）と、ノードごとの回復
 │   ├── RunLoadout.cs           ツール 3 枠・消耗品 3 枠の口（中身は DungeonContent）
 │   ├── ExplorationState.cs     1 階層ぶんの状態（不変）
-│   ├── ExplorationReducer.cs   刻限と瘴気の遷移・「この生を終える」
+│   ├── ExplorationReducer.cs   ノードごとに暦を 1 日進める遷移・王に勝ったときの暦の停止・「この生を終える」
 │   └── LayerEncounters.cs      層ごとの出会いの表（encounters_and_rewards_v4.md §2、敵は roster §9、id は roster §1.8）
 ├── DungeonCore.Tests/          NUnit（net10.0）。種の再現・到達性・七層を通した潜行
 ├── DungeonContent/             持ち物の目録（netstandard2.1 / C# 9・データだけ・参照ゼロ）
@@ -83,7 +85,7 @@ unity-port/
 └── PHASE3-KICKOFF.md           Phase 3（実 Unity + UGUI）の Windows 手順 + MCP 選定
 ```
 
-**`DungeonCore` は `BattleCore` を参照しません**（2026-09-21、Issue #97）。戦闘コアは battle レーン、探索コアは dungeon レーンが書くので、片方の作り直しがもう片方のビルドを壊さないように切り離しています。瘴気から最大スタミナを引く規則は一時期どちらにもありましたが、#69 が `BattleCore` 側を落としたので、いまは `DungeonCore.Miasma` だけが持ちます。`IRng` は同じ形のものが両方にあり、まとめるかどうかは探索と戦闘を繋ぐ Issue #99 で決めます。
+**`DungeonCore` は `BattleCore` を参照しません**（2026-09-21、Issue #97）。戦闘コアは battle レーン、探索コアは dungeon レーンが書くので、片方の作り直しがもう片方のビルドを壊さないように切り離しています。瘴気から最大スタミナを引く規則は一時期どちらにもありましたが、#69 が `BattleCore` 側を落とし、#888 が瘴気そのものを探索から外しました。探索側の最大スタミナは、いまは `DungeonCore.StaminaRules` が持ちます。`IRng` は同じ形のものが両方にあり、まとめるかどうかは探索と戦闘を繋ぐ Issue #99 で決めます。
 
 **`DungeonContent` はどのコアも参照しません**（2026-09-21、Issue #100）。持ち物の目録はデータだけなので、探索コアからも戦闘コアからも出立の画面からも、余計なものを引き連れずに読めます。効果を実際に適用するのは読む側です。
 

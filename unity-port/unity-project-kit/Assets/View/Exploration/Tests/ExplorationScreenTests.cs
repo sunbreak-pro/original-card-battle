@@ -16,28 +16,42 @@ namespace Exploration.Tests
         {
             var session = new ExplorationSession();
             var screen = session.Screen();
-            var layer = SevenLayers.Of(1);
 
             Assert.That(screen.LayerTitle, Is.EqualTo("第 1 層　燦光の樹海"));
-            Assert.That(screen.TimeLabel, Is.EqualTo($"刻限 {layer.TimeLimit - 1} / {layer.TimeLimit}"));
-            Assert.That(screen.Miasma.Label, Is.EqualTo($"瘴気 {layer.Density}%"));
+            Assert.That(screen.DaysLeft, Is.EqualTo(Calendar.TotalDays - 1), "the entry node takes its day on arrival");
+            Assert.That(screen.DaysLabel, Is.EqualTo($"残り {Calendar.TotalDays - 1} 日"));
+            Assert.That(screen.CalendarFrozen, Is.False);
+            Assert.That(screen.CalendarNote, Is.Empty);
             Assert.That(screen.HpLabel, Is.EqualTo("HP 50 / 50"));
             Assert.That(screen.Nodes.Count, Is.EqualTo(session.State.Map.NodeCount));
             Assert.That(screen.CurrentNodeId, Is.EqualTo(session.State.Map.EntryId));
         }
 
         [Test]
-        public void TheScreenNamesTheLayerItsBackdropIsDrawnFor()
+        public void TheScreenNamesTheBackdropSlotOfTheLayer()
         {
-            // The view lays ExplorationBackdropSpec.For(screen.Layer) behind the map (#614), so the number
-            // must follow the descent, not stay on layer one.
+            // The view lays ExplorationBackdropSpec.For(screen.BackdropLayer) behind the map (#614). The regions share
+            // depths, so the slot is the profile's, not the depth (seven_layers_v4.md §3.4).
             var session = new ExplorationSession();
-            Assert.That(session.Screen().Layer, Is.EqualTo(1));
+            Assert.That(session.Screen().BackdropLayer, Is.EqualTo(Lair.Of(1).BackdropLayer));
 
-            WalkToLayer(session, 3);
+            WalkToLayer(session, 3, Region.Ghost);
             var screen = session.Screen();
 
             Assert.That(screen.Layer, Is.EqualTo(3));
+            Assert.That(screen.BackdropLayer, Is.EqualTo(Lair.Of(3, Region.Ghost).BackdropLayer));
+        }
+
+        [Test]
+        public void ARegionLayerIsTitledWithItsRegion()
+        {
+            var session = new ExplorationSession(new RunStart { Region = Region.Dragon });
+            WalkToLayer(session, 3);
+            Assert.That(session.Screen().LayerTitle, Is.EqualTo("第 3 層　大黒蛇の住処（竜の領域）"));
+
+            WalkToLayer(session, 4);
+            Assert.That(session.Screen().LayerTitle, Is.EqualTo(Lair.Of(4, Region.Dragon).Name), "an unnamed layer reads 「竜の領域 第 4 層」");
+            Assert.That(session.Screen().LayerTitle, Does.StartWith("竜の領域"));
         }
 
         [Test]
@@ -105,14 +119,28 @@ namespace Exploration.Tests
                         Assert.That(session.Step(node.Id, option.Choice), Is.True);
                         var taken = session.State;
 
-                        Assert.That(taken.TimeLeft, Is.EqualTo(option.Forecast.TimeAfter));
-                        Assert.That(taken.MiasmaPercent, Is.EqualTo(option.Forecast.MiasmaAfter));
+                        Assert.That(taken.DaysLeft, Is.EqualTo(option.Forecast.DaysAfter));
                         Assert.That(taken.MaxStamina, Is.EqualTo(option.Forecast.MaxStaminaAfter));
                         Assert.That(taken.Stamina, Is.EqualTo(option.Forecast.StaminaAfter));
                         Assert.That(taken.Hp, Is.EqualTo(option.Forecast.HpAfter));
                     }
                 }
             }
+        }
+
+        [Test]
+        public void AStepForetellsTheDayItTakes()
+        {
+            var session = Explorable(new ExplorationSession());
+            int days = session.State.DaysLeft;
+            var node = session.Screen().Nodes.First(n => n.Standing == NodeStanding.Reachable && n.Kind != NodeKind.Rest);
+            var forecast = node.Options.Single().Forecast;
+
+            Assert.That(forecast.DaysBefore, Is.EqualTo(days));
+            Assert.That(forecast.DaysAfter, Is.EqualTo(days - 1));
+            Assert.That(forecast.Lines.First(), Is.EqualTo($"暦 残り {days} → {days - 1} 日"));
+            Assert.That(forecast.Warnings, Is.Empty);
+            Assert.That(forecast.IsExpiry, Is.False);
         }
 
         [Test]
@@ -144,11 +172,11 @@ namespace Exploration.Tests
             Assert.That(back.Standing, Is.EqualTo(NodeStanding.Revisit));
             Assert.That(back.Options.Single().Label, Is.EqualTo("移る"));
             Assert.That(back.Options.Single().Forecast, Is.Null);
-            Assert.That(back.Note, Does.Contain("刻限を使わずに"));
+            Assert.That(back.Note, Does.Contain("日数を使わずに"));
 
-            int timeBefore = session.State.TimeLeft;
+            int daysBefore = session.State.DaysLeft;
             Assert.That(session.Step(entry), Is.True);
-            Assert.That(session.State.TimeLeft, Is.EqualTo(timeBefore));
+            Assert.That(session.State.DaysLeft, Is.EqualTo(daysBefore));
         }
 
         [Test]
@@ -179,79 +207,31 @@ namespace Exploration.Tests
         }
 
         [Test]
-        public void TheGaugeForetellsTheNextNewNode()
+        public void TheBandForetellsTheDayOfTheNextNewNode()
         {
-            var session = Explorable(new ExplorationSession());
-            var gauge = session.Screen().Miasma;
+            var screen = Explorable(new ExplorationSession()).Screen();
 
-            Assert.That(gauge.NextPercent, Is.EqualTo(gauge.Percent + SevenLayers.Of(1).Density));
-            Assert.That(gauge.ForecastLabel, Is.EqualTo($"次の 1 歩で +{SevenLayers.Of(1).Density}%"));
-            Assert.That(gauge.StepLines, Is.EqualTo(new[] { 20, 40, 60, 80 }));
+            Assert.That(screen.NextDaysLeft, Is.EqualTo(screen.DaysLeft - 1));
+            Assert.That(screen.DaysForecastLabel, Is.EqualTo("次の 1 歩で 1 日進む"));
         }
 
         [Test]
-        public void TheGaugeHoldsItsReadingsAsFractionsOfTheDeathLine()
+        public void AFrozenCalendarSaysWhichKingIsDownAndForHowLong()
         {
-            var session = Explorable(new ExplorationSession(new RunStart { MiasmaPercent = 18 }));
-            var gauge = session.Screen().Miasma;
+            // seven_layers_v4.md §2.2: while a king is down no day passes; the days till its return do.
+            var start = CalendarState.Fresh.KingDown(Region.Dragon);
+            var session = Explorable(new ExplorationSession(new RunStart { Calendar = start }));
+            var screen = session.Screen();
 
-            Assert.That(gauge.Percent, Is.EqualTo(19));
-            Assert.That(gauge.Fill, Is.EqualTo(0.19f).Within(1e-6f));
-            Assert.That(gauge.NextFill, Is.EqualTo((float)gauge.NextPercent / Miasma.DeathAt).Within(1e-6f));
-            Assert.That(gauge.StepLineFills.Count, Is.EqualTo(gauge.StepLines.Count));
-            for (int i = 0; i < gauge.StepLines.Count; i++)
-                Assert.That(gauge.StepLineFills[i], Is.EqualTo(0.2f * (i + 1)).Within(1e-6f));
-        }
+            Assert.That(screen.CalendarFrozen, Is.True);
+            Assert.That(screen.DaysLeft, Is.EqualTo(Calendar.TotalDays), "the entry's day did not count");
+            int back = session.State.Calendar.KingReturns[Region.Dragon];
+            Assert.That(back, Is.EqualTo(Calendar.KingReturnDays - 1), "the entry's day brought the king a day nearer");
+            Assert.That(screen.CalendarNote, Is.EqualTo($"竜王が戻るまで {back} 日。暦は止まっている"));
+            Assert.That(screen.DaysForecastLabel, Is.Empty, "the note says it already");
 
-        [Test]
-        public void CrossingATwentyPercentLineIsWarned()
-        {
-            var session = Explorable(new ExplorationSession(new RunStart { MiasmaPercent = 18 }));
-            Assert.That(session.State.MiasmaPercent, Is.EqualTo(19));
-
-            var node = session.Screen().Nodes.First(n => n.Standing == NodeStanding.Reachable && n.Kind != NodeKind.Rest);
-            var forecast = node.Options.Single().Forecast;
-
-            Assert.That(forecast.MiasmaAfter, Is.EqualTo(20));
-            Assert.That(forecast.MaxStaminaAfter, Is.EqualTo(forecast.MaxStaminaBefore - 1));
-            Assert.That(forecast.Warnings, Has.Member("瘴気が 20% を越え、最大スタミナが 10 から 9 に下がります"));
-            Assert.That(forecast.IsLethal, Is.False);
-        }
-
-        [Test]
-        public void TheGaugeForecastOfAStepAcrossALineStartsWithTheCautionMark()
-        {
-            // battle-visual-v1 §2.5: the share ahead is drawn in 注意 when it crosses a 20% line, and 注意 comes with △.
-            var crossing = Explorable(new ExplorationSession(new RunStart { MiasmaPercent = 18 })).Screen().Miasma;
-            Assert.That(crossing.Percent, Is.EqualTo(19));
-            Assert.That(crossing.NextPercent, Is.EqualTo(20));
-            Assert.That(crossing.ForecastLabel, Is.EqualTo($"△ 次の 1 歩で +{SevenLayers.Of(1).Density}%"));
-
-            var plain = Explorable(new ExplorationSession(new RunStart { MiasmaPercent = 10 })).Screen().Miasma;
-            Assert.That(plain.ForecastLabel, Does.Not.StartWith("△"));
-        }
-
-        [Test]
-        public void RestingAcrossALineWarnsOnlyWhenTheMaximumReallyFalls()
-        {
-            // A 休息 lifts max stamina by 2, so crossing 20% on 「休む」 still raises it: no warning.
-            // 「訓練する」 on the same node crosses the same line without the lift, and is warned.
-            ExplorationSession session = null;
-            for (ulong seed = 1; seed <= 200 && session == null; seed++)
-            {
-                var probe = Explorable(new ExplorationSession(new RunStart { Seed = seed, MiasmaPercent = 18 }));
-                if (probe.Screen().Nodes.Any(n => n.Standing == NodeStanding.Reachable && n.Kind == NodeKind.Rest)) session = probe;
-            }
-            Assert.That(session, Is.Not.Null, "no seed in 1..200 opens next to a rest node");
-
-            var rest = session.Screen().Nodes.First(n => n.Standing == NodeStanding.Reachable && n.Kind == NodeKind.Rest);
-            var restForecast = rest.Options.Single(o => o.Choice == RestChoice.Rest).Forecast;
-            var trainForecast = rest.Options.Single(o => o.Choice == RestChoice.Train).Forecast;
-
-            Assert.That(restForecast.MaxStaminaAfter, Is.EqualTo(11));
-            Assert.That(restForecast.Warnings, Is.Empty);
-            Assert.That(trainForecast.MaxStaminaAfter, Is.EqualTo(9));
-            Assert.That(trainForecast.Warnings, Has.Member("瘴気が 20% を越え、最大スタミナが 10 から 9 に下がります"));
+            var node = screen.Nodes.First(n => n.Standing == NodeStanding.Reachable && n.Kind != NodeKind.Rest);
+            Assert.That(node.Options.Single().Forecast.Lines.First(), Is.EqualTo("暦は止まっている"));
         }
 
         [Test]
@@ -264,79 +244,145 @@ namespace Exploration.Tests
             Assert.That(far.Title, Is.EqualTo($"{far.Glyph}　{far.KindLabel}"));
 
             var near = screen.Nodes.First(n => n.Standing == NodeStanding.Reachable && n.Kind != NodeKind.Rest);
-            Assert.That(near.Detail.First(), Is.EqualTo("入ると刻限を 1 使う"));
-            Assert.That(near.Detail, Has.Some.StartsWith("【進む】刻限 "));
+            Assert.That(near.Detail.First(), Is.EqualTo("入ると暦が 1 日進む"));
+            Assert.That(near.Detail, Has.Some.StartsWith("【進む】暦 残り "));
         }
 
         [Test]
         public void MaxStaminaIsSpeltOut()
         {
-            var session = Explorable(new ExplorationSession(new RunStart { MiasmaPercent = 40 }));
-            Assert.That(session.Screen().MaxStaminaLabel, Is.EqualTo("最大 8 = 10 − 瘴気 2"));
+            var session = Explorable(new ExplorationSession());
+            Assert.That(session.Screen().MaxStaminaLabel, Is.EqualTo("最大 10"), "nothing moves it");
+
+            session.State = session.State.With(tempMaxStaminaMod: 2);
+            Assert.That(session.Screen().MaxStaminaLabel, Is.EqualTo("最大 12 = 10 + 一時 2"));
+
+            session.State = session.State.With(tempMaxStaminaMod: -3);
+            Assert.That(session.Screen().MaxStaminaLabel, Is.EqualTo("最大 7 = 10 − 一時 3"));
         }
 
         [Test]
-        public void AStepThatEndsTheLifeWaitsForAConfirmation()
+        public void AStepThatRunsTheCalendarOutWaitsForAConfirmation()
         {
-            var session = Explorable(new ExplorationSession(new RunStart { MiasmaPercent = 98 }));
+            // Two days left: the entry takes one, so the next new node takes the last.
+            var session = Explorable(new ExplorationSession(new RunStart { Calendar = new CalendarState(2) }));
+            Assert.That(session.State.DaysLeft, Is.EqualTo(1));
             int target = session.State.ReachableUnresolved().First();
             var option = session.Screen().Node(target).Options.First();
             Assert.That(option.NeedsConfirm, Is.True);
-            Assert.That(option.Forecast.Warnings, Has.Member("ここで瘴気が 100% に達し、この生が終わります"));
+            Assert.That(option.Forecast.IsExpiry, Is.True);
+            Assert.That(option.Forecast.Warnings, Is.EqualTo(new[] { "ここで暦が尽き、龍神が目覚めます。世界が終わり、最初からやり直します" }));
 
             Assert.That(session.Step(target, option.Choice), Is.True);
-            Assert.That(session.Screen().Card.Kind, Is.EqualTo(CardKind.ConfirmStep));
+            var ask = session.Screen().Card;
+            Assert.That(ask.Kind, Is.EqualTo(CardKind.ConfirmStep));
+            Assert.That(ask.Lines, Is.EqualTo(new[] { "ここで暦が尽き、龍神が目覚めます。世界が終わり、最初からやり直します。" }));
             Assert.That(session.State.CurrentNodeId, Is.Not.EqualTo(target), "nothing is taken before the confirmation");
 
             Assert.That(session.Act(ScreenAction.Cancel), Is.True);
             Assert.That(session.Screen().Card.IsShown, Is.False);
-            Assert.That(session.State.MiasmaPercent, Is.EqualTo(99));
+            Assert.That(session.State.DaysLeft, Is.EqualTo(1));
 
             session.Step(target, option.Choice);
             Assert.That(session.Act(ScreenAction.ConfirmStep), Is.True);
-            Assert.That(session.State.Phase, Is.EqualTo(RunPhase.MiasmaDeath));
+            Assert.That(session.State.Phase, Is.EqualTo(RunPhase.Expired));
+            Assert.That(session.State.IsOver, Is.True);
+            Assert.That(session.HasPendingBattle, Is.False, "the world ends before any fight");
 
             var end = session.Screen().Card;
-            Assert.That(end.Kind, Is.EqualTo(CardKind.MiasmaDeath), "瘴気死 comes before any fight");
-            Assert.That(end.Buttons.Single().Action, Is.EqualTo(ScreenAction.NewLife));
+            Assert.That(end.Kind, Is.EqualTo(CardKind.Expired));
+            Assert.That(end.Lines.First(), Is.EqualTo("暦が尽き、龍神が目覚めた。世界が終わり、最初からやり直す。"));
+            // §6.9: the one button of every end card, and the one the Enter key presses (Buttons[0]); without it the
+            // world's end is a card the player cannot leave.
+            Assert.That(end.Buttons.Select(b => b.Action), Is.EqualTo(new[] { ScreenAction.NewLife }));
+            Assert.That(end.Buttons[0].Label, Is.EqualTo("新しい生で潜り直す"));
         }
 
         [Test]
-        public void TheLastTimeUnitWarnsOfBeingPushedOut()
+        public void ANewLifeAfterTheCalendarRanOut_StartsOverOnTheFirstDay_WithNoTraceOfTheWorldBefore()
         {
-            // Layer seven: 刻限 4 over rows 1-3-1. Entry, two middles, then the third middle spends the last unit.
-            var session = new ExplorationSession();
-            WalkToLayer(session, 7);
-            int entry = session.State.CurrentNodeId;
-            var middle = session.State.Map.Row(1).Select(n => n.Id).ToList();
+            var session = Explorable(new ExplorationSession(new RunStart { Seed = 5, Calendar = new CalendarState(2) }));
+            int target = session.State.ReachableUnresolved().First();
+            session.Step(target, session.Screen().Node(target).Options.First().Choice);
+            session.Act(ScreenAction.ConfirmStep);
+            Assert.That(session.State.Phase, Is.EqualTo(RunPhase.Expired));
+            Assert.That(session.Traces.Traces, Is.Not.Empty, "the expired life left its trace on this world");
 
-            Step(session, middle[0]);
-            Assert.That(session.Step(entry), Is.True);
-            Step(session, middle[1]);
-            Assert.That(session.Step(entry), Is.True);
-
-            var last = session.Screen().Node(middle[2]);
-            Assert.That(last.Options.First().Forecast.Warnings, Has.Member("刻限が尽き、この層の行動が終わります"));
+            Assert.That(session.Act(ScreenAction.NewLife), Is.True);
+            Assert.That(session.Life, Is.EqualTo(2));
+            Assert.That(session.State.Profile.Layer, Is.EqualTo(1));
+            Assert.That(session.State.Phase, Is.EqualTo(RunPhase.Exploring));
+            // A fresh calendar, less the new life's own entry day (not the 10 days a death hands over).
+            Assert.That(session.Calendar.DaysLeft, Is.EqualTo(Calendar.TotalDays - 1));
+            Assert.That(session.Calendar.IsFrozen, Is.False);
+            Assert.That(session.Traces.Traces, Is.Empty, "the world before left nothing behind");
         }
 
         [Test]
-        public void ConsumablesShowInTheirSlotsAndCostNoTime()
+        public void TheKingsNodeForetellsHowLongTheCalendarStops_AndItsFallLeavesOnlyTheSurvivorRoute()
         {
-            var session = Explorable(new ExplorationSession(new RunStart { Loadout = RunStart.TrialLoadout(), MiasmaPercent = 30 }));
+            var session = new ExplorationSession(new RunStart { Region = Region.Ghost });
+            WalkToLayer(session, Lair.KingLayer);
+            Assert.That(session.State.Profile.IsKingLayer, Is.True);
+            Step(session, session.State.Map.Row(1).First().Id);
+
+            var king = session.Screen().Nodes.Single(n => n.Kind == NodeKind.Boss);
+            Assert.That(king.Standing, Is.EqualTo(NodeStanding.Reachable));
+            Assert.That(king.Lines, Has.Member($"暦が {Calendar.KingReturnDays} 日延びる見込み"), "no other king is down");
+
+            Step(session, king.Id);
+            Assert.That(session.State.Phase, Is.EqualTo(RunPhase.LayerCleared));
+            Assert.That(session.Calendar.IsFrozen, Is.True);
+
+            var screen = session.Screen();
+            Assert.That(screen.CalendarFrozen, Is.True);
+            Assert.That(screen.Card.Kind, Is.EqualTo(CardKind.LayerCleared));
+            Assert.That(screen.Card.Title, Is.EqualTo("死霊王を倒した"));
+            Assert.That(screen.Card.Buttons.Select(b => b.Action), Is.EqualTo(new[] { ScreenAction.AskEndLife }), "layer 8 is shut");
+            Assert.That(session.Act(ScreenAction.GoToInterlude), Is.False);
+        }
+
+        [Test]
+        public void FallingToTheKingLeavesTheNextLifesCalendarRunning()
+        {
+            var session = new ExplorationSession(new RunStart { Region = Region.Ghost });
+            WalkToLayer(session, Lair.KingLayer);
+            Step(session, session.State.Map.Row(1).First().Id);
+
+            Assert.That(session.Step(session.State.Map.BossId), Is.True);
+            Assert.That(session.HasPendingBattle, Is.True);
+            Assert.That(session.Calendar.IsFrozen, Is.False, "the king fight is still ahead");
+            Assert.That(session.Act(ScreenAction.FallInBattle), Is.True);
+            Assert.That(session.State.Phase, Is.EqualTo(RunPhase.Fallen));
+            Assert.That(session.Calendar.KingReturns, Is.Empty);
+
+            int fallenDays = session.State.DaysLeft;
+            Assert.That(session.Act(ScreenAction.NewLife), Is.True);
+            Assert.That(session.Calendar.IsFrozen, Is.False);
+            Assert.That(session.State.DaysLeft, Is.LessThanOrEqualTo(fallenDays - Calendar.HandoverFallenDays));
+        }
+
+        [Test]
+        public void ConsumablesShowInTheirSlotsAndCostNoDay()
+        {
+            var session = Explorable(new ExplorationSession(new RunStart { Loadout = RunStart.TrialLoadout() }));
             var screen = session.Screen();
 
-            Assert.That(screen.ToolsLabel, Is.EqualTo("ツール: 防瘴の面（1 / 3）"));
-            Assert.That(screen.Consumables[0].Note, Is.EqualTo("瘴気の蓄積が 10% 戻る"), "the design-document pointer is not for the player");
-            Assert.That(screen.Consumables.Select(s => s.Name), Is.EqualTo(new[] { "浄化の香", "浄化の香", ExplorationText.EmptySlot }));
+            Assert.That(screen.ToolsLabel, Is.EqualTo("ツール: 帰り道の糸（1 / 3）"));
+            Assert.That(screen.Consumables[0].Note, Does.Not.Contain(".md"), "the design-document pointer is not for the player");
+            Assert.That(screen.Consumables.Select(s => s.Name), Is.EqualTo(new[] { "早駆けの丸薬", "早駆けの丸薬", ExplorationText.EmptySlot }));
             Assert.That(screen.Consumables[0].CanUse, Is.True);
             Assert.That(screen.Consumables[2].CanUse, Is.False);
 
-            int time = session.State.TimeLeft;
-            int miasma = session.State.MiasmaPercent;
+            int days = session.State.DaysLeft;
             Assert.That(session.UseConsumable(0), Is.True);
-            Assert.That(session.State.TimeLeft, Is.EqualTo(time));
-            Assert.That(session.State.MiasmaPercent, Is.EqualTo(miasma - 10));
-            Assert.That(session.Screen().Consumables.Count(s => s.Name == "浄化の香"), Is.EqualTo(1));
+            Assert.That(session.State.DaysLeft, Is.EqualTo(days));
+            Assert.That(session.Screen().Consumables.Count(s => s.Name == "早駆けの丸薬"), Is.EqualTo(1));
+
+            var next = session.Screen();
+            Assert.That(next.DaysForecastLabel, Is.EqualTo("次の 1 日は進まない"));
+            var node = next.Nodes.First(n => n.Standing == NodeStanding.Reachable && n.Kind != NodeKind.Rest);
+            Assert.That(node.Options.Single().Forecast.Lines.First(), Is.EqualTo("次の 1 日は進まない"));
         }
 
         [Test]
@@ -361,8 +407,9 @@ namespace Exploration.Tests
 
             var dungeon = book.Pages.Single(p => p.Tab == JournalTab.Dungeon);
             Assert.That(dungeon.Title, Is.EqualTo("第 1 層　燦光の樹海"));
-            Assert.That(dungeon.Rows.Select(r => r.Label), Is.EqualTo(new[] { "瘴気の濃さ", "刻限", "ノード", "情報収集" }));
-            Assert.That(dungeon.TextOf(dungeon.Rows[0]), Is.EqualTo("1 刻限ごとに +1%"));
+            Assert.That(dungeon.Rows.Select(r => r.Label), Is.EqualTo(new[] { "領域", "日数", "ノード", "情報収集" }));
+            Assert.That(dungeon.TextOf(dungeon.Rows[0]), Is.EqualTo("共通"));
+            Assert.That(dungeon.TextOf(dungeon.Rows[1]), Is.EqualTo($"寄り道なしで抜けると {session.State.Map.ShortestPathCost} 日"));
             Assert.That(dungeon.TextOf(dungeon.Rows[3]), Is.EqualTo("まだ"));
         }
 
@@ -408,8 +455,11 @@ namespace Exploration.Tests
             }
         }
 
-        /// <summary>Clears layers straight down until the given layer's entry is reported.</summary>
-        internal static void WalkToLayer(ExplorationSession session, int layer)
+        /// <summary>
+        /// Clears layers straight down until the given layer's entry is reported. At the layer-two interlude it goes
+        /// down into <paramref name="region"/> unless the life already chose one.
+        /// </summary>
+        internal static void WalkToLayer(ExplorationSession session, int layer, Region region = Region.Dragon)
         {
             Explorable(session);
             while (session.State.Profile.Layer < layer)
@@ -417,6 +467,7 @@ namespace Exploration.Tests
                 WalkToBoss(session);
                 Assert.That(session.State.Phase, Is.EqualTo(RunPhase.LayerCleared));
                 Assert.That(session.Act(ScreenAction.GoToInterlude), Is.True);
+                if (session.NeedsRegion) Assert.That(session.Act(ScreenAction.ChooseRegion, (int)region), Is.True);
                 Assert.That(session.Act(ScreenAction.Descend), Is.True);
                 Explorable(session);
             }

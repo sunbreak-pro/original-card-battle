@@ -11,12 +11,12 @@ namespace DungeonCore.Tests
         private const int PlayerMaxHp = 50;
 
         // The catalogue's items as the trial carries them (DungeonContent's amounts; TrialItems in Exploration.Script).
-        private static readonly ReliefItem Mask = ReliefItem.Density("bosho_no_men", 1);
-        private static readonly ReliefItem Sand = new ReliefItem("kokugen_no_suna", ReliefKind.Time, 1);
+        private static readonly ReliefItem Thread = new ReliefItem("kaerimichi_no_ito", ReliefKind.Return, 1);
+        private static readonly ReliefItem Sand = new ReliefItem("hiyomi_no_suna", ReliefKind.EntryDay, 1);
         private static readonly ReliefItem Book = new ReliefItem("utsushi_no_tobari", ReliefKind.Survey, 1);
         private static readonly ReliefItem Wick = new ReliefItem("toshin_no_kakera", ReliefKind.Interlude, 15);
         private static readonly ReliefItem Flute = new ReliefItem("ikitsugi_no_fue", ReliefKind.Battle, 3);
-        private static readonly ReliefItem Incense = ReliefItem.Gauge("joka_no_ko", 10);
+        private static readonly ReliefItem Pill = new ReliefItem("hayagake_no_gan", ReliefKind.Haste, 1);
         private static readonly ReliefItem Herb = new ReliefItem("yakuso", ReliefKind.HealHp, 20);
         private static readonly ReliefItem Meat = new ReliefItem("koi_hoshiniku", ReliefKind.MaxStamina, 1);
         private static readonly ReliefItem Water = new ReliefItem("wasuremizu", ReliefKind.RefillStamina, 1);
@@ -26,10 +26,10 @@ namespace DungeonCore.Tests
             new RunLoadout(tools, consumables, Math.Max(RunLoadout.ToolSlots, tools?.Length ?? 0), trial: true);
 
         private static ExplorationState Enter(int layer, RunLoadout loadout, bool trial, ulong seed = 11UL, int hp = PlayerMaxHp,
-            int stamina = 10, int miasma = 0)
+            int stamina = 10, CalendarState? calendar = null)
         {
-            var profile = SevenLayers.Of(layer);
-            return ExplorationReducer.Enter(profile, profile.Map(seed), loadout, hp, PlayerMaxHp, stamina, miasma, 0, trial);
+            var profile = Lair.Of(layer);
+            return ExplorationReducer.Enter(profile, profile.Map(seed), loadout, hp, PlayerMaxHp, stamina, calendar ?? CalendarState.Fresh, 0, trial);
         }
 
         // ---------------------------------------------------------------- off by default (W-1)
@@ -39,8 +39,6 @@ namespace DungeonCore.Tests
         {
             var plain = Enter(1, RunLoadout.Empty, trial: false);
             Assert.That(plain.Trial, Is.False);
-            Assert.That(plain.TimeBonus, Is.EqualTo(0));
-            Assert.That(plain.TimeLimit, Is.EqualTo(SevenLayers.Of(1).TimeLimit));
             Assert.That(RunLoadout.Empty.Trial, Is.False);
             Assert.That(new RunLoadout().Trial, Is.False);
             Assert.That(ExplorationReducer.CanTeleport(plain, plain.Map.BossId), Is.False);
@@ -60,17 +58,18 @@ namespace DungeonCore.Tests
         }
 
         [Test]
-        public void ACSharpRunLoadout_StillRefusesANonDensityTool_ATrialOneTakesEveryTool()
+        public void ACSharpRunLoadout_RefusesATrialOnlyTool_ATrialOneTakesEveryTool()
         {
             // js: test/ext/world.test.mjs:132
-            Assert.Throws<ArgumentException>(() => new RunLoadout(new[] { Sand }));
-            var lo = new RunLoadout(new[] { Sand, Mask, Flute }, null, 3, trial: true);
+            Assert.Throws<ArgumentException>(() => new RunLoadout(new[] { Book }));
+            Assert.Throws<ArgumentException>(() => new RunLoadout(new[] { Flute }));
+            var lo = new RunLoadout(new[] { Sand, Thread, Flute }, null, 3, trial: true);
             Assert.That(lo.Trial, Is.True);
-            Assert.That(lo.DensityRelief, Is.EqualTo(1), "only the density tools lower the density");
-            Assert.That(lo.TimeBonus, Is.EqualTo(1));
+            Assert.That(lo.EntryDayFree, Is.True);
+            Assert.That(lo.ShortHandover, Is.True);
             Assert.That(lo.InterludeBonus, Is.EqualTo(0));
             Assert.That(lo.ChoosesSurvey, Is.False);
-            var ex = Assert.Throws<ArgumentException>(() => new RunLoadout(new[] { Incense }, null, 3, trial: true));
+            var ex = Assert.Throws<ArgumentException>(() => new RunLoadout(new[] { Pill }, null, 3, trial: true));
             Assert.That(ex!.Message, Does.StartWith("a trial tool is one of the eight tools of tools_and_consumables_v4.md §2"));
         }
 
@@ -108,18 +107,14 @@ namespace DungeonCore.Tests
         // ---------------------------------------------------------------- tools (§2)
 
         [Test]
-        public void 刻限の砂_AddsItsTimeToEveryLayer_AndCopiesStack()
+        public void 日読みの砂_FreesTheEntryNode_InTrialModeAndOutside()
         {
-            // js: test/ext/world.test.mjs:172 (the core half)
+            // tools_and_consumables_v4.md §2.4: a calendar tool, so the C# reads it too.
             var state = Enter(1, Trial(new[] { Sand }), trial: true);
-            Assert.That(state.TimeLimit, Is.EqualTo(11));
-            Assert.That(state.TimeBonus, Is.EqualTo(1));
-            Assert.That(state.TimeLeft, Is.EqualTo(10), "the entry node took one");
-            Assert.That(Enter(1, Trial(new[] { Sand, Sand }), trial: true).TimeLimit, Is.EqualTo(12));
-            // the same loadout in a C# state does nothing
-            var off = Enter(1, Trial(new[] { Sand }), trial: false);
-            Assert.That(off.TimeLimit, Is.EqualTo(10));
-            Assert.That(off.TimeLeft, Is.EqualTo(9));
+            Assert.That(state.DaysLeft, Is.EqualTo(Calendar.TotalDays), "the entry node took no day");
+            Assert.That(Enter(1, Trial(new[] { Sand, Sand }), trial: true).DaysLeft, Is.EqualTo(Calendar.TotalDays), "a copy adds nothing");
+            Assert.That(Enter(1, new RunLoadout(new[] { Sand }), trial: false).DaysLeft, Is.EqualTo(Calendar.TotalDays));
+            Assert.That(Enter(1, Trial(), trial: true).DaysLeft, Is.EqualTo(Calendar.TotalDays - 1));
         }
 
         [Test]
@@ -128,11 +123,10 @@ namespace DungeonCore.Tests
             // js: test/ext/world.test.mjs:188 (the core half)
             var state = Enter(1, Trial(new[] { Sand }), trial: true).With(phase: RunPhase.LayerCleared);
             var rest = ExplorationReducer.Interlude(state);
-            var two = SevenLayers.Of(2);
+            var two = Lair.Of(2);
             var below = ExplorationReducer.Descend(rest, two, two.Map(3UL));
             Assert.That(below.Trial, Is.True);
-            Assert.That(below.TimeLimit, Is.EqualTo(11));
-            Assert.That(below.TimeLeft, Is.EqualTo(10));
+            Assert.That(below.DaysLeft, Is.EqualTo(state.DaysLeft), "the sand freed this entry too");
         }
 
         [Test]
@@ -156,7 +150,7 @@ namespace DungeonCore.Tests
         public void 写しの帳_IsChosen_OnlyInATrialLoadout()
         {
             Assert.That(Trial(new[] { Book }).ChoosesSurvey, Is.True);
-            Assert.That(Trial(new[] { Mask }).ChoosesSurvey, Is.False);
+            Assert.That(Trial(new[] { Thread }).ChoosesSurvey, Is.False);
         }
 
         // ---------------------------------------------------------------- consumables (§3)
@@ -164,8 +158,9 @@ namespace DungeonCore.Tests
         [Test]
         public void TheConsumables_ActInTrialMode()
         {
-            // js: test/ext/world.test.mjs:313〜412 (the core half): 薬草 +20%, 濃い干し肉 +1 inside ±4, 忘れ水 full, 浄化の香 −10.
-            var state = Enter(1, Trial(null, new[] { Herb, Meat, Water }), trial: true, hp: 25, stamina: 2, miasma: 30);
+            // js: test/ext/world.test.mjs:313〜412 (the core half): 薬草 +20%, 濃い干し肉 +1 inside ±4, 忘れ水 full; and
+            // 早駆けの丸薬, the next new node free (#888).
+            var state = Enter(1, Trial(null, new[] { Herb, Meat, Water }), trial: true, hp: 25, stamina: 2);
             var healed = ExplorationReducer.UseConsumable(state, 0);
             Assert.That(healed.Hp, Is.EqualTo(35));
             Assert.That(healed.Loadout.Consumables.Count, Is.EqualTo(2));
@@ -178,8 +173,8 @@ namespace DungeonCore.Tests
             var refilled = ExplorationReducer.UseConsumable(state, 2);
             Assert.That(refilled.Stamina, Is.EqualTo(state.MaxStamina));
 
-            var incense = Enter(1, Trial(null, new[] { Incense }), trial: true, miasma: 30);
-            Assert.That(ExplorationReducer.UseConsumable(incense, 0).MiasmaPercent, Is.EqualTo(21));
+            var pill = Enter(1, Trial(null, new[] { Pill }), trial: true);
+            Assert.That(ExplorationReducer.UseConsumable(pill, 0).NextStepFree, Is.True);
         }
 
         [Test]
@@ -190,7 +185,7 @@ namespace DungeonCore.Tests
         }
 
         [Test]
-        public void 標の石_JumpsToAnyUnresolvedNode_TheBossIncluded_PayingItsTime()
+        public void 標の石_JumpsToAnyUnresolvedNode_TheBossIncluded_PayingItsDay()
         {
             // js: test/ext/world.test.mjs:427 (the core half); 試作で決めたこと 3
             var state = Enter(1, Trial(null, new[] { Stone, Herb }), trial: true);
@@ -202,8 +197,7 @@ namespace DungeonCore.Tests
 
             var after = ExplorationReducer.Teleport(state, 0, far.Id);
             Assert.That(after.CurrentNodeId, Is.EqualTo(far.Id));
-            Assert.That(after.TimeLeft, Is.EqualTo(state.TimeLeft - 1));
-            Assert.That(after.MiasmaPercent, Is.EqualTo(state.MiasmaPercent + state.EffectiveDensity));
+            Assert.That(after.DaysLeft, Is.EqualTo(state.DaysLeft - 1));
             Assert.That(after.HasResolved(far.Id), Is.True);
             Assert.That(after.Loadout.Consumables.Select(c => c.Id), Is.EqualTo(new[] { "yakuso" }));
 
@@ -213,13 +207,13 @@ namespace DungeonCore.Tests
         }
 
         [Test]
-        public void 標の石_CannotJumpOnTheLayerBreak_OrWithNoTimeLeft_OrOutsideTrial()
+        public void 標の石_CannotJumpOnTheLayerBreak_OrWithNoDayLeft_OrOutsideTrial()
         {
             // js: test/ext/world.test.mjs:488 (the core half)
             var state = Enter(1, Trial(null, new[] { Stone }), trial: true);
             int boss = state.Map.BossId;
             Assert.That(ExplorationReducer.CanTeleport(state.With(phase: RunPhase.LayerCleared), boss), Is.False);
-            Assert.That(ExplorationReducer.CanTeleport(state.With(timeLeft: 0), boss), Is.False);
+            Assert.That(ExplorationReducer.CanTeleport(state.With(calendar: new CalendarState(0)), boss), Is.False);
             Assert.Throws<ExplorationRuleException>(() => ExplorationReducer.Teleport(state.With(phase: RunPhase.LayerCleared), 0, boss));
             var off = Enter(1, new RunLoadout(null, new[] { Stone }), trial: false);
             Assert.That(ExplorationReducer.CanTeleport(off, boss), Is.False);
@@ -227,12 +221,23 @@ namespace DungeonCore.Tests
         }
 
         [Test]
-        public void ALethalJump_EndsTheLifeOnTheNode()
+        public void AJumpOnTheLastDay_EndsTheWorldOnTheNode()
         {
-            var state = Enter(1, Trial(null, new[] { Stone }), trial: true, miasma: 98);
-            Assert.That(state.MiasmaPercent, Is.EqualTo(99));
+            var state = Enter(1, Trial(null, new[] { Stone }), trial: true, calendar: new CalendarState(2));
+            Assert.That(state.DaysLeft, Is.EqualTo(1));
             var after = ExplorationReducer.Teleport(state, 0, state.Map.BossId);
-            Assert.That(after.Phase, Is.EqualTo(RunPhase.MiasmaDeath), "瘴気死 outranks the boss, as for a step");
+            Assert.That(after.Phase, Is.EqualTo(RunPhase.Expired), "期限切れ outranks the boss, as for a step");
+        }
+
+        [Test]
+        public void APillTakenFirst_MakesTheJumpFree()
+        {
+            // tools_and_consumables_v4.md §3: 「早駆けの丸薬を先に使えば、跳んだ先も 0 日です」.
+            var state = Enter(1, Trial(null, new[] { Pill, Stone }), trial: true);
+            var hasted = ExplorationReducer.UseConsumable(state, 0);
+            var after = ExplorationReducer.Teleport(hasted, 0, state.Map.BossId);
+            Assert.That(after.DaysLeft, Is.EqualTo(state.DaysLeft));
+            Assert.That(after.NextStepFree, Is.False);
         }
 
         [Test]
@@ -241,7 +246,7 @@ namespace DungeonCore.Tests
             var state = Enter(1, Trial(null, new[] { Herb }), trial: true);
             var after = ExplorationReducer.TakeConsumable(state, Water);
             Assert.That(after.Loadout.Consumables.Select(c => c.Id), Is.EqualTo(new[] { "yakuso", "wasuremizu" }));
-            Assert.That(after.TimeLeft, Is.EqualTo(state.TimeLeft), "costs no 刻限");
+            Assert.That(after.Calendar, Is.EqualTo(state.Calendar), "costs no day");
             Assert.Throws<ExplorationRuleException>(() => ExplorationReducer.TakeConsumable(ExplorationReducer.EndLife(state), Water));
         }
 
@@ -274,16 +279,16 @@ namespace DungeonCore.Tests
         public void TheMapGenerator_IsUntouched_TheEventsLiveBesideIt()
         {
             // js: test/ext/world.test.mjs:929
-            var spec = SevenLayers.Of(1).MapSpec;
+            var spec = Lair.Of(1).MapSpec;
             var a = MapGenerator.Generate(spec, 11UL);
-            var b = SevenLayers.Of(1).Map(11UL);
+            var b = Lair.Of(1).Map(11UL);
             Assert.That(a.Nodes.Select(n => n.Kind), Is.EqualTo(b.Nodes.Select(n => n.Kind)));
         }
 
         [Test]
         public void TheDraw_IsSeededFromTheNode_InIdOrder()
         {
-            var map = SevenLayers.Of(1).Map(9UL);
+            var map = Lair.Of(1).Map(9UL);
             Func<int, ulong> seedOf = id => 9UL * 31UL + (ulong)id;
             var a = LayerEvents.Draw(map, 1, seedOf);
             var b = LayerEvents.Draw(map, 1, seedOf);
@@ -310,7 +315,7 @@ namespace DungeonCore.Tests
             Assert.That(after.TempMaxStaminaMod, Is.EqualTo(state.TempMaxStaminaMod - 2));
             Assert.That(after.MaxStamina, Is.EqualTo(state.MaxStamina - 2));
             Assert.That(after.Stamina, Is.EqualTo(Math.Min(state.Stamina, after.MaxStamina)));
-            Assert.That(after.TimeLeft, Is.EqualTo(state.TimeLeft), "the 刻限 was paid by the step");
+            Assert.That(after.Calendar, Is.EqualTo(state.Calendar), "the day was paid by the step");
             Assert.That(ExplorationReducer.ResolveEvent(state.With(tempMaxStaminaMod: -4), EventKind.HeavyChest, true).TempMaxStaminaMod,
                 Is.EqualTo(-4), "inside ±4");
         }

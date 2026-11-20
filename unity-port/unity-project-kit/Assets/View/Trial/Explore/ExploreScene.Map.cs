@@ -477,15 +477,19 @@ namespace Trial.Explore
             UpdateMap(Screen);
             DrawDetail();
             // what the step sounds like (docs/AUDIO.md): the step, then at most one result
+            // A step that lowers the max stamina still swells low (no miasma behind it now, #888): the old line sound by
+            // how many points it falls, 20 a point, up to the deepest line (80).
             int line = 0;
-            if (fc != null && fc.MaxStaminaAfter < fc.MaxStaminaBefore && !fc.IsLethal) line = Miasma.MaxStaminaPenalty(fc.MiasmaAfter) * Miasma.StepPercent;
-            // at most two sounds: the step, then one result (a 20% line or death outranks the node's own)
+            bool expiry = fc != null && fc.IsExpiry;
+            if (fc != null && fc.MaxStaminaAfter < fc.MaxStaminaBefore && !expiry) line = Math.Min(80, 20 * (fc.MaxStaminaBefore - fc.MaxStaminaAfter));
+            // at most two sounds: the step, then one result (the calendar running out outranks the node's own; the
+            // sound keeps the miasma death's name)
             string result = !fresh ? null
                 : node.Kind == NodeKind.Rest ? (choice == RestChoice.Train ? "train" : "rest")
                 : ExploreStyle.StepResult(node.Kind);
             try
             {
-                if (Audio != null) Audio.StepTo(fresh, line, fc != null && fc.IsLethal, result);
+                if (Audio != null) Audio.StepTo(fresh, line, expiry, result);
             }
             catch (Exception) { /* optional */ }
             Hovered = -1;
@@ -502,8 +506,8 @@ namespace Trial.Explore
             Busy = false;
             // A trace opens its card on arrival; walked back onto with its legacy still undecided (a reload left it
             // open), it opens again — the choice is made at the place of death (concept-v3 §8.3, R-08 / R-11). Never when
-            // the step itself ended the life (瘴気死 on arrival, §6.4): the dead heir takes nothing, and the trace stays for
-            // a living heir (R-09 / R-10).
+            // the step itself ended the life (the calendar running out on arrival, §6.4): the heir takes nothing, and the
+            // trace stays (R-09 / R-10).
             if (node.Kind == NodeKind.Trace && !Session.State.IsOver && (fresh || TraceWaiting() != null))
                 PendingTrace = new ExploreTraceRef(Session.State.Profile.Layer, node.Id);
             if (fresh && node.Kind == NodeKind.Rest && choice == RestChoice.Train && !Session.Trial) PendingTraining = true; // trial: TrainingWaiting

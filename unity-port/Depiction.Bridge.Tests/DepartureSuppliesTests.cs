@@ -99,12 +99,13 @@ namespace Depiction.Bridge.Tests
             // What the screen sets out with is something the dungeon side's Loadout takes as it is.
             DepartureBuilder builder = DepartureSupplies.NewBuilder();
             builder.AddTool("maai_no_kutsu");
-            builder.AddTool("bosho_no_men");
-            builder.AddTool("bosho_no_men");
+            builder.AddTool("kaerimichi_no_ito");
+            builder.AddTool("kaerimichi_no_ito");
             builder.AddConsumable("yakuso");
             Loadout loadout = Loadout.Of(builder.Tools, builder.Consumables);
             Assert.That(loadout.Has(ItemEffect.WiderStart), Is.True);
-            Assert.That(loadout.MiasmaDensityRelief, Is.EqualTo(2));
+            Assert.That(loadout.Tools.Count, Is.EqualTo(3), "the same tool can be taken twice");
+            Assert.That(loadout.ShortHandover, Is.True);
         }
     }
 }

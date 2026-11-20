@@ -60,6 +60,7 @@ namespace InheritanceCore
             LifeEnding.Fallen => "倒れた",
             LifeEnding.Completed => "踏破",
             LifeEnding.Survived => "生存ルート",
+            LifeEnding.Expired => "期限切れ",
             _ => throw new InheritanceRuleException($"unknown ending {ending}"),
         };
 
@@ -114,12 +115,16 @@ namespace InheritanceCore
 
         public static string TierCleared(int generation, string name) => Invariant($"前の生（第 {generation} 代 {name}）が歪みの根を倒したため");
 
-        /// <summary>The four end sentences, the same words as ExplorationScreenBuilder's end cards.</summary>
+        /// <summary>
+        /// The end sentences, the same words as ExplorationScreenBuilder's end cards. 瘴気死 keeps its sentence for the
+        /// lives of lineages saved before the gauge left the exploration (#888).
+        /// </summary>
         public static string EndingSentence(LifeEnding ending, int? layer)
         {
             string l = JsNullable(layer);
             switch (ending)
             {
+                case LifeEnding.Expired: return $"第 {l} 層で暦が尽きた。龍神が目覚め、世界が終わる。";
                 case LifeEnding.MiasmaDeath: return $"瘴気が 100% に達し、第 {l} 層でこの生が終わった。";
                 case LifeEnding.Fallen: return $"第 {l} 層の戦いで倒れた。";
                 case LifeEnding.Completed: return "歪みの根を倒した。";
@@ -135,6 +140,9 @@ namespace InheritanceCore
         public static string WithheldLine(IEnumerable<string> names) => $"浅い層の死では残らない札：{string.Join("、", names)}";
 
         public const string NothingLeft = "遺産になるものは残らなかった";
+
+        /// <summary>The ending card's line after 期限切れ: the world ends, and the game starts over (seven_layers_v4.md §2.1).</summary>
+        public const string WorldEndsLine = "龍神が目覚め、世界が終わる。最初からやり直す。";
         public const string JournalPasses = "手記は丸ごと次の生へ渡る";
 
         public static string ClearedTraceLeft(string layerTitle) => $"{layerTitle}に札の痕跡が残った（歪みの根の札を含む）";

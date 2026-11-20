@@ -28,7 +28,7 @@ namespace DungeonContent
 
         public ItemEffect Effect { get; }
 
-        /// <summary>Size of the effect. Percentage points, stamina, 刻限 — whatever the effect counts.</summary>
+        /// <summary>Size of the effect. Percentage points, stamina, days — whatever the effect counts.</summary>
         public int Amount { get; }
 
         /// <summary>One line of why it exists, for the loadout screen's tooltip.</summary>
@@ -57,13 +57,13 @@ namespace DungeonContent
         /// </summary>
         public static IReadOnlyList<ItemDef> Tools { get; } = new[]
         {
-            new ItemDef("bosho_no_men", "防瘴の面", "ぼうしょうのめん",
-                ItemEffect.MiasmaDensity, 1,
-                "この生の間、層の濃度を 1 下げる。下限は 1（seven_layers_v4.md §3.2）"),
+            new ItemDef("kaerimichi_no_ito", "帰り道の糸", "かえりみちのいと",
+                ItemEffect.ShortHandover, 1,
+                "生還したとき、次の代の出立までが 3 日から 1 日になる。死亡と奥へ降りたときは効かない"),
 
-            new ItemDef("kokugen_no_suna", "刻限の砂", "こくげんのすな",
-                ItemEffect.TimeLimit, 1,
-                "どの層でも刻限が 1 増える。浅い層ほど得が大きい"),
+            new ItemDef("hiyomi_no_suna", "日読みの砂", "ひよみのすな",
+                ItemEffect.EntryDayFree, 1,
+                "層の入口のノードで日が進まない。地上から王の前までの 30 日が 23 日になる"),
 
             new ItemDef("utsushi_no_tobari", "写しの帳", "うつしのとばり",
                 ItemEffect.ChooseSurveyTarget, 1,
@@ -96,9 +96,9 @@ namespace DungeonContent
         /// </summary>
         public static IReadOnlyList<ItemDef> Consumables { get; } = new[]
         {
-            new ItemDef("joka_no_ko", "浄化の香", "じょうかのこう",
-                ItemEffect.MiasmaGauge, 10,
-                "瘴気の蓄積が 10% 戻る（concept-v3.md §6）"),
+            new ItemDef("hayagake_no_gan", "早駆けの丸薬", "はやがけのがん",
+                ItemEffect.NextStepFree, 1,
+                "次に踏む新しいノード 1 つで日が進まない。通り直しのノードは元から 0 日"),
 
             new ItemDef("yakuso", "薬草", "やくそう",
                 ItemEffect.HealHp, 20,
@@ -114,7 +114,7 @@ namespace DungeonContent
 
             new ItemDef("shirube_no_ishi", "標の石", "しるべのいし",
                 ItemEffect.Teleport, 1,
-                "同じ層の未踏のノードへ 1 度だけ跳ぶ。刻限は普通に 1 払う"),
+                "同じ層の未踏のノードへ 1 度だけ跳ぶ。跳んだ先では普通に 1 日進む"),
         };
 
         public static IEnumerable<ItemDef> All => Tools.Concat(Consumables);

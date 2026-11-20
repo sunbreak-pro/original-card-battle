@@ -14,8 +14,14 @@ namespace Exploration.Bridge.Tests
 {
     internal static class TrialTestKit
     {
-        public const string Mask = "bosho_no_men";
-        public const string Sand = "kokugen_no_suna";
+        // The two calendar tools that replaced 防瘴の面 and 刻限の砂 (tools_and_consumables_v4.md §2.4) keep the old
+        // constants' names, so the tests that carry "a mask and a sand" still read the same.
+
+        /// <summary>帰り道の糸, which took 防瘴の面's place.</summary>
+        public const string Mask = "kaerimichi_no_ito";
+
+        /// <summary>日読みの砂, which took 刻限の砂's place.</summary>
+        public const string Sand = "hiyomi_no_suna";
         public const string Book = "utsushi_no_tobari";
         public const string Wick = "toshin_no_kakera";
         public const string Flute = "ikitsugi_no_fue";
@@ -121,7 +127,10 @@ namespace Exploration.Bridge.Tests
             return path[path.Count - 1];
         }
 
-        /// <summary>Walks down to <paramref name="layer"/>, beating each layer's boss (js: explore-results.test.mjs:84).</summary>
+        /// <summary>
+        /// Walks down to <paramref name="layer"/>, beating each layer's boss (js: explore-results.test.mjs:84), into the
+        /// dragon's region after layer 2.
+        /// </summary>
         public static void WalkToLayer(Expedition ex, int layer)
         {
             ExplorationSession s = ex.Session;
@@ -132,6 +141,7 @@ namespace Exploration.Bridge.Tests
                 ex.CloseResult();
                 ClearChoices(s);
                 Assert.That(s.Act(ScreenAction.GoToInterlude), Is.True);
+                if (s.NeedsRegion) Assert.That(s.Act(ScreenAction.ChooseRegion, (int)Region.Dragon), Is.True);
                 Assert.That(s.Act(ScreenAction.Descend), Is.True);
                 if (s.HasPendingBattle)
                 {

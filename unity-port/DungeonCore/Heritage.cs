@@ -10,8 +10,8 @@ namespace DungeonCore
         /// <summary>HP reached 0 in a battle (<see cref="RunPhase.Fallen"/>).</summary>
         Fallen,
 
-        /// <summary>The gauge reached <see cref="Miasma.DeathAt"/> (<see cref="RunPhase.MiasmaDeath"/>).</summary>
-        Miasma,
+        /// <summary>The calendar ran out while the life was in the lair (<see cref="RunPhase.Expired"/>).</summary>
+        Expired,
     }
 
     /// <summary>
@@ -154,7 +154,7 @@ namespace DungeonCore
             return state.Phase switch
             {
                 RunPhase.Fallen => DeathCause.Fallen,
-                RunPhase.MiasmaDeath => DeathCause.Miasma,
+                RunPhase.Expired => DeathCause.Expired,
                 _ => (DeathCause?)null,
             };
         }

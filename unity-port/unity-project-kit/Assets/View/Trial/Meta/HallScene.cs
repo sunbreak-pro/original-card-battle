@@ -56,6 +56,18 @@ namespace Trial.Meta
         // js: scenes/meta/hall.js:413, :415 ↑↓ scroll the candidates by 84 px; a page is the panel less 84
         private const float ScrollStep = 84f;
 
+        // The collapse calendar in the header, left of the corner buttons (#888; a Unity addition, the JS hall has none).
+        private const string CalendarCss = "font: 700 22px/28px var(--font-body); white-space: nowrap; color: var(--ink);";
+        private const string CalendarNoteCss = "font: 400 16px/22px var(--font-body); white-space: nowrap; color: var(--steel);";
+        private const float CalendarIcon = 24f, CalendarGap = 8f, CalendarRight = 32f;
+
+        /// <summary>The strata below the shared layers: the three regions' layers, then the kings' rooms.</summary>
+        private const string RegionStratumName = "竜・寄生・亡霊の領域";
+        private const string KingStratumName = "王の間";
+
+        /// <summary>The words under 「残り N 日」 while a king is down (seven_layers_v4.md §2.2).</summary>
+        private const string CalendarFrozenNote = "王が倒れていて、暦は止まっている";
+
         // ---- the scene -----------------------------------------------------------------------------------------------
 
         private readonly HallCtx _ctx;
@@ -139,6 +151,8 @@ namespace Trial.Meta
                 toTitle.Click += () => LeaveToTitle().Forget();
                 _corner.Add(toTitle);
             }
+            // The collapse calendar the lineage walks on, left of the corner (#888).
+            DrawCalendar(cornerX - CalendarRight);
 
             // ---- past lives (newest first) ----
             RectTransform livesHead = MetaStyle.H2(_root, _view.PastLivesHeading, LivesX, LivesHeadY);
@@ -176,11 +190,10 @@ namespace Trial.Meta
             RectTransform traceHead = MetaStyle.H2(_root, _view.TraceHeading, ColumnX, LivesHeadY);
             RectTransform column = Ui.Div(_root, "ocbg-meta-hall-column", ColumnX, ColumnY, ColumnW, ColumnH);
             UiNode.Of(column);
-            for (int layer = 1; layer <= DungeonCore.SevenLayers.Count; layer++)
-            {
-                DungeonCore.LayerProfile profile = DungeonCore.SevenLayers.Of(layer);
-                _strata.Add(HallParts.Stratum(column, layer, profile.DisplayName(_lineage.Player.CarvingTaken)));
-            }
+            // The two shared layers by their names; deeper, the three regions share each depth and a life's record keeps
+            // only its depth, so those strata name what lies there in general (seven_layers_v4.md §3.1, #888).
+            for (int layer = 1; layer <= DungeonCore.Lair.LayerCount; layer++)
+                _strata.Add(HallParts.Stratum(column, layer, StratumName(layer)));
             // Each closed life marks the layer it ended on (the lineage keeps the layer; HallView prints the line).
             foreach (LifeRecord life in _lineage.Lives)
             {
@@ -365,6 +378,36 @@ namespace Trial.Meta
 
         private HallStratum StratumOf(int? layer) =>
             layer.HasValue && layer.Value >= 1 && layer.Value <= _strata.Count ? _strata[layer.Value - 1] : null;
+
+        /// <summary>A stratum's name: the shared layers' own (Lair.Of, the carving read or not), then the regions', then the kings'.</summary>
+        private string StratumName(int layer)
+        {
+            if (layer <= DungeonCore.Lair.SacramentLayer) return DungeonCore.Lair.Of(layer).DisplayName(_lineage.Player.CarvingTaken);
+            return layer == DungeonCore.Lair.KingLayer ? KingStratumName : RegionStratumName;
+        }
+
+        /// <summary>
+        /// The lineage's collapse calendar, right-aligned to <paramref name="right"/> in the header: the hourglass and
+        /// 「残り N 日」; while a king is down, dimmed, with a line under it that the calendar stands still.
+        /// </summary>
+        private void DrawCalendar(float right)
+        {
+            DungeonCore.CalendarState cal = _lineage.Calendar ?? DungeonCore.CalendarState.Fresh;
+            string text = "残り " + cal.DaysLeft.ToString(System.Globalization.CultureInfo.InvariantCulture) + " 日";
+            TextStyle ts = MetaStyle.Text(CalendarCss);
+            float lh = ts.LineHeightPx;
+            float tw = TextMeasure.Width(text, ts);
+            float x = right - tw;
+            float y = CornerY + (CornerH - lh) / 2f - (cal.IsFrozen ? 11f : 0f);
+            TextMeshProUGUI days = Label.Make(_root, text, ts, x, y, tw, lh, "ocbg-meta-hall-calendar");
+            if (cal.IsFrozen) Label.SetColor(days, DsTokens.Steel);
+            PathGraphic icon = MetaUtil.Icon(_root, "hourglass", CalendarIcon, cal.IsFrozen ? DsTokens.Steel : DsTokens.Ink);
+            Ui.Place(icon.rectTransform, x - CalendarGap - CalendarIcon, y + (lh - CalendarIcon) / 2f);
+            if (!cal.IsFrozen) return;
+            TextStyle ns = MetaStyle.Text(CalendarNoteCss);
+            float nw = TextMeasure.Width(CalendarFrozenNote, ns);
+            Label.Make(_root, CalendarFrozenNote, ns, right - nw, y + lh + 2f, nw, ns.LineHeightPx, "ocbg-meta-hall-calendar-note");
+        }
 
         private int IndexOfTrace(string id)
         {

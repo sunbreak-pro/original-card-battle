@@ -91,7 +91,7 @@ namespace DungeonCore
     {
         public LayerEncounterTable(int layer, IReadOnlyList<Encounter> normal, IReadOnlyList<Encounter> elite, IReadOnlyList<Encounter> boss)
         {
-            if (layer < 1 || layer > SevenLayers.Count) throw new ArgumentOutOfRangeException(nameof(layer));
+            if (layer < 1 || layer > Lair.LayerCount) throw new ArgumentOutOfRangeException(nameof(layer));
             Layer = layer;
             Normal = Freeze(normal, nameof(normal));
             Elite = Freeze(elite, nameof(elite));
@@ -172,8 +172,8 @@ namespace DungeonCore
 
         public static LayerEncounterTable Of(int layer)
         {
-            if (layer < 1 || layer > SevenLayers.Count)
-                throw new ArgumentOutOfRangeException(nameof(layer), layer, $"the lair has {SevenLayers.Count} layers");
+            if (layer < 1 || layer > Lair.LayerCount)
+                throw new ArgumentOutOfRangeException(nameof(layer), layer, $"the lair has {Lair.LayerCount} layers");
             return Tables[layer - 1];
         }
 

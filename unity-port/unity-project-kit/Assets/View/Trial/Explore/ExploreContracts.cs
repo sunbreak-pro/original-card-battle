@@ -74,8 +74,9 @@ namespace Trial.Explore
     }
 
     /// <summary>
-    /// What ctx.onLifeEnd receives (ExploreScene.js:165 lifeEnd): the phase the life ended in (MiasmaDeath / Fallen /
-    /// Completed / Survived), the end card the builder wrote, and where it happened.
+    /// What ctx.onLifeEnd receives (ExploreScene.js:165 lifeEnd): the phase the life ended in (Expired / Fallen /
+    /// Completed / Survived; Expired is the calendar run out, after which the app starts a new lineage), the end card the
+    /// builder wrote, and where it happened.
     /// </summary>
     public sealed class ExploreLifeEnd
     {

@@ -347,17 +347,26 @@ namespace Trial.Meta
         // ---- hall.js's small helpers ---------------------------------------------------------------------------------
 
         // js: scenes/meta/hall.js:14
-        /// <summary>DEATHS: a life that ended in a death (倒れた, 瘴気死); the others closed alive.</summary>
-        internal static bool IsDeath(LifeEnding? ending) => ending == LifeEnding.Fallen || ending == LifeEnding.MiasmaDeath;
+        /// <summary>
+        /// DEATHS: a life that ended in a death (倒れた, and the 瘴気死 of a lineage saved before #888) or with the calendar
+        /// run out (期限切れ, which starts a new lineage, so a hall only meets it in a record kept by hand); the others
+        /// closed alive.
+        /// </summary>
+        internal static bool IsDeath(LifeEnding? ending) =>
+            ending == LifeEnding.Fallen || ending == LifeEnding.MiasmaDeath || ending == LifeEnding.Expired;
 
         // js: scenes/meta/hall.js:32
-        /// <summary>endingIcon(ending) → [icon, colour]: miasma phosphor / person steel / star amber / person amber (also for none).</summary>
+        /// <summary>
+        /// endingIcon(ending) → [icon, colour]: miasma phosphor (the legacy 瘴気死) / person steel (倒れた, 期限切れ) / star
+        /// amber / person amber (also for none).
+        /// </summary>
         internal static (string Icon, string Color) EndingIcon(LifeEnding? ending)
         {
             switch (ending)
             {
                 case LifeEnding.MiasmaDeath: return ("miasma", "var(--phosphor)");
-                case LifeEnding.Fallen: return ("person", "var(--steel)");
+                case LifeEnding.Fallen:
+                case LifeEnding.Expired: return ("person", "var(--steel)");
                 case LifeEnding.Completed: return ("star", "var(--amber)");
                 default: return ("person", "var(--amber)");
             }

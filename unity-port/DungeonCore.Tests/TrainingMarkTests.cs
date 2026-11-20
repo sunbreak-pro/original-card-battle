@@ -21,8 +21,7 @@ namespace DungeonCore.Tests
             Assert.Multiple(() =>
             {
                 Assert.That(spent.TrainingMarks, Is.EqualTo(0));
-                Assert.That(spent.TimeLeft, Is.EqualTo(trained.TimeLeft), "the 刻限 was paid at the node");
-                Assert.That(spent.MiasmaPercent, Is.EqualTo(trained.MiasmaPercent));
+                Assert.That(spent.Calendar, Is.EqualTo(trained.Calendar), "the day was paid at the node");
                 Assert.That(spent.Hp, Is.EqualTo(trained.Hp));
                 Assert.That(spent.CurrentNodeId, Is.EqualTo(trained.CurrentNodeId));
                 Assert.That(spent.Phase, Is.EqualTo(trained.Phase));
@@ -32,8 +31,8 @@ namespace DungeonCore.Tests
         [Test]
         public void WithNoMarkLeft_TheSpendIsRefused()
         {
-            var profile = SevenLayers.Of(1);
-            var fresh = ExplorationReducer.Enter(profile, profile.Map(11UL), RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10);
+            var profile = Lair.Of(1);
+            var fresh = ExplorationReducer.Enter(profile, profile.Map(11UL), RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10, CalendarState.Fresh);
             Assert.That(fresh.TrainingMarks, Is.EqualTo(0));
             Assert.Throws<ExplorationRuleException>(() => ExplorationReducer.SpendTrainingMark(fresh));
         }
@@ -48,8 +47,8 @@ namespace DungeonCore.Tests
         /// <summary>Layer 1, walked to its nearest 習熟訓練 node and trained there.</summary>
         private static ExplorationState Trained()
         {
-            var profile = SevenLayers.Of(1);
-            var state = ExplorationReducer.Enter(profile, profile.Map(11UL), RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10);
+            var profile = Lair.Of(1);
+            var state = ExplorationReducer.Enter(profile, profile.Map(11UL), RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10, CalendarState.Fresh);
             var path = PathTo(state, NodeKind.Rest);
             for (int i = 0; i < path.Count; i++)
             {

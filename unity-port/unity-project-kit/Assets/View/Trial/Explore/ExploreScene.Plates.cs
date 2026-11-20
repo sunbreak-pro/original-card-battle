@@ -129,13 +129,13 @@ namespace Trial.Explore
         /// classes as the stylesheet does (.is-end: centred, shrink-to-fit, padding-top 22; .is-break 26; .is-result 18;
         /// else the content width, right-aligned, 10); on a washi plate the buttons take the washi rules.
         /// </summary>
-        private RectTransform CardButtons(RectTransform parent, ScreenCard card, Action<ScreenAction> onAct)
+        private RectTransform CardButtons(RectTransform parent, ScreenCard card, Action<CardButton> onAct)
         {
             var items = new List<PlateButtonSpec>();
             for (int i = 0; i < card.Buttons.Count; i++)
             {
                 CardButton b = card.Buttons[i];
-                items.Add(new PlateButtonSpec(b.Label, i == 0, () => onAct?.Invoke(b.Action)));
+                items.Add(new PlateButtonSpec(b.Label, i == 0, () => onAct?.Invoke(b)));
             }
             return PlatesButtonRow(parent, items, ExplorePlateKit.ContentOf(parent).W, PlateClassSet.Contains("is-end"),
                 ExplorePlateKit.ButtonsPadTop(PlateClassSet), PlateClassSet.Contains("is-washi") ? PlateButtonSkin.Washi : PlateButtonSkin.Plain);
@@ -188,9 +188,10 @@ namespace Trial.Explore
             }
             string key = card.Kind + "|" + card.Title + "|" + string.Join("|", card.Lines);
             if (Plate != null && Plate.Kind == ExploreStyle.PlateScreen && Plate.Key == key) return;
-            bool end = card.Kind == CardKind.MiasmaDeath || card.Kind == CardKind.Fallen || card.Kind == CardKind.Completed || card.Kind == CardKind.Survived;
-            bool brk = card.Kind == CardKind.LayerCleared || card.Kind == CardKind.PushedOut;
-            void Act(ScreenAction action) => OnCardAction(action).Forget();
+            bool end = card.Kind == CardKind.Expired || card.Kind == CardKind.Fallen || card.Kind == CardKind.Completed || card.Kind == CardKind.Survived;
+            bool brk = card.Kind == CardKind.LayerCleared;
+            // a button's Arg goes with its action (the region of ChooseRegion, #888)
+            void Act(CardButton b) => OnCardAction(b.Action, b.Arg).Forget();
             RectTransform el = OpenPlate(new PlateOpts
             {
                 Cls = end ? "is-end is-" + card.Kind.ToString().ToLowerInvariant() : brk ? "is-washi is-break" : "is-washi",
@@ -202,7 +203,7 @@ namespace Trial.Explore
                 {
                     if (e.Key == "Enter")
                     {
-                        if (card.Buttons.Count > 0) Act(card.Buttons[0].Action);
+                        if (card.Buttons.Count > 0) Act(card.Buttons[0]);
                         return true;
                     }
                     return false;
@@ -215,10 +216,11 @@ namespace Trial.Explore
             PlateBoxContent c = ExplorePlateKit.ContentOf(el);
             var flow = new ExplorePlateFlow(c.X, c.Y, c.W, 14f);
 
-            // the end card's mark: miasma / a fallen heart / the player's own way out (survived, cleared)
+            // the end card's mark: the calendar run out (the world ends) / a fallen heart / the player's own way out
+            // (survived, cleared)
             if (end)
             {
-                IconSpec mark = card.Kind == CardKind.MiasmaDeath ? new IconSpec("miasma", ExploreStyle.Phosphor)
+                IconSpec mark = card.Kind == CardKind.Expired ? new IconSpec("hourglass", ExploreStyle.Steel)
                     : card.Kind == CardKind.Fallen ? new IconSpec("heart", ExploreStyle.Crimson, outline: true)
                     : new IconSpec("stairs", ExploreStyle.Amber);
                 float my = flow.Take(76f);
@@ -228,7 +230,7 @@ namespace Trial.Explore
             }
             if (brk)
             {
-                RectTransform kicker = PlatesKicker(el, card.Kind == CardKind.LayerCleared ? "Boss" : "hourglass", 28f, ExploreStyle.WashiInk,
+                RectTransform kicker = PlatesKicker(el, "Boss", 28f, ExploreStyle.WashiInk,
                     Screen.LayerTitle, true, null, ink, true, out float kh);
                 Ui.Place(kicker, c.X, flow.Take(kh));
             }
@@ -741,8 +743,8 @@ namespace Trial.Explore
                     return;
                 }
                 if (card.Buttons.Count == 0) return;
-                ScreenAction action = card.Buttons[0].Action;
-                OnCardAction(action).Forget();
+                CardButton ok = card.Buttons[0];
+                OnCardAction(ok.Action, ok.Arg).Forget();
             }).Forget();
         }
 
@@ -807,7 +809,7 @@ namespace Trial.Explore
                     return;
                 }
             }
-            if (!Session.Act(action)) return;
+            if (!Session.Act(action, arg)) return;
             Persist();
             ClosePlate();
             switch (action)
@@ -815,6 +817,17 @@ namespace Trial.Explore
                 case ScreenAction.GoToInterlude:
                     Sfx("interlude");
                     Render();
+                    break;
+                case ScreenAction.ChooseRegion:
+                    // the region either opens the way down at once or waits on 次の層へ降りる: the session decides, the
+                    // scene follows its phase (seven_layers_v4.md §3.1)
+                    if (Session.State.Phase == RunPhase.Interlude || Session.ConfirmingDescend)
+                    {
+                        Sfx("uiConfirm");
+                        Render();
+                        break;
+                    }
+                    await AfterDescend();
                     break;
                 case ScreenAction.Descend:
                 case ScreenAction.ConfirmDescend:
@@ -846,15 +859,19 @@ namespace Trial.Explore
         }
 
         // js: scenes/explore/ExploreScene.js:1404
-        /// <summary>afterDescend(): the new layer assembles; a death on entry sounds after 600 ms, else the layer banner, then proceed.</summary>
+        /// <summary>
+        /// afterDescend(): the new layer assembles; a calendar that runs out on the entry node sounds after 600 ms and its
+        /// end card stays (no banner), else the layer banner, then proceed.
+        /// </summary>
         private async Promise AfterDescend()
         {
             Sfx("descend");
             BattleFallback = false;
             Render(enter: true);
             ExplorationState st = Session.State;
-            if (st.Phase == RunPhase.MiasmaDeath)
+            if (st.Phase == RunPhase.Expired)
             {
+                // the doom swell the miasma death had is the world's end now (the sound keeps its old name)
                 Sfx("miasmaDeath", 600);
                 return;
             }
@@ -1276,7 +1293,7 @@ namespace Trial.Explore
                 return;
             }
             if (Screen == null) return;
-            // a confirmation (この生を終える, or a descent into 瘴気死) is up over the rest: its own modal asks, and the rest's
+            // a confirmation (この生を終える, or a descent that runs the calendar out) is up over the rest: its own modal asks, and the rest's
             // card stays under it (one confirmation, §6.6) — drawn from the interlude card itself when this mount has not
             // drawn it yet (a reload with the confirmation open: X-8)
             if (Screen.Card.Kind != CardKind.Interlude && LullKey.Length > 0) return;
@@ -1287,11 +1304,13 @@ namespace Trial.Explore
             LullKey = key;
             Ui.Clear(Lull);
             ExplorationState below = Session.TryDescend();
+            Rgba washiInkIcon = ExploreStyle.WashiInk;
             IconSpec[] icons =
             {
                 new IconSpec("heart", ExploreStyle.Crimson),
                 new IconSpec("pip", ExploreStyle.Amber),
-                new IconSpec("miasma", ExploreStyle.Phosphor),
+                // the rest's third line is the calendar's (no day passes, §6.5)
+                new IconSpec("hourglass", washiInkIcon),
             };
             var restLines = new List<string>();
             var ahead = new List<string>();
@@ -1331,22 +1350,27 @@ namespace Trial.Explore
             Ui.Size(rest, rc.W, ry);
             BoxGraphic.On(rest, ExplorePlateKit.LullRestCss);
             Ui.Place(rest, rc.X, flow.Take(ry));
-            // .ocbg-explore-lull-buttons: margin-top 12, right-aligned, gap 16; min-width 260; 次の層へ降りる with its stairs
+            // .ocbg-explore-lull-buttons: margin-top 12, right-aligned, gap 16; min-width 260; 次の層へ降りる with its stairs.
+            // After layer 2 the three ways down (ChooseRegion, each with its region in Arg) stand where 次の層へ降りる stood,
+            // each with the stairs and as a primary; with この生を終える beside them the four take min-width 220 to fit the
+            // plate (dungeon_exploration_v4.md §6.5, #888).
             RectTransform buttonsRow = Ui.Div(restPlate, "ocbg-explore-lull-buttons");
             var buttons = new List<OcbgButton>();
             var withIcon = new List<bool>();
+            bool regions = card.Buttons.Any(b => b.Action == ScreenAction.ChooseRegion);
             for (int i = 0; i < card.Buttons.Count; i++)
             {
                 CardButton b = card.Buttons[i];
-                bool descend = b.Action == ScreenAction.Descend;
-                OcbgButton btn = ExplorePlateKit.Button(buttonsRow, b.Label, i == 0 && descend, false, PlateButtonSkin.Lull, out Action<bool> ring);
-                btn.Click += () => OnCardAction(b.Action).Forget();
+                bool region = b.Action == ScreenAction.ChooseRegion;
+                bool descend = b.Action == ScreenAction.Descend || region;
+                OcbgButton btn = ExplorePlateKit.Button(buttonsRow, b.Label, region || (i == 0 && descend), false, PlateButtonSkin.Lull, out Action<bool> ring);
+                btn.Click += () => OnCardAction(b.Action, b.Arg).Forget();
                 string label = b.Label;
                 AddFocus(btn, () => label, ring);
                 buttons.Add(btn);
                 withIcon.Add(descend);
             }
-            ExplorePlateKit.RowOfButtons(buttonsRow, buttons, rc.W, false, 0f, 260f, 16f, true,
+            ExplorePlateKit.RowOfButtons(buttonsRow, buttons, rc.W, false, 0f, regions ? 220f : 260f, 16f, true,
                 k => withIcon[k] ? ExplorePlateKit.IconButtonSize(buttons[k], 24f, 12f) : buttons[k].NaturalSize);
             for (int k = 0; k < buttons.Count; k++)
                 if (withIcon[k]) ExplorePlateKit.IconInButton(buttons[k], "stairs", 24f, ExploreStyle.Ink, 12f);
@@ -1376,7 +1400,7 @@ namespace Trial.Explore
                 BoxGraphic.On(win, ExplorePlateKit.LullWindowCss);
                 RectTransform clip = Ui.Div(win, "clip", 1f, 1f, 534f, 300f);
                 clip.gameObject.AddComponent<UnityEngine.UI.RectMask2D>();
-                RectTransform strip = ExploreBackdrop.SkyStrip(clip, below.Profile.Layer, 534f, 300f);
+                RectTransform strip = ExploreBackdrop.SkyStrip(clip, below.Profile.BackdropLayer, 534f, 300f);
                 // @media (prefers-reduced-motion: reduce) … .ocbg-explore-lull-window canvas { animation: none; }
                 if (strip && !Reduce) CssAnimator.Set(strip, ExplorePlateKit.LullWindowAnim);
                 BoxGraphic.Make(clip, ExplorePlateKit.LullWindowAfterCss, 0f, 0f, 534f, 300f, "::after");
@@ -1401,7 +1425,7 @@ namespace Trial.Explore
                     Ui.Place(warn, nc.X, nflow.Take(wh));
                     continue;
                 }
-                // 「次は第 2 層　■■の秘跡: 1 歩ごとに瘴気 +1%、刻限 10」: the layer as a heading, its numbers under it
+                // 「第 2 層　■■の秘跡: ノード 11、真っ直ぐ抜けると 5 日」: the layer as a heading, its numbers under it
                 int at = line.IndexOf(": ", StringComparison.Ordinal);
                 if (below != null && at > 0)
                 {
@@ -1558,6 +1582,8 @@ namespace Trial.Explore
         public const string SurvivedCss = "background: radial-gradient(80% 70% at 50% 0%, color-mix(in srgb, var(--amber) 12%, transparent), transparent 70%), var(--panel-solid); border-color: color-mix(in srgb, var(--amber) 50%, var(--steel));";
         /// <summary>explore.css:251 .ocbg-explore-plate.is-fallen.</summary>
         public const string FallenCss = "border-top: 3px solid var(--crimson);";
+        /// <summary>The calendar run out (#888, Unity's own rule, provisional until design draws it): a steel rule, the world gone grey.</summary>
+        public const string ExpiredCss = "border-top: 3px solid var(--steel);";
         /// <summary>explore.css:252 .ocbg-explore-end-mark.</summary>
         public const string EndMarkCss = "width: 76px; height: 76px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--rule); border-radius: 50%;";
         /// <summary>explore.css:260 .ocbg-explore-plate.is-result .ocbg-explore-plate-buttons.</summary>
@@ -1716,6 +1742,7 @@ namespace Trial.Explore
             if (cls.Contains("is-end")) sb.Append(EndCss);
             if (cls.Contains("is-survived") || cls.Contains("is-completed")) sb.Append(SurvivedCss);
             if (cls.Contains("is-fallen")) sb.Append(FallenCss);
+            if (cls.Contains("is-expired")) sb.Append(ExpiredCss);
             return sb.ToString();
         }
 

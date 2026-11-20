@@ -1,4 +1,4 @@
-// #99: the exploration hands a combat node's battle in — the floor, the max stamina 瘴気 leaves, HP,
+// #99: the exploration hands a combat node's battle in — the floor, the max stamina the temporary changes leave, HP,
 // stamina, the journal's 開示度, the deck, the tools and the enemy line — and takes its result back:
 // HP, stamina, mastery ticks, what the journal learned, the unique cards and death. Runs under
 // `dotnet test` (Exploration.Bridge.Tests.csproj) and in Unity's EditMode runner.
@@ -34,7 +34,7 @@ namespace Exploration.Bridge.Tests
                 Assert.That(handIn.Encounter, Is.EqualTo(session.PendingEncounter));
                 Assert.That(handIn.Hp, Is.EqualTo(41));
                 Assert.That(handIn.MaxHp, Is.EqualTo(Constants.PlayerMaxHp));
-                Assert.That(handIn.Stamina, Is.EqualTo(session.State.Stamina), "the entry node's 刻限 has already given stamina back");
+                Assert.That(handIn.Stamina, Is.EqualTo(session.State.Stamina), "the entry node has already given stamina back");
                 Assert.That(handIn.MaxStamina, Is.EqualTo(session.State.MaxStamina));
                 Assert.That(handIn.Deck.Count, Is.EqualTo(PrototypeDeck.Kinds.Count * PrototypeDeck.Copies));
                 Assert.That(handIn.FieldCells, Is.EqualTo(new[] { BattleField.Cells(1, NodeKind.Battle) }));
@@ -62,16 +62,6 @@ namespace Exploration.Bridge.Tests
         }
 
         [Test]
-        public void Miasma_LowersTheMaxStamina_TheBattleStartsFrom()
-        {
-            // concept-v3 §6: one point per full 20%. 45% is two points down from 10.
-            var expedition = new Expedition(new RunStart { Seed = 3, MiasmaPercent = 45 });
-            BattleLaunch launch = expedition.StartEncounter().NextLaunch();
-            Assert.That(launch.MaxStamina, Is.EqualTo(8));
-            Assert.That(launch.CreateSource().State.Player.MaxStamina, Is.EqualTo(8));
-        }
-
-        [Test]
         public void TheInBattleTools_ReachTheBattle_AsAmounts()
         {
             var tools = new[] { "maai_no_kutsu", "ikitsugi_no_fue", "ryurin_no_kakera" };
@@ -91,7 +81,7 @@ namespace Exploration.Bridge.Tests
         [Test]
         public void AToolThatActsOnTheExploration_IsNotABattleTool()
         {
-            Assert.Throws<ArgumentException>(() => new Expedition(battleToolIds: new[] { "bosho_no_men" }));
+            Assert.Throws<ArgumentException>(() => new Expedition(battleToolIds: new[] { "kaerimichi_no_ito" }));
         }
 
         [Test]
@@ -568,6 +558,7 @@ namespace Exploration.Bridge.Tests
                 WalkToAndWin(expedition, NodeKind.Elite);
                 WalkToBossAndWin(expedition, out _);
                 Assert.That(expedition.Session.Act(ScreenAction.GoToInterlude), Is.True);
+                if (expedition.Session.NeedsRegion) Assert.That(expedition.Session.Act(ScreenAction.ChooseRegion, (int)Region.Dragon), Is.True);
                 Assert.That(expedition.Session.Act(ScreenAction.Descend), Is.True);
             }
             BattleReturn elite = WalkToAndWin(expedition, NodeKind.Elite);
@@ -598,7 +589,7 @@ namespace Exploration.Bridge.Tests
             var deck = PrototypeDeck.Build();
             return new BattleHandIn(
                 2, kind, encounter, encounter.Fights.Select(_ => cells).ToList(),
-                Constants.PlayerMaxHp, Constants.PlayerMaxHp, Constants.BaseMaxStamina, Constants.BaseMaxStamina, 0,
+                Constants.PlayerMaxHp, Constants.PlayerMaxHp, Constants.BaseMaxStamina, Constants.BaseMaxStamina,
                 levels ?? encounter.EnemyIds.Distinct().ToDictionary(id => id, _ => 0),
                 deck, Departure.Plain(deck), 11);
         }
@@ -675,6 +666,7 @@ namespace Exploration.Bridge.Tests
             Assert.That(atBoss, Is.Not.Null, "the walk reached the boss");
         }
 
+        /// <summary>Clears layers to the boss and descends, into the dragon's region after layer 2.</summary>
         private static void WalkToLayer(Expedition expedition, int layer)
         {
             ExplorationSession session = expedition.Session;
@@ -682,8 +674,9 @@ namespace Exploration.Bridge.Tests
             {
                 WalkToBossAndWin(expedition, out _);
                 Assert.That(session.Act(ScreenAction.GoToInterlude), Is.True);
+                if (session.NeedsRegion) Assert.That(session.Act(ScreenAction.ChooseRegion, (int)Region.Dragon), Is.True);
                 Assert.That(session.Act(ScreenAction.Descend), Is.True);
-                Assert.That(session.ConfirmingDescend, Is.False, "the descent does not end the life");
+                Assert.That(session.ConfirmingDescend, Is.False, "the descent does not run the calendar out");
             }
         }
 

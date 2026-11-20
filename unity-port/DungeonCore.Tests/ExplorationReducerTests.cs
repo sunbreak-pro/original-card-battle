@@ -7,31 +7,39 @@ namespace DungeonCore.Tests
         // battle_core_v4.md §10: PLAYER_MAX_HP 50.
         private const int PlayerMaxHp = 50;
 
-        private static ExplorationState EnterLayer(int layer, ulong seed = 11UL, RunLoadout? loadout = null, int hp = PlayerMaxHp, int stamina = 10)
+        private static readonly ReliefItem Sand = ReliefItem.EntryDay("hiyomi_no_suna");
+        private static readonly ReliefItem Thread = ReliefItem.Return("kaerimichi_no_ito");
+        private static readonly ReliefItem Pill = ReliefItem.Haste("hayagake_no_gan");
+
+        private static ExplorationState EnterLayer(
+            int layer, ulong seed = 11UL, RunLoadout? loadout = null, int hp = PlayerMaxHp, int stamina = 10,
+            CalendarState? calendar = null, Region region = Region.Dragon)
         {
-            var profile = SevenLayers.Of(layer);
-            return ExplorationReducer.Enter(profile, profile.Map(seed), loadout ?? RunLoadout.Empty, hp, PlayerMaxHp, stamina);
+            var profile = Lair.Of(layer, region);
+            return ExplorationReducer.Enter(
+                profile, profile.Map(seed), loadout ?? RunLoadout.Empty, hp, PlayerMaxHp, stamina, calendar ?? CalendarState.Fresh);
         }
 
+        // ---------------------------------------------------------------- the day a node costs
+
         [Test]
-        public void EnteringALayerSpendsTheEntryNodesTimeUnit()
+        public void EnteringALayerSpendsTheEntryNodesDay()
         {
             var state = EnterLayer(3);
-            Assert.That(state.TimeLeft, Is.EqualTo(SevenLayers.Of(3).TimeLimit - 1));
-            Assert.That(state.MiasmaPercent, Is.EqualTo(SevenLayers.Of(3).Density));
+            Assert.That(state.DaysLeft, Is.EqualTo(Calendar.TotalDays - 1));
+            Assert.That(state.Calendar, Is.EqualTo(CalendarState.Fresh.Advance()));
             Assert.That(state.HasResolved(state.Map.EntryId), Is.True);
             Assert.That(state.Phase, Is.EqualTo(RunPhase.Exploring));
+            Assert.That(state.Region, Is.EqualTo(Region.Dragon));
         }
 
         [Test]
-        public void ANewNodeCostsOneTimeUnitAndOneLayersWorthOfMiasma()
+        public void ANewNodeCostsOneDay()
         {
             var before = EnterLayer(5);
             int next = before.ReachableUnresolved().First();
             var after = ExplorationReducer.Step(before, next, RestChoice.Train);
-
-            Assert.That(after.TimeLeft, Is.EqualTo(before.TimeLeft - 1));
-            Assert.That(after.MiasmaPercent, Is.EqualTo(before.MiasmaPercent + SevenLayers.Of(5).Density));
+            Assert.That(after.DaysLeft, Is.EqualTo(before.DaysLeft - 1));
         }
 
         [Test]
@@ -46,12 +54,11 @@ namespace DungeonCore.Tests
             var back = ExplorationReducer.Step(stepped, entry);
 
             Assert.That(back.CurrentNodeId, Is.EqualTo(entry));
-            Assert.That(back.TimeLeft, Is.EqualTo(stepped.TimeLeft));
-            Assert.That(back.MiasmaPercent, Is.EqualTo(stepped.MiasmaPercent));
+            Assert.That(back.Calendar, Is.EqualTo(stepped.Calendar));
         }
 
         [Test]
-        public void BothSidesOfAForkCostOneTimeUnitEach()
+        public void BothSidesOfAForkCostOneDayEach()
         {
             var start = EnterLayer(1);
             int entry = start.CurrentNodeId;
@@ -62,8 +69,7 @@ namespace DungeonCore.Tests
             var home = ExplorationReducer.Step(left, entry);
             var right = ExplorationReducer.Step(home, fork[1], RestChoice.Train);
 
-            Assert.That(right.TimeLeft, Is.EqualTo(start.TimeLeft - 2));
-            Assert.That(right.MiasmaPercent, Is.EqualTo(start.MiasmaPercent + 2 * SevenLayers.Of(1).Density));
+            Assert.That(right.DaysLeft, Is.EqualTo(start.DaysLeft - 2));
         }
 
         [Test]
@@ -75,29 +81,9 @@ namespace DungeonCore.Tests
         }
 
         [Test]
-        public void StaminaComesBackByThreeForEveryTimeUnitSpent()
+        public void ALayerHasNoBudgetOfItsOwn()
         {
-            // concept-v3.md §12-16.
-            var start = EnterLayer(1, stamina: 0);
-            Assert.That(start.Stamina, Is.EqualTo(Miasma.FieldRecovery));
-
-            var next = ExplorationReducer.Step(start, start.ReachableUnresolved().First(), RestChoice.Train);
-            Assert.That(next.Stamina, Is.EqualTo(Math.Min(next.MaxStamina, 2 * Miasma.FieldRecovery)));
-        }
-
-        [Test]
-        public void StaminaNeverPassesTheMaximumTheGaugeAllows()
-        {
-            var state = EnterLayer(6, stamina: 10);
-            Assert.That(state.Stamina, Is.LessThanOrEqualTo(state.MaxStamina));
-        }
-
-        [Test]
-        public void RunningOutOfTimeEndsTheLayer()
-        {
-            // dungeon_exploration_v4.md §4.3.
-            // Layer seven holds 刻限 4 over six nodes. Combing the middle row instead of
-            // dropping onto the root spends every unit and pushes the run out empty-handed.
+            // The per-layer 刻限 is gone: combing the king room's middle row leaves the life exploring, a day a node.
             var state = EnterLayer(7, seed: 4UL, stamina: 10);
             int entry = state.CurrentNodeId;
             var middle = state.Map.Row(1).Select(n => n.Id).ToList();
@@ -106,97 +92,290 @@ namespace DungeonCore.Tests
             foreach (int id in middle)
             {
                 state = ExplorationReducer.Step(state, id, RestChoice.Train);
-                if (state.Phase != RunPhase.Exploring) break;
                 state = ExplorationReducer.Step(state, entry);
             }
 
-            Assert.That(state.TimeLeft, Is.Zero);
-            Assert.That(state.Phase, Is.EqualTo(RunPhase.PushedOut));
-            Assert.That(state.HasResolved(state.Map.BossId), Is.False, "the root was never reached");
+            Assert.That(state.Phase, Is.EqualTo(RunPhase.Exploring));
+            Assert.That(state.DaysLeft, Is.EqualTo(Calendar.TotalDays - 5));
+            Assert.That(ExplorationReducer.CanStep(state, middle[0]), Is.True);
+        }
 
-            // Being pushed out still leads to the interlude and the next layer (§4.3).
-            Assert.DoesNotThrow(() => ExplorationReducer.Interlude(state));
+        // ---------------------------------------------------------------- 日読みの砂 and 早駆けの丸薬
+
+        [Test]
+        public void TheSandMakesEveryEntryNodeFree()
+        {
+            // tools_and_consumables_v4.md §2.4.
+            var sand = new RunLoadout(new[] { Sand });
+            Assert.That(sand.EntryDayFree, Is.True);
+            var state = EnterLayer(3, loadout: sand);
+            Assert.That(state.DaysLeft, Is.EqualTo(Calendar.TotalDays));
+            Assert.That(state.HasResolved(state.Map.EntryId), Is.True);
+
+            var next = ExplorationReducer.Step(state, state.ReachableUnresolved().First(), RestChoice.Train);
+            Assert.That(next.DaysLeft, Is.EqualTo(Calendar.TotalDays - 1), "only the entry node is free");
         }
 
         [Test]
-        public void NoNewNodeCanBeTakenWithoutTimeLeft()
+        public void TheSandTurnsThirtyDaysToTheKingIntoTwentyThree()
         {
-            var state = EnterLayer(7, seed: 4UL);
-            var zeroed = state.With(timeLeft: 0);
+            // tools_and_consumables_v4.md §2.4: seven entry nodes at 0 days.
+            Assert.That(RunStraightDown(Region.Parasite, RunLoadout.Empty).DaysLeft, Is.EqualTo(Calendar.TotalDays - 30));
+            Assert.That(RunStraightDown(Region.Parasite, new RunLoadout(new[] { Sand })).DaysLeft, Is.EqualTo(Calendar.TotalDays - 23));
+        }
+
+        [Test]
+        public void ThePillMakesTheNextNewNodeFree()
+        {
+            // tools_and_consumables_v4.md §3.
+            var state = EnterLayer(1, loadout: new RunLoadout(null, new[] { Pill }));
+            int entry = state.CurrentNodeId;
+            var taken = ExplorationReducer.UseConsumable(state, 0);
+            Assert.That(taken.NextStepFree, Is.True);
+            Assert.That(taken.DaysLeft, Is.EqualTo(state.DaysLeft), "taking it costs no day");
+            Assert.That(taken.Loadout.Consumables, Is.Empty);
+
+            var fork = taken.ReachableUnresolved().Take(2).ToList();
+            var free = ExplorationReducer.Step(taken, fork[0], RestChoice.Train);
+            Assert.That(free.DaysLeft, Is.EqualTo(state.DaysLeft));
+            Assert.That(free.NextStepFree, Is.False);
+
+            var back = ExplorationReducer.Step(free, entry);
+            var paid = ExplorationReducer.Step(back, fork[1], RestChoice.Train);
+            Assert.That(paid.DaysLeft, Is.EqualTo(state.DaysLeft - 1));
+        }
+
+        [Test]
+        public void ThePillWaitsOverResolvedNodes()
+        {
+            var state = EnterLayer(1, loadout: new RunLoadout(null, new[] { Pill }));
+            int entry = state.CurrentNodeId;
+            int forward = state.ReachableUnresolved().First();
+            var stepped = ExplorationReducer.UseConsumable(ExplorationReducer.Step(state, forward, RestChoice.Train), 0);
+
+            var back = ExplorationReducer.Step(stepped, entry);
+            Assert.That(back.NextStepFree, Is.True, "a walk back is free already, so the pill is kept");
+        }
+
+        [Test]
+        public void APillTakenInTheInterludePaysTheNextLayersEntry()
+        {
+            var cleared = WalkStraightDown(Lair.Of(1), 9UL, new RunLoadout(null, new[] { Pill }), PlayerMaxHp, PlayerMaxHp, 10, CalendarState.Fresh);
+            var rest = ExplorationReducer.UseConsumable(ExplorationReducer.Interlude(cleared), 0);
+            var two = ExplorationReducer.Descend(rest, Lair.Of(2), Lair.Of(2).Map(2UL));
+            Assert.That(two.DaysLeft, Is.EqualTo(cleared.DaysLeft));
+            Assert.That(two.NextStepFree, Is.False);
+        }
+
+        [Test]
+        public void WithTheSandThePillIsKeptForTheNodeAfterTheEntry()
+        {
+            var cleared = WalkStraightDown(Lair.Of(1), 9UL, new RunLoadout(new[] { Sand }, new[] { Pill }), PlayerMaxHp, PlayerMaxHp, 10, CalendarState.Fresh);
+            var rest = ExplorationReducer.UseConsumable(ExplorationReducer.Interlude(cleared), 0);
+            var two = ExplorationReducer.Descend(rest, Lair.Of(2), Lair.Of(2).Map(2UL));
+            Assert.That(two.DaysLeft, Is.EqualTo(cleared.DaysLeft));
+            Assert.That(two.NextStepFree, Is.True);
+
+            var next = ExplorationReducer.Step(two, two.ReachableUnresolved().First(), RestChoice.Train);
+            Assert.That(next.DaysLeft, Is.EqualTo(cleared.DaysLeft));
+            Assert.That(next.NextStepFree, Is.False);
+        }
+
+        // ---------------------------------------------------------------- 期限切れ
+
+        [Test]
+        public void TheLastDayEndsTheWorld()
+        {
+            var state = EnterLayer(1, calendar: new CalendarState(2));
+            Assert.That(state.DaysLeft, Is.EqualTo(1));
+            Assert.That(state.Phase, Is.EqualTo(RunPhase.Exploring));
+
+            var gone = ExplorationReducer.Step(state, state.ReachableUnresolved().First(), RestChoice.Train);
+            Assert.That(gone.DaysLeft, Is.Zero);
+            Assert.That(gone.Phase, Is.EqualTo(RunPhase.Expired));
+            Assert.That(gone.IsOver, Is.True);
+            Assert.That(ExplorationReducer.CanStep(gone, state.CurrentNodeId), Is.False);
+            Assert.Throws<ExplorationRuleException>(() => ExplorationReducer.EndLife(gone));
+            Assert.Throws<ExplorationRuleException>(() => ExplorationReducer.Interlude(gone));
+        }
+
+        [Test]
+        public void ExpiryOutranksTheLayerBoss()
+        {
+            // Layer one's shortest route is five days: the boss takes the last one.
+            var state = WalkStraightDown(Lair.Of(1), 9UL, RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10, new CalendarState(5));
+            Assert.That(state.HasResolved(state.Map.BossId), Is.True);
+            Assert.That(state.Phase, Is.EqualTo(RunPhase.Expired));
+        }
+
+        [Test]
+        public void TheLastDaySpentReachingTheKingEndsTheWorldBeforeTheFight()
+        {
+            // An expired calendar starts no fight, so the king never falls.
+            var state = WalkStraightDown(Lair.Of(7, Region.Dragon), 5UL, RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10, new CalendarState(3));
+            Assert.That(state.Phase, Is.EqualTo(RunPhase.Expired));
+            Assert.That(state.Calendar.KingReturns, Is.Empty);
+
+            var reported = BeatTheBoss(state);
+            Assert.That(reported.Phase, Is.EqualTo(RunPhase.Expired));
+            Assert.That(reported.Calendar.KingReturns, Is.Empty);
+        }
+
+        [Test]
+        public void NoNewNodeCanBeTakenOnARunOutCalendar()
+        {
+            var state = EnterLayer(1, seed: 4UL);
+            var zeroed = state.With(calendar: new CalendarState(0));
             int next = zeroed.ReachableUnresolved().First();
+            Assert.That(ExplorationReducer.CanStep(zeroed, next), Is.False);
             Assert.Throws<ExplorationRuleException>(() => ExplorationReducer.Step(zeroed, next));
         }
 
         [Test]
+        public void EnteringOnARunOutCalendarEndsTheLifeAtTheEntry()
+        {
+            var state = EnterLayer(1, calendar: new CalendarState(0));
+            Assert.That(state.Phase, Is.EqualTo(RunPhase.Expired));
+        }
+
+        // ---------------------------------------------------------------- layers, interlude and kings
+
+        [Test]
         public void BeatingTheLayerBossOpensTheInterlude()
         {
-            var state = WalkStraightDown(SevenLayers.Of(2), 9UL, RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10);
+            var state = WalkStraightDown(Lair.Of(2), 9UL, RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10, CalendarState.Fresh);
             Assert.That(state.Phase, Is.EqualTo(RunPhase.LayerCleared));
+            Assert.That(ExplorationReducer.CanInterlude(state), Is.True);
 
             var rest = ExplorationReducer.Interlude(state);
             Assert.That(rest.Phase, Is.EqualTo(RunPhase.Interlude));
-            Assert.That(rest.MiasmaPercent, Is.EqualTo(state.MiasmaPercent), "the interlude adds no 瘴気");
+            Assert.That(rest.Calendar, Is.EqualTo(state.Calendar), "the interlude costs no day");
             Assert.That(rest.Stamina, Is.EqualTo(rest.MaxStamina));
         }
 
         [Test]
         public void TheInterludeGivesBackThirtyPercentOfHp()
         {
-            var cleared = WalkStraightDown(SevenLayers.Of(1), 9UL, RunLoadout.Empty, hp: 10, maxHp: PlayerMaxHp, stamina: 10);
+            var cleared = WalkStraightDown(Lair.Of(1), 9UL, RunLoadout.Empty, hp: 10, maxHp: PlayerMaxHp, stamina: 10, CalendarState.Fresh);
             var rest = ExplorationReducer.Interlude(cleared);
             Assert.That(rest.Hp, Is.EqualTo(Math.Min(PlayerMaxHp, cleared.Hp + 15)), "30% of 50");
         }
 
         [Test]
-        public void BeatingTheLastLayersBossCompletesTheRun()
+        public void AKingFallingFreezesTheCalendarAndEndsTheWayOn()
         {
-            var state = WalkStraightDown(SevenLayers.Of(7), 5UL, RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10);
+            var reached = WalkStraightDown(Lair.Of(7, Region.Ghost), 5UL, RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10, CalendarState.Fresh);
+            Assert.That(reached.Calendar.KingReturns, Is.Empty, "standing in the king room is not beating the king");
+
+            var state = BeatTheBoss(reached);
+            Assert.That(state.Phase, Is.EqualTo(RunPhase.LayerCleared));
+            Assert.That(state.IsOver, Is.False);
+            Assert.That(state.Calendar.KingReturns, Is.EqualTo(new Dictionary<Region, int> { [Region.Ghost] = Calendar.KingReturnDays }));
+            Assert.That(state.DaysLeft, Is.EqualTo(Calendar.TotalDays - 3));
+            Assert.That(BeatTheBoss(state).Calendar, Is.EqualTo(state.Calendar), "a second report changes nothing");
+
+            // No layer lies below the king room: the life ends alive from here (seven_layers_v4.md §10).
+            Assert.That(ExplorationReducer.CanInterlude(state), Is.False);
+            Assert.Throws<ExplorationRuleException>(() => ExplorationReducer.Interlude(state));
+            Assert.That(ExplorationReducer.EndLife(state).Phase, Is.EqualTo(RunPhase.Survived));
+        }
+
+        [Test]
+        public void TheThirdKingWhileTheOtherTwoAreDownIsTheClear()
+        {
+            var twoDown = CalendarState.Fresh.KingDown(Region.Dragon).Advance(20).KingDown(Region.Parasite);
+            var reached = WalkStraightDown(Lair.Of(7, Region.Ghost), 5UL, RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10, twoDown);
+            Assert.That(reached.Phase, Is.EqualTo(RunPhase.LayerCleared), "the third king still has to be fought");
+            Assert.That(reached.IsOver, Is.False);
+
+            var state = BeatTheBoss(reached);
             Assert.That(state.Phase, Is.EqualTo(RunPhase.Completed));
             Assert.That(state.IsOver, Is.True);
+            Assert.That(state.Calendar.ClearReached, Is.True);
+            Assert.That(state.DaysLeft, Is.EqualTo(twoDown.DaysLeft), "every day of the room was frozen");
         }
 
         [Test]
-        public void TheGaugeReachingOneHundredEndsTheLife()
+        public void LosingTheKingFightLeavesTheKingStandingAndTheCalendarRunning()
         {
-            var profile = SevenLayers.Of(7);
-            var state = ExplorationReducer.Enter(
-                profile, profile.Map(3UL), RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10, miasmaPercent: 90);
-            Assert.That(state.MiasmaPercent, Is.EqualTo(97));
-            Assert.That(state.Phase, Is.EqualTo(RunPhase.Exploring));
+            var reached = WalkStraightDown(Lair.Of(7, Region.Dragon), 5UL, RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10, CalendarState.Fresh);
+            var fallen = ExplorationReducer.ReportBattle(reached, 0, reached.Stamina);
 
-            var dead = ExplorationReducer.Step(state, state.ReachableUnresolved().First(), RestChoice.Train);
-            Assert.That(dead.MiasmaPercent, Is.EqualTo(100));
-            Assert.That(dead.Phase, Is.EqualTo(RunPhase.MiasmaDeath));
-            Assert.That(dead.IsOver, Is.True);
+            Assert.That(fallen.Phase, Is.EqualTo(RunPhase.Fallen));
+            Assert.That(fallen.Calendar.KingReturns, Is.Empty);
+            Assert.That(fallen.Calendar, Is.EqualTo(reached.Calendar));
+
+            // The next heir's calendar counts down through the hand-over instead of freezing on a king nobody beat.
+            var next = fallen.Calendar.Handover(fallen.Phase, fallen.Loadout.ShortHandover);
+            Assert.That(next.IsFrozen, Is.False);
+            Assert.That(next.DaysLeft, Is.EqualTo(fallen.DaysLeft - Calendar.HandoverFallenDays));
         }
 
         [Test]
-        public void MiasmaDeathOutranksTheBoss()
+        public void LosingTheThirdKingIsNoClear()
         {
-            var profile = SevenLayers.Of(7);
-            var map = profile.Map(3UL);
-            var state = ExplorationReducer.Enter(
-                profile, map, RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10, miasmaPercent: 79);
+            var twoDown = CalendarState.Fresh.KingDown(Region.Dragon).Advance(20).KingDown(Region.Parasite);
+            var reached = WalkStraightDown(Lair.Of(7, Region.Ghost), 5UL, RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10, twoDown);
+            var fallen = ExplorationReducer.ReportBattle(reached, 0, reached.Stamina);
 
-            while (state.Phase == RunPhase.Exploring)
+            Assert.That(fallen.Phase, Is.EqualTo(RunPhase.Fallen));
+            Assert.That(fallen.Calendar.ClearReached, Is.False);
+            Assert.That(fallen.Calendar.KingReturns.Keys, Is.EqualTo(new[] { Region.Dragon, Region.Parasite }));
+        }
+
+        [Test]
+        public void BeatingALayerBossLeavesTheKingsAlone()
+        {
+            var reached = WalkStraightDown(Lair.Of(6, Region.Dragon), 9UL, RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10, CalendarState.Fresh);
+            var won = BeatTheBoss(reached);
+            Assert.That(won.Phase, Is.EqualTo(RunPhase.LayerCleared));
+            Assert.That(won.Calendar, Is.EqualTo(reached.Calendar));
+        }
+
+        [Test]
+        public void AStraightRunToTheKingCostsThirtyDays()
+        {
+            // seven_layers_v4.md §3.2, walked end to end rather than summed on paper.
+            foreach (Region region in Lair.Regions)
             {
-                int next = state.ReachableUnresolved().First();
-                state = ExplorationReducer.Step(state, next, RestChoice.Train);
+                var state = BeatTheBoss(RunStraightDown(region, RunLoadout.Empty));
+                Assert.That(state.DaysLeft, Is.EqualTo(Calendar.TotalDays - 30), region.ToString());
+                Assert.That(state.Phase, Is.EqualTo(RunPhase.LayerCleared), region.ToString());
+                Assert.That(state.Profile.IsKingLayer, Is.True);
+                Assert.That(state.Calendar.KingReturns.Keys, Is.EqualTo(new[] { region }));
+                Assert.That(state.MaxStamina, Is.EqualTo(StaminaRules.BaseMaxStamina), "no gauge lowers max stamina any more");
             }
+        }
 
-            Assert.That(state.MiasmaPercent, Is.EqualTo(100));
-            Assert.That(state.Phase, Is.EqualTo(RunPhase.MiasmaDeath));
+        // ---------------------------------------------------------------- stamina and rests
+
+        [Test]
+        public void StaminaComesBackByThreeForEveryNewNode()
+        {
+            // concept-v3.md §12-16.
+            var start = EnterLayer(1, stamina: 0);
+            Assert.That(start.Stamina, Is.EqualTo(StaminaRules.FieldRecovery));
+
+            var next = ExplorationReducer.Step(start, start.ReachableUnresolved().First(), RestChoice.Train);
+            Assert.That(next.Stamina, Is.EqualTo(Math.Min(next.MaxStamina, 2 * StaminaRules.FieldRecovery)));
+        }
+
+        [Test]
+        public void StaminaNeverPassesTheMaximum()
+        {
+            var state = EnterLayer(6, stamina: 10);
+            Assert.That(state.Stamina, Is.LessThanOrEqualTo(state.MaxStamina));
         }
 
         [Test]
         public void ARestNodeHealsOrTrains_NeverBoth()
         {
             // dungeon_exploration_v4.md §3.2.
-            var profile = SevenLayers.Of(4);
+            var profile = Lair.Of(4, Region.Ghost);
             var map = profile.Map(2UL);
             var restNode = map.Nodes.First(n => n.Kind == NodeKind.Rest);
 
-            var start = ExplorationReducer.Enter(profile, map, RunLoadout.Empty, hp: 10, maxHp: PlayerMaxHp, stamina: 1);
+            var start = ExplorationReducer.Enter(profile, map, RunLoadout.Empty, hp: 10, maxHp: PlayerMaxHp, stamina: 1, CalendarState.Fresh);
             var atRest = WalkTo(start, restNode.Id, RestChoice.Rest);
             var atTrain = WalkTo(start, restNode.Id, RestChoice.Train);
 
@@ -207,8 +386,25 @@ namespace DungeonCore.Tests
 
             Assert.That(atTrain.TrainingMarks, Is.EqualTo(1));
             Assert.That(atTrain.TempMaxStaminaMod, Is.Zero);
-            Assert.That(atRest.TimeLeft, Is.EqualTo(atTrain.TimeLeft), "either choice costs the same one 刻限");
-            Assert.That(atRest.MiasmaPercent, Is.EqualTo(atTrain.MiasmaPercent));
+            Assert.That(atRest.Calendar, Is.EqualTo(atTrain.Calendar), "either choice costs the same one day");
+        }
+
+        [Test]
+        public void TakingTheRestInTheKingRoomArrivesWithMoreStamina()
+        {
+            // 休息's +2 is a 一時変化 and carries into the king's battle.
+            var profile = Lair.Of(7, Region.Dragon);
+            var map = profile.Map(5UL);
+            var rest = map.Nodes.Single(n => n.Kind == NodeKind.Rest);
+
+            var trained = ThroughTheKingRoom(profile, map, rest.Id, RestChoice.Train);
+            var rested = ThroughTheKingRoom(profile, map, rest.Id, RestChoice.Rest);
+
+            Assert.That(rested.Calendar, Is.EqualTo(trained.Calendar), "either choice costs the same day");
+            Assert.That(trained.MaxStamina, Is.EqualTo(10));
+            Assert.That(rested.MaxStamina, Is.EqualTo(12));
+            Assert.That(rested.TrainingMarks, Is.Zero);
+            Assert.That(trained.TrainingMarks, Is.EqualTo(1));
         }
 
         [Test]
@@ -218,54 +414,52 @@ namespace DungeonCore.Tests
             Assert.That(state.MaxStamina, Is.EqualTo(14));
         }
 
-        [Test]
-        public void AToolThinsEveryLayerForTheWholeLife()
-        {
-            var masked = new RunLoadout(new[] { ReliefItem.Density("bosho_no_men", 1) });
-            Assert.That(EnterLayer(7, loadout: masked).EffectiveDensity, Is.EqualTo(6));
-            Assert.That(EnterLayer(1, loadout: masked).EffectiveDensity, Is.EqualTo(1), "density floors at 1");
-        }
-
-        [Test]
-        public void AConsumablePullsTheGaugeBackWithoutSpendingTime()
-        {
-            var carried = new RunLoadout(
-                null,
-                new[] { ReliefItem.Gauge("joka_no_ko", 10) });
-            var profile = SevenLayers.Of(6);
-            var state = ExplorationReducer.Enter(
-                profile, profile.Map(11UL), carried, PlayerMaxHp, PlayerMaxHp, 10, miasmaPercent: 40);
-            Assert.That(state.MiasmaPercent, Is.EqualTo(45));
-
-            var after = ExplorationReducer.UseConsumable(state, 0);
-            Assert.That(after.MiasmaPercent, Is.EqualTo(35));
-            Assert.That(after.TimeLeft, Is.EqualTo(state.TimeLeft));
-            Assert.That(after.Loadout.Consumables, Is.Empty);
-        }
+        // ---------------------------------------------------------------- loadout
 
         [Test]
         public void ThereAreThreeToolSlotsAndThreeConsumableSlots()
         {
             // concept-v3.md §14.
-            var four = Enumerable.Range(0, 4).Select(i => ReliefItem.Density($"t{i}", 1)).ToArray();
+            var four = new[] { Sand, Sand, Thread, Thread };
             Assert.Throws<ArgumentException>(() => new RunLoadout(four));
             Assert.DoesNotThrow(() => new RunLoadout(four, null, RunLoadout.SurvivorBonusToolSlots));
 
-            var fourConsumables = Enumerable.Range(0, 4).Select(i => ReliefItem.Gauge($"c{i}", 10)).ToArray();
+            var fourConsumables = Enumerable.Range(0, 4).Select(i => ReliefItem.Haste($"c{i}")).ToArray();
             Assert.Throws<ArgumentException>(() => new RunLoadout(null, fourConsumables));
         }
 
         [Test]
-        public void HpAndStaminaCarryAcrossBattlesButTheGaugeDoesNot()
+        public void OutsideTrialAToolIsOneTheCalendarReads()
         {
-            // concept-v3.md §7.1 for the carry-over; battle_core_v4.md §6.2 for the boundary:
-            // 瘴気纏い lowers max stamina inside a battle and never touches this gauge.
+            Assert.Throws<ArgumentException>(() => new RunLoadout(new[] { new ReliefItem("ikitsugi_no_fue", ReliefKind.Battle, 3) }));
+            var both = new RunLoadout(new[] { Sand, Thread });
+            Assert.That(both.EntryDayFree, Is.True);
+            Assert.That(both.ShortHandover, Is.True);
+            Assert.That(RunLoadout.Empty.EntryDayFree, Is.False);
+            Assert.That(RunLoadout.Empty.ShortHandover, Is.False);
+        }
+
+        [Test]
+        public void TheThreadDoesNothingInsideTheLair()
+        {
+            var plain = EnterLayer(2);
+            var threaded = EnterLayer(2, loadout: new RunLoadout(new[] { Thread }));
+            Assert.That(threaded.Calendar, Is.EqualTo(plain.Calendar));
+        }
+
+        // ---------------------------------------------------------------- battles and the end of a life
+
+        [Test]
+        public void HpAndStaminaCarryAcrossBattles()
+        {
+            // concept-v3.md §7.1 for the carry-over; battle_core_v4.md §6.2 for the boundary: a battle's own swings of
+            // max stamina are never written back.
             var state = EnterLayer(3);
             var after = ExplorationReducer.ReportBattle(state, hpAfter: 12, staminaAfter: 2);
 
             Assert.That(after.Hp, Is.EqualTo(12));
             Assert.That(after.Stamina, Is.EqualTo(2));
-            Assert.That(after.MiasmaPercent, Is.EqualTo(state.MiasmaPercent));
+            Assert.That(after.Calendar, Is.EqualTo(state.Calendar));
             Assert.That(after.MaxStamina, Is.EqualTo(state.MaxStamina));
         }
 
@@ -282,20 +476,19 @@ namespace DungeonCore.Tests
         public void EndingTheLifeStopsTheRunWhereItStands()
         {
             // tier1-core.md R1-11: 「この生を終える」 can be chosen at any point of the exploration.
-            var state = EnterLayer(3);
+            var state = EnterLayer(3, loadout: new RunLoadout(new[] { Thread }));
             var ended = ExplorationReducer.EndLife(state);
 
             Assert.That(ended.Phase, Is.EqualTo(RunPhase.Survived));
             Assert.That(ended.IsOver, Is.True);
-            Assert.That(ended.TimeLeft, Is.EqualTo(state.TimeLeft), "closing the life spends no 刻限");
-            Assert.That(ended.MiasmaPercent, Is.EqualTo(state.MiasmaPercent), "and adds no 瘴気");
+            Assert.That(ended.Calendar, Is.SameAs(state.Calendar), "closing the life spends no day; the handover is the calendar's");
             Assert.That(ended.Hp, Is.EqualTo(state.Hp));
         }
 
         [Test]
         public void TheLifeCanAlsoBeClosedFromTheInterlude()
         {
-            var cleared = WalkStraightDown(SevenLayers.Of(1), 9UL, RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10);
+            var cleared = WalkStraightDown(Lair.Of(1), 9UL, RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10, CalendarState.Fresh);
             var rest = ExplorationReducer.Interlude(cleared);
             Assert.That(ExplorationReducer.EndLife(rest).Phase, Is.EqualTo(RunPhase.Survived));
         }
@@ -315,108 +508,46 @@ namespace DungeonCore.Tests
         }
 
         [Test]
-        public void AStraightRunDownAllSevenLayersEndsAt89Percent()
+        public void TheSameSeedsGiveTheSameRun()
         {
-            // The headline number of seven_layers_v4.md §3.1, proved end to end rather than
-            // summed on paper: enter each layer, walk the shortest route, take the interlude.
-            var loadout = RunLoadout.Empty;
-            var state = ExplorationReducer.Enter(
-                SevenLayers.Of(1), SevenLayers.Of(1).Map(1UL), loadout, PlayerMaxHp, PlayerMaxHp, 10);
-            state = WalkToBoss(state);
+            var first = WalkStraightDown(Lair.Of(4, Region.Ghost), 77UL, RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10, CalendarState.Fresh);
+            var second = WalkStraightDown(Lair.Of(4, Region.Ghost), 77UL, RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10, CalendarState.Fresh);
 
-            var expectedAfterLayer = new[] { 5, 10, 20, 32, 48, 68, 89 };
-            var expectedMaxStamina = new[] { 10, 10, 9, 9, 8, 7, 6 };
-            Assert.That(state.MiasmaPercent, Is.EqualTo(expectedAfterLayer[0]));
-
-            for (int layer = 2; layer <= SevenLayers.Count; layer++)
-            {
-                var profile = SevenLayers.Of(layer);
-                state = ExplorationReducer.Descend(ExplorationReducer.Interlude(state), profile, profile.Map((ulong)layer));
-                state = WalkToBoss(state);
-
-                Assert.That(state.MiasmaPercent, Is.EqualTo(expectedAfterLayer[layer - 1]), $"after layer {layer}");
-                Assert.That(state.MaxStamina, Is.EqualTo(expectedMaxStamina[layer - 1]), $"after layer {layer}");
-            }
-
-            Assert.That(state.Phase, Is.EqualTo(RunPhase.Completed));
-            Assert.That(state.MiasmaPercent, Is.EqualTo(89));
-            Assert.That(state.MaxStamina, Is.EqualTo(6));
-            Assert.That(state.MiasmaPercent, Is.EqualTo(SevenLayers.BareMinimumMiasma()));
+            Assert.That(second.Map.Fingerprint(), Is.EqualTo(first.Map.Fingerprint()));
+            Assert.That(second.Calendar, Is.EqualTo(first.Calendar));
+            Assert.That(second.Hp, Is.EqualTo(first.Hp));
         }
 
-        [Test]
-        public void TakingTheRestOnTheLastLayerArrivesWithMoreStamina()
+        // ---------------------------------------------------------------- helpers
+
+        /// <summary>Enters the king room, spends its one middle node on <paramref name="middleId"/>, then meets the king.</summary>
+        private static ExplorationState ThroughTheKingRoom(LayerProfile profile, LayerMap map, int middleId, RestChoice choice)
         {
-            // seven_layers_v4.md §3.4: "max stamina 6 at 歪みの根" is the line where no rest
-            // node was ever taken. 休息's +2 is a 一時変化 and carries into the battle, so a run
-            // that spends its one middle node on rest reaches the root at 8 instead.
-            var profile = SevenLayers.Of(7);
-            var map = profile.Map(5UL);
-            var rest = map.Nodes.Single(n => n.Kind == NodeKind.Rest);
-
-            var trained = WalkThroughLayerSeven(profile, map, rest.Id, RestChoice.Train);
-            var rested = WalkThroughLayerSeven(profile, map, rest.Id, RestChoice.Rest);
-
-            Assert.That(trained.MiasmaPercent, Is.EqualTo(89));
-            Assert.That(rested.MiasmaPercent, Is.EqualTo(89), "either choice costs the same 瘴気");
-
-            Assert.That(trained.MaxStamina, Is.EqualTo(6));
-            Assert.That(rested.MaxStamina, Is.EqualTo(8));
-            Assert.That(rested.TrainingMarks, Is.Zero);
-            Assert.That(trained.TrainingMarks, Is.EqualTo(1));
-        }
-
-        [Test]
-        public void ADetourOnTheLastLayerCostsNoStamina()
-        {
-            // seven_layers_v4.md §3.5: the penalty caps at −4, so anything spent past 80% buys
-            // nothing back and costs nothing either — except the distance left to 100%.
-            var profile = SevenLayers.Of(7);
-            var map = profile.Map(5UL);
-            var straight = WalkThroughLayerSeven(profile, map, map.Row(1).First().Id, RestChoice.Train);
-
-            var detoured = ExplorationReducer.Enter(
-                profile, map, RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10, miasmaPercent: 68);
-            var middle = map.Row(1).Select(n => n.Id).ToList();
-            detoured = ExplorationReducer.Step(detoured, middle[0], RestChoice.Train);
-            detoured = ExplorationReducer.Step(detoured, map.EntryId); // free: already resolved
-            detoured = ExplorationReducer.Step(detoured, middle[1], RestChoice.Train);
-            detoured = ExplorationReducer.Step(detoured, map.BossId, RestChoice.Train);
-
-            Assert.That(detoured.MiasmaPercent, Is.EqualTo(96));
-            Assert.That(detoured.MaxStamina, Is.EqualTo(straight.MaxStamina),
-                "89% and 96% are both a −4 penalty");
-            Assert.That(detoured.Phase, Is.EqualTo(RunPhase.Completed));
-        }
-
-        /// <summary>
-        /// Enters layer seven at the 68% a straight run down the first six layers arrives with,
-        /// spends its one middle node on <paramref name="middleId"/>, then drops onto the root.
-        /// </summary>
-        private static ExplorationState WalkThroughLayerSeven(
-            LayerProfile profile, LayerMap map, int middleId, RestChoice choice)
-        {
-            var state = ExplorationReducer.Enter(
-                profile, map, RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10, miasmaPercent: 68);
+            var state = ExplorationReducer.Enter(profile, map, RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10, CalendarState.Fresh);
             state = ExplorationReducer.Step(state, middleId, choice);
             return ExplorationReducer.Step(state, map.BossId, choice);
         }
 
-        [Test]
-        public void TheSameSeedsGiveTheSameRun()
+        /// <summary>Layer 1 to the region's king, the shortest route through each layer, an interlude between them.</summary>
+        private static ExplorationState RunStraightDown(Region region, RunLoadout loadout)
         {
-            var first = WalkStraightDown(SevenLayers.Of(4), 77UL, RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10);
-            var second = WalkStraightDown(SevenLayers.Of(4), 77UL, RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10);
-
-            Assert.That(second.Map.Fingerprint(), Is.EqualTo(first.Map.Fingerprint()));
-            Assert.That(second.MiasmaPercent, Is.EqualTo(first.MiasmaPercent));
-            Assert.That(second.TimeLeft, Is.EqualTo(first.TimeLeft));
-            Assert.That(second.Hp, Is.EqualTo(first.Hp));
+            var route = Lair.Route(region);
+            var state = WalkToBoss(ExplorationReducer.Enter(
+                route[0], route[0].Map(1UL), loadout, PlayerMaxHp, PlayerMaxHp, 10, CalendarState.Fresh));
+            foreach (var profile in route.Skip(1))
+            {
+                state = ExplorationReducer.Descend(ExplorationReducer.Interlude(state), profile, profile.Map((ulong)profile.Layer));
+                state = WalkToBoss(state);
+            }
+            return state;
         }
 
+        private static ExplorationState BeatTheBoss(ExplorationState state) =>
+            ExplorationReducer.ReportBattle(state, state.Hp, state.Stamina);
+
         private static ExplorationState WalkStraightDown(
-            LayerProfile profile, ulong seed, RunLoadout loadout, int hp, int maxHp, int stamina) =>
-            WalkToBoss(ExplorationReducer.Enter(profile, profile.Map(seed), loadout, hp, maxHp, stamina));
+            LayerProfile profile, ulong seed, RunLoadout loadout, int hp, int maxHp, int stamina, CalendarState calendar) =>
+            WalkToBoss(ExplorationReducer.Enter(profile, profile.Map(seed), loadout, hp, maxHp, stamina, calendar));
 
         /// <summary>
         /// Always steps to the first node of the next row. Every forward route is the same

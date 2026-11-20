@@ -20,7 +20,7 @@ namespace DungeonCore.Tests
                 {
                     bool taken = Takes(() => ExplorationReducer.Step(state, node.Id));
                     Assert.That(ExplorationReducer.CanStep(state, node.Id), Is.EqualTo(taken),
-                        $"layer {state.Profile.Layer}, {state.Phase}, at {state.CurrentNodeId}, 刻限 {state.TimeLeft}, node {node.Id}");
+                        $"{state.Profile}, {state.Phase}, at {state.CurrentNodeId}, {state.DaysLeft} days, node {node.Id}");
                 }
             }
         }
@@ -33,9 +33,9 @@ namespace DungeonCore.Tests
             {
                 phases.Add(state.Phase);
                 Assert.That(ExplorationReducer.CanInterlude(state), Is.EqualTo(Takes(() => ExplorationReducer.Interlude(state))),
-                    $"layer {state.Profile.Layer}, {state.Phase}");
+                    $"{state.Profile}, {state.Phase}");
             }
-            Assert.That(phases, Is.SupersetOf(new[] { RunPhase.Exploring, RunPhase.LayerCleared, RunPhase.PushedOut, RunPhase.Fallen }),
+            Assert.That(phases, Is.SupersetOf(new[] { RunPhase.Exploring, RunPhase.LayerCleared, RunPhase.Expired, RunPhase.Fallen }),
                 "the walks reach every phase the check tells apart");
         }
 
@@ -52,24 +52,24 @@ namespace DungeonCore.Tests
             Assert.That(NodeKind.Trace.IsCombat(), Is.False, "a 死亡地点の痕跡 holds no fight (#106)");
         }
 
-        private static ExplorationState Enter(int layer, ulong seed)
-        {
-            var profile = SevenLayers.Of(layer);
-            return ExplorationReducer.Enter(profile, profile.Map(seed), RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10);
-        }
+        private static ExplorationState Enter(int layer, ulong seed) => Enter(Lair.Of(layer), seed, CalendarState.Fresh);
+
+        private static ExplorationState Enter(LayerProfile profile, ulong seed, CalendarState calendar) =>
+            ExplorationReducer.Enter(profile, profile.Map(seed), RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10, calendar);
 
         /// <summary>
-        /// Random walks over every layer: each one steps to a random neighbour, revisits included, until
-        /// the layer is left. Every state on the way is returned, the last one too.
+        /// Random walks over every layer of every region: each one steps to a random neighbour, revisits included,
+        /// until the layer is left or the calendar runs out (the last seed starts with four days left). Every state
+        /// on the way is returned, the last one too.
         /// </summary>
         private static IEnumerable<ExplorationState> Walks()
         {
-            for (int layer = 1; layer <= SevenLayers.Count; layer++)
+            foreach (var profile in Lair.Profiles)
             {
                 for (ulong seed = 1; seed <= 4; seed++)
                 {
-                    var rng = new SeededRng(seed * 31UL + (ulong)layer);
-                    var state = Enter(layer, seed);
+                    var rng = new SeededRng(seed * 31UL + (ulong)profile.Layer);
+                    var state = Enter(profile, seed, seed == 4 ? new CalendarState(4) : CalendarState.Fresh);
                     yield return state;
                     for (int guard = 0; state.Phase == RunPhase.Exploring && guard < 200; guard++)
                     {

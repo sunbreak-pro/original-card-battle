@@ -31,11 +31,11 @@ namespace Trial.Battle
             public static string Layer(int n) => "第 " + n.ToString(CultureInfo.InvariantCulture) + " 層";
             public static string Chain(int index, int total) =>
                 "連戦：" + total.ToString(CultureInfo.InvariantCulture) + " 戦のうち " + index.ToString(CultureInfo.InvariantCulture) + " 戦目";
-            /// <summary>「瘴気 n%：探索で溜まった瘴気。StepPercent% ごとに最大スタミナ −1（−MaxPenalty まで）」 (Miasma's numbers, DungeonCore's constants).</summary>
-            public static string Miasma(float pct) =>
-                "瘴気 " + Ocb.Num(pct) + "%：探索で溜まった瘴気。"
-                + global::DungeonCore.Miasma.StepPercent.ToString(CultureInfo.InvariantCulture) + "% ごとに最大スタミナ −1（−"
-                + global::DungeonCore.Miasma.MaxPenalty.ToString(CultureInfo.InvariantCulture) + " まで）";
+            /// <summary>
+            /// 「瘴気 n%」. The exploration dropped the miasma and its stamina penalty in #888, so the tip names the leftover
+            /// value only; removing the corner itself is the battle HUD's own follow-up.
+            /// </summary>
+            public static string Miasma(float pct) => "瘴気 " + Ocb.Num(pct) + "%";
         }
 
         /// <summary>JOURNAL_TIP: the journal button's tooltip (the DS JournalButton's title and its key). scene text</summary>
