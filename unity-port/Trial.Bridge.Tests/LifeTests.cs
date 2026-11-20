@@ -314,6 +314,30 @@ namespace Trial.Bridge.Tests
             Assert.Throws<ArgumentException>(() => Life.CloseLife(recorded, raw.Session.State, NoNewLineage), "a life still exploring has not ended");
         }
 
+        // A walked life whose calendar runs out: its end card must lead off the map. The explore scene hands the card's
+        // ScreenAction.NewLife to ctx.onLifeEnd, and main.js endLife closes the life there; a card with no button would
+        // leave the player on the world's end for good.
+        [Test]
+        public void TheExpiredEndCard_OffersTheButtonThatEndsTheLife_AndTheLifeEndStartsANewLineageOnTheFirstDay()
+        {
+            LifeStart ls = Inheritance.StartLife(Inheritance.NewLineage(13));
+            Expedition raw = Life.LifeSetup(Life.MakeStart(ls, Plain(ls)), new CalendarState(3)).Expedition;
+            ExplorationState end = Walk(Recorder.RecordExpedition(raw), (open, st) => open[0]);
+            Assert.That(end.Phase, Is.EqualTo(RunPhase.Expired), "three days run out on layer one");
+
+            ScreenCard card = raw.Session.Screen().Card;
+            Assert.That(card.Kind, Is.EqualTo(CardKind.Expired));
+            Assert.That(card.Buttons.Select(b => b.Action), Is.EqualTo(new[] { ScreenAction.NewLife }),
+                "the one button, and the one the Enter key presses");
+
+            // main.js endLife, as Trial's Main.EndLife runs it from ctx.onLifeEnd
+            Lineage recorded = Inheritance.RecordEnd(ls.Lineage, null, Inheritance.PlaceFromState(end), raw.Mastery, Names.LifeJournal(raw), Names.EndOptions(raw, end));
+            LifeClose close = Life.CloseLife(recorded, end, () => Inheritance.NewLineage(99));
+            Assert.That(close.WorldEnded, Is.True);
+            Assert.That(close.Next.Lives, Is.Empty);
+            Assert.That(close.Next.Calendar.DaysLeft, Is.EqualTo(Calendar.TotalDays));
+        }
+
         // ================================================================== survivor.test.mjs
 
         private const string Memo = "八代目のメモ。生きて戻る。";

@@ -203,14 +203,12 @@ namespace Exploration
         }
 
         /// <summary>
-        /// A life's end card. 期限切れ ends the world rather than the life, so it offers no new life here: starting over
-        /// from the first day is the game's (§6.9).
+        /// A life's end card, with the one button §6.9 gives every ending. 期限切れ needs it as much as the others: it is
+        /// the only way off the card, and the trial hands it to the app, which starts the new lineage on the first day.
         /// </summary>
         private static ScreenCard EndCard(CardKind kind, string title, string line, ExplorationState state) =>
             new ScreenCard(kind, title,
                 new[] { line, $"暦 {CalendarText.DaysLabel(state.DaysLeft)} ／ HP {state.Hp} / {state.MaxHp}" },
-                kind == CardKind.Expired
-                    ? new CardButton[0]
-                    : new[] { new CardButton("新しい生で潜り直す", ScreenAction.NewLife) });
+                new[] { new CardButton("新しい生で潜り直す", ScreenAction.NewLife) });
     }
 }

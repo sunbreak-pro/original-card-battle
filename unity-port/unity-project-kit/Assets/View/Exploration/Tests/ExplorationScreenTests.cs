@@ -292,8 +292,30 @@ namespace Exploration.Tests
             var end = session.Screen().Card;
             Assert.That(end.Kind, Is.EqualTo(CardKind.Expired));
             Assert.That(end.Lines.First(), Is.EqualTo("暦が尽き、龍神が目覚めた。世界が終わり、最初からやり直す。"));
-            Assert.That(end.Buttons, Is.Empty, "starting over from the first day is the game's, not this screen's");
-            Assert.That(session.Act(ScreenAction.NewLife), Is.False);
+            // §6.9: the one button of every end card, and the one the Enter key presses (Buttons[0]); without it the
+            // world's end is a card the player cannot leave.
+            Assert.That(end.Buttons.Select(b => b.Action), Is.EqualTo(new[] { ScreenAction.NewLife }));
+            Assert.That(end.Buttons[0].Label, Is.EqualTo("新しい生で潜り直す"));
+        }
+
+        [Test]
+        public void ANewLifeAfterTheCalendarRanOut_StartsOverOnTheFirstDay_WithNoTraceOfTheWorldBefore()
+        {
+            var session = Explorable(new ExplorationSession(new RunStart { Seed = 5, Calendar = new CalendarState(2) }));
+            int target = session.State.ReachableUnresolved().First();
+            session.Step(target, session.Screen().Node(target).Options.First().Choice);
+            session.Act(ScreenAction.ConfirmStep);
+            Assert.That(session.State.Phase, Is.EqualTo(RunPhase.Expired));
+            Assert.That(session.Traces.Traces, Is.Not.Empty, "the expired life left its trace on this world");
+
+            Assert.That(session.Act(ScreenAction.NewLife), Is.True);
+            Assert.That(session.Life, Is.EqualTo(2));
+            Assert.That(session.State.Profile.Layer, Is.EqualTo(1));
+            Assert.That(session.State.Phase, Is.EqualTo(RunPhase.Exploring));
+            // A fresh calendar, less the new life's own entry day (not the 10 days a death hands over).
+            Assert.That(session.Calendar.DaysLeft, Is.EqualTo(Calendar.TotalDays - 1));
+            Assert.That(session.Calendar.IsFrozen, Is.False);
+            Assert.That(session.Traces.Traces, Is.Empty, "the world before left nothing behind");
         }
 
         [Test]

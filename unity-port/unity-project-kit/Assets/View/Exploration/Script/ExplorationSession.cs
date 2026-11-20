@@ -408,11 +408,19 @@ namespace Exploration
                     return true;
 
                 case ScreenAction.NewLife:
-                    // An expired calendar ends the world, not the life: starting over from the first day is the game's
-                    // (Trial.Bridge's Life), so this screen offers no new life after it (§6.9).
-                    if (!State.IsOver || !IsIdle || State.Phase == RunPhase.Expired) return false;
-                    // The hand-over to the next life takes its days from the shared calendar (seven_layers_v4.md §2.1).
-                    _calendar = State.Calendar.Handover(State.Phase, State.Loadout.ShortHandover);
+                    if (!State.IsOver || !IsIdle) return false;
+                    if (State.Phase == RunPhase.Expired)
+                    {
+                        // The calendar run out ends the world, not only the life (§6.9): the next life starts on a fresh
+                        // calendar and finds no trace of the world before, as the trial's new lineage does (Trial.Bridge's Life).
+                        _calendar = CalendarState.Fresh;
+                        Traces = TraceLedger.Empty;
+                    }
+                    else
+                    {
+                        // The hand-over to the next life takes its days from the shared calendar (seven_layers_v4.md §2.1).
+                        _calendar = State.Calendar.Handover(State.Phase, State.Loadout.ShortHandover);
+                    }
                     Begin(RunSeed + 1UL);
                     return true;
 
