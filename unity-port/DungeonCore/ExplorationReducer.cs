@@ -224,8 +224,9 @@ namespace DungeonCore
 
         /// <summary>
         /// Hands a battle's result back to the run. HP and stamina carry across battles
-        /// (concept-v3.md §7.1); the battle's own max-stamina swings do not (battle_core_v4.md §6.2). Wiring this to
-        /// the battle core itself is #99.
+        /// (concept-v3.md §7.1); the battle's own max-stamina swings do not (battle_core_v4.md §6.2). Winning the
+        /// king room's boss fight brings the region's king down (CalendarState.KingDown). Wiring this to the battle
+        /// core itself is #99.
         /// </summary>
         public static ExplorationState ReportBattle(ExplorationState state, int hpAfter, int staminaAfter)
         {
@@ -233,8 +234,15 @@ namespace DungeonCore
 
             int hp = Math.Max(0, Math.Min(state.MaxHp, hpAfter));
             int stamina = Math.Max(0, Math.Min(state.MaxStamina, staminaAfter));
-            var phase = hp == 0 ? RunPhase.Fallen : state.Phase;
-            return state.With(hp: hp, stamina: stamina, phase: phase);
+            if (hp == 0) return state.With(hp: hp, stamina: stamina, phase: RunPhase.Fallen);
+
+            if (!IsKingFight(state)) return state.With(hp: hp, stamina: stamina);
+
+            // The king is down only once it is beaten: the calendar stands still until it comes back, and three down
+            // at once is the clear (§2.2).
+            var calendar = state.Calendar.KingDown(state.Region);
+            var phase = calendar.ClearReached ? RunPhase.Completed : RunPhase.LayerCleared;
+            return state.With(hp: hp, stamina: stamina, calendar: calendar, phase: phase);
         }
 
         /// <summary>
@@ -303,21 +311,9 @@ namespace DungeonCore
             int stamina = Math.Min(maxStamina, state.Stamina + StaminaRules.FieldRecovery);
             if (choice == RestChoice.Rest && node.Kind == NodeKind.Rest) stamina = maxStamina;
 
-            var phase = RunPhase.Exploring;
-            if (node.Kind == NodeKind.Boss)
-            {
-                if (state.Profile.IsKingLayer)
-                {
-                    // The king is down: the calendar stands still until it comes back, and three down at once is the
-                    // clear (§2.2).
-                    calendar = calendar.KingDown(state.Region);
-                    phase = calendar.ClearReached ? RunPhase.Completed : RunPhase.LayerCleared;
-                }
-                else
-                {
-                    phase = RunPhase.LayerCleared;
-                }
-            }
+            // The boss fight is still ahead: a loss turns this into Fallen in ReportBattle. The king's fall waits for
+            // the win there, so a lost king fight leaves nothing on the calendar for the next life to inherit.
+            var phase = node.Kind == NodeKind.Boss ? RunPhase.LayerCleared : RunPhase.Exploring;
 
             // 期限切れ outranks everything: the world ends on the node that spent the last day, boss or not.
             if (calendar.IsExpired) phase = RunPhase.Expired;
@@ -333,6 +329,16 @@ namespace DungeonCore
                 phase: phase,
                 nextStepFree: state.NextStepFree && !hasteSpent);
         }
+
+        /// <summary>
+        /// The fight being reported is the king's: the player stands on the king room's boss node and the room has not
+        /// ended otherwise. An expired calendar starts no fight. A beaten king reported twice gets the same return count
+        /// again, because no day passes in between.
+        /// </summary>
+        private static bool IsKingFight(ExplorationState state) =>
+            state.Phase == RunPhase.LayerCleared
+            && state.Profile.IsKingLayer
+            && state.CurrentNodeId == state.Map.BossId;
 
         /// <summary>A share of a maximum, rounded half away from zero the way the battle core rounds.</summary>
         private static int Share(int maximum, int percent) =>

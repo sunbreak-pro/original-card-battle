@@ -343,6 +343,26 @@ namespace Exploration.Tests
         }
 
         [Test]
+        public void FallingToTheKingLeavesTheNextLifesCalendarRunning()
+        {
+            var session = new ExplorationSession(new RunStart { Region = Region.Ghost });
+            WalkToLayer(session, Lair.KingLayer);
+            Step(session, session.State.Map.Row(1).First().Id);
+
+            Assert.That(session.Step(session.State.Map.BossId), Is.True);
+            Assert.That(session.HasPendingBattle, Is.True);
+            Assert.That(session.Calendar.IsFrozen, Is.False, "the king fight is still ahead");
+            Assert.That(session.Act(ScreenAction.FallInBattle), Is.True);
+            Assert.That(session.State.Phase, Is.EqualTo(RunPhase.Fallen));
+            Assert.That(session.Calendar.KingReturns, Is.Empty);
+
+            int fallenDays = session.State.DaysLeft;
+            Assert.That(session.Act(ScreenAction.NewLife), Is.True);
+            Assert.That(session.Calendar.IsFrozen, Is.False);
+            Assert.That(session.State.DaysLeft, Is.LessThanOrEqualTo(fallenDays - Calendar.HandoverFallenDays));
+        }
+
+        [Test]
         public void ConsumablesShowInTheirSlotsAndCostNoDay()
         {
             var session = Explorable(new ExplorationSession(new RunStart { Loadout = RunStart.TrialLoadout() }));

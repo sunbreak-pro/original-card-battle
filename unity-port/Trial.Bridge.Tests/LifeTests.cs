@@ -289,6 +289,27 @@ namespace Trial.Bridge.Tests
             Assert.That(close.Next.Calendar.KingReturns[Region.Dragon], Is.EqualTo(41 - Calendar.HandoverSurvivedDays));
         }
 
+        // A death in the king fight is no king brought down: the lineage's calendar keeps counting for the next heir.
+        [Test]
+        public void ADeathInTheKingFight_LeavesTheLineagesCalendarRunning()
+        {
+            LifeStart ls = Inheritance.StartLife(Inheritance.NewLineage(13));
+            LayerProfile kingRoom = Lair.Of(Lair.KingLayer, Region.Dragon);
+            ExplorationState at = ExplorationReducer.Enter(kingRoom, kingRoom.Map(5UL), RunLoadout.Empty, 50, 50, 10, new CalendarState(200));
+            while (at.Phase == RunPhase.Exploring)
+            {
+                int row = at.Map.Node(at.CurrentNodeId).Row;
+                at = ExplorationReducer.Step(at, at.Map.Successors(at.CurrentNodeId).First(id => at.Map.Node(id).Row == row + 1), RestChoice.Train);
+            }
+            Assert.That(at.CurrentNodeId, Is.EqualTo(at.Map.BossId));
+
+            ExplorationState fallen = ExplorationReducer.ReportBattle(at, 0, at.Stamina);
+            LifeClose close = Life.CloseLife(ls.Lineage, fallen, NoNewLineage);
+            Assert.That(close.Ending, Is.EqualTo(LifeEnding.Fallen));
+            Assert.That(close.Next.Calendar.IsFrozen, Is.False);
+            Assert.That(close.Next.Calendar.DaysLeft, Is.EqualTo(fallen.DaysLeft - Calendar.HandoverFallenDays));
+        }
+
         // dungeon_exploration_v4.md §6.9: the calendar run out ends the world; the game starts over on a new lineage.
         [Test]
         public void ACalendarThatRanOut_StartsABrandNewLineage_AndTheEndingStillReadsTheOldOne()

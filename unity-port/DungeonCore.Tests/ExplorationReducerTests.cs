@@ -209,11 +209,16 @@ namespace DungeonCore.Tests
         }
 
         [Test]
-        public void AKingFellOnTheLastDayIsStillDownButTheWorldEnds()
+        public void TheLastDaySpentReachingTheKingEndsTheWorldBeforeTheFight()
         {
+            // An expired calendar starts no fight, so the king never falls.
             var state = WalkStraightDown(Lair.Of(7, Region.Dragon), 5UL, RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10, new CalendarState(3));
             Assert.That(state.Phase, Is.EqualTo(RunPhase.Expired));
-            Assert.That(state.Calendar.KingReturns.Keys, Is.EqualTo(new[] { Region.Dragon }));
+            Assert.That(state.Calendar.KingReturns, Is.Empty);
+
+            var reported = BeatTheBoss(state);
+            Assert.That(reported.Phase, Is.EqualTo(RunPhase.Expired));
+            Assert.That(reported.Calendar.KingReturns, Is.Empty);
         }
 
         [Test]
@@ -259,11 +264,15 @@ namespace DungeonCore.Tests
         [Test]
         public void AKingFallingFreezesTheCalendarAndEndsTheWayOn()
         {
-            var state = WalkStraightDown(Lair.Of(7, Region.Ghost), 5UL, RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10, CalendarState.Fresh);
+            var reached = WalkStraightDown(Lair.Of(7, Region.Ghost), 5UL, RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10, CalendarState.Fresh);
+            Assert.That(reached.Calendar.KingReturns, Is.Empty, "standing in the king room is not beating the king");
+
+            var state = BeatTheBoss(reached);
             Assert.That(state.Phase, Is.EqualTo(RunPhase.LayerCleared));
             Assert.That(state.IsOver, Is.False);
             Assert.That(state.Calendar.KingReturns, Is.EqualTo(new Dictionary<Region, int> { [Region.Ghost] = Calendar.KingReturnDays }));
             Assert.That(state.DaysLeft, Is.EqualTo(Calendar.TotalDays - 3));
+            Assert.That(BeatTheBoss(state).Calendar, Is.EqualTo(state.Calendar), "a second report changes nothing");
 
             // No layer lies below the king room: the life ends alive from here (seven_layers_v4.md §10).
             Assert.That(ExplorationReducer.CanInterlude(state), Is.False);
@@ -275,11 +284,52 @@ namespace DungeonCore.Tests
         public void TheThirdKingWhileTheOtherTwoAreDownIsTheClear()
         {
             var twoDown = CalendarState.Fresh.KingDown(Region.Dragon).Advance(20).KingDown(Region.Parasite);
-            var state = WalkStraightDown(Lair.Of(7, Region.Ghost), 5UL, RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10, twoDown);
+            var reached = WalkStraightDown(Lair.Of(7, Region.Ghost), 5UL, RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10, twoDown);
+            Assert.That(reached.Phase, Is.EqualTo(RunPhase.LayerCleared), "the third king still has to be fought");
+            Assert.That(reached.IsOver, Is.False);
+
+            var state = BeatTheBoss(reached);
             Assert.That(state.Phase, Is.EqualTo(RunPhase.Completed));
             Assert.That(state.IsOver, Is.True);
             Assert.That(state.Calendar.ClearReached, Is.True);
             Assert.That(state.DaysLeft, Is.EqualTo(twoDown.DaysLeft), "every day of the room was frozen");
+        }
+
+        [Test]
+        public void LosingTheKingFightLeavesTheKingStandingAndTheCalendarRunning()
+        {
+            var reached = WalkStraightDown(Lair.Of(7, Region.Dragon), 5UL, RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10, CalendarState.Fresh);
+            var fallen = ExplorationReducer.ReportBattle(reached, 0, reached.Stamina);
+
+            Assert.That(fallen.Phase, Is.EqualTo(RunPhase.Fallen));
+            Assert.That(fallen.Calendar.KingReturns, Is.Empty);
+            Assert.That(fallen.Calendar, Is.EqualTo(reached.Calendar));
+
+            // The next heir's calendar counts down through the hand-over instead of freezing on a king nobody beat.
+            var next = fallen.Calendar.Handover(fallen.Phase, fallen.Loadout.ShortHandover);
+            Assert.That(next.IsFrozen, Is.False);
+            Assert.That(next.DaysLeft, Is.EqualTo(fallen.DaysLeft - Calendar.HandoverFallenDays));
+        }
+
+        [Test]
+        public void LosingTheThirdKingIsNoClear()
+        {
+            var twoDown = CalendarState.Fresh.KingDown(Region.Dragon).Advance(20).KingDown(Region.Parasite);
+            var reached = WalkStraightDown(Lair.Of(7, Region.Ghost), 5UL, RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10, twoDown);
+            var fallen = ExplorationReducer.ReportBattle(reached, 0, reached.Stamina);
+
+            Assert.That(fallen.Phase, Is.EqualTo(RunPhase.Fallen));
+            Assert.That(fallen.Calendar.ClearReached, Is.False);
+            Assert.That(fallen.Calendar.KingReturns.Keys, Is.EqualTo(new[] { Region.Dragon, Region.Parasite }));
+        }
+
+        [Test]
+        public void BeatingALayerBossLeavesTheKingsAlone()
+        {
+            var reached = WalkStraightDown(Lair.Of(6, Region.Dragon), 9UL, RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10, CalendarState.Fresh);
+            var won = BeatTheBoss(reached);
+            Assert.That(won.Phase, Is.EqualTo(RunPhase.LayerCleared));
+            Assert.That(won.Calendar, Is.EqualTo(reached.Calendar));
         }
 
         [Test]
@@ -288,7 +338,7 @@ namespace DungeonCore.Tests
             // seven_layers_v4.md §3.2, walked end to end rather than summed on paper.
             foreach (Region region in Lair.Regions)
             {
-                var state = RunStraightDown(region, RunLoadout.Empty);
+                var state = BeatTheBoss(RunStraightDown(region, RunLoadout.Empty));
                 Assert.That(state.DaysLeft, Is.EqualTo(Calendar.TotalDays - 30), region.ToString());
                 Assert.That(state.Phase, Is.EqualTo(RunPhase.LayerCleared), region.ToString());
                 Assert.That(state.Profile.IsKingLayer, Is.True);
@@ -491,6 +541,9 @@ namespace DungeonCore.Tests
             }
             return state;
         }
+
+        private static ExplorationState BeatTheBoss(ExplorationState state) =>
+            ExplorationReducer.ReportBattle(state, state.Hp, state.Stamina);
 
         private static ExplorationState WalkStraightDown(
             LayerProfile profile, ulong seed, RunLoadout loadout, int hp, int maxHp, int stamina, CalendarState calendar) =>
