@@ -54,14 +54,32 @@ namespace Depiction
 
         /// <summary>
         /// §5.16: the y of the row's bottom edge, 14 px over the highest of the heads, for figures
-        /// <paramref name="heights"/> tall with their feet on <paramref name="feetY"/>.
+        /// <paramref name="heights"/> tall with their feet on <paramref name="feetY"/>. A tall enemy in the
+        /// row puts the whole row at its fixed place (<see cref="BadgeBottom"/>), so it stays one row.
         /// </summary>
         public static float RowBottom(float feetY, IReadOnlyList<float> heights)
         {
             if (heights == null) throw new ArgumentNullException(nameof(heights));
             float tallest = 0f;
             foreach (float height in heights) tallest = Math.Max(tallest, height);
-            return feetY - FigureFrame.OmenBottomAbove(tallest);
+            return BadgeBottom(feetY, tallest);
+        }
+
+        /// <summary>
+        /// battle-visual-v1 §4.3 大型の敵 (#843): the first action's badge over an enemy taller than
+        /// <see cref="FigureFrame.TallHeight"/> has its top fixed on y 162, wherever the head is; the plan
+        /// stacks 8 px above it (y 88〜154), clear of the corner info and the buttons that end at y 76.
+        /// </summary>
+        public const float TallBadgeTop = 162f;
+
+        /// <summary>
+        /// The y of the bottom edge of a badge <paramref name="badgeHeight"/> tall over a figure
+        /// <paramref name="height"/> px tall with its feet on <paramref name="feetY"/>: 14 px over the head
+        /// (§4.4), or, for a tall enemy, under its fixed top (<see cref="TallBadgeTop"/>).
+        /// </summary>
+        public static float BadgeBottom(float feetY, float height, float badgeHeight = BadgeHeight)
+        {
+            return FigureFrame.IsTall(height) ? TallBadgeTop + badgeHeight : feetY - FigureFrame.OmenBottomAbove(height);
         }
     }
 }

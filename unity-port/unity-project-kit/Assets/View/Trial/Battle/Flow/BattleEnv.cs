@@ -355,7 +355,7 @@ namespace Trial.Battle
         public float X;
         /// <summary>feetY: L.FeetY + the figure's own y (a rise or a fall's sink).</summary>
         public float FeetY;
-        /// <summary>height: FigureFrame.HeightFor(size).</summary>
+        /// <summary>height: FigureFrame.HeightFor(size), or an enemy's own on FigureHeights (#843).</summary>
         public float Height;
         /// <summary>width: the body width.</summary>
         public float Width;

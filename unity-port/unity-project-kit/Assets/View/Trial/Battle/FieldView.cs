@@ -857,7 +857,7 @@ namespace Trial.Battle
         // ---- the api: frame ---------------------------------------------------------------------------------------
 
         /// <summary>
-        /// ApplyFrame's field half: art and Down, heights (FigureFrame.HeightFor(size)), the floor (FloorView.Bind), the player
+        /// ApplyFrame's field half: art and Down, heights (FigureFrame.HeightFor(size); an enemy's own on FigureHeights), the floor (FloorView.Bind), the player
         /// on its cells at once, the enemy's HOME on its cells (moved there now only when first), the stance lights snapped
         /// when first, the enemy-turn shade.
         /// </summary>
@@ -887,7 +887,8 @@ namespace Trial.Battle
             {
                 Fig f = FoeFig(e.Unit);
                 f.Size = e.Size;
-                Dress(f, FieldArt.SilhouetteOf(UnitSide.Enemy, e.U.ArtId, e.Size), FigureFrame.HeightFor(e.Size), "");
+                // §4.3 大型の敵 (#843): an enemy with a height of its own stands that tall, feet on y 570.
+                Dress(f, FieldArt.SilhouetteOf(UnitSide.Enemy, e.U.ArtId, e.Size), FigureFrame.HeightOf(e.U.ArtId, e.Size), "");
                 SetDown(UnitSide.Enemy, e.U.Down, e.Unit);
                 f.HomeX = fl != null && _floor.Shown && e.Cell > 0 ? StandX(f, e.Cell, e.Size) : NoFloorXEnemy;
                 if (first)
