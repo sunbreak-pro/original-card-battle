@@ -46,6 +46,17 @@ namespace BattleCore
                 self.Statuses,
                 adjacent: OwnGap(state, actor, unit) == 0 && state.Nearest >= 0,
                 recoveryBefore: recovery + stanceRecovery - fatigue + self.NextTurnRecoveryBonus);
+
+            // #962 (§7.5 根の這い): a turn started within a crawling enemy's gap loses 1 more, never
+            // below 1, counted like 枯らし (疲労 and the 温存 bonus in). Not a word: it takes no slot.
+            int crawler = actor == Actor.Player ? RootCrawler(state) : -1;
+            if (crawler >= 0)
+            {
+                int before = recovery + stanceRecovery - fatigue - withered + self.NextTurnRecoveryBonus;
+                int lost = before > Statuses.RootCrawlRecoveryFloor ? Statuses.RootCrawlRecoveryLoss : 0;
+                withered += lost;
+                events.Add(new RootCrawled(actor, lost) { Unit = crawler });
+            }
             int staminaAfter = Combat.RecoverStamina(
                 self.Stamina, self.MaxStamina, recovery + stanceRecovery - fatigue - withered, self.NextTurnRecoveryBonus);
             events.Add(new StaminaRecovered(actor, staminaAfter - self.Stamina, staminaAfter, self.MaxStamina) { Unit = unit });
@@ -85,6 +96,13 @@ namespace BattleCore
 
             bool swift = self.Statuses.Has(StatusKind.Swift);
             var ticked = self.Statuses.TickTurnStart();
+
+            // #962 (roster §13.1 爛れ): while it is still held after the tick, 出血 keeps its stack.
+            int bleedBefore = self.Statuses.Stacks(StatusKind.Bleed);
+            if (ticked.Has(StatusKind.Festering) && ticked.Stacks(StatusKind.Bleed) < bleedBefore)
+            {
+                ticked = ticked.Add(StatusKind.Bleed, bleedBefore - ticked.Stacks(StatusKind.Bleed));
+            }
             foreach (var kind in self.Statuses.Kinds)
             {
                 if (Statuses.DecayOf(kind) != StatusDecay.OnTurn) continue;

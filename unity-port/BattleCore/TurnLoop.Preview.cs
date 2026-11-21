@@ -31,6 +31,12 @@ namespace BattleCore
                 return PlayRefusal.Bound;
             }
 
+            // roster §14.1 凍て (#962): 「スタンスの札を出せない」.
+            if (state.Player.Statuses.Has(StatusKind.Frost) && Cards.IsStanceCard(card.Def))
+            {
+                return PlayRefusal.Frozen;
+            }
+
             return AimRefusal(state, card.Def, target);
         }
 

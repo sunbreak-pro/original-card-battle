@@ -367,7 +367,8 @@ namespace Depiction.Bridge
         public static string EnemyLine(EnemyDef enemy)
         {
             if (enemy == null) throw new ArgumentNullException(nameof(enemy));
-            string rank = enemy.Rank == EnemyRank.Boss ? "ボス" : enemy.Rank == EnemyRank.Elite ? "精鋭" : "通常";
+            // #962: the king of a lineage (EnemyRank.King) reads 王.
+            string rank = enemy.Rank == EnemyRank.King ? "王" : enemy.Rank == EnemyRank.Boss ? "ボス" : enemy.Rank == EnemyRank.Elite ? "精鋭" : "通常";
             return enemy.Name + "（" + rank + "・HP " + enemy.MaxHp + "）";
         }
 

@@ -614,6 +614,10 @@ namespace BattleCore
         /// words are 根張り (ending two turns on one cell costs 4 HP a stack) and 枯らし (the recovery
         /// −1 a stack). 伸びる根 pushes a player at gap 1 or less and pulls one at 2 or more. The five
         /// adaptations (root_a / root_g / root_st / root_sk / root_m) work through all three stages.
+        ///
+        /// #962: of the parasite lineage since roster v5.0 (§1.8), with no parasite body and no 根の這い.
+        /// roster §6 gives it neither, and turning 根の這い on would move a boss measured without it; the
+        /// question is handed to main (roster §1.9 reads as if every parasite crawled).
         /// </summary>
         public static readonly EnemyDef DistortionRoot = Build(
             "distortion_root", "歪みの根", EnemyRank.Boss,
@@ -698,7 +702,8 @@ namespace BattleCore
                             RootGrip(reach: new Reach(0, 4), cap: Statuses.BossWordStackMax),
                         },
                         Sway: true),
-                }));
+                }),
+            lineage: EnemyLineage.Parasite);
 
         private static Tree RootBase => new Tree(
             new[] { "twist", "root_grip", "sweep", "creeping_root" },
@@ -750,6 +755,275 @@ namespace BattleCore
             Omen: OmenKind.Guard,
             PullBeyond: push == null ? 1 : (int?)null);
 
+        // ---- §13〜§15 the parasite and ghost lineages' bosses (#962, proposed in roster v5.0) ----
+        //
+        // The owner took roster §1.9 and §13〜§15 as proposed on 2026-11-21, with the HP and numbers as
+        // provisional values to tune on the bench and in Unity. They stand outside All: the game's
+        // encounters, journal pages and art do not know them yet (LineageBosses).
+
+        /// <summary>
+        /// roster §13.5: 爛れた世界樹の芯, the parasite that comes out of the trunk (stage 2 of §13.4).
+        /// HP 60, size 1, favours gap 0; its roots crawl only at gap 0. It bites for 出血, skitters back
+        /// and puts down roots to heal where it is left alone. Unlike the trunk it takes push and pull.
+        /// </summary>
+        public static readonly EnemyDef RottedWorldTreeCore = Build(
+            "rotted_world_tree_core", "爛れた世界樹の芯", EnemyRank.King,
+            maxHp: 60, maxStamina: 14, recovery: 3, size: 1,
+            branchAtGapZero: new[] { "core_bite", "skitter", "spore_puff" },
+            branchAtGapOneToTwo: new[] { "spore_puff", "creep", "reroot", "skitter" },
+            branchAtGapThreePlus: new[] { "reroot", "creep", "spore_puff" },
+            actions: new[]
+            {
+                new EnemyActionDef(
+                    "core_bite", "芯の喰らいつき", BattleAttribute.Attack, 2,
+                    new Face(Power: 8, Reach: Reach.Only(0), Statuses: new[] { Foe(StatusKind.Bleed, 1) }),
+                    FoeHas(StatusKind.Festering, TraitEffect.PowerBonus, 3),
+                    Description: "間合い 0 に届く。出血を 1 付与する。相手の状態（爛れ）: 威力 +3"),
+                new EnemyActionDef(
+                    "creep", "這い寄る", BattleAttribute.Attack, 2,
+                    new Face(Power: 5, Move: 1),
+                    When(TraitCondition.Unguarded, TraitEffect.PowerBonus, 5),
+                    Description: "間合い 0〜1 に届く。当ててから前へ 1。無防備: 相手の Guard が 0 なら威力 +5"),
+                new EnemyActionDef(
+                    "spore_puff", "胞子吹き", BattleAttribute.Skill, 1,
+                    new Face(Reach: new Reach(1, 3), Statuses: new[] { Foe(StatusKind.Sprouting, 2) }),
+                    Description: "間合い 1〜3 に届く。芽吹きを 2 付与する。芽吹きが残っているあいだは使わない",
+                    NotWhileFoeHas: StatusKind.Sprouting),
+                new EnemyActionDef(
+                    "reroot", "根を下ろす", BattleAttribute.Skill, 2,
+                    new Face(Statuses: new[] { Self(StatusKind.Regen, 2) }),
+                    Targets: TargetKind.Self,
+                    Description: "自分に再生を 2 付与する。再生が残っているあいだは使わない",
+                    NotWhileSelfHas: StatusKind.Regen),
+                new EnemyActionDef(
+                    "skitter", "跳ね退く", BattleAttribute.Guard, 1,
+                    new Face(Guard: 2, Move: -2),
+                    Targets: TargetKind.Self,
+                    Description: "Guard 2、後ろへ 2"),
+            },
+            actionsPerPhase: Constants.EliteActions,
+            lineage: EnemyLineage.Parasite,
+            rootCrawlGap: 0);
+
+        /// <summary>
+        /// roster §13: 爛れた世界樹, the parasite lineage's king. The trunk is the host: HP 170, size 3,
+        /// never moves itself, favours gap 0〜1, and its roots crawl at gap 1 or less. 爛れ keeps 出血
+        /// from wearing off, 芽吹き makes every card cost 2 HP; neither is put on while it remains.
+        /// uproot pulls a player who stays at 3 or more. When the trunk falls the core comes out
+        /// (§13.4 stage_2): the fight is won when the core falls (230 HP in all).
+        /// </summary>
+        public static readonly EnemyDef RottedWorldTree = Build(
+            "rotted_world_tree", "爛れた世界樹", EnemyRank.King,
+            maxHp: 170, maxStamina: 14, recovery: 3, size: 3,
+            branchAtGapZero: TreeBase.Zero,
+            branchAtGapOneToTwo: TreeBase.One,
+            branchAtGapThreePlus: TreeBase.Three,
+            actions: new[]
+            {
+                new EnemyActionDef(
+                    "root_lash", "根の鞭", BattleAttribute.Attack, 2,
+                    new Face(Power: 8, Reach: new Reach(0, 2)),
+                    FoeHas(StatusKind.Bleed, TraitEffect.PowerBonus, 3),
+                    Description: "間合い 0〜2 に届く。相手の状態（出血）: 威力 +3"),
+                new EnemyActionDef(
+                    "sap_burst", "爛れの樹液", BattleAttribute.Skill, 2,
+                    new Face(Statuses: new[] { Foe(StatusKind.Festering, 2), Foe(StatusKind.Bleed, 1) }),
+                    Description: "間合い 0〜1 に届く。爛れを 2 付与する。出血を 1 付与する。爛れが残っているあいだは使わない",
+                    NotWhileFoeHas: StatusKind.Festering),
+                new EnemyActionDef(
+                    "spore_rain", "胞子の雨", BattleAttribute.Skill, 2,
+                    new Face(Reach: new Reach(2, 4), Statuses: new[] { Foe(StatusKind.Sprouting, 2) }),
+                    Description: "間合い 2〜4 に届く。芽吹きを 2 付与する。芽吹きが残っているあいだは使わない",
+                    NotWhileFoeHas: StatusKind.Sprouting),
+                new EnemyActionDef(
+                    "branch_fall", "枝落とし", BattleAttribute.Attack, 3,
+                    new Face(Power: 13, Reach: new Reach(1, 4)),
+                    AtLeast(3, TraitEffect.PowerBonus, 3),
+                    Description: "間合い 1〜4 に届く。間合い 3 以上: 威力 +3"),
+                new EnemyActionDef(
+                    "root_draw", "根寄せ", BattleAttribute.Guard, 1,
+                    new Face(Guard: 2, Push: -1, Reach: new Reach(2, 4)),
+                    Description: "間合い 2〜4 に届く。Guard 2。相手を 1 マス引く",
+                    Omen: OmenKind.Guard),
+                new EnemyActionDef(
+                    "bark_shell", "樹殻", BattleAttribute.Stance, 2,
+                    new Face(Stance: new StanceDef(StanceHook.TurnStart, StanceWhen.TargetHasStatus, Guard: 5, Status: StatusKind.Bleed)),
+                    Targets: TargetKind.Self,
+                    Description: "構え: 相手に出血が付いているターン開始に Guard +5"),
+                new EnemyActionDef(
+                    "sap_guard", "樹液で塞ぐ", BattleAttribute.Guard, 1,
+                    new Face(Guard: 3),
+                    Reserve(5, TraitEffect.GuardBonus, 3),
+                    Targets: TargetKind.Self,
+                    Description: "Guard 3。温存: 残 5 以上で Guard +3"),
+            },
+            actionsPerPhase: Constants.EliteActions,
+            switches: Layered(
+                TreeBase,
+                adaptations: new[]
+                {
+                    // uproot 「離れて 2 ターン過ごすと、根で引き寄せる」: 根寄せ on top of 3+ until N is 2 or less.
+                    new Adaptation("uproot", view => Lingered(view, gap => gap >= 3, gap => gap <= 2),
+                        tree => tree.PrefixFar("root_draw")),
+                },
+                stages: Array.Empty<Stage>()),
+            lineage: EnemyLineage.Parasite,
+            parasite: RottedWorldTreeCore,
+            rootCrawlGap: 1);
+
+        private static Tree TreeBase => new Tree(
+            new[] { "sap_burst", "root_lash", "bark_shell", "sap_guard" },
+            new[] { "root_lash", "sap_burst", "branch_fall", "sap_guard" },
+            new[] { "spore_rain", "branch_fall", "root_draw", "sap_guard" });
+
+        /// <summary>
+        /// roster §14: 死霊王, the ghost lineage's king. HP 220, size 2. It leaps 2 → 0 → 3 → 0 at the
+        /// end of each phase and acts on its omens one phase late. 惑い hides the aimed cells, 凍て keeps
+        /// stance cards out; neither is put on while it remains. anchor leaps next to a player who ended
+        /// two turns on one cell. From HP 110 (stage_2) it leaps 0 → 3 → 0 → 3 and 魂の奔流, which reaches
+        /// every cell, comes every other phase.
+        /// </summary>
+        public static readonly EnemyDef WraithKing = Build(
+            "wraith_king", "死霊王", EnemyRank.King,
+            maxHp: 220, maxStamina: 14, recovery: 3, size: 2,
+            branchAtGapZero: WraithBase.Zero,
+            branchAtGapOneToTwo: WraithBase.One,
+            branchAtGapThreePlus: WraithBase.Three,
+            actions: new[]
+            {
+                new EnemyActionDef(
+                    "soul_reap", "魂刈り", BattleAttribute.Attack, 3,
+                    new Face(Power: 13),
+                    AtMost(0, TraitEffect.PowerBonus, 5),
+                    Description: "間合い 0〜1 に届く。間合い 0: 威力 +5"),
+                new EnemyActionDef(
+                    "wraith_lance", "霊槍", BattleAttribute.Attack, 2,
+                    new Face(Power: 8, Reach: new Reach(1, 4)),
+                    AtLeast(3, TraitEffect.PowerBonus, 5),
+                    Description: "間合い 1〜4 に届く。間合い 3 以上: 威力 +5"),
+                new EnemyActionDef(
+                    "luring_voice", "招きの声", BattleAttribute.Skill, 2,
+                    new Face(Push: -1, Reach: new Reach(2, 4), Statuses: new[] { Foe(StatusKind.Bewildered, 2) }),
+                    Description: "間合い 2〜4 に届く。惑いを 2 付与する。相手を 1 マス引く。惑いが残っているあいだは使わない",
+                    Omen: OmenKind.Skill,
+                    NotWhileFoeHas: StatusKind.Bewildered),
+                new EnemyActionDef(
+                    "frost_touch", "凍ての手", BattleAttribute.Skill, 1,
+                    new Face(Statuses: new[] { Foe(StatusKind.Frost, 2), Foe(StatusKind.Intimidate, 1) }),
+                    Description: "間合い 0〜1 に届く。凍てを 2 付与する。威圧を 1 付与する。凍てが残っているあいだは使わない",
+                    NotWhileFoeHas: StatusKind.Frost),
+                new EnemyActionDef(
+                    "mist_veil", "霧の帳", BattleAttribute.Stance, 2,
+                    new Face(Stance: new StanceDef(StanceHook.TurnStart, StanceWhen.GapAtMost, Threshold: 1, Guard: 5)),
+                    Targets: TargetKind.Self,
+                    Description: "構え: 相手との間合いが 1 以下のターン開始に Guard +5"),
+                new EnemyActionDef(
+                    "bone_ward", "骨の垣", BattleAttribute.Guard, 1,
+                    new Face(Guard: 3),
+                    Reserve(5, TraitEffect.GuardBonus, 3),
+                    Targets: TargetKind.Self,
+                    Description: "Guard 3。温存: 残 5 以上で Guard +3"),
+                new EnemyActionDef(
+                    "soul_torrent", "魂の奔流", BattleAttribute.Attack, 4,
+                    new Face(Power: 18, Reach: new Reach(0, 4)),
+                    Description: "間合い 0〜4 に届く。1 つ前のフェーズに使っていれば使わない",
+                    NotTwiceRunning: true),
+            },
+            actionsPerPhase: Constants.EliteActions,
+            switches: Layered(
+                WraithBase,
+                adaptations: new[]
+                {
+                    // anchor 「同じマスで 2 ターン続けてターンを終えると、隣へ跳ぶ」: the next leap goes to
+                    // gap 0, once (跳んだら戻る). The tree is not touched.
+                    new Adaptation("anchor", view => StayedPutLastTurn(view), tree => tree, LeapOnce: 0),
+                },
+                stages: new[]
+                {
+                    // stage_2 「HP が半分を切ると、奔流を流す」: 魂の奔流 leads every band, leaping 0 → 3 → 0 → 3.
+                    new Stage("stage_2", view => view.Hp <= 110,
+                        tree => new Tree(
+                            new[] { "soul_torrent", "bone_ward", "soul_reap" },
+                            new[] { "soul_torrent", "bone_ward", "wraith_lance" },
+                            new[] { "soul_torrent", "luring_voice", "wraith_lance", "bone_ward" }),
+                        Array.Empty<EnemyActionDef>(),
+                        LeapPlan: new[] { 0, 3, 0, 3 }),
+                }),
+            lineage: EnemyLineage.Ghost,
+            leapPlan: new[] { 2, 0, 3, 0 });
+
+        private static Tree WraithBase => new Tree(
+            new[] { "soul_reap", "frost_touch", "mist_veil", "bone_ward" },
+            new[] { "wraith_lance", "frost_touch", "soul_reap", "bone_ward" },
+            new[] { "luring_voice", "wraith_lance", "bone_ward" });
+
+        /// <summary>
+        /// roster §15: 還らずの英雄, the ghost lineage's mid-boss. HP 170, size 1 — yet a ghost, so push
+        /// and pull pass it by. It leaps 0 → 2 → 0 → 3 and acts one phase late: next to the player it
+        /// cuts, from afar it throws the blade that puts on 影縫い (each own move costs 3 HP; not put on
+        /// while it remains). pursuit leaps next to a player who stayed 3 or more away for two turns.
+        /// From HP 85 (stage_2) it leaps only 0 → 1 → 0 → 1.
+        /// </summary>
+        public static readonly EnemyDef UnreturnedHero = Build(
+            "unreturned_hero", "還らずの英雄", EnemyRank.Boss,
+            maxHp: 170, maxStamina: 14, recovery: 3, size: 1,
+            branchAtGapZero: HeroBase.Zero,
+            branchAtGapOneToTwo: HeroBase.One,
+            branchAtGapThreePlus: HeroBase.Three,
+            actions: new[]
+            {
+                new EnemyActionDef(
+                    "hero_cleave", "斬り下ろし", BattleAttribute.Attack, 3,
+                    new Face(Power: 13),
+                    When(TraitCondition.Unguarded, TraitEffect.PowerBonus, 5),
+                    Description: "間合い 0〜1 に届く。無防備: 相手の Guard が 0 なら威力 +5"),
+                new EnemyActionDef(
+                    "stitch_blade", "影縫いの投げ刃", BattleAttribute.Attack, 2,
+                    new Face(Power: 5, Reach: new Reach(2, 4), Statuses: new[] { Foe(StatusKind.Shadowstitch, 2) }),
+                    Description: "間合い 2〜4 に届く。影縫いを 2 付与する。影縫いが残っているあいだは使わない",
+                    NotWhileFoeHas: StatusKind.Shadowstitch),
+                new EnemyActionDef(
+                    "return_cut", "返し斬り", BattleAttribute.Attack, 2,
+                    new Face(Power: 8, Break: 1, Reach: Reach.Only(0)),
+                    When(TraitCondition.Broken, TraitEffect.PowerBonus, 3),
+                    Description: "間合い 0 に届く。崩しを 1 付与する。崩し後: 相手のスタミナ 3 未満で威力 +3"),
+                new EnemyActionDef(
+                    "parry", "受け流し", BattleAttribute.Guard, 2,
+                    new Face(Guard: 4, Statuses: new[] { Foe(StatusKind.Intimidate, 1) }),
+                    Description: "間合い 0〜1 に届く。Guard 4。威圧を 1 付与する"),
+                new EnemyActionDef(
+                    "oath_stance", "帰れぬ誓い", BattleAttribute.Stance, 2,
+                    new Face(Stance: new StanceDef(StanceHook.TurnStart, StanceWhen.GapAtMost, Threshold: 0, Guard: 5)),
+                    Targets: TargetKind.Self,
+                    Description: "構え: 相手との間合いが 0 のターン開始に Guard +5"),
+                new EnemyActionDef(
+                    "fade_guard", "霧に紛れる", BattleAttribute.Guard, 1,
+                    new Face(Guard: 3),
+                    Targets: TargetKind.Self,
+                    Description: "Guard 3"),
+            },
+            actionsPerPhase: Constants.EliteActions,
+            switches: Layered(
+                HeroBase,
+                adaptations: new[]
+                {
+                    // pursuit 「離れて 2 ターン過ごすと、隣へ跳んで来る」: the next leap goes to gap 0, once.
+                    new Adaptation("pursuit", view => FarTwiceLastTurn(view), tree => tree, LeapOnce: 0),
+                },
+                stages: new[]
+                {
+                    // stage_2 「HP が半分を切ると、離れなくなる」: the tree stays, the leaps go 0 → 1 → 0 → 1.
+                    new Stage("stage_2", view => view.Hp <= 85, tree => tree, Array.Empty<EnemyActionDef>(),
+                        LeapPlan: new[] { 0, 1, 0, 1 }),
+                }),
+            lineage: EnemyLineage.Ghost,
+            leapPlan: new[] { 0, 2, 0, 3 });
+
+        private static Tree HeroBase => new Tree(
+            new[] { "hero_cleave", "oath_stance", "parry", "return_cut", "fade_guard" },
+            new[] { "hero_cleave", "stitch_blade", "parry", "fade_guard" },
+            new[] { "stitch_blade", "fade_guard" });
+
         /// <summary>
         /// The enemy actions that break the multi-hit rule (v4.4: <see cref="Cards.ValidateEnemyAction"/>).
         /// Empty since #51 put 二段斬り on v4.5's 7 × 2 with no status; kept so the check has a list to
@@ -757,7 +1031,10 @@ namespace BattleCore
         /// </summary>
         public static readonly IReadOnlyCollection<string> MultiHitRedesignPending = new HashSet<string>();
 
-        /// <summary>Every enemy the core knows, in roster order: seven normal, three elite, three bosses.</summary>
+        /// <summary>
+        /// The enemies the game fights, in roster order: seven normal, three elite, three bosses. The
+        /// encounters, the journal pages, the bench and the screens all read this list.
+        /// </summary>
         public static readonly IReadOnlyList<EnemyDef> All = new[]
         {
             PolearmWarped, ShadowHound, RustedRevenant, CrossbowHunter, MistArcher, TwinBladeWarped, PolearmCrystal,
@@ -765,10 +1042,27 @@ namespace BattleCore
             MiasmaPriest, AbyssAngler, DistortionRoot,
         };
 
+        /// <summary>
+        /// #962: the parasite and ghost lineages' kings and mid-boss of roster §13〜§15, in roster
+        /// order. They are proposals the core already fights, but nothing in the game meets them yet —
+        /// no encounter, journal page or art — so they stay out of <see cref="All"/> until the
+        /// lanes that own those take them in. 爛れた世界樹の芯 is not listed: it only comes out of the
+        /// trunk (<see cref="EnemyDef.Parasite"/>).
+        /// </summary>
+        public static readonly IReadOnlyList<EnemyDef> LineageBosses = new[]
+        {
+            RottedWorldTree, WraithKing, UnreturnedHero,
+        };
+
+        /// <summary>The enemy of this id, among <see cref="All"/> and <see cref="LineageBosses"/>.</summary>
         public static EnemyDef ById(string id)
         {
             if (id == null) throw new ArgumentNullException(nameof(id));
             foreach (var def in All)
+            {
+                if (string.Equals(def.Id, id, StringComparison.Ordinal)) return def;
+            }
+            foreach (var def in LineageBosses)
             {
                 if (string.Equals(def.Id, id, StringComparison.Ordinal)) return def;
             }
@@ -787,6 +1081,9 @@ namespace BattleCore
 
             /// <summary>The action on top of the 0 and 1〜2 bands as <see cref="Prefix"/> puts it; the 3+ band stays as it is.</summary>
             public Tree PrefixNear(string id) => new Tree(Front(id, Zero), Front(id, One), Three);
+
+            /// <summary>The action on top of the 3+ band as <see cref="Prefix"/> puts it; the 0 and 1〜2 bands stay as they are.</summary>
+            public Tree PrefixFar(string id) => new Tree(Zero, One, Front(id, Three));
 
             public Tree Without(IReadOnlyCollection<string> ids) => new Tree(Drop(ids, Zero), Drop(ids, One), Drop(ids, Three));
 
@@ -822,7 +1119,8 @@ namespace BattleCore
             Func<Tree, Tree> Reshape,
             IReadOnlyList<EnemyActionDef>? Overrides = null,
             bool Cleanse = false,
-            Func<IReadOnlyList<EnemyActionDef>, IReadOnlyList<EnemyActionDef>>? Retouch = null)
+            Func<IReadOnlyList<EnemyActionDef>, IReadOnlyList<EnemyActionDef>>? Retouch = null,
+            int? LeapOnce = null)
         {
             /// <summary>The overrides of this adaptation over a layer that has <paramref name="layer"/>: the layer's, then its own on top.</summary>
             public List<EnemyActionDef> Over(IReadOnlyList<EnemyActionDef> layer)
@@ -855,7 +1153,8 @@ namespace BattleCore
             IReadOnlyList<EnemyActionDef> Overrides,
             int EnterMove = 0,
             bool Sway = false,
-            IReadOnlyList<string>? Without = null)
+            IReadOnlyList<string>? Without = null,
+            IReadOnlyList<int>? LeapPlan = null)
         {
             public bool Holds(AdaptationView view) => Crossed(view) || view.HasHeld(Id);
         }
@@ -875,13 +1174,15 @@ namespace BattleCore
             foreach (var adaptation in adaptations)
             {
                 var overrides = adaptation.Over(Array.Empty<EnemyActionDef>());
-                switches.Add(Switch(adaptation.Id, adaptation.Holds, adaptation.Reshape(baseTree), overrides.Count == 0 ? null : overrides, cleanse: adaptation.Cleanse));
+                switches.Add(Switch(
+                    adaptation.Id, adaptation.Holds, adaptation.Reshape(baseTree), overrides.Count == 0 ? null : overrides,
+                    cleanse: adaptation.Cleanse, leapOnce: adaptation.LeapOnce));
             }
             foreach (var stage in stages)
             {
                 var without = stage.Without ?? Array.Empty<string>();
                 var stageTree = stage.Reshape(baseTree).Without(without);
-                switches.Add(Switch(stage.Id, stage.Holds, stageTree, stage.Overrides, stage.EnterMove, stage.Sway));
+                switches.Add(Switch(stage.Id, stage.Holds, stageTree, stage.Overrides, stage.EnterMove, stage.Sway, leapPlan: stage.LeapPlan));
                 foreach (var adaptation in adaptations)
                 {
                     var overrides = adaptation.Over(stage.Overrides);
@@ -892,7 +1193,9 @@ namespace BattleCore
                         view => stageHolds(view) && adaptationHolds(view),
                         adaptation.Reshape(stageTree).Without(without),
                         overrides,
-                        cleanse: adaptation.Cleanse));
+                        cleanse: adaptation.Cleanse,
+                        leapPlan: stage.LeapPlan,
+                        leapOnce: adaptation.LeapOnce));
                 }
             }
             return switches;
@@ -900,8 +1203,8 @@ namespace BattleCore
 
         private static TreeSwitch Switch(
             string id, Func<AdaptationView, bool> holds, Tree tree, IReadOnlyList<EnemyActionDef>? overrides,
-            int enterMove = 0, bool sway = false, bool cleanse = false) =>
-            new TreeSwitch(id, holds, tree.Zero, tree.One, tree.Three, overrides, enterMove, sway, cleanse);
+            int enterMove = 0, bool sway = false, bool cleanse = false, IReadOnlyList<int>? leapPlan = null, int? leapOnce = null) =>
+            new TreeSwitch(id, holds, tree.Zero, tree.One, tree.Three, overrides, enterMove, sway, cleanse, leapPlan, leapOnce);
 
         // ---- What the adaptations count (roster §1.5: by counting the history, never by chance) ----
 
@@ -1004,6 +1307,45 @@ namespace BattleCore
         }
 
         /// <summary>
+        /// anchor (#962, roster §14.4) 「同じマスで 2 ターン続けてターンを終えた」: two turn ends in a row on
+        /// one cell, completed by the last finished turn. Counted in runs of two like
+        /// <see cref="MovedTwiceLastTurn"/>, so it holds once each time two more turns on one cell add up.
+        /// </summary>
+        private static bool StayedPutLastTurn(AdaptationView view)
+        {
+            var turns = view.Player.TurnEnds;
+            int run = 0;
+            bool completed = false;
+            for (int i = 0; i < turns.Count; i++)
+            {
+                run = run > 0 && turns[i].Cell == turns[i - 1].Cell ? run + 1 : 1;
+                if (run < 2) continue;
+                run = 0;
+                completed = i == turns.Count - 1;
+            }
+            return completed;
+        }
+
+        /// <summary>
+        /// pursuit (#962, roster §15.4) 「間合い 3 以上で 2 ターン続けてターンを終えた」: completed by the last
+        /// finished turn, in runs of two as <see cref="StayedPutLastTurn"/>.
+        /// </summary>
+        private static bool FarTwiceLastTurn(AdaptationView view)
+        {
+            var turns = view.Player.TurnEnds;
+            int run = 0;
+            bool completed = false;
+            for (int i = 0; i < turns.Count; i++)
+            {
+                run = turns[i].Gap >= 3 ? run + 1 : 0;
+                if (run < 2) continue;
+                run = 0;
+                completed = i == turns.Count - 1;
+            }
+            return completed;
+        }
+
+        /// <summary>
         /// The way the player's own last move of its last finished turn went (+1 前へ, toward the
         /// enemies; -1 後ろへ; 0 none). Read from the move itself, not from the change of cell between
         /// turn ends, which a push or pull in between, or a step out and back, would hide
@@ -1034,7 +1376,11 @@ namespace BattleCore
             IReadOnlyList<string> branchAtGapThreePlus,
             IReadOnlyList<EnemyActionDef> actions,
             int actionsPerPhase = 1,
-            IReadOnlyList<TreeSwitch>? switches = null)
+            IReadOnlyList<TreeSwitch>? switches = null,
+            EnemyLineage lineage = EnemyLineage.Dragon,
+            EnemyDef? parasite = null,
+            IReadOnlyList<int>? leapPlan = null,
+            int? rootCrawlGap = null)
         {
             if (size < 1 || size > Constants.EnemySizeMax)
             {
@@ -1067,10 +1413,24 @@ namespace BattleCore
                 }
             }
 
+            // #962 (battle_core_v4 §7.5): a parasite comes out on one cell, and a leap plan belongs to a ghost.
+            if (parasite != null && parasite.Size != 1)
+            {
+                throw new ArgumentException($"Enemy \"{id}\": a parasite is of size 1, not {parasite.Size}.");
+            }
+            if ((leapPlan != null) != (lineage == EnemyLineage.Ghost))
+            {
+                throw new ArgumentException($"Enemy \"{id}\": a ghost and only a ghost has a leap plan.");
+            }
+            foreach (int gap in leapPlan ?? Array.Empty<int>())
+            {
+                if (gap < 0) throw new ArgumentOutOfRangeException(nameof(leapPlan), gap, $"Enemy \"{id}\": a leap goes to a gap of 0 or more.");
+            }
+
             return new EnemyDef(
                 id, name, maxHp, maxStamina, recovery, size,
                 branchAtGapZero, branchAtGapOneToTwo, branchAtGapThreePlus, map,
-                rank, actionsPerPhase, switches);
+                rank, actionsPerPhase, switches, lineage, parasite, leapPlan, rootCrawlGap);
         }
 
         private static void CheckCells(string id, EnemyActionDef action)

@@ -108,6 +108,22 @@ namespace BattleCore
             return new Shift(from, to, Math.Abs(cells) - Math.Abs(to - from));
         }
 
+        /// <summary>
+        /// #962 (battle_core_v4 §7.5 跳ぶ): whether enemy <paramref name="unit"/> could stand with its near
+        /// edge on <paramref name="cell"/> — right of the player, inside the line and on cells no other
+        /// standing enemy uses. The cells in between are not looked at: a leap passes over them.
+        /// <paramref name="size"/> is the body's own when left out; a parasite coming out of its host
+        /// passes its own.
+        /// </summary>
+        public static bool CanStand(BattleState state, int unit, int cell, int? size = null)
+        {
+            if (state == null) throw new ArgumentNullException(nameof(state));
+            int cells = size ?? state.Enemies[unit].Body.Size;
+            if (cell <= state.Player.FarCell) return false;
+            if (cell + cells - 1 > state.FieldCells) return false;
+            return IsFree(state, unit, cell, cells);
+        }
+
         /// <summary>Whether cells [cell, cell + size − 1] hold no standing enemy other than <paramref name="unit"/>.</summary>
         private static bool IsFree(BattleState state, int unit, int cell, int size)
         {

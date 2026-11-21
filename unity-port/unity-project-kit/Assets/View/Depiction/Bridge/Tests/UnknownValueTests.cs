@@ -130,6 +130,11 @@ namespace Depiction.Bridge.Tests
             { StatusKind.Depths, ChipKind.Boss },
             { StatusKind.Rooting, ChipKind.Boss },
             { StatusKind.Withering, ChipKind.Boss },
+            { StatusKind.Sprouting, ChipKind.Boss },
+            { StatusKind.Festering, ChipKind.Boss },
+            { StatusKind.Bewildered, ChipKind.Boss },
+            { StatusKind.Frost, ChipKind.Boss },
+            { StatusKind.Shadowstitch, ChipKind.Boss },
         };
 
         [Test]

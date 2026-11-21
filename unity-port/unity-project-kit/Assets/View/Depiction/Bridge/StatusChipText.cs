@@ -76,6 +76,12 @@ namespace Depiction.Bridge
                 case StatusKind.Depths:
                 case StatusKind.Rooting:
                 case StatusKind.Withering:
+                // The lineage bosses' words (#962).
+                case StatusKind.Sprouting:
+                case StatusKind.Festering:
+                case StatusKind.Bewildered:
+                case StatusKind.Frost:
+                case StatusKind.Shadowstitch:
                     return ChipKind.Boss;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(kind), kind, "No chip family for the status " + kind);
@@ -136,6 +142,17 @@ namespace Depiction.Bridge
                 case StatusKind.Withering:
                     // roster §6.2 (#575): 疲労 included, the recovery never goes below the floor.
                     return "ターン開始のスタミナ回復が スタック 1 につき " + Statuses.WitheringRecoveryPerStack + " 減る（疲労と重なっても " + Statuses.WitheringRecoveryFloor + " より下がらない）";
+                // The lineage bosses' words (#962, roster §13.1 / §14.1 / §15.1).
+                case StatusKind.Sprouting:
+                    return "札を 1 枚出すたびに HP −" + Statuses.SproutingHpPerCard + "（Guard では減らない）";
+                case StatusKind.Festering:
+                    return "ターン開始に出血が減らない";
+                case StatusKind.Bewildered:
+                    return "敵の予兆の狙うマスが床に出ない（種別は見える）";
+                case StatusKind.Frost:
+                    return "スタンスの札を出せない";
+                case StatusKind.Shadowstitch:
+                    return "自分のマスを動かすたびに HP −" + Statuses.ShadowstitchHpPerMove + "（Guard では減らない）";
                 default:
                     throw new ArgumentOutOfRangeException(nameof(kind), kind, "No panel text for the status " + kind);
             }

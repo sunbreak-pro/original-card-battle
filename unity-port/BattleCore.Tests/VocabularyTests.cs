@@ -135,12 +135,13 @@ namespace BattleCore.Tests
         {
             // §5: ターンで減る型 lose one stack at the holder's turn start; 使うと減る型 wait to be used. All ten words (俊敏 since #48),
             // and the six boss-only words (#51) follow them: 呪縛 is a turn word, 鉤爪 a use word, the other four last the battle.
+            // The five words of the lineage bosses (#962) are turn words.
             var kinds = Enum.GetValues(typeof(StatusKind)).Cast<StatusKind>().ToList();
             var ticked = StatusSet.Of(kinds.Select(k => (k, 2)).ToArray()).TickTurnStart();
 
             Assert.Multiple(() =>
             {
-                Assert.That(kinds, Has.Count.EqualTo(10 + 6));
+                Assert.That(kinds, Has.Count.EqualTo(10 + 6 + 5));
                 foreach (var kind in kinds)
                 {
                     int expected = Statuses.DecayOf(kind) == StatusDecay.OnTurn ? 1 : 2;

@@ -18,11 +18,45 @@ namespace BattleCore
         /// </summary>
         private static BattleState DecideNextOmen(BattleState state, int unit, List<BattleEvent> events)
         {
+            state = JudgeSwitches(state, unit, events, out var active);
+            var enemy = state.Enemies[unit];
+
+            int gap = state.GapTo(unit);
+            int stamina = EnemyAi.StaminaAtAction(enemy.Def, enemy.Body);
+
+            // #51 (roster §4.3): an action the player's word keeps out, as it will stand after the
+            // player's next turn start, is passed over like a spent stance — and, #497 (v4.18), one
+            // whose word the player already holds at the cap of the switch decided here. #962: one
+            // its own word keeps out (根を下ろす), and one it took in the phase just ended (魂の奔流).
+            var skip = new List<string>(enemy.Spent);
+            skip.AddRange(EnemyAi.Barred(
+                enemy.Def, state.Player.Statuses, beforeFoeTurn: true, active: active, warded: state.Tools.WardedStacks,
+                self: enemy.Body.Statuses));
+            skip.AddRange(EnemyAi.RanBefore(enemy.Def, enemy.ThisPhaseActions, active));
+            var omen = EnemyAi.DecideOmen(enemy.Def, gap, stamina, skip, active);
+            events.Add(new OmenSet(Actor.Enemy, omen, Decided: true) { Unit = unit });
+
+            // §17.6 F11 (#50): an elite or a boss shows its second step too, as a 予定.
+            var plan = EnemyAi.DecidePlan(enemy.Def, gap, stamina, omen, skip, active);
+            if (plan != null) events.Add(new PlanSet(Actor.Enemy, plan, Decided: true) { Unit = unit });
+
+            return state.WithUnit(unit, enemy with { Omen = omen, Plan = plan, ActiveSwitch = active?.Id });
+        }
+
+        /// <summary>
+        /// The switch an omen decision of this enemy is made under (#50 / #51): the one that holds now.
+        /// A switch holding for the first time is remembered and moves the body when it says so, a
+        /// change from the switch of the enemy's latest decision is announced, and a cleansing switch
+        /// shakes off the enemy's words. #962: a ghost's latest decision is its Later omen's, which the
+        /// shift has already made <see cref="EnemyUnit.ActiveSwitch"/>, so the same comparison holds.
+        /// </summary>
+        private static BattleState JudgeSwitches(BattleState state, int unit, List<BattleEvent> events, out TreeSwitch? active)
+        {
             var enemy = state.Enemies[unit];
 
             // #50: the boss's tree is asked first. A switch that starts or stops holding is announced.
             var view = AdaptationViewOf(state, unit);
-            var active = EnemyAi.ActiveSwitch(enemy.Def, view);
+            active = EnemyAi.ActiveSwitch(enemy.Def, view);
 
             // #51: a switch holding for the first time this battle is remembered (a stage that never
             // goes back reads it), and moves the body when it says so (EnterMove).
@@ -54,25 +88,8 @@ namespace BattleCore
                     events.Add(new StatusCleared(Actor.Enemy, kind, enemy.Body.Statuses.Stacks(kind)) { Unit = unit });
                 }
                 state = state.WithEnemy(unit, enemy.Body with { Statuses = StatusSet.Empty });
-                enemy = state.Enemies[unit];
             }
-
-            int gap = state.GapTo(unit);
-            int stamina = EnemyAi.StaminaAtAction(enemy.Def, enemy.Body);
-
-            // #51 (roster §4.3): an action the player's word keeps out, as it will stand after the
-            // player's next turn start, is passed over like a spent stance — and, #497 (v4.18), one
-            // whose word the player already holds at the cap of the switch decided here.
-            var skip = new List<string>(enemy.Spent);
-            skip.AddRange(EnemyAi.Barred(enemy.Def, state.Player.Statuses, beforeFoeTurn: true, active: active, warded: state.Tools.WardedStacks));
-            var omen = EnemyAi.DecideOmen(enemy.Def, gap, stamina, skip, active);
-            events.Add(new OmenSet(Actor.Enemy, omen, Decided: true) { Unit = unit });
-
-            // §17.6 F11 (#50): an elite or a boss shows its second step too, as a 予定.
-            var plan = EnemyAi.DecidePlan(enemy.Def, gap, stamina, omen, skip, active);
-            if (plan != null) events.Add(new PlanSet(Actor.Enemy, plan, Decided: true) { Unit = unit });
-
-            return state.WithUnit(unit, enemy with { Omen = omen, Plan = plan, ActiveSwitch = active?.Id });
+            return state;
         }
 
         /// <summary>#50: what an adaptation of this enemy reads at this moment. #51 adds N and the switches that have held.</summary>

@@ -53,6 +53,15 @@ namespace BattleCore
             state = Set(state, actor, unit, self with { Cell = shift.To, Moved = true, LastMove = Math.Sign(move) });
             events.Add(new CellsMoved(actor, shift.From, shift.To, Pushed: false) { Unit = unit });
 
+            // #962 (roster §15.1 影縫い): each own move that changed the cell costs HP, past Guard.
+            if (self.Statuses.Has(StatusKind.Shadowstitch))
+            {
+                var stitched = Get(state, actor, unit);
+                int hpAfter = Math.Max(0, stitched.Hp - Statuses.ShadowstitchHpPerMove);
+                events.Add(new StatusHpChanged(actor, StatusKind.Shadowstitch, hpAfter - stitched.Hp, hpAfter) { Unit = unit });
+                state = Set(state, actor, unit, stitched with { Hp = hpAfter });
+            }
+
             // 根縛り: an enemy that moves itself pays for it for each such stance the player holds.
             if (actor == Actor.Enemy)
             {
@@ -91,6 +100,13 @@ namespace BattleCore
                 if (other.Size >= 2)
                 {
                     events.Add(new PushRefused(foeSide, other.Size) { Unit = eventUnit });
+                    continue;
+                }
+
+                // #962 (§7.5): a ghost refuses push and pull at size 1 too, and so takes no wall damage.
+                if (foeSide == Actor.Enemy && state.Enemies[foe].Def.Lineage == EnemyLineage.Ghost)
+                {
+                    events.Add(new PushRefused(foeSide, other.Size) { Unit = eventUnit, ByLineage = true });
                     continue;
                 }
                 var immune = other.StanceList.FirstOrDefault(entry => entry.Def.Hook == StanceHook.PushImmune && !entry.StoppedIn(state.Turn));
@@ -202,7 +218,23 @@ namespace BattleCore
         {
             over = false;
             if (!Combat.IsDefeated(Get(state, side, unit).Hp)) return state;
-            if (side == Actor.Player || state.Living.Count == 0)
+            if (side == Actor.Player)
+            {
+                over = true;
+                return state;
+            }
+
+            // #962 (§7.5): a host does not fall for good. It leaves its omens and waits for the card or
+            // the step that felled it to finish; then its parasite comes out (EmergeParasites).
+            var enemy = state.Enemies[unit];
+            if (enemy.EmergePending) return state;
+            if (enemy.Def.Parasite != null && enemy.Host == null)
+            {
+                events.Add(new HostFell(Actor.Enemy, enemy.Def.Id) { Unit = unit });
+                return state.WithUnit(unit, enemy with { Omen = null, Plan = null, Later = null, LaterPlan = null, EmergePending = true });
+            }
+
+            if (state.Living.Count == 0 && !AnyEmergePending(state))
             {
                 over = true;
                 return state;

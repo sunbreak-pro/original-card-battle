@@ -155,5 +155,8 @@ namespace BattleCore
 
         /// <summary>roster §4.1 呪縛 (#51): the player is bound and the card is one of movement only.</summary>
         Bound,
+
+        /// <summary>roster §14.1 凍て (#962): the player is frozen and the card is a stance card.</summary>
+        Frozen,
     }
 }
