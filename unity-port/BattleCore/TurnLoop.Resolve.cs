@@ -341,7 +341,17 @@ namespace BattleCore
             {
                 events.Add(new FaceResolved(r.Actor, r.Source.Id, FaceKind.Move) { Unit = r.Unit });
             }
-            if (r.Face.Move != 0) state = MoveSelf(state, r.Actor, r.Unit, BoostedMove(r.Face.Move, r.Boost.Move), events);
+            if (r.Face.Move != 0)
+            {
+                state = MoveSelf(state, r.Actor, r.Unit, BoostedMove(r.Face.Move, r.Boost.Move), events);
+
+                // #962 (roster §15.1 影縫い): the move may have taken the player's last HP.
+                if (r.Actor == Actor.Player && Combat.IsDefeated(state.Player.Hp))
+                {
+                    over = true;
+                    return state;
+                }
+            }
             if (r.Face.Push == 0 || r.Hit.Count == 0) return state;
             return PushFoes(state, r, events, out over);
         }

@@ -162,6 +162,25 @@ namespace BattleCore
 
         /// <summary>枯らし (歪みの根): the holder recovers 1 less per stack at every turn start, never below 1 even with 疲労 (#400). Lasting.</summary>
         Withering,
+
+        // The words of the parasite and ghost lineages' bosses (#962): roster §13.1 / §14.1 / §15.1,
+        // proposed. Each lasts its stacks in turns and is read after the turn-start tick, so the 2
+        // stacks an enemy phase puts on work through the player's next turn only.
+
+        /// <summary>芽吹き (爛れた世界樹): each card the holder plays costs 2 HP, past Guard. OnTurn.</summary>
+        Sprouting,
+
+        /// <summary>爛れ (爛れた世界樹): the holder's 出血 does not lose its stack at the turn start. OnTurn.</summary>
+        Festering,
+
+        /// <summary>惑い (死霊王): the enemies' aimed cells are not shown to the holder; the kind still is. The core only carries it. OnTurn.</summary>
+        Bewildered,
+
+        /// <summary>凍て (死霊王): the holder cannot play a stance card. OnTurn.</summary>
+        Frost,
+
+        /// <summary>影縫い (還らずの英雄): each own move that changes the holder's cell costs 3 HP, past Guard. OnTurn.</summary>
+        Shadowstitch,
     }
 
     /// <summary>
@@ -582,7 +601,9 @@ namespace BattleCore
         OmenKind? Omen = null,
         StatusKind? NotWhileFoeHas = null,
         int? PullBeyond = null,
-        bool NotAtFoeCap = false)
+        bool NotAtFoeCap = false,
+        StatusKind? NotWhileSelfHas = null,
+        bool NotTwiceRunning = false)
     {
         public int Cost => Columns.CostOf(Column);
 
@@ -599,6 +620,11 @@ namespace BattleCore
         // PullBeyond (#51, roster §6.3 伸びる根): when set, the face's Push is a push of |Push| cells
         // while N is at most PullBeyond and a pull of |Push| cells beyond it, read when it resolves.
         // See EnemyAi.FaceAt.
+        //
+        // NotWhileSelfHas (#962, roster §13.5 根を下ろす): as NotWhileFoeHas, on the enemy's own word.
+        //
+        // NotTwiceRunning (#962, roster §14.2 魂の奔流): the tree passes over this action in the phase
+        // right after one that took it.
     }
 
     /// <summary>
@@ -741,8 +767,15 @@ namespace BattleCore
         IReadOnlyList<EnemyActionDef>? Overrides = null,
         int EnterMove = 0,
         bool Sway = false,
-        bool Cleanse = false)
+        bool Cleanse = false,
+        IReadOnlyList<int>? LeapPlan = null,
+        int? LeapOnce = null)
     {
+        // LeapPlan (#962, roster §14.4 / §15.4 stage_2): the ghost's leap plan while this switch is
+        // the one holding at its phase end; null keeps the enemy's own.
+        // LeapOnce (#962, roster §14.4 anchor / §15.4 pursuit): while this switch holds at the phase
+        // end, the leap goes to this gap instead of the plan's next one, and the plan does not move on.
+
         public IReadOnlyList<string>? Branch(GapBand band) => band switch
         {
             GapBand.Zero => BranchAtGapZero,
@@ -763,12 +796,30 @@ namespace BattleCore
         }
     }
 
-    /// <summary>roster §1.1 `rank`: what kind of fight the enemy is. Elites and bosses act twice a phase.</summary>
+    /// <summary>
+    /// roster §1.1 `rank`: what kind of fight the enemy is. Elites, bosses and kings act twice a
+    /// phase. Boss is the 中ボス of roster v5.0 (§1.8); King (#962) is the 王 of each lineage.
+    /// </summary>
     public enum EnemyRank
     {
         Normal,
         Elite,
         Boss,
+        King,
+    }
+
+    /// <summary>
+    /// roster §1.1 `lineage` / §1.8 (#962): the three lineages and the one outside them. The lineage
+    /// carries rules of its own (battle_core_v4 §7.5): a ghost refuses push and pull at any size, leaps
+    /// at its phase end (<see cref="EnemyDef.LeapPlan"/>) and acts on its omens one phase late. A
+    /// parasite's rules ride on its data (<see cref="EnemyDef.Parasite"/>, <see cref="EnemyDef.RootCrawlGap"/>).
+    /// </summary>
+    public enum EnemyLineage
+    {
+        Dragon,
+        Parasite,
+        Ghost,
+        Outside,
     }
 
     /// <summary>
@@ -791,8 +842,20 @@ namespace BattleCore
         IReadOnlyDictionary<string, EnemyActionDef> Actions,
         EnemyRank Rank = EnemyRank.Normal,
         int ActionsPerPhase = 1,
-        IReadOnlyList<TreeSwitch>? Switches = null)
+        IReadOnlyList<TreeSwitch>? Switches = null,
+        EnemyLineage Lineage = EnemyLineage.Dragon,
+        EnemyDef? Parasite = null,
+        IReadOnlyList<int>? LeapPlan = null,
+        int? RootCrawlGap = null)
     {
+        // #962 (battle_core_v4 §7.5): Parasite is the body that comes out where the host falls, null
+        // for an enemy that simply falls. LeapPlan is a ghost's leap plan, the gaps it leaps to in
+        // turn. RootCrawlGap is the gap at or below which 根の這い takes 1 off the player's recovery,
+        // null for none.
+
+        /// <summary>Whether this enemy acts on its omens one phase late (§7.5): every ghost does.</summary>
+        public bool DelaysOmen => Lineage == EnemyLineage.Ghost;
+
         public IReadOnlyList<string> Branch(GapBand band) => band switch
         {
             GapBand.Zero => BranchAtGapZero,
@@ -864,9 +927,30 @@ namespace BattleCore
         Omen? Plan = null,
         string? ActiveSwitch = null,
         IReadOnlyList<string>? Executed = null,
-        IReadOnlyList<string>? HeldSwitches = null)
+        IReadOnlyList<string>? HeldSwitches = null,
+        Omen? Later = null,
+        Omen? LaterPlan = null,
+        string? LaterSwitch = null,
+        int LeapIndex = 0,
+        EnemyDef? Host = null,
+        bool EmergePending = false,
+        IReadOnlyList<string>? ThisPhase = null,
+        IReadOnlyList<string>? PreviousPhase = null)
     {
+        // #962 (battle_core_v4 §7.5). Later / LaterPlan / LaterSwitch are a ghost's omen for the phase
+        // after next, decided under that switch; Omen and Plan stay the ones its next phase carries
+        // out. LeapIndex is where its leap plan stands. Host is the host a parasite came out of, null
+        // until then; EmergePending marks a host that has fallen while the card or phase that felled
+        // it is still resolving. ThisPhase and PreviousPhase are the actions of its current (or last)
+        // phase and of the one before, for NotTwiceRunning.
+
         public bool Alive => !Combat.IsDefeated(Body.Hp);
+
+        /// <summary>The actions taken in the enemy's current or last phase.</summary>
+        public IReadOnlyList<string> ThisPhaseActions => ThisPhase ?? Array.Empty<string>();
+
+        /// <summary>The actions taken in the phase before that.</summary>
+        public IReadOnlyList<string> PreviousPhaseActions => PreviousPhase ?? Array.Empty<string>();
 
         /// <summary>#51: the ids of the switches that have held at some omen decision this battle, in the order they first did.</summary>
         public IReadOnlyList<string> Held => HeldSwitches ?? Array.Empty<string>();
@@ -1024,6 +1108,12 @@ namespace BattleCore
             StatusKind.Depths => "depths",
             StatusKind.Rooting => "rooting",
             StatusKind.Withering => "withering",
+            // The lineage bosses' words (#962).
+            StatusKind.Sprouting => "sprouting",
+            StatusKind.Festering => "festering",
+            StatusKind.Bewildered => "bewildered",
+            StatusKind.Frost => "frost",
+            StatusKind.Shadowstitch => "shadowstitch",
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
         };
 
@@ -1046,6 +1136,12 @@ namespace BattleCore
             StatusKind.Depths => "深み",
             StatusKind.Rooting => "根張り",
             StatusKind.Withering => "枯らし",
+            // The lineage bosses' words (#962).
+            StatusKind.Sprouting => "芽吹き",
+            StatusKind.Festering => "爛れ",
+            StatusKind.Bewildered => "惑い",
+            StatusKind.Frost => "凍て",
+            StatusKind.Shadowstitch => "影縫い",
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
         };
     }

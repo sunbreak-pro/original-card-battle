@@ -90,6 +90,12 @@ namespace BattleCore
                 case StanceWhen.GapAtLeast: return OwnGap(state, actor, unit) >= stance.Threshold;
                 case StanceWhen.GapAtMost: return OwnGap(state, actor, unit) <= stance.Threshold;
                 case StanceWhen.MovedThisTurn: return Get(state, actor, unit).Moved;
+                // #962 (roster §13.2 樹殻): 「相手に出血が付いているターン開始」. The foe is the player for
+                // an enemy and the nearest standing enemy for the player, as the gap is read.
+                case StanceWhen.TargetHasStatus:
+                    if (!stance.Status.HasValue) return false;
+                    if (actor == Actor.Enemy) return state.Player.Statuses.Has(stance.Status.Value);
+                    return state.Nearest >= 0 && state.Enemies[state.Nearest].Body.Statuses.Has(stance.Status.Value);
                 case StanceWhen.OmenAttack:
                     if (actor != Actor.Player) return false;
                     foreach (int i in state.Living)

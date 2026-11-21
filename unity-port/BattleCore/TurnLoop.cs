@@ -75,7 +75,13 @@ namespace BattleCore
                 PlayerTools: setup.Tools);
 
             var events = new List<BattleEvent>();
-            for (int i = 0; i < units.Count; i++) state = DecideNextOmen(state, i, events);
+            for (int i = 0; i < units.Count; i++)
+            {
+                state = DecideNextOmen(state, i, events);
+
+                // #962 (§7.5): a ghost shows the first two phases' omens at the start.
+                if (state.Enemies[i].Def.DelaysOmen) state = DecideLaterOmen(state, i, events);
+            }
             return new StepResult(state, events);
         }
 
@@ -112,6 +118,8 @@ namespace BattleCore
             {
                 events.Add(new OmenSet(Actor.Enemy, state.Enemies[i].Omen!, Decided: false) { Unit = i });
                 if (state.Enemies[i].Plan != null) events.Add(new PlanSet(Actor.Enemy, state.Enemies[i].Plan!, Decided: false) { Unit = i });
+                var later = state.Enemies[i].Later;
+                if (later != null) events.Add(new LaterOmenSet(Actor.Enemy, later, state.Enemies[i].LaterPlan, Decided: false) { Unit = i });
             }
 
             return new StepResult(state with { Phase = BattlePhase.PlayerAction }, events);
@@ -189,6 +197,12 @@ namespace BattleCore
                 state = state with { DiscardPile = discard };
             }
 
+            // #962 (roster §13.1 芽吹き): the card costs HP once it has resolved, unless it ended the battle.
+            state = Sprout(state, events);
+
+            // #962 (§7.5): a host this card felled lets its parasite out now that the card is done.
+            state = EmergeParasites(state, events);
+
             state = CheckDefeat(state, Actor.Player, 0, events);
             return new StepResult(state, events);
         }
@@ -228,6 +242,9 @@ namespace BattleCore
             state = state with { Player = state.Player with { FreeStep = false } };
             events.Add(new FreeStepTaken(Actor.Player, direction));
             state = MoveSelf(state, Actor.Player, 0, direction, events);
+
+            // #962 (roster §15.1 影縫い): the step itself may take the last HP.
+            if (Combat.IsDefeated(state.Player.Hp)) state = CheckDefeat(state, Actor.Player, 0, events);
             return new StepResult(state, events);
         }
 
@@ -281,13 +298,18 @@ namespace BattleCore
 
         private static BattleState EnemyPhase(BattleState state, int unit, IRng rng, List<BattleEvent> events)
         {
+            // #962: the phase before this one is kept for NotTwiceRunning (魂の奔流).
+            var opening = state.Enemies[unit];
+            state = state.WithUnit(unit, opening with { PreviousPhase = opening.ThisPhaseActions, ThisPhase = null });
+
             // Step 9: the enemy's own Guard reset, recovery, stance and status ticks.
             state = OpenTurnFor(state, Actor.Enemy, unit, state.Enemies[unit].Def.Recovery, events);
             if (!state.Enemies[unit].Alive)
             {
-                // §17.6 F9: 出血 took the last HP at its turn start. It does not act.
+                // §17.6 F9: 出血 took the last HP at its turn start. It does not act. #962: a host lets
+                // its parasite out, which shows its omen and acts from the next phase.
                 state = OnFall(state, Actor.Enemy, unit, events, out bool over);
-                return over ? CheckDefeat(state, Actor.Enemy, unit, events) : state;
+                return over ? CheckDefeat(state, Actor.Enemy, unit, events) : EmergeParasites(state, events);
             }
 
             // #51 (roster §6.1 段階 3): a body that sways steps before it acts.
@@ -307,7 +329,7 @@ namespace BattleCore
             else
             {
                 state = Execute(state, unit, action, rng, events, out bool fell);
-                if (fell) return state.Living.Count == 0 ? CheckDefeat(state, Actor.Enemy, unit, events) : state;
+                if (fell) return AfterOwnFall(state, unit, events);
 
                 // roster §1.3 (#189), §17.6 F11 (#50): an elite or a boss takes a second action. The
                 // omen showed the first and planned the second (予定). The tree is read again from the
@@ -316,13 +338,16 @@ namespace BattleCore
                 if (enemy.Def.ActionsPerPhase >= 2 && !Combat.IsDefeated(state.Player.Hp))
                 {
                     var skip = new List<string>(state.Enemies[unit].Spent) { action.Id };
-                    skip.AddRange(EnemyAi.Barred(enemy.Def, state.Player.Statuses, beforeFoeTurn: false, active: active, warded: state.Tools.WardedStacks));
+                    skip.AddRange(EnemyAi.Barred(
+                        enemy.Def, state.Player.Statuses, beforeFoeTurn: false, active: active, warded: state.Tools.WardedStacks,
+                        self: state.Enemies[unit].Body.Statuses));
+                    skip.AddRange(EnemyAi.RanBefore(enemy.Def, state.Enemies[unit].PreviousPhaseActions, active));
                     var second = EnemyAi.ChooseAction(enemy.Def, state.GapTo(unit), state.Enemies[unit].Body.Stamina, skip, active);
                     state = RevisePlan(state, unit, EnemyAi.OmenOf(second), events);
                     if (second != null)
                     {
                         state = Execute(state, unit, second, rng, events, out fell);
-                        if (fell) return state.Living.Count == 0 ? CheckDefeat(state, Actor.Enemy, unit, events) : state;
+                        if (fell) return AfterOwnFall(state, unit, events);
                     }
                 }
             }
@@ -336,8 +361,27 @@ namespace BattleCore
             state = CheckDefeat(state, Actor.Enemy, unit, events);
             if (state.Result != GameResult.Ongoing) return state;
 
+            // #962 (§7.5): a ghost leaps, takes up the omen it showed a phase ago and shows the one
+            // after it.
+            if (state.Enemies[unit].Def.DelaysOmen)
+            {
+                state = Leap(state, unit, events);
+                state = ShiftLaterOmen(state, unit, events);
+                return DecideLaterOmen(state, unit, events);
+            }
+
             // Step 12: the next omen, read from this enemy's gap as it stands now — after any move or push.
             return DecideNextOmen(state, unit, events);
+        }
+
+        /// <summary>
+        /// The acting enemy fell to its own blow's return (見切り): the phase ends there. #962: a host
+        /// lets its parasite out, which acts from the next phase.
+        /// </summary>
+        private static BattleState AfterOwnFall(BattleState state, int unit, List<BattleEvent> events)
+        {
+            state = EmergeParasites(state, events);
+            return state.Living.Count == 0 ? CheckDefeat(state, Actor.Enemy, unit, events) : state;
         }
 
         /// <summary>
@@ -352,7 +396,8 @@ namespace BattleCore
             state = Resolve(state, new Play(Actor.Enemy, unit, Array.Empty<int>(), source, context), rng, events);
             fell = !state.Enemies[unit].Alive;
             var taken = new List<string>(state.Enemies[unit].ExecutedActions) { action.Id };
-            state = state.WithUnit(unit, state.Enemies[unit] with { Executed = taken });
+            var thisPhase = new List<string>(state.Enemies[unit].ThisPhaseActions) { action.Id };
+            state = state.WithUnit(unit, state.Enemies[unit] with { Executed = taken, ThisPhase = thisPhase });
             if (fell) return state;
             if (action.Face.Stance != null)
             {

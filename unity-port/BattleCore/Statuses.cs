@@ -158,6 +158,12 @@ namespace BattleCore
             StatusKind.Depths => StatusDecay.Lasting,
             StatusKind.Rooting => StatusDecay.Lasting,
             StatusKind.Withering => StatusDecay.Lasting,
+            // The lineage bosses' words (#962): roster §13.1 / §14.1 / §15.1, スタック分のターン.
+            StatusKind.Sprouting => StatusDecay.OnTurn,
+            StatusKind.Festering => StatusDecay.OnTurn,
+            StatusKind.Bewildered => StatusDecay.OnTurn,
+            StatusKind.Frost => StatusDecay.OnTurn,
+            StatusKind.Shadowstitch => StatusDecay.OnTurn,
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown status."),
         };
 
@@ -207,7 +213,10 @@ namespace BattleCore
         /// <summary>roster §4.1 / §5.1 / §6.2: the most stacks a boss puts of its word (瘴気纏い 2 → −2, 深み 2 → −2, 根張り 2 → −8, 枯らし 2 → −2).</summary>
         public const int BossWordStackMax = 2;
 
-        /// <summary>Whether the word is one of the six a boss alone gives (battle_core_v4 §5 ボス専用の状態).</summary>
+        /// <summary>
+        /// Whether the word is one a boss or a king alone gives (battle_core_v4 §5 ボス専用の状態): the
+        /// six of #51 and the five of the lineage bosses (#962).
+        /// </summary>
         public static bool IsBossOnly(StatusKind kind) => kind switch
         {
             StatusKind.MiasmaShroud => true,
@@ -216,8 +225,34 @@ namespace BattleCore
             StatusKind.Depths => true,
             StatusKind.Rooting => true,
             StatusKind.Withering => true,
+            StatusKind.Sprouting => true,
+            StatusKind.Festering => true,
+            StatusKind.Bewildered => true,
+            StatusKind.Frost => true,
+            StatusKind.Shadowstitch => true,
             _ => false,
         };
+
+        // ---- The lineage bosses' words (#962, battle_core_v4 §5) ----
+
+        /// <summary>roster §13.1 芽吹き: the HP each card played costs while it is held.</summary>
+        public const int SproutingHpPerCard = 2;
+
+        /// <summary>roster §15.1 影縫い: the HP each own move that changes the holder's cell costs while it is held.</summary>
+        public const int ShadowstitchHpPerMove = 3;
+
+        /// <summary>roster §1.9 根の這い: what the player's recovery loses when a turn starts within a crawling enemy's gap, however many crawl.</summary>
+        public const int RootCrawlRecoveryLoss = 1;
+
+        /// <summary>roster §1.9 根の這い: the recovery it never takes the player below.</summary>
+        public const int RootCrawlRecoveryFloor = 1;
+
+        /// <summary>roster §14.1 惑い: whether the holder is shown the enemies' aimed cells. The screen asks; the core changes nothing else.</summary>
+        public static bool SeesAimedCells(StatusSet statuses)
+        {
+            if (statuses == null) throw new ArgumentNullException(nameof(statuses));
+            return !statuses.Has(StatusKind.Bewildered);
+        }
 
         /// <summary>roster §6.2 枯らし (v4.14, #399 / #400): the recovery 枯らし leaves at the least, 疲労 included.</summary>
         public const int WitheringRecoveryFloor = 1;

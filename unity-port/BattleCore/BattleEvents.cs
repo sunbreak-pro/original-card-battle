@@ -130,7 +130,14 @@ namespace BattleCore
     /// §7.3: Actor is whose cell changed (From → To, To is the near edge for the enemy). Pushed is true
     /// when the other side moved them (push / pull). Only emitted when the cell did change.
     /// </summary>
-    public sealed record CellsMoved(Actor Actor, int From, int To, bool Pushed) : BattleEvent(Actor);
+    public sealed record CellsMoved(Actor Actor, int From, int To, bool Pushed) : BattleEvent(Actor)
+    {
+        /// <summary>
+        /// #962 (battle_core_v4 §7.5 跳ぶ): a ghost leapt at its phase end, over the cells between.
+        /// Not a move of its own: 鈍足, 呪縛 and 根縛り do not touch it.
+        /// </summary>
+        public bool Leap { get; init; }
+    }
 
     /// <summary>
     /// §7.3 壁のダメージ: Actor is the pushed side that could not take BlockedCells of the push.
@@ -147,11 +154,14 @@ namespace BattleCore
 
     /// <summary>
     /// §7.3: Actor is the target of a push / pull that its size (2 or more) refused. ByStance is true
-    /// when a stance refused it instead (錨の構え, #188).
+    /// when a stance refused it instead (錨の構え, #188), ByLineage when the target is a ghost of size 1
+    /// (#962, §7.5).
     /// </summary>
     public sealed record PushRefused(Actor Actor, int Size) : BattleEvent(Actor)
     {
         public bool ByStance { get; init; }
+
+        public bool ByLineage { get; init; }
     }
 
     /// <summary>
@@ -266,6 +276,35 @@ namespace BattleCore
 
     /// <summary>roster §6.4 root_sk: Actor shook off a word it held, all Stacks of it, when the switch that cleanses became active.</summary>
     public sealed record StatusCleared(Actor Actor, StatusKind Kind, int Stacks) : BattleEvent(Actor);
+
+    // ---- The lineages' rules (#962, battle_core_v4 §7.5) ----
+
+    /// <summary>
+    /// A ghost's omen for the phase after next (§7.5 予兆が 1 フェーズ遅れる), with the second step an
+    /// elite, a boss or a king plans for it (null for none). Decided is as for <see cref="OmenSet"/>:
+    /// true when just chosen, false when step 5 shows it again. The phase in between carries out the
+    /// omen of the last <see cref="OmenSet"/>.
+    /// </summary>
+    public sealed record LaterOmenSet(Actor Actor, Omen Omen, Omen? Plan, bool Decided) : BattleEvent(Actor);
+
+    /// <summary>
+    /// A parasite's host fell (§7.5 宿主と寄生体). It leaves its omen; the parasite comes out on its
+    /// near edge once the card or the phase that felled it has resolved (<see cref="ParasiteEmerged"/>).
+    /// No <see cref="EnemyDefeated"/> is emitted for the host.
+    /// </summary>
+    public sealed record HostFell(Actor Actor, string HostId) : BattleEvent(Actor);
+
+    /// <summary>
+    /// The parasite came out of the fallen host on Cell, at full HP, with no status, Guard or stance of
+    /// the host's. It shows its omen at once and acts from the next enemy phase. Unit stays the host's.
+    /// </summary>
+    public sealed record ParasiteEmerged(Actor Actor, string HostId, string ParasiteId, int Cell, int HpAfter, int MaxHp) : BattleEvent(Actor);
+
+    /// <summary>
+    /// 根の這い (§7.5): the player started a turn within a crawling enemy's gap (Unit, the nearest of
+    /// them) and the recovery lost Lost (1, or 0 when it was already at the floor of 1).
+    /// </summary>
+    public sealed record RootCrawled(Actor Actor, int Lost) : BattleEvent(Actor);
 
     /// <summary>One move of the loop: the state it left and what happened on the way there.</summary>
     public sealed record StepResult(BattleState State, IReadOnlyList<BattleEvent> Events);

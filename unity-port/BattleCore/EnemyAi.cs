@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace BattleCore
 {
@@ -120,21 +121,71 @@ namespace BattleCore
         /// off the action as it stands under <paramref name="active"/> (the second stage's cap of 2).
         /// <paramref name="warded"/> is what 竜語の符 has kept off (§9.1, #452): the word counts as it
         /// would sit without the ward, so the ward lowers the word and leaves the choice as it is.
+        ///
+        /// #962: <paramref name="self"/> is the enemy's own words, for an action that waits out one of
+        /// them (<see cref="EnemyActionDef.NotWhileSelfHas"/>: 根を下ろす while 再生 remains). The
+        /// enemy's own turn start comes before the action as the player's does, so it ticks the same.
         /// </summary>
         public static IReadOnlyList<string> Barred(
-            EnemyDef def, StatusSet foe, bool beforeFoeTurn, TreeSwitch? active = null, StatusSet? warded = null)
+            EnemyDef def, StatusSet foe, bool beforeFoeTurn, TreeSwitch? active = null, StatusSet? warded = null, StatusSet? self = null)
         {
             if (def == null) throw new ArgumentNullException(nameof(def));
             if (foe == null) throw new ArgumentNullException(nameof(foe));
+            return BarredAfter(def, foe, self ?? StatusSet.Empty, beforeFoeTurn ? 1 : 0, Array.Empty<EnemyActionDef>(), active, warded ?? StatusSet.Empty);
+        }
+
+        /// <summary>
+        /// #962 (battle_core_v4 §7.5 予兆が 1 フェーズ遅れる): <see cref="Barred"/> for a ghost's omen of the
+        /// phase after next. Two turn starts of each side come before it, and <paramref name="queued"/>
+        /// (the next phase's omen and 予定) will have been taken in between: a word one of them puts on
+        /// with stacks to spare counts as remaining, and a NotTwiceRunning action among them is passed over.
+        /// </summary>
+        public static IReadOnlyList<string> BarredLater(
+            EnemyDef def, StatusSet foe, StatusSet self, IReadOnlyList<EnemyActionDef> queued, TreeSwitch? active = null, StatusSet? warded = null)
+        {
+            if (def == null) throw new ArgumentNullException(nameof(def));
+            if (foe == null) throw new ArgumentNullException(nameof(foe));
+            if (self == null) throw new ArgumentNullException(nameof(self));
+            if (queued == null) throw new ArgumentNullException(nameof(queued));
+            return BarredAfter(def, foe, self, 2, queued, active, warded ?? StatusSet.Empty);
+        }
+
+        /// <summary>
+        /// #962: the actions an enemy's tree passes over in a phase because it took them in the one
+        /// before (<see cref="EnemyActionDef.NotTwiceRunning"/>), as they stand under <paramref name="active"/>.
+        /// </summary>
+        public static IReadOnlyList<string> RanBefore(EnemyDef def, IReadOnlyCollection<string> previous, TreeSwitch? active = null)
+        {
+            if (def == null) throw new ArgumentNullException(nameof(def));
+            if (previous == null) throw new ArgumentNullException(nameof(previous));
+            var barred = new List<string>();
+            foreach (var own in def.Actions.Values)
+            {
+                if (ActionOf(def, own.Id, active).NotTwiceRunning && Contains(previous, own.Id)) barred.Add(own.Id);
+            }
+            return barred;
+        }
+
+        private static IReadOnlyList<string> BarredAfter(
+            EnemyDef def, StatusSet foe, StatusSet self, int ticks, IReadOnlyList<EnemyActionDef> queued, TreeSwitch? active, StatusSet warded)
+        {
             var barred = new List<string>();
             foreach (var own in def.Actions.Values)
             {
                 var action = ActionOf(def, own.Id, active);
-                if (action.NotWhileFoeHas.HasValue && Left(foe, action.NotWhileFoeHas.Value, beforeFoeTurn) > 0)
+                if (action.NotWhileFoeHas.HasValue && Remains(foe, action.NotWhileFoeHas.Value, ticks, queued, onSelf: false))
                 {
                     barred.Add(action.Id);
                 }
-                else if (action.NotAtFoeCap && AtFoeCap(action, foe, beforeFoeTurn, warded ?? StatusSet.Empty))
+                else if (action.NotWhileSelfHas.HasValue && Remains(self, action.NotWhileSelfHas.Value, ticks, queued, onSelf: true))
+                {
+                    barred.Add(action.Id);
+                }
+                else if (action.NotAtFoeCap && AtFoeCap(action, foe, ticks, warded))
+                {
+                    barred.Add(action.Id);
+                }
+                else if (action.NotTwiceRunning && queued.Any(q => string.Equals(q.Id, action.Id, StringComparison.Ordinal)))
                 {
                     barred.Add(action.Id);
                 }
@@ -142,22 +193,37 @@ namespace BattleCore
             return barred;
         }
 
-        /// <summary>The stacks of <paramref name="word"/> the player holds when the action is taken (see <see cref="Barred"/>).</summary>
-        private static int Left(StatusSet foe, StatusKind word, bool beforeFoeTurn) =>
-            foe.Stacks(word) - (beforeFoeTurn && Statuses.DecayOf(word) == StatusDecay.OnTurn ? 1 : 0);
+        /// <summary>Whether <paramref name="word"/> is still held when the action is taken: left after the ticks, or put on again by a queued action.</summary>
+        private static bool Remains(StatusSet holder, StatusKind word, int ticks, IReadOnlyList<EnemyActionDef> queued, bool onSelf)
+        {
+            if (Left(holder, word, ticks) > 0) return true;
+            int tick = Statuses.DecayOf(word) == StatusDecay.OnTurn ? 1 : 0;
+            foreach (var action in queued)
+            {
+                foreach (var grant in action.Face.StatusList)
+                {
+                    if (grant.OnSelf == onSelf && grant.Kind == word && grant.Stacks - tick > 0) return true;
+                }
+            }
+            return false;
+        }
+
+        /// <summary>The stacks of <paramref name="word"/> held once <paramref name="ticks"/> turn starts have come (see <see cref="Barred"/>).</summary>
+        private static int Left(StatusSet holder, StatusKind word, int ticks) =>
+            holder.Stacks(word) - (Statuses.DecayOf(word) == StatusDecay.OnTurn ? ticks : 0);
 
         /// <summary>
         /// #497: every capped word the action puts on the player is held at the cap. An action with
         /// no capped grant on the player is never at it.
         /// </summary>
-        private static bool AtFoeCap(EnemyActionDef action, StatusSet foe, bool beforeFoeTurn, StatusSet warded)
+        private static bool AtFoeCap(EnemyActionDef action, StatusSet foe, int ticks, StatusSet warded)
         {
             bool capped = false;
             foreach (var grant in action.Face.StatusList)
             {
                 if (grant.OnSelf || grant.Cap <= 0) continue;
                 capped = true;
-                if (Left(foe, grant.Kind, beforeFoeTurn) + warded.Stacks(grant.Kind) < grant.Cap) return false;
+                if (Left(foe, grant.Kind, ticks) + warded.Stacks(grant.Kind) < grant.Cap) return false;
             }
             return capped;
         }
