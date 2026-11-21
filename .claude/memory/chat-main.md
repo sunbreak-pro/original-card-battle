@@ -25,6 +25,9 @@
 
 ## 直近の完了
 
+- issue-workflow の回（#843・#888・#961・#963）✅（2026-11-21）— 4 件とも PR にした。#983（#961）・#987（#963）・#984（#843）は main に入り、#988（#888、崩壊の暦）は Unity Editor での試遊待ちで open。別の役の確認で止まった #888（王に負けても暦が止まる）と #963（要約の文）は、回のあとに直した。申し送りは #985・#986 と #961 へのコメントにした
+- ハーネスの文書を共通の決まりに合わせる残り ✅（2026-11-19）— 共通の検査が読まない文書（SOURCES・INDEX・comm・known-issues）の内輪の語を言い換え、`npm run sources -- --lane` の見出しを「書く元になる文書」「読む元になる文書」に変えた（#981、PR #980）
+
 - 世界の正典 v5 の整合と v5.1（2026-11-04 の決定）✅（2026-11-04）— v5（PR #885）を仕組み・探索・敵の文書と突き合わせ、食い違い 5 件（面 1 枚と世代差 / 結晶と亡霊の領域 / 踏破が残すもの / 「踏破」の語 / 痕跡を守る亡霊）と古い記述 6 件を直し、こうだいさんの決定 4 つ（王は戻り倒すたび暦が延びる / 踏破した探索者は封印の奥へ降りて帰らない / 二度目の踏破で痕跡を受け取り生還か奥を選ぶ / 役の名は探索者）を `world-v1.md` v5.1・`concept-v3.md` §14.3・`core.md`・`CLAUDE.md` に入れた（PR #894 open）。波及は #111 / #861 / #887 / #890 / #891 / #892 にコメント。報告書 `docs/reports/2026-11-04-world-consistency.html`（Artifact https://claude.ai/artifact/QDsjCv4F9fQZHu7tStveo7 の Version 2）。**人手待ち**: PR #894 の merge。**仮**: 奥へ降りた面は 10 日で戻る / 期限切れでも解禁の記録は残る / 生還時の踏破の文の 3 行目
 - Issue を立てるのを main だけにし、レーンは申し送りを書く ✅（2026-10-06）— life-editor の「起票は chat-main 一元」（2026-07-11、#227）を移植した。レーンは `.claude/comm/handoff/` に 1 件 1 ファイル（git 非追跡）で申し送りを書き、main が全 worktree から回収して Issue にし、ファイルを消す。`pre-issue-create-guard.sh` が main 以外の `gh issue create` を止める（life-editor は文章だけ）。レーンに起票させていた CLAUDE.md・SOURCES.md §5・スキル 7 本を書き換えた（#367、PR #368 open）。**人手待ち**: PR #368 の merge と、merge 後に各レーンで `git merge origin/main`
 - docs のコンフリクト対策 ✅（2026-10-04）— 9/24 以降のコンフリクト 9 件のうち 6 件が `SOURCES.md` で、原因は prettier による表の桁揃えと台帳に版を書く決まりだった。Markdown を prettier から外し（`.prettierrc.json` の `requirePragma`）、全表の空白を `npm run md:tables` で詰め、台帳を持ち主ごとの表にして版を外し、続きの PR を積む決まりを `worktree-policy` に足した（PR #338 open）。グローバルの hook 側は claude-dotfiles#36。**人手待ち**: PR #338 の merge
