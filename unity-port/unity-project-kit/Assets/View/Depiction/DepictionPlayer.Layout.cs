@@ -287,7 +287,8 @@ namespace Depiction.View
         /// <summary>
         /// With a floor, the parts tied to an enemy keep to its x: the omen badge and the release zone
         /// over the enemy's home, kept 24 px inside the screen's edges. The badge's bottom also stands
-        /// 14 px over the enemy's head (§4.4, #455: the figure is 226 or 264 px tall since §4.3); the
+        /// 14 px over the enemy's head (§4.4, #455: the figure is 226 or 264 px tall since §4.3), or at
+        /// the fixed place §4.3 gives an enemy over 400 px (OmenRowLayout.BadgeBottom, #843); the
         /// release zone's height stays where the scene put it. The number panels follow their
         /// figures with or without a floor (§4.5). With several enemies the badges share one row (§5.16)
         /// and slide apart (§5.8), and the release zone stands over the enemy a held card is aimed at.
@@ -304,13 +305,22 @@ namespace Depiction.View
                 {
                     Vector2 home = EnemyHomeOnScreen(root, _enemies[0]);
                     KeepX(omenBadge.Rect, root, home.x);
-                    float head = home.y - FigureFrame.HeightFor(EnemySizeOf(0));
-                    KeepBottom(omenBadge.Rect, root, head - FigureFrame.OmenOverHead);
+                    KeepBottom(omenBadge.Rect, root, OmenRowLayout.BadgeBottom(home.y, EnemyHeightOf(0)));
                 }
                 if (receiver) KeepX((RectTransform)receiver.transform, root, EnemyHomeOnScreen(root, ReceiverEnemy()).x);
             }
             float playerX = RefScreen.Of(root, _playerHomeSet ? _playerHome : playerFigure.transform.position).x;
             FollowPanels(root, playerX);
+        }
+
+        /// <summary>
+        /// How tall enemy <paramref name="k"/>'s figure stands now: what ApplyFrame stood it at (its own
+        /// height on FigureHeights, else by its cells, #843), read back so the badge never disagrees with it.
+        /// </summary>
+        private float EnemyHeightOf(int k)
+        {
+            FigureView figure = k >= 0 && k < _enemies.Count ? _enemies[k].Figure : null;
+            return figure ? figure.Height : FigureFrame.HeightFor(EnemySizeOf(k));
         }
 
         /// <summary>The enemy the release zone stands over.</summary>
@@ -343,7 +353,7 @@ namespace Depiction.View
             {
                 Vector2 home = EnemyHomeOnScreen(root, _enemies[standing[i]]);
                 centres[i] = home.x;
-                heights[i] = FigureFrame.HeightFor(EnemySizeOf(standing[i]));
+                heights[i] = EnemyHeightOf(standing[i]);
                 feetY = home.y;
             }
             float[] lefts = OmenRowLayout.Lefts(centres);

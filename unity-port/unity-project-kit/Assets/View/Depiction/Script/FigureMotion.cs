@@ -152,6 +152,30 @@ namespace Depiction
         }
 
         /// <summary>
+        /// §4.3 大型の敵 (#843): a figure with a height of its own (<paramref name="ownHeight"/> &gt; 0)
+        /// stands that tall, feet still on y 570, free to run off the top and the sides; one without
+        /// keeps <see cref="HeightFor(int)"/>.
+        /// </summary>
+        public static float HeightFor(int cells, float ownHeight)
+        {
+            return ownHeight > 0f ? ownHeight : HeightFor(cells);
+        }
+
+        /// <summary>How tall the figure wearing <paramref name="artId"/> stands: its own height on <see cref="FigureHeights"/>, else by its cells.</summary>
+        public static float HeightOf(string artId, int cells)
+        {
+            return HeightFor(cells, FigureHeights.Of(artId));
+        }
+
+        /// <summary>
+        /// §4.3 大型の敵: past this height (400 px, not at it) the omen badge leaves the head for a fixed
+        /// place (<see cref="OmenRowLayout.BadgeBottom"/>), since over the head it would leave the screen.
+        /// </summary>
+        public const float TallHeight = 400f;
+
+        public static bool IsTall(float height) => height > TallHeight;
+
+        /// <summary>
         /// The scale that draws a frame <paramref name="frameHeight"/> tall at <paramref name="height"/>
         /// screen pixels. A frame with no height is drawn as it is.
         /// </summary>
