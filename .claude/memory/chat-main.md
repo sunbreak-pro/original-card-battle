@@ -4,24 +4,7 @@
 
 ## 進行中
 
-### 🔧 リアル性コンセプト v2 — 戦闘システム上流確定 + プロトタイプ計画（着手日: 2026-06-11）
-
-**対象**: `.claude/docs/requirements/`（Tier1/2/3 正本確定）/ `.claude/docs/vision/concept-v2.md`（RE-APPROVED 2026-06-27）/ `src/ui/prototype/`（実装済・main マージ）
-**計画書**: `.claude/docs/vision/plans/2026-06-28-battle-engine-bakeoff.md`（次ステップ・PLANNED・別セッション実装）/ `2026-06-27-battle-prototype-range-stamina.md`（プロト — 実装・マージ済 PR #14）
-
-- 前回: 戦闘プロト（間合い×スタミナ検証台）を `src/ui/prototype/` に隔離実装→実機プレイで「ゲーム性はかなり面白い」と評価→PR #14 を origin/main へマージ（merge `9b88536`）。詳細は HISTORY 2026-06-27
-- 前回: 要件正本化 + Bake-off Phase 0 prep 完了（Tier1/2/3 正本化・umbrella削除・rollup除去・phaser v4 導入）
-- 現在: **Bake-off 実装・実機評価まで完了 → Unity フル移行へ方針転換**。共有コア + Pixi/Phaser 2アダプタを PR #16 で main マージ（merge `853226a`）。実機プレイで Phaser は好印象だが低解像度・ボタン重なり・全体にリアル感不足 → エンジン選定は Unity 移行で moot 化。検証済み戦闘コア（`src/ui/battle-lab/core/`）は C# 移植元・パリティ基準として main に保全
-- 次: 先に戦闘 v4.2 の本文改訂を置く（2026-09-16 に判断 95 件が出そろい、着手可能）。その後 Unity 上で Tier1 本実装へ。剣気・崩し設計、カード・敵ロースター拡張、アート/Live2D は Phase 3 完了後の別プラン（`docs/vision/plans/2026-06-28-unity-migration-character-art.md`）。人手確認: Editor 前面で実プレイ（乱数「実戦」ボタン）
-
-### 🔧 長柄の歪み兵の立ち絵（polearm_warped）— C0 完了・人の生成待ち（着手日: 2026-09-20）
-
-**対象**: `.claude/docs/art_document/briefs/polearm_warped.md`（仕様カード）/ `.claude/docs/handover/2026-09-20-krita-art-pipeline.md`（引き継ぎ書）
-**スキル**: `visual-production-pipeline character polearm_warped`（C0 → C11）
-
-- 前回: Krita AI Diffusion 1.53.0 の導入と設定が完了。1024×1024 の試し生成に成功（28 ステップ 21.09 秒）
-- 現在: **C0（仕様カード）完了**。表示枠 140×300 / 基準点 / 反転 / 行動 5 種 / 貼るだけの英語の指示文を `briefs/polearm_warped.md` に置いた。前提を実測して引き継ぎ書を 3 行修正（生成物は ComfyUI の output に出ない / 生成時間 21 秒 / Illustrious 系が同居）
-- 次: **人手待ち** — Krita で指示文の翻訳を切ってから（`prompt_translation: ja` が英語の指示文を壊す）、1024×1536 で候補を 8〜16 枚。出た 2〜3 枚を Claude に渡すと C1 の影絵と C4 の比較へ進む。前提の欠けは `style-guide.md` と `Docs/art/asset-ledger.csv` が未設置（setup S0/S1 が未了、主人公の見た目が未決のため）
+（なし）
 
 ## 直近の完了
 
@@ -48,12 +31,10 @@
 
 ### 次のアクティブタスク
 
-- 🔜 **縦切り: 長柄の歪み兵と 1 ターンを通す（親 #67、`prio:1`）** — 最初の一手は #68（範囲と合格条件。battle レーン、#113 の merge 後）。続きは `npm run issues:next -- --lane battle`。演出と要不要の判別は #75〜#80（`prio:2`）
-- 🔜 **戦闘シーンの実装（Issue #46〜#62、`lane:battle`、`prio:2`〜`3`）** — 計画書 `.claude/docs/vision/plans/2026-09-20-battle-scene-production.md`。縦切りの振り返り（#80）で範囲を見直してから束 1（#47〜#50）へ。人手は #60 と #61
-- 🔜 **敵を竜の系譜へ寄せる（#128 → #129、`lane:cards`。#130 は `lane:dungeon`）** — #131 の merge 後に配る。立ち絵（#85〜#88）は #128 の結果を待つ
-- 🔜 **#44 の赤を片付ける（`prio:2`）** — `npm run build` と `npm run lint` が main で赤。レーンの検証ゲートが最初から届かない
-- 🔜 **アート / 探索と世界観 / 生と継承（親 #81 / #94 / #104、`prio:3`〜`4`）** — 設計と判断だけ先に進められるのは #91（カード絵の方針）/ #93（取り込み規約）/ #95（探索の要素の選別）/ #96（世界観の正本）/ #103（未確定の棚卸し）
-- 🔜 **Unity 上で Tier1 v6 本実装 — 次プラン策定（C# が正）** — Phase 3（最小戦闘画面）完了済（2026-09-06）。**戦闘コア v3（R1-3 / R1-4 相当）と戦闘画面 v1.1 は 2026-09-12 に実装済**（`unity-port/`、`dotnet test` 54）。次は探索側（刻限 / 瘴気 / ノード）と `BattleInit` の接続、手記の実データ、開示度（R2-3）、ボスの 2 段階予兆。TS battle-lab は凍結、`dotnet test` を正にする。残る未確定は concept-v3 §12 の 1 / 4 / 5 / 6 / 9 / 10 / 11 / 12 / 13 / 15 / 17 / 19 / 22 / 23。アート/Live2D は `2026-06-28-unity-migration-character-art.md`。探索とゲーム全体の枠は 2026-09-16 に決定（デッキ 20〜40 / ツール共通 3 枠 / 消耗品 3 枠 / 刻限は 1 ノード 1 回 / クリアは「歪みの根」撃破 / 剣士固定 / 連戦 3 戦と 9 戦）。Unity リポ（sunbreak-pro/RPG-by-card）の運用も 2026-09-16 に決定（初回コミットを入れる / `unity-port/` を正本にして写しもコミット / URP は 17.5.0 に直す / 描画は CLIP STUDIO PAINT PRO を買う）。実プレイの手触り確認は人手（Editor 前面・乱数「実戦」）
+- 🔜 **PR #988（#888、崩壊の暦）を入れる** — こうだいさんが Unity Editor で試遊できるときに merge する。入れる前に、衝突を解いた commit を別の役が確かめる。入れたら `npm run unity:sync -- --prune` を打つ
+- 🔜 **Unity Editor での見え方の確認が残る Issue** — #951・#946・#837・#772・#843。確かめたら閉じる
+- 🔜 **次に回す Issue は `npm run issues:next` で選ぶ** — PR の有無と担当の決まりは一覧に出ないので、`issue-workflow` の除外を当ててから決める
+- 🔜 **アート / 探索と世界観 / 生と継承（親 #81 / #94 / #104）** — 長柄の歪み兵の立ち絵は #85 が持つ（Krita での候補の生成が、こうだいさんの作業として残っている）
 
 ### バックログ機能（旧 TODO.md より移管）
 
