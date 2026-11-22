@@ -21,9 +21,9 @@ worktree ごとに設計書のコピーを持つので、main を取り込んで
 
 | 主題 | 元になる文書 | 持ち主 | 状態 | 読む担当 |
 | --- | --- | --- | --- | --- |
-| 構想（生と継承） | `.claude/docs/vision/concept-v3.md` | main | APPROVED | all |
+| 構想（生と継承） | `.claude/docs/vision/concept-v3.md` | main | APPROVED。§14.6 の同じ 1 人が潜り直す方向（世代の交代をやめる）未反映 | all |
 | 設計原則 | `.claude/docs/vision/core.md` | main | APPROVED | all |
-| 世界設定・用語・固有名詞 | `.claude/docs/vision/world-v1.md` | main | 正典 | cards, design, dungeon |
+| 世界設定・用語・固有名詞 | `.claude/docs/vision/world-v1.md` | main | 正典。`concept-v3.md` §14.6 の面と魔術の由来を外す決定・暦 100 日 未反映 | cards, design, dungeon |
 | ゲーム全体像 | `.claude/docs/Overall_document/game_design_master.md` | main | 現行 | audit |
 | 要件（何をどの順で） | `.claude/docs/requirements/tier1-core.md` | main | DRAFT | all |
 | 要件（支援） | `.claude/docs/requirements/tier2-support.md` | main | 現行 | all |
