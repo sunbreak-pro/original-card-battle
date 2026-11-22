@@ -15,9 +15,9 @@
 | --- | --- | --- |
 | main が最新か | `git fetch origin && git status -sb` | `main...origin/main` で、遅れが無い |
 | 柱の節が入っているか | `grep -n "^### 8\." .claude/docs/battle_document/battle_core_v4.md` | `8.1 戦法の柱` と `8.2 柱どうしの相性` が出る |
-| 順番の Issue の状態 | `gh issue list -R sunbreak-pro/original-card-battle --state open --json number,title --jq '.[] \| select(.number==999 or .number==934 or .number==903 or .number==898) \| "\(.number) \(.title)"'` | 4 件とも open |
+| 順番の Issue の状態 | `for n in 999 934 903 898; do gh issue view $n -R sunbreak-pro/original-card-battle --json number,state -q '"(.number) (.state)"'; done` | 4 行とも `OPEN` |
 | 着手済みの PR が無いか | `gh pr list -R sunbreak-pro/original-card-battle --state open --json number,headRefName,title` | #999・#934・#903・#898 の PR が無い（#988 は試遊待ちで open のまま） |
-| 残った worktree | `git worktree list` | main と `audit` だけ（`wf-*` や `tracker-main` が残っていたら片付ける） |
+| 残った worktree | `git worktree list` | この引き継ぎ書の PR を入れたあとは、main と `audit` だけ（`wf-*` や `tracker-main` が残っていたら片付ける） |
 | 空きメモリ | `node ~/.claude/skills/issue-workflow/scripts/free-mem.mjs` | 6 以上（GB） |
 
 ## 次の一手
