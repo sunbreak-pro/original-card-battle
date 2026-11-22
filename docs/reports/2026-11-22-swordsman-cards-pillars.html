@@ -1,0 +1,859 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>剣術の札と戦法の柱</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* 左に追従する目次 + 右に 1 本の読み筋(題 → 結論 → 理由 → 根拠 → 参考)。
+     ライトが既定。ダークは右上のボタンで選んだときだけ使う(OS の設定には追従しない)。
+     色は :root とダークのブロックにだけ hex で書き、ほかはすべてトークン(var(--…))で当てる。 */
+  :root {
+    --ground: #f6f8f9; --panel: #ffffff; --ink: #1c2327; --muted: #56636b;
+    --line: #d9e0e3; --accent: #0e6b74; --accent-ink: #ffffff; --accent-soft: #e2f0f0;
+    --row: #f1f5f6; --ok: #2c7a4b; --warn: #966010; --stop: #a23c3c; --idle: #e3e8eb; --code-bg: #eef3f4;
+    --shadow: 0 1px 2px rgba(20, 40, 45, .05), 0 6px 18px rgba(20, 40, 45, .04);
+    --font-body: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+    --font-mono: "IBM Plex Mono", "Consolas", "Courier New", monospace;
+    /* 余白のスケール */
+    --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px; --sp-7: 48px; --sp-8: 72px; --sp-9: 96px;
+    /* チャート: カテゴリ(系列そのものが主題のときだけ使う。ふつうは accent 1 本 + グレー) */
+    --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --c4: #eda100; --c5: #e87ba4; --c6: #008300;
+    /* チャート: 連続(1 色相。明るい → 濃い)と、各段に載せる文字の色 */
+    --seq-1: #cde2fb; --seq-2: #86b6ef; --seq-3: #3987e5; --seq-4: #1c5cab; --seq-5: #0d366b;
+    --seq-1-ink: #1c2327; --seq-2-ink: #1c2327; --seq-3-ink: #0b1114; --seq-4-ink: #ffffff; --seq-5-ink: #ffffff;
+    /* チャート: 罫線と軸(軸は棒の「その他」の塗りにも使う) */
+    --grid: #e4e9ec; --axis: #75848b;
+    color-scheme: light;
+  }
+  @media not print {
+    :root[data-theme="dark"] {
+      --ground: #111618; --panel: #1a2125; --ink: #e4e9eb; --muted: #99a6ad;
+      --line: #2c363b; --accent: #5fc4cc; --accent-ink: #0f1c1e; --accent-soft: #163338;
+      --row: #1e262a; --ok: #6fc48f; --warn: #e0a94a; --stop: #e07a7a; --idle: #2c363b; --code-bg: #0f1417;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .35);
+      --c1: #3987e5; --c2: #d95926; --c3: #199e70; --c4: #c98500; --c5: #d55181; --c6: #008300;
+      --seq-1: #1f3a57; --seq-2: #2a5a92; --seq-3: #3987e5; --seq-4: #86b6ef; --seq-5: #cde2fb;
+      --seq-1-ink: #e4e9eb; --seq-2-ink: #ffffff; --seq-3-ink: #0b1114; --seq-4-ink: #0b1114; --seq-5-ink: #0b1114;
+      --grid: #2a3439; --axis: #7f8d94;
+      color-scheme: dark;
+    }
+  }
+  :root { --gap-section: var(--sp-8); --gap-card: var(--sp-5); }
+  @media (max-width: 599px) { :root { --gap-section: var(--sp-7); --gap-card: var(--sp-4); } }
+
+  * { box-sizing: border-box; }
+  /* scroll-padding-top: 固定のテーマボタン(下端 56px)に、目次・脚注・Shift+Tab で飛んだ先を隠さない(節ごとの scroll-margin は持たない) */
+  html { scroll-behavior: smooth; scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 72px); }
+  body { margin: 0; background: var(--ground); color: var(--ink); font-family: var(--font-body);
+    font-size: 16px; line-height: 1.9; -webkit-font-smoothing: antialiased; }
+  code, pre, .mono { font-family: var(--font-mono); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { transition: none !important; animation: none !important; }
+  }
+
+  /* テーマ切り替え(右上に固定。.page の上に 64px の予約余白を取って本文と重ねない)。
+     JS が data-theme を付けるまで出さない(JS が動かないとき、効かないボタンを残さない)。印刷では出さない */
+  .themeswitch { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 12px); right: calc(env(safe-area-inset-right, 0px) + 16px); z-index: 50;
+    display: none; gap: 2px; padding: 3px; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 8px; box-shadow: var(--shadow); }
+  @media screen { :root[data-theme] .themeswitch { display: inline-flex; } }
+  .themeswitch button { appearance: none; font: inherit; font-size: 14px; line-height: 1; height: 36px; min-width: 64px; padding: 0 14px;
+    border: 0; border-radius: 4px; background: transparent; color: var(--muted); cursor: pointer; }
+  .themeswitch button:hover { background: var(--row); color: var(--ink); }
+  .themeswitch button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+
+  /* レイアウト: 目次 250px + 本文 最大 880px。本文の列は子の間を gap で空ける */
+  .page { max-width: 1226px; margin: 0 auto; padding: 64px 24px 96px; display: grid;
+    grid-template-columns: 250px minmax(0, 880px); gap: var(--sp-7); justify-content: center; }
+  .page.no-toc { grid-template-columns: minmax(0, 880px); }
+  .main { min-width: 0; display: flex; flex-direction: column; gap: var(--sp-6); }
+  section { display: flex; flex-direction: column; gap: var(--sp-5); min-width: 0; }
+  /* 節と節の間 = main の gap(32px) + この margin = 72px(幅 600px 未満は 48px) */
+  .main > section { margin-top: calc(var(--gap-section) - var(--sp-6)); }
+  /* 幅 999px 以下は 1 列。並びは 題の面 → 結論カード → 目次 → 節(結論カードがない報告書は 題の面 → 目次 → 節) */
+  @media (max-width: 999px) {
+    .page { display: flex; flex-direction: column; gap: var(--sp-6); padding: 64px 16px 72px; }
+    .main { display: contents; }
+    .hero { order: -2; }
+    .main > :is(.verdicts, .tiles) { order: -1; }
+  }
+
+  /* 目次 */
+  .toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 24px); align-self: start;
+    max-height: calc(100vh - 48px); overflow-y: auto; font-size: 14px; }
+  .toc-title { font-size: 13px; font-weight: 700; color: var(--muted); margin: 0 0 var(--sp-2); }
+  .toc-progress { height: 3px; background: var(--idle); border-radius: 4px; overflow: hidden; margin: 0 0 var(--sp-3); }
+  .toc-progress > span { display: block; height: 100%; width: 0; background: var(--accent); transition: width .15s linear; }
+  .toc ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+  .toc a { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; align-items: start; padding: 8px 10px;
+    border-radius: 4px; color: var(--muted); text-decoration: none; line-height: 1.5; border-left: 3px solid transparent; }
+  .toc a:hover { background: var(--row); color: var(--ink); }
+  /* .toc は overflow-y: auto で横も切るので、焦点の輪は外ではなくリンクの内側に描く */
+  .toc a:focus-visible { outline-offset: -2px; }
+  .toc .lbl { display: block; font-size: 14px; }
+  .toc .toc-claim { display: block; font-size: 13px; color: var(--muted); font-weight: 400; line-height: 1.5; }
+  .toc a[aria-current="location"] .toc-claim { color: var(--ink); }
+  .toc .no { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 13px;
+    font-weight: 700; font-family: var(--font-mono); background: var(--idle); color: var(--ink); }
+  .toc a.done .no { background: transparent; color: var(--ok); box-shadow: inset 0 0 0 1.5px var(--ok); }
+  .toc a.done .no::before { content: "✓"; font-family: var(--font-body); }
+  .toc a.done .no > span { display: none; }
+  .toc a[aria-current="location"] { background: var(--accent-soft); color: var(--accent); font-weight: 700; border-left-color: var(--accent); }
+  .toc a[aria-current="location"] .no { background: var(--accent); color: var(--accent-ink); box-shadow: none; }
+  @media (max-width: 999px) {
+    .toc { order: 0; position: static; max-height: none; align-self: stretch; }
+  }
+
+  /* 題の面 */
+  .hero { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow);
+    padding: 40px 44px; display: flex; flex-direction: column; gap: var(--sp-4); }
+  @media (max-width: 599px) { .hero { padding: 24px 20px; } }
+  .eyebrow { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-3); align-items: center; font-size: 13px; color: var(--muted); font-weight: 700; margin: 0; }
+  h1 { font-size: clamp(26px, 3.4vw, 36px); line-height: 1.4; margin: 0; text-wrap: balance; font-weight: 700; letter-spacing: .01em; }
+  .lede { font-size: 17px; color: var(--muted); margin: 0; }
+  .meta { display: flex; flex-direction: row; flex-wrap: wrap; gap: var(--sp-2) var(--sp-5); margin: 0; padding: var(--sp-4) 0 0; border-top: 1px solid var(--line);
+    font-size: 13px; color: var(--muted); list-style: none; }
+  .meta b { color: var(--ink); font-weight: 700; margin-right: 4px; font-variant-numeric: tabular-nums; }
+
+  /* 見出しと本文。本文の 1 行は全角 40 字前後(40em)。図・表・カードは列の幅いっぱい */
+  .kicker { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--accent); font-weight: 700; margin: 0; max-width: none; }
+  .kicker .no { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+  .kicker::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  h2 { font-size: 24px; line-height: 1.5; margin: 0; text-wrap: balance; }
+  /* 小さな分類名(kicker)と主張(h2)は近づけて 1 組に見せる。この 1 か所だけ負の margin で gap を詰める */
+  .kicker + h2 { margin-top: calc(var(--sp-3) - var(--sp-5)); }
+  h3 { font-size: 17px; line-height: 1.5; margin: 0; }
+  p { margin: 0; }
+  p, ul, ol { max-width: 40em; }
+  ul, ol { padding-left: 1.4em; margin: 0; display: flex; flex-direction: column; gap: var(--sp-2); }
+  /* flex でない箱(.callout・.finding・li・td・dd)の中で段落や一覧が続くとき、間隔が 0 にならないようにする */
+  :is(.callout, .finding, li, td, dd) > :is(p, ul, ol) + :is(p, ul, ol) { margin-top: var(--sp-4); }
+  /* 日本語の折り返し: 見出し・リード文・カードの文は語や句の途中で割らない。段落の最終行を 1〜2 字にしない。
+     対応していないブラウザでは無視され、従来どおりに折り返す */
+  h1, h2, h3, .lede, .verdict p, .fig > figcaption, .compare figcaption, .hbar-label, .tile .l, .vhead p { word-break: auto-phrase; }
+  .page :is(p, li, td, dd, caption) { word-break: auto-phrase; }
+  p, li, td, dd, caption { text-wrap: pretty; }
+  /* 英単語・ファイル名・製品名を折り返させない(見出し・カード・図のラベルは全角 12 字以内にするか、これで守る) */
+  .nobr { white-space: nowrap; }
+  a { color: var(--accent); }
+  sup.ref { font-size: 13px; margin-left: 1px; line-height: 0; }
+  sup.ref a { text-decoration: none; }
+
+  /* 大きな塊(図・表・カード列・案パネル)の上下は、gap(24px) + この margin(8px) = 32px 以上 */
+  .fig, .tablewrap, .rowcards, .decision, .verdicts, .tiles, .compare, .split, .variants, .callout, .steps, pre { margin-block: var(--sp-2); }
+  .main > section > :last-child { margin-bottom: 0; }
+
+  /* 部品: 結論カード・チップ・数字タイル */
+  .verdicts, .tiles, .meta, .legend, .hbar, .steps, .refs, .rowcards, .toc ol { max-width: none; }
+  .verdicts { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--gap-card); padding: 0; list-style: none; }
+  .verdict { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); padding: var(--sp-5);
+    display: flex; flex-direction: column; gap: var(--sp-3); min-width: 0; break-inside: avoid; }
+  .verdict .tag { font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: var(--sp-2); }
+  .verdict .tag::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+  .verdict.now .tag { color: var(--ok); } .verdict.later .tag { color: var(--warn); } .verdict.skip .tag { color: var(--stop); }
+  .verdict h3 { font-size: 18px; text-wrap: balance; }
+  .verdict p { color: var(--muted); font-size: 15px; line-height: 1.8; }
+  .chip { display: inline-block; border-radius: 4px; padding: 1px 8px; font-size: 13px; font-weight: 700; line-height: 1.6; color: var(--accent-ink); white-space: nowrap; }
+  .chip.ok { background: var(--ok); } .chip.warn { background: var(--warn); } .chip.stop { background: var(--stop); }
+  .chip.idle { background: var(--idle); color: var(--ink); } .chip.kind { background: var(--accent); }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: var(--gap-card); padding: 0; list-style: none; }
+  .tile { background: var(--panel); border: 1px solid var(--line); border-top: 4px solid var(--idle); border-radius: 8px; box-shadow: var(--shadow);
+    padding: var(--sp-4) var(--sp-5) var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-1); }
+  .tile.ok { border-top-color: var(--ok); } .tile.warn { border-top-color: var(--warn); } .tile.stop { border-top-color: var(--stop); }
+  .tile .n { font-size: 32px; font-weight: 700; line-height: 1.3; font-family: var(--font-mono); display: block; white-space: nowrap; }
+  /* 数字の後ろの単位(36<span class="u">か月</span>)は小さく添える。数字と単位が別の行に割れない */
+  .tile .n .u { font: 700 16px var(--font-body); margin-left: 4px; }
+  .tile .l { font-size: 14px; line-height: 1.6; color: var(--muted); text-wrap: balance; }
+  .dist { display: flex; height: 10px; border-radius: 4px; overflow: hidden; background: var(--idle); gap: 2px; }
+  .dist > span { display: block; height: 100%; }
+  .dist .ok { background: var(--ok); } .dist .warn { background: var(--warn); } .dist .stop { background: var(--stop); } .dist .idle { background: var(--muted); }
+  /* 進捗バー(HTML)。svg の帯(rect.bar、.chart .bar)には当てない: CSS の height が rect の height 属性を上書きするため */
+  .bar:not(rect) { height: 8px; background: var(--idle); border-radius: 4px; overflow: hidden; min-width: 80px; }
+  .bar:not(rect) > span { display: block; height: 100%; background: var(--accent); }
+  .compare { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--gap-card); }
+  .compare > figure { margin: 0; min-width: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: var(--sp-5);
+    display: flex; flex-direction: column; gap: var(--sp-3); }
+  .compare figcaption { font-size: 14px; font-weight: 700; color: var(--muted); }
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: var(--sp-4) var(--sp-5); overflow-x: auto; font-size: 14px; line-height: 1.7; }
+  pre code { background: none; padding: 0; }
+  p code, li code, td code { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: .9em; }
+  .callout { border: 1px solid var(--line); background: var(--accent-soft); padding: var(--sp-5); border-radius: 8px; font-size: 15px; line-height: 1.8; }
+  .callout strong { color: var(--accent); }
+  .finding { border-left: 3px solid var(--line); padding: var(--sp-1) 0 var(--sp-1) var(--sp-4); }
+  .finding.stop { border-left-color: var(--stop); } .finding.warn { border-left-color: var(--warn); } .finding.ok { border-left-color: var(--ok); }
+  .note { font-size: 14px; color: var(--muted); }
+
+  /* 表: セルの内側は 12px × 20px */
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); box-shadow: var(--shadow); }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; line-height: 1.7; font-variant-numeric: tabular-nums; }
+  caption { caption-side: top; text-align: left; font-weight: 700; font-size: 15px; line-height: 1.7; padding: var(--sp-4) 20px var(--sp-3); border-bottom: 1px solid var(--line); }
+  th, td { text-align: left; padding: 12px 20px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 13px; color: var(--muted); background: var(--row); font-weight: 700; white-space: nowrap; }
+  tbody tr:nth-child(even) td { background: var(--row); }
+  th.num, td.num { text-align: right; white-space: nowrap; font-family: var(--font-mono); }
+  td.nowrap { white-space: nowrap; }
+  tr { break-inside: avoid; }
+  tr:last-child td { border-bottom: 0; }
+  td.state { white-space: nowrap; font-weight: 700; }
+  td.state.wrap { white-space: normal; } /* 結果が文のセル(td class="state wrap yes")。短い状態語は wrap なしで折り返さない */
+  td.state.yes { color: var(--ok); } td.state.no { color: var(--stop); } td.state.maybe { color: var(--warn); }
+  /* 3 列以上の表は、狭い幅で列が数文字に潰れないよう、表の枠の中で横に動かす。列が多いほど最小幅を広げる(後ろの規則が勝つ)。
+     :where() で詳しさを 0 にしてあるので、table.stack や印刷の min-width: 0 が素直に勝つ */
+  .tablewrap > table:where(:has(thead th:nth-child(3))) { min-width: 36em; }
+  .tablewrap > table:where(:has(thead th:nth-child(4))) { min-width: 44em; }
+  .tablewrap > table:where(:has(thead th:nth-child(5))) { min-width: 48em; }
+  /* 標題は、表が横に動いても枠の見えている幅に留めて左端に残す。幅は枠の幅(100cqw)で決める。
+     container query の単位が使えない古いブラウザでは、幅 999px 以下だけ画面の幅から近似する */
+  .tablewrap caption { position: sticky; left: 0; box-sizing: border-box; }
+  @media (max-width: 999px) { .tablewrap caption { width: min(100%, calc(100vw - 34px)); } }
+  @supports (width: 1cqw) {
+    .tablewrap { container-type: inline-size; }
+    .tablewrap caption { width: 100cqw; }
+  }
+  /* 列が 4 つ以上の表(table class="wide")。列を押し縮めて 1 行を数文字にせず、列の幅を保ったまま、表の枠(.tablewrap)の中だけを横に動かす。
+     文のセルは全角 12 字ぶんに左右の余白(40px)を足した幅を、列の最小幅にする(足りなければ枠の中で横に動く)。
+     Chrome はセルの width を「望ましい幅」として表の幅に合わせて縮めるので min-width も付ける(Firefox は width を最小幅として扱う)。
+     数値・状態語・折り返さない語のセルは指定せず、語の幅に任せる。
+     :where() で詳しさを下げてあるので、幅 599px 以下の table.stack と印刷の指定が素直に勝つ */
+  table.wide :where(td:not(.num, .nowrap, .state:not(.wrap))) { width: calc(12em + 40px); min-width: calc(12em + 40px); }
+  /* 縦積みの表(table class="stack"。各 td に data-label="列の名前")。幅 599px 以下では、行を縦に積み、
+     セルの前に data-label の文字を出す。thead は見えない位置に置く(読み上げには残る)。
+     全セルが短い表だけに付ける。長い文の比較は .rowcards にする。数字が主体の表と評価表(table.heat)には付けない */
+  @media (max-width: 599px) {
+    .tablewrap > table.stack { min-width: 0; }
+    table.stack colgroup { display: none; }
+    table.stack tbody, table.stack tr, table.stack td { display: block; }
+    table.stack thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    table.stack td { border-bottom: 0; padding: var(--sp-1) var(--sp-5); text-align: left; white-space: normal; width: auto; min-width: 0; }
+    table.stack td[data-label]::before { content: attr(data-label); display: block; font-size: 13px; line-height: 1.6; font-weight: 700; color: var(--muted); }
+    table.stack td:first-child { padding-top: var(--sp-3); font-weight: 700; }
+    table.stack td:last-child { padding-bottom: var(--sp-3); border-bottom: 1px solid var(--line); }
+    table.stack tbody tr:last-child td:last-child { border-bottom: 0; }
+  }
+
+  /* 行のカード(ul class="rowcards")。文章が主体の比較は表にせず、1 件を 1 枚のカードにして、題(h3)の下に項目名(dt)と文(dd)を積む。
+     幅 760px 以上は項目名を左の列に置く(狭い列に長い文を押し込まない) */
+  .rowcards { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--gap-card); }
+  .rowcards > li { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); padding: var(--sp-5);
+    display: flex; flex-direction: column; gap: var(--sp-3); min-width: 0; break-inside: avoid; }
+  .rowcards dl, .decision dl { margin: 0; display: flex; flex-direction: column; gap: var(--sp-3); }
+  .rowcards dl > div, .decision dl > div { display: flex; flex-direction: column; gap: var(--sp-1); min-width: 0; }
+  .rowcards dt, .decision dt { font-size: 13px; font-weight: 700; line-height: 1.6; color: var(--muted); }
+  .rowcards dd, .decision dd { margin: 0; font-size: 15px; line-height: 1.8; }
+  @media (min-width: 760px) {
+    .rowcards dl > div, .decision dl > div { display: grid; grid-template-columns: 11em minmax(0, 1fr); gap: var(--sp-4); align-items: baseline; }
+  }
+
+  /* 判断カード(article class="decision")。判断 1 つを 1 枚にし、4 つの欄を同じ順で並べる:
+     .d-situation 何が起きているか / .d-reason なぜ決める必要があるか / .d-options 選ぶと何が起きるか(選択肢ごとの li) /
+     .d-pick 推奨と根拠(.d-choice 推す選択肢の名前、.d-basis 根拠)。欄が欠けるか空なら、検査が ERROR にする */
+  .decision { background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 8px; box-shadow: var(--shadow);
+    padding: var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; break-inside: avoid; }
+  .decision h3 { font-size: 18px; text-wrap: balance; }
+  .decision dl { gap: var(--sp-4); }
+  .decision .d-pick { background: var(--accent-soft); border-radius: 4px; padding: var(--sp-3) var(--sp-4); }
+  .decision .d-pick dt { color: var(--accent); }
+  .decision .d-choice { font-weight: 700; }
+  .decision .d-basis { margin-top: var(--sp-1); }
+
+  /* 図の枠: 図の主張(figcaption)を図の上に出す */
+  .fig { margin-inline: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow);
+    padding: var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; overflow-x: auto; break-inside: avoid; }
+  .fig > figcaption { font-size: 16px; font-weight: 700; line-height: 1.6; color: var(--ink); }
+  .fig-note { font-size: 13px; line-height: 1.7; color: var(--muted); max-width: none; }
+  /* svg.chart は幅 640px 未満では横に動く。SVG だけを <div class="chartscroll"> で包み、図の主張(figcaption)・凡例・注記は動かさない。
+     動かせる側の端に影を出して知らせる(動かせるときだけ見える。白(--panel)の覆いが中身と一緒に動き、端まで来ると影を隠す)。
+     右端は初めに切れて見えるので、値は図の左側に置く。color-mix が効かないブラウザでは影を出さず、.fig の白がそのまま残る */
+  .chartscroll { overflow-x: auto; min-width: 0; }
+  @supports (background: color-mix(in srgb, red 50%, transparent)) {
+    .chartscroll {
+      background:
+        linear-gradient(to right, var(--panel) 40%, transparent) left center / 32px 100% no-repeat local,
+        linear-gradient(to left, var(--panel) 40%, transparent) right center / 32px 100% no-repeat local,
+        radial-gradient(farthest-side at 0 50%, color-mix(in srgb, var(--ink) 24%, transparent), transparent) left center / 12px 100% no-repeat scroll,
+        radial-gradient(farthest-side at 100% 50%, color-mix(in srgb, var(--ink) 24%, transparent), transparent) right center / 12px 100% no-repeat scroll,
+        var(--panel);
+    }
+  }
+
+  /* 横棒グラフ: 大きさの比較。値は右に文字でも書く。強調する 1 行だけ accent、ほかはグレー */
+  .hbar { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--sp-3); }
+  .hbar-row { display: grid; grid-template-columns: minmax(8em, 14em) minmax(0, 1fr) 4.5em; gap: var(--sp-2) var(--sp-4); align-items: center; }
+  .hbar-label { font-size: 15px; line-height: 1.6; min-width: 0; }
+  .hbar-track { display: block; height: 14px; background: var(--idle); border-radius: 4px; overflow: hidden; }
+  .hbar-fill { display: block; height: 100%; border-radius: 4px; background: var(--bar, var(--axis)); }
+  .hbar-val { font-family: var(--font-mono); font-size: 15px; text-align: right; font-variant-numeric: tabular-nums; }
+  .hbar .is-focus { --bar: var(--accent); }
+  .hbar-row.is-focus .hbar-label, .hbar-row.is-focus .hbar-val { font-weight: 700; }
+  .hbar .c1 { --bar: var(--c1); } .hbar .c2 { --bar: var(--c2); } .hbar .c3 { --bar: var(--c3); }
+  .hbar .c4 { --bar: var(--c4); } .hbar .c5 { --bar: var(--c5); } .hbar .c6 { --bar: var(--c6); }
+  @media (max-width: 599px) {
+    .hbar-row { grid-template-columns: minmax(0, 1fr) 4em; }
+    .hbar-label { grid-column: 1 / -1; }
+  }
+  /* 文と図の並び(.split)の中の横棒: 列が 325〜490px しかなく、既定のラベル列(最大 14em)だと棒が 0px になる。
+     ラベルを棒の上の行に出して、棒と値だけを並べる(幅 760px 未満は .split が 1 列になるので、既定の並びのまま) */
+  @media (min-width: 760px) {
+    .split .hbar-row { grid-template-columns: minmax(0, 1fr) 3.5em; gap: var(--sp-1) var(--sp-3); }
+    .split .hbar-label { grid-column: 1 / -1; }
+  }
+
+  /* 凡例: 2 系列以上のとき必須 */
+  .legend { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: row; flex-wrap: wrap; gap: var(--sp-2) var(--sp-5); font-size: 14px; line-height: 1.6; color: var(--muted); }
+  .legend li { display: inline-flex; align-items: center; gap: var(--sp-2); }
+  .sw { display: inline-block; width: 12px; height: 12px; border-radius: 4px; background: var(--axis); flex: none; }
+  .sw.c1 { background: var(--c1); } .sw.c2 { background: var(--c2); } .sw.c3 { background: var(--c3); }
+  .sw.c4 { background: var(--c4); } .sw.c5 { background: var(--c5); } .sw.c6 { background: var(--c6); }
+
+  /* SVG チャート: viewBox の幅は 640 にそろえる(最小幅 640px で等倍になり、文字は 13px を下回らない) */
+  svg.chart { display: block; width: 100%; min-width: 640px; height: auto; overflow: visible; }
+  .chart .grid { stroke: var(--grid); stroke-width: 1; fill: none; }
+  .chart .axis { stroke: var(--axis); stroke-width: 1.5; fill: none; }
+  .chart .tick { stroke: var(--axis); stroke-width: 1; fill: none; }
+  .chart .t { fill: var(--ink); font-family: var(--font-body); font-size: 13px; }
+  .chart .t-muted { fill: var(--muted); }
+  .chart .ln-1 { --series: var(--c1); } .chart .ln-2 { --series: var(--c2); }
+  .chart .ln-3 { --series: var(--c3); } .chart .ln-4 { --series: var(--c4); }
+  .chart .is-focus { --series: var(--accent); }
+  .chart .ln { fill: none; stroke: var(--series, var(--axis)); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+  .chart .area { fill: var(--series, var(--axis)); fill-opacity: .14; stroke: none; }
+  .chart .dot { fill: var(--series, var(--axis)); stroke: var(--panel); stroke-width: 2; }
+  /* 期間の帯(rect class="bar" に x・y・width・height を属性で書く)。重なる帯は --panel の縁で分ける */
+  .chart .bar { fill: var(--series, var(--axis)); stroke: var(--panel); stroke-width: 2; }
+  .chart .quad { fill: var(--row); stroke: var(--line); stroke-width: 1; }
+  .chart .quad.is-focus { fill: var(--accent-soft); stroke: var(--accent); }
+  .chart .node { fill: var(--panel); stroke: var(--axis); stroke-width: 1.5; }
+  .chart .node.is-focus { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2; }
+  .chart .edge { fill: none; stroke: var(--axis); stroke-width: 1.5; }
+  .chart .arrowhead { fill: var(--axis); stroke: none; }
+  .chart .edge-label { fill: var(--muted); font-family: var(--font-body); font-size: 13px; paint-order: stroke; stroke: var(--panel); stroke-width: 4px; stroke-linejoin: round; }
+
+  /* 評価表: 案 × 基準の点数を濃淡で見せる(数値は必ず文字で載せる) */
+  table.heat td, table.heat th { text-align: center; }
+  table.heat td { vertical-align: middle; }
+  table.heat th:first-child, table.heat td:first-child { text-align: left; min-width: 9em; }
+  table.heat td[data-l] { font-family: var(--font-mono); font-weight: 700; border-left: 1px solid var(--panel); }
+  table.heat td[data-l="1"] { background: var(--seq-1); color: var(--seq-1-ink); }
+  table.heat td[data-l="2"] { background: var(--seq-2); color: var(--seq-2-ink); }
+  table.heat td[data-l="3"] { background: var(--seq-3); color: var(--seq-3-ink); }
+  table.heat td[data-l="4"] { background: var(--seq-4); color: var(--seq-4-ink); }
+  table.heat td[data-l="5"] { background: var(--seq-5); color: var(--seq-5-ink); }
+  /* 幅 599px 以下で横に動かしても、先頭列(行の名前)は左に残す。固定した列の背景は行の色と同じにして、後ろのセルを隠す */
+  @media (max-width: 599px) {
+    table.heat th:first-child, table.heat td:first-child { position: sticky; left: 0; z-index: 1; box-shadow: 1px 0 0 var(--line); }
+    table.heat tbody td:first-child { background: var(--panel); }
+    table.heat tbody tr:nth-child(even) td:first-child { background: var(--row); }
+  }
+
+  /* 手順: 順番に意味があるときだけ。番号は CSS カウンタ */
+  .steps { list-style: none; padding: 0; margin: 0; counter-reset: step; display: flex; flex-direction: column; gap: var(--sp-4); }
+  .steps > li { counter-increment: step; position: relative; padding: 2px 0 0 52px; min-height: 36px; }
+  .steps > li::before { content: counter(step); position: absolute; left: 0; top: 0; width: 36px; height: 36px; border-radius: 50%;
+    display: grid; place-items: center; background: var(--accent); color: var(--accent-ink); font-family: var(--font-mono); font-weight: 700; font-size: 15px; }
+  .steps strong { display: block; }
+
+  /* 文と図の並び: 幅 760px 未満で縦積み */
+  .split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: var(--sp-6); align-items: start; }
+  .split > div { display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; }
+  .split > .fig { margin-block: 0; }
+  .split.rev > :first-child { order: 2; }
+  @media (max-width: 759px) {
+    .split { grid-template-columns: minmax(0, 1fr); gap: var(--sp-5); }
+    .split.rev > :first-child { order: 0; }
+  }
+
+  /* 参考 */
+  .refs { font-size: 14px; line-height: 1.8; color: var(--muted); padding: var(--sp-5) var(--sp-5) var(--sp-5) calc(var(--sp-5) + 1.6em);
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+  .refs li { overflow-wrap: anywhere; }
+  .refs li:target { color: var(--ink); }
+
+  /* 切り替え式の案パネル(UI/UX 案)。JS が動くと .is-ready が付き、ボタンで 1 案ずつ見せる。
+     動かないときはタブを隠して全案を縦に並べる。全パネルを同じ grid セルに重ねるので、切り替えても高さは変わらない */
+  .variants { display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; }
+  .variants-tabs { display: none; }
+  .variants.is-ready .variants-tabs { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: var(--sp-2); }
+  @media (max-width: 699px) {
+    .variants.is-ready .variants-tabs { grid-auto-flow: row; grid-auto-columns: auto; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    /* 案が奇数個のとき、最後の 1 つは 2 列ぶんの幅にして、左に 1 つだけ残らないようにする */
+    .variants.is-ready .variants-tabs > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+  }
+  .variants-tabs .chip { margin-left: auto; }
+  .variants-tabs [role="tab"] { appearance: none; font: inherit; font-size: 14px; font-weight: 700; line-height: 1.4; color: var(--ink); text-align: left;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px; min-height: 44px; padding: 10px 14px 13px; cursor: pointer;
+    position: relative; overflow: hidden; display: flex; flex-wrap: wrap; align-items: center; align-content: center; gap: var(--sp-1) 10px; }
+  .variants-tabs [role="tab"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: transparent; }
+  .variants-tabs [role="tab"]:hover { background: var(--row); }
+  .variants-tabs [role="tab"][aria-selected="true"] { background: var(--accent-soft); border-color: var(--accent); }
+  .variants-tabs [role="tab"][aria-selected="true"]::after { background: var(--accent); }
+  .vt-name { flex: 1 1 auto; min-width: 0; }
+  .variants-stage { display: flex; flex-direction: column; gap: var(--sp-6); }
+  .variants.is-ready .variants-stage { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .vpanel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); padding: var(--sp-5);
+    display: flex; flex-direction: column; gap: var(--sp-5); min-width: 0; }
+  .variants.is-ready .vpanel { grid-area: 1 / 1; visibility: hidden; opacity: 0; }
+  .variants.is-ready .vpanel.is-active { visibility: visible; opacity: 1; }
+  /* 切り替えのフェードは、利用者が最初に案を切り替えたとき(script が .is-live を付ける)から。
+     最初の描画で動かすと、スクリーンショットや印刷が途中の半透明の画面を写す */
+  .variants.is-live .vpanel { transition: opacity .12s ease, visibility 0s linear .12s; }
+  .variants.is-live .vpanel.is-active { transition: opacity .12s ease; }
+  /* 幅 700px 未満は、見せていない案を高さ 0 にたたむ(重ねたままだと、短い案の下に最も高い案ぶんの空白が残る)。
+     印刷は全案を並べるので、画面(screen)だけに効かせる */
+  @media screen and (max-width: 699px) {
+    .variants.is-ready .vpanel:not(.is-active) { max-height: 0; overflow: hidden; padding-block: 0; border-width: 0; box-shadow: none; }
+  }
+  .vhead { display: flex; flex-direction: column; gap: var(--sp-2); }
+  .vhead h3 { font-size: 18px; }
+  .vhead p { color: var(--muted); }
+  .vnotes { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--sp-4) var(--sp-5); margin: 0; padding: var(--sp-4) 0 0; border-top: 1px solid var(--line); }
+  .vnotes > div { display: flex; flex-direction: column; gap: var(--sp-1); min-width: 0; }
+  .vnotes dt { font-size: 13px; font-weight: 700; color: var(--muted); }
+  .vnotes dd { margin: 0; font-size: 15px; line-height: 1.8; }
+
+  /* モックアップの枠(案の中身は #mockup-styles が .mk-<記号> で持つ。レポートのトークンとは独立) */
+  .mock { container-type: inline-size; min-width: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--panel); }
+  /* container query が効かないブラウザでは、案が枠より広くなる。切り捨てず、枠の中で横に動かして読めるようにする */
+  @supports not (container-type: inline-size) { .mock { overflow-x: auto; } }
+  .mock-bar { display: flex; align-items: center; gap: var(--sp-3); padding: 10px 14px; background: var(--row); border-bottom: 1px solid var(--line); font-size: 13px; line-height: 1.4; color: var(--muted); }
+  .mock-dots { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--axis); margin-right: 40px; box-shadow: 16px 0 0 var(--axis), 32px 0 0 var(--axis); }
+  .mock-url { flex: 1; min-width: 0; padding: 2px 10px; border-radius: 4px; background: var(--panel); border: 1px solid var(--line); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mock[data-device="phone"] { width: 100%; max-width: 390px; margin-inline: auto; border-width: 2px; border-radius: 28px; }
+  .mock[data-device="phone"] .mock-bar { display: none; }
+  .mocks { display: flex; flex-wrap: wrap; gap: var(--sp-5); align-items: flex-start; }
+  .mocks > .mock { flex: 1 1 320px; margin-inline: 0; }
+  .mocks > .mock[data-device="phone"] { flex: 0 1 390px; }
+  /* 広い画面とスマホ画面を縦に重ねるとき(.mocks に stack を付ける)。横に並べると広い画面が 416px 前後に狭まる */
+  .mocks.stack { flex-direction: column; align-items: stretch; }
+  .mocks.stack > .mock { flex: none; width: 100%; }
+  .mocks.stack > .mock[data-device="phone"] { width: min(100%, 390px); align-self: center; }
+
+  @media print {
+    :root { --shadow: none; }
+    /* 背景のグラフィックを刷らない設定(Chrome の既定)でも、評価表・チップ・棒グラフ・手順の番号の色を残す */
+    *, *::before, *::after { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { background: var(--panel); }
+    .chartscroll { background: var(--panel); }
+    /* 印刷では表を横に動かせない。枠を切らず、最小幅を外して列を詰め、見出しも折り返して、右端の列(評価表の合計など)を失わない */
+    .tablewrap { overflow: visible; }
+    .tablewrap > table { min-width: 0; }
+    table.wide td { width: auto; min-width: 0; }
+    th { white-space: normal; word-break: auto-phrase; }
+    .themeswitch, .toc { display: none; }
+    .page { display: block; padding: 0; max-width: none; }
+    .main { display: flex; }
+    h2, .kicker, h3 { break-after: avoid; }
+    .refs a::after { content: " (" attr(href) ")"; }
+    .variants-tabs, .variants.is-ready .variants-tabs { display: none; }
+    .variants.is-ready .variants-stage { display: flex; flex-direction: column; gap: var(--sp-6); }
+    .variants.is-ready .vpanel { visibility: visible; opacity: 1; }
+  }
+</style>
+<!-- 案(UI/UX のモックアップ)が必要な報告書だけ、この直後に <style id="mockup-styles"> を足す。セレクタは必ず .mk-<案の記号> から始める。 -->
+</head>
+<body>
+<script>
+  /* テーマの初期化: 描画前に data-theme を決める。保存値(light / dark)があればそれ、なければ light。
+     本文の最初の要素に置く(Artifact で外枠を外しても動く)。localStorage が使えなくても止まらない */
+  (function () {
+    var t = 'light';
+    try {
+      var s = localStorage.getItem('html-report-theme');
+      if (s === 'light' || s === 'dark') t = s;
+    } catch (e) {}
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+
+<div class="themeswitch" role="group" aria-label="表示の明るさ">
+  <button type="button" data-theme-set="light" aria-pressed="true">ライト</button>
+  <button type="button" data-theme-set="dark" aria-pressed="false">ダーク</button>
+</div>
+
+<div class="page" lang="ja">
+  <nav class="toc" aria-label="目次">
+    <p class="toc-title">目次</p>
+    <div class="toc-progress" aria-hidden="true"><span></span></div>
+    <ol>
+      <li><a href="#s-cards" data-target="s-cards"><span class="no"><span>1</span></span><span><span class="lbl">書き換えた札</span><span class="toc-claim">10 枚の前と後</span></span></a></li>
+      <li><a href="#s-weak" data-target="s-weak"><span class="no"><span>2</span></span><span><span class="lbl">役の薄い 5 枚</span><span class="toc-claim">5 枚は外さず書き換え</span></span></a></li>
+      <li><a href="#s-pillars" data-target="s-pillars"><span class="no"><span>3</span></span><span><span class="lbl">柱の入口</span><span class="toc-claim">9 本に入口がそろう</span></span></a></li>
+      <li><a href="#s-checks" data-target="s-checks"><span class="no"><span>4</span></span><span><span class="lbl">確認</span><span class="toc-claim">確認は 2 つとも通過</span></span></a></li>
+      <li><a href="#s-follow" data-target="s-follow"><span class="no"><span>5</span></span><span><span class="lbl">残った宿題</span><span class="toc-claim">宿題は 4 か所に回した</span></span></a></li>
+      <li><a href="#s-open" data-target="s-open"><span class="no"><span>6</span></span><span><span class="lbl">仮定と未確認</span><span class="toc-claim">置いた仮定と未確認</span></span></a></li>
+      <li><a href="#s-next" data-target="s-next"><span class="no"><span>7</span></span><span><span class="lbl">次の判断</span><span class="toc-claim">main に入れるか</span></span></a></li>
+      <li><a href="#s-refs" data-target="s-refs"><span class="no"><span>8</span></span><span><span class="lbl">参考</span><span class="toc-claim">出典 5 件</span></span></a></li>
+    </ol>
+  </nav>
+
+  <main class="main">
+    <header class="hero">
+      <p class="eyebrow"><span class="chip kind">判断</span><span>2026-11-22</span><span>剣術の札と戦法の柱</span></p>
+      <h1>剣術の札 10&nbsp;枚の書き換えは確認を 2&nbsp;つとも通り、main に入れられる状態です</h1>
+      <p class="lede">Issue #999「剣術の札を、戦法の柱に合わせて見直す」を 1&nbsp;件だけ実装し、PR #1014 で止めてあります。札は 64&nbsp;種のまま 10&nbsp;枚の特性を書き換え、柱 10&nbsp;本のうち 9&nbsp;本に出立の束の入口がそろいました。</p>
+      <ul class="meta"><li><b>5</b>件の出典</li><li><b>約 10 分</b>で読めます(計算)</li></ul>
+    </header>
+
+    <ul class="verdicts">
+      <li class="verdict now"><span class="tag">変えたこと</span><h3>札は 64&nbsp;種のままです</h3><p>外した札と足した札は 0 枚です。10 枚の特性を書き換えました。</p></li>
+      <li class="verdict later"><span class="tag">まだ残ること</span><h3>柱 9&nbsp;本に入口がそろいました</h3><p>残る 1 本の「札の巡り」は、札を生む規則と魔術の札が決まるまで、剣術の札では入口を作れません。</p></li>
+      <li class="verdict now"><span class="tag">確認の結果</span><h3>確認を 2&nbsp;つとも通りました</h3><p>全体確認の 7 つのコマンドはすべて exit 0 でした。別の役の確認は、直さないと通せない指摘が 0 件でした。<sup class="ref"><a href="#ref-4">[4]</a></sup></p></li>
+    </ul>
+
+    <p>変更は設計書 2 本だけです。剣士の札の設計書 <span class="nobr">swordsman_cards_v4.md</span> を v4.13 に、敵の一覧 <span class="nobr">enemy_roster_v4.md</span> を v5.1 に上げました。差分は 166 行の追加と 114 行の削除です<sup class="ref"><a href="#ref-1">[1]</a></sup>。C# のカード表は v4.10 のままです。書き換えた特性が遊びに出るのは、次の Issue が入ったあとです。その Issue は #898「BattleCore のカード表を、柱に合わせて見直した剣術の札に追従させる」です。main に入れても、いまの試遊の手触りは変わりません。設計書の集計は、実装役と別の役がそれぞれ表から数え直して一致しました<sup class="ref"><a href="#ref-4">[4]</a></sup>。残った宿題は、Issue とコメントに回してあります。</p>
+
+    <section id="s-cards">
+      <p class="kicker"><span class="no">01</span>書き換えた札</p>
+      <h2>10&nbsp;枚とも特性だけを替え、動かした数値は影踏みの威力 1&nbsp;つです</h2>
+      <p>書き換えた 10 枚の前と後を並べます。札の効果・コスト・届く間合い・入手先は、10 枚とも変えていません。#45 変幻の構えにも触っていません。</p>
+      <div class="tablewrap">
+        <table class="wide">
+          <caption>書き換えた 10 枚は、どれも柱の「得をする役」に回りました。</caption>
+          <thead><tr><th>札</th><th>前の特性</th><th>新しい特性</th><th>回した柱</th></tr></thead>
+          <tbody>
+            <tr><td>#4 小手打ち</td><td>間合い 0: スタミナ +1</td><td>相手の状態(出血): スタミナ +1</td><td>出血で削る</td></tr>
+            <tr><td>#9 投げ刃</td><td>間合い 2 以上: ドロー +1</td><td>相手の状態(威圧): ドロー +1</td><td>威圧で凌ぐ</td></tr>
+            <tr><td>#10 伸び突き</td><td>間合い 2 以上: 威力 +5</td><td>連動(Sk): 威力 +5</td><td>手数の階段</td></tr>
+            <tr><td>#36 柄当て</td><td>連動(G): 威力 +3</td><td>連動(G): 転換</td><td>受けて返す</td></tr>
+            <tr><td>#43 遠間の構え</td><td>予兆(攻撃): 追撃</td><td>相手の状態(脆化): 追撃</td><td>重い一太刀</td></tr>
+            <tr><td>#48 棘の一射</td><td>予兆(攻撃): 重撃</td><td>死力: 重撃</td><td>息の貸し借り</td></tr>
+            <tr><td>#61 斬り上げ</td><td>初手: 威力 +3</td><td>自分の状態(集中): 威力 +3</td><td>研いで放つ</td></tr>
+            <tr><td>#64 受け歩き</td><td>連打: Guard +3</td><td>連打: 追撃</td><td>受けて返す・手数の階段</td></tr>
+            <tr><td>#71 見切りの目</td><td>予兆(攻撃): ドロー +1</td><td>崩し後: ドロー +1</td><td>崩して休ませる</td></tr>
+            <tr><td>#79 影踏み</td><td>予兆(移動): 威力 +5</td><td>移動後: 威力 +5</td><td>間合いを握る</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>動かした数値は #79 影踏みの威力だけで、12 から 10 に戻しました。予兆(移動) は約 8% しか出ないので、+2 で補っていました。条件を移動後に替えたため、その補いが要らなくなりました<sup class="ref"><a href="#ref-2">[2]</a></sup>。</p>
+    </section>
+
+    <section id="s-weak">
+      <p class="kicker"><span class="no">02</span>役の薄い 5 枚</p>
+      <h2>役の薄い 5&nbsp;枚は、1&nbsp;枚も外さず書き換えました</h2>
+      <div class="callout"><strong>指摘:</strong> Issue #999 では「外すのは 5 枚前後」と見込んでいましたが、結果は 0 枚です。Issue の本文は「外すか、特性を書き換えて柱の穴に回す」のどちらも認めているので、範囲の中です。剣術の札は、59〜64 種の範囲の上端である 64 種のままです。</div>
+      <ul class="rowcards">
+        <li>
+          <h3>#43 遠間の構え</h3>
+          <dl>
+            <div><dt>替えた特性</dt><dd>予兆(攻撃): 追撃 を、相手の状態(脆化): 追撃 に替えました。</dd></div>
+            <div><dt>書き換えた理由</dt><dd>離れて始まるターンに得をするスタンスは #16 と #47 にもあり、予兆で追撃する特性はどの柱の役にもなっていませんでした。外すとボス固有の札が減ります。<sup class="ref"><a href="#ref-2">[2]</a></sup></dd></div>
+          </dl>
+        </li>
+        <li>
+          <h3>#48 棘の一射</h3>
+          <dl>
+            <div><dt>替えた特性</dt><dd>予兆(攻撃): 重撃 を、死力: 重撃 に替えました。</dd></div>
+            <div><dt>書き換えた理由</dt><dd>前の組は #3 大上段と同じでした。息の貸し借りの柱に要る「死力の攻撃の札」がありませんでした。</dd></div>
+          </dl>
+        </li>
+        <li>
+          <h3>#64 受け歩き</h3>
+          <dl>
+            <div><dt>替えた特性</dt><dd>連打: Guard +3 を、連打: 追撃 に替えました。</dd></div>
+            <div><dt>書き換えた理由</dt><dd>連打は型替えの道の始まりなので、条件は残しました。</dd></div>
+          </dl>
+        </li>
+        <li>
+          <h3>#71 見切りの目</h3>
+          <dl>
+            <div><dt>替えた特性</dt><dd>予兆(攻撃): ドロー +1 を、崩し後: ドロー +1 に替えました。</dd></div>
+            <div><dt>書き換えた理由</dt><dd>効果と特性の両方が予兆(攻撃) を読む札でした。予兆(攻撃) で Guard を得る札は、ほかに 2 枚あります。</dd></div>
+          </dl>
+        </li>
+        <li>
+          <h3>#79 影踏み</h3>
+          <dl>
+            <div><dt>替えた特性</dt><dd>予兆(移動): 威力 +5 を、移動後: 威力 +5 に替えました。威力は 12 から 10 に戻しました。</dd></div>
+            <div><dt>書き換えた理由</dt><dd>予兆(移動) は約 8% しか出ないので、+2 で補っていました。移動後に替えたため、その補いが要らなくなりました(節 1 と同じ理由です)。</dd></div>
+          </dl>
+        </li>
+      </ul>
+      <p>#64 受け歩きと #71 見切りの目は、習熟の表に行を持っています。C# のテスト <code>MasteryProfilesTests</code> は、この表を C# の側と名前で突き合わせます。そのため、この 2 枚を設計書だけから外すと、このブランチの <code>dotnet test</code> が落ちます。実装役はこれを理由の 1 つにして、5 枚とも書き換えを選びました。</p>
+    </section>
+
+    <section id="s-pillars">
+      <p class="kicker"><span class="no">03</span>柱の入口</p>
+      <h2>柱 9&nbsp;本は、出立の束に仕込む札と得をする札が 1&nbsp;種ずつ入りました</h2>
+      <div class="tablewrap">
+        <table class="wide">
+          <caption>札の巡りを除く 9 本で、入口の 2 種が初期の 32 種の中にあります。</caption>
+          <thead><tr><th>柱</th><th class="num">主に属す剣術</th><th class="num">うち初期</th><th>仕込む札</th><th>得をする札</th></tr></thead>
+          <tbody>
+            <tr><td>出血で削る</td><td class="num">5</td><td class="num">2</td><td>#32 皮裂き</td><td>#4 小手打ち</td></tr>
+            <tr><td>崩して休ませる</td><td class="num">7</td><td class="num">4</td><td>#6 峰打ち</td><td>#8 体幹崩し</td></tr>
+            <tr><td>威圧で凌ぐ</td><td class="num">3</td><td class="num">3</td><td>#23 鬨の声</td><td>#9 投げ刃</td></tr>
+            <tr><td>間合いを握る</td><td class="num">12</td><td class="num">9</td><td>#33 体当たり</td><td>#6 峰打ち</td></tr>
+            <tr><td>研いで放つ</td><td class="num">4</td><td class="num">2</td><td>#21 集中</td><td>#5 横薙ぎ</td></tr>
+            <tr><td>重い一太刀</td><td class="num">6</td><td class="num">4</td><td>#34 石礫</td><td>#2 袈裟斬り</td></tr>
+            <tr><td>息の貸し借り</td><td class="num">5</td><td class="num">3</td><td>#11 呼吸を整える</td><td>#3 大上段</td></tr>
+            <tr><td>受けて返す</td><td class="num">10</td><td class="num">6</td><td>#12 鉄の受け</td><td>#36 柄当て</td></tr>
+            <tr><td>手数の階段</td><td class="num">9</td><td class="num">7</td><td>#25 足運び</td><td>#10 伸び突き</td></tr>
+            <tr><td>札の巡り</td><td class="num">0</td><td class="num">0</td><td>なし</td><td>なし</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <figure class="fig">
+        <figcaption>柱を主にする剣術の札は、間合いを握るが 12&nbsp;種で最も多く、札の巡りは 0&nbsp;種です。</figcaption>
+        <ul class="hbar" role="list">
+          <li class="hbar-row is-focus"><span class="hbar-label">間合いを握る</span><span class="hbar-track" aria-hidden="true"><span class="hbar-fill" style="width:100%"></span></span><span class="hbar-val">12</span></li>
+          <li class="hbar-row"><span class="hbar-label">受けて返す</span><span class="hbar-track" aria-hidden="true"><span class="hbar-fill" style="width:83%"></span></span><span class="hbar-val">10</span></li>
+          <li class="hbar-row"><span class="hbar-label">手数の階段</span><span class="hbar-track" aria-hidden="true"><span class="hbar-fill" style="width:75%"></span></span><span class="hbar-val">9</span></li>
+          <li class="hbar-row"><span class="hbar-label">崩して休ませる</span><span class="hbar-track" aria-hidden="true"><span class="hbar-fill" style="width:58%"></span></span><span class="hbar-val">7</span></li>
+          <li class="hbar-row"><span class="hbar-label">重い一太刀</span><span class="hbar-track" aria-hidden="true"><span class="hbar-fill" style="width:50%"></span></span><span class="hbar-val">6</span></li>
+          <li class="hbar-row"><span class="hbar-label">出血で削る</span><span class="hbar-track" aria-hidden="true"><span class="hbar-fill" style="width:42%"></span></span><span class="hbar-val">5</span></li>
+          <li class="hbar-row"><span class="hbar-label">息の貸し借り</span><span class="hbar-track" aria-hidden="true"><span class="hbar-fill" style="width:42%"></span></span><span class="hbar-val">5</span></li>
+          <li class="hbar-row"><span class="hbar-label">研いで放つ</span><span class="hbar-track" aria-hidden="true"><span class="hbar-fill" style="width:33%"></span></span><span class="hbar-val">4</span></li>
+          <li class="hbar-row"><span class="hbar-label">威圧で凌ぐ</span><span class="hbar-track" aria-hidden="true"><span class="hbar-fill" style="width:25%"></span></span><span class="hbar-val">3</span></li>
+          <li class="hbar-row"><span class="hbar-label">札の巡り</span><span class="hbar-track" aria-hidden="true"><span class="hbar-fill" style="width:0%"></span></span><span class="hbar-val">0</span></li>
+        </ul>
+        <p class="fig-note">主に属す剣術の札の数。札の巡りは、剣術の入口がまだ無いため 0 です。</p>
+      </figure>
+      <ul>
+        <li>札の巡りの柱だけ、剣術の札で入口を作れません。剣術に要る役は「魔術の小さな札を生む札」です。札を生む規則は、まだ決まっていません(Issue #933「札が生む札の最初の対応表」)。生まれる側の魔術の札も、まだ決まっていません(Issue #934「魔術の札 37〜40 種と合わせ技 約 5 種を設計書に作る」)。</li>
+        <li>入口の 2 種がすでに初期の 32 種にあったので、初期と習得の振り分けと、入手先の列は変えていません<sup class="ref"><a href="#ref-3">[3]</a></sup>。</li>
+        <li>柱を主にする剣術の数は、3 種(威圧で凌ぐ)から 12 種(間合いを握る)まで開きがあります。Issue #934 の本文にある魔術の数の目安をそのまま足すと、威圧で凌ぐは 6 種、息の貸し借りは 8 種になります(計算)。どちらも目安の 9 種に届きません。間合いを握るは 16 種になり、目安の 13 種を超えます(計算)。魔術の配分を決め直すよう、Issue #934 にコメントしました。</li>
+      </ul>
+    </section>
+
+    <section id="s-checks">
+      <p class="kicker"><span class="no">04</span>確認</p>
+      <h2>全体確認の 7&nbsp;つと、別の役の確認を通りました</h2>
+      <ul class="tiles"><li class="tile ok"><span class="n">7</span><span class="l">全体確認のコマンド(すべて exit 0)</span></li><li class="tile ok"><span class="n">0</span><span class="l">別の役の確認で直すべき指摘</span></li><li class="tile ok"><span class="n">9.86<span class="u">GB</span></span><span class="l">空きメモリの最小値(下限 6&nbsp;GB)</span></li></ul>
+      <div class="tablewrap">
+        <table>
+          <caption>全体確認のコマンドは 7 つとも exit 0 でした。</caption>
+          <thead><tr><th>確認</th><th>結果</th><th>補足</th></tr></thead>
+          <tbody>
+            <tr><td><code>npm run build</code></td><td>exit 0</td><td>—</td></tr>
+            <tr><td><code>npm run lint</code></td><td>exit 0</td><td>—</td></tr>
+            <tr><td><code>npm run test:run</code></td><td>exit 0</td><td>148 件が通りました。</td></tr>
+            <tr><td><code>dotnet test</code>(全プロジェクト)</td><td>exit 0</td><td>失敗は 0 件でした。</td></tr>
+            <tr><td><code>npm run sources -- --check</code></td><td>exit 0</td><td>変えた 2 本の持ち主は、どちらも cards 担当です。</td></tr>
+            <tr><td><code>npm run md:tables -- --check</code></td><td>exit 0</td><td>—</td></tr>
+            <tr><td><code>npm run issues:test</code></td><td>exit 0</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul>
+        <li>C# を変えていないので、Unity のコンパイルの確認(<code>unity:check</code>)は打っていません。</li>
+        <li>別の役(実装役とは別のエージェント)は、札の表と集計の表を自分で読み直して数えました。行数は 32 + 32 + 3 で、集計の表と一致しました。同じ「条件 + 効果」の組は最大 2 枚で、3 枚までの決まりを守っています。攻撃の値の合計は 269 から 267 になりました<sup class="ref"><a href="#ref-4">[4]</a></sup>。</li>
+        <li>間合いの境目を条件にする札は 13 枚から 10 枚になりました(4 マスに 3 / 2 / 2 / 3、初期 5・習得 5)。</li>
+        <li>空きメモリの最小値は 9.86 GB(17:42)で、下限の 6 GB を割っていません。記録は実行の 25 分間を 30 秒おきに覆っています<sup class="ref"><a href="#ref-5">[5]</a></sup>。</li>
+      </ul>
+    </section>
+
+    <section id="s-follow">
+      <p class="kicker"><span class="no">05</span>残った宿題</p>
+      <h2>古くなった記述と列の見直しは、Issue 2&nbsp;件とコメント 2&nbsp;件に回しました</h2>
+      <ul class="rowcards">
+        <li>
+          <h3>特性を書き換えた剣術の札 6&nbsp;枚の列(コスト)を、1&nbsp;枚ずつ選び直す</h3>
+          <dl>
+            <div><dt>行き先</dt><dd>新規の Issue #1016(cards 担当)</dd></div>
+            <div><dt>中身</dt><dd>書き換えた 10 枚は列を据え置きました。列の選び方の手順で選び直すと、6 枚の列が変わります。対象は #9 投げ刃・#10 伸び突き・#36 柄当て・#43 遠間の構え・#48 棘の一射・#71 見切りの目です。#36 柄当ては、転換を持つ札を列 3 から列 2 へ下げる目安に反したままです。数値を 1 つずつ動かす決まりに従い、1 枚ずつ決める Issue にしました。</dd></div>
+          </dl>
+        </li>
+        <li>
+          <h3>BattleCore のカード表を、柱に合わせて見直した剣術の札に追従させる</h3>
+          <dl>
+            <div><dt>行き先</dt><dd>Issue #898「BattleCore のカード表を、柱に合わせて見直した剣術の札に追従させる」へのコメント</dd></div>
+            <div><dt>中身</dt><dd>戦闘の設計書 <span class="nobr">battle_core_v4.md</span> の札の例 9 か所と、同じ設計書の「間合いの境目の札 13 枚」の記述が古くなります。定数 <code>PositionTraitCards</code> は、備考の「13 にする」ではなく 10 にする必要があります。</dd></div>
+          </dl>
+        </li>
+        <li>
+          <h3>battle-visual-v1 の札の文の例 3&nbsp;枚を、書き換えた剣術の札(v4.13)に合わせる</h3>
+          <dl>
+            <div><dt>行き先</dt><dd>新規の Issue #1015(design 担当)</dd></div>
+            <div><dt>中身</dt><dd>見た目の設計書の例(伸び突き・見切りの目・斬り上げ)が、書き換える前の特性の文のままです。</dd></div>
+          </dl>
+        </li>
+        <li>
+          <h3>魔術の札の設計に、剣術側の 4&nbsp;点を伝える</h3>
+          <dl>
+            <div><dt>行き先</dt><dd>Issue #934「魔術の札 37〜40 種と合わせ技 約 5 種を設計書に作る」へのコメント</dd></div>
+            <div><dt>中身</dt><dd>次の 4 点を書きました。柱ごとの剣術の数が最初の案と違うこと。#61 斬り上げと #10 伸び突きが連動(術) を使っていないこと。札の巡りに剣術の入口が無いこと。竜王の 3 枚を 4 マスの配分に数えるかが書かれていないこと。</dd></div>
+          </dl>
+        </li>
+      </ul>
+      <p>申し送りのファイルは処理して消し、作業用の worktree(wf-999)も片付けました。</p>
+    </section>
+
+    <section id="s-open">
+      <p class="kicker"><span class="no">06</span>仮定と未確認</p>
+      <h2>置いた仮定は 5&nbsp;つで、遊んだ手触りは未確認です</h2>
+      <ul>
+        <li><b>読み取った意図</b>: こうだいさんが PR で止める形を選んだのは、札の特性の書き換えを読んでから入れるためだと読みました。そのため、この報告は 10 枚の前と後を先に置いています。</li>
+        <li><b>列(コスト)は据え置き</b>: 10 枚とも列は変えませんでした(実装役の仮定)。見直しは Issue #1016 です。</li>
+        <li><b>研いで放つと手数の階段の札</b>: 連動(術) ではなく、自分の状態(集中) と連動(Sk) にしました(実装役の仮定)。術の印を持つ札がまだ無いためです。替えるかは Issue #934 で決めます。</li>
+        <li><b>竜王の 3 枚</b>: 系統・柱・役割の列を足し、系統は剣術と書きました(実装役の仮定)。</li>
+        <li><b>目盛りの参照先</b>: Issue は「いまの目盛り(設計書の節 1.3)」と書いていましたが、目盛りの表があるのは節 1.1 と節 1.4 です。値は節 1.1 と節 1.4 に合わせました(実装役の仮定)。</li>
+        <li><b>未確認</b>: 書き換えた特性で遊んだときの手触りです。C# のカード表が v4.10 のままなので、Issue #898 が入るまで確かめられません。</li>
+      </ul>
+    </section>
+
+    <section id="s-next">
+      <p class="kicker"><span class="no">07</span>次の判断</p>
+      <h2>PR #1014 を main に入れるかを決めてください</h2>
+      <article class="decision">
+        <h3>PR #1014「剣術の札を戦法の柱に合わせる」を main に入れるか(今日の判断)</h3>
+        <dl>
+          <div class="d-situation"><dt>何が起きているか</dt><dd>PR #1014「剣術の札を戦法の柱に合わせる」は、全体確認と別の役の確認を通って open のままです。GitHub は merge できる状態と示しています。</dd></div>
+          <div class="d-reason"><dt>なぜ決める必要があるか</dt><dd>次の Issue #934(魔術の札)は、同じ剣士の札の設計書を書きます。Issue #903「変幻の構え(#45)の効果を、移動で相手を惑わす形に考え直す」も、同じ設計書を書きます。PR #1014 が main に入るまで、どちらも始められません。その先の Issue #898 も待ちます。</dd></div>
+          <div class="d-options"><dt>選ぶと何が起きるか</dt><dd><ul>
+            <li><b>main に入れる</b>: merge の手順を回して入れ、続けて Issue #934 と Issue #903 の起動前の確認に進みます。列の見直しは Issue #1016 で 1 枚ずつ扱います。</li>
+            <li><b>直しを頼んでから入れる</b>: 直したい札と中身を聞き、同じブランチに直しを積んで、確認をやり直します。Issue #934 と Issue #903 は、そのあとになります。</li>
+            <li><b>今日は置いておく</b>: PR は open のまま残ります。Issue #934・#903・#898 は始めません。</li>
+          </ul></dd></div>
+          <div class="d-pick"><dt>推奨と根拠</dt><dd><p class="d-choice">main に入れる</p><p class="d-basis">確認は 2 つとも通っていて、変更は設計書だけなので、いまの試遊には影響しません。気になる札があれば、Issue #1016 と同じく、あとから 1 枚ずつ直せます。</p></dd></div>
+        </dl>
+      </article>
+    </section>
+
+    <section id="s-refs">
+      <p class="kicker"><span class="no">08</span>参考</p>
+      <h2>本文の数字の出どころは、この 5&nbsp;件です</h2>
+      <ol class="refs">
+        <li id="ref-1">PR #1014「docs(cards): fit the sword cards to the build pillars」 <a href="https://github.com/sunbreak-pro/original-card-battle/pull/1014">https://github.com/sunbreak-pro/original-card-battle/pull/1014</a>(差分の行数と変えたファイル)</li>
+        <li id="ref-2">設計書 <span class="nobr">swordsman_cards_v4.md</span> v4.13 の札の表と、書き換えた理由(ブランチ <span class="nobr">docs/cards-999</span>)</li>
+        <li id="ref-3">同じ設計書の「戦法の柱」の節(柱ごとの数と出立の入口)</li>
+        <li id="ref-4">Workflow の記録 <span class="nobr">journal.jsonl</span>(実行 wf_6d82051d-edc。全体確認の終了コードと、別の役の確認の結果)</li>
+        <li id="ref-5">メモリの記録 <span class="nobr">mem-log.csv</span>(2026-11-22 17:20〜17:46、53 行)</li>
+      </ol>
+    </section>
+  </main>
+</div>
+
+<script>
+  /* 目次: 現在地の強調(aria-current)、読み終えた節(.done)、上端の進捗バー。節が 3 つ以下で目次がなければ何もしない */
+  (() => {
+    const links = [...document.querySelectorAll('.toc a[data-target]')];
+    const sections = links.map(a => document.getElementById(a.dataset.target));
+    const bar = document.querySelector('.toc-progress > span');
+    if (!links.length || sections.some(s => !s)) return;
+    let ticking = false;
+    const update = () => {
+      ticking = false;
+      const root = document.documentElement;
+      const line = window.innerHeight * 0.3;
+      let idx = 0;
+      sections.forEach((s, i) => { if (s.getBoundingClientRect().top <= line) idx = i; });
+      const max = root.scrollHeight - window.innerHeight;
+      if (max > 0 && window.scrollY >= max - 4) idx = sections.length - 1;
+      links.forEach((a, i) => {
+        a.classList.toggle('done', i < idx);
+        if (i === idx) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current');
+      });
+      if (bar) bar.style.width = (max > 0 ? Math.min(100, (window.scrollY / max) * 100) : 100) + '%';
+      /* 目次が画面より高いとき(.toc は内側でスクロールする)、現在地のリンクを目次の見える範囲に入れる */
+      const box = links[idx].closest('.toc');
+      if (box && box.scrollHeight > box.clientHeight + 1) {
+        const b = box.getBoundingClientRect(), r = links[idx].getBoundingClientRect();
+        if (r.top < b.top) box.scrollTop -= b.top - r.top + 8;
+        else if (r.bottom > b.bottom) box.scrollTop += r.bottom - b.bottom + 8;
+      }
+    };
+    const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+    addEventListener('scroll', onScroll, { passive: true });
+    addEventListener('resize', onScroll);
+    update();
+  })();
+
+  /* テーマ切り替え: data-theme と aria-pressed を更新し、選んだ値を保存する(保存できなくても切り替えは効く) */
+  (() => {
+    const root = document.documentElement;
+    const buttons = [...document.querySelectorAll('[data-theme-set]')];
+    if (!buttons.length) return;
+    const current = () => (root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light');
+    const paint = () => {
+      const now = current();
+      buttons.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.themeSet === now)));
+    };
+    buttons.forEach(b => b.addEventListener('click', () => {
+      const v = b.dataset.themeSet === 'dark' ? 'dark' : 'light';
+      root.setAttribute('data-theme', v);
+      try { localStorage.setItem('html-report-theme', v); } catch (e) {}
+      paint();
+    }));
+    if (root.getAttribute('data-theme') !== current()) root.setAttribute('data-theme', current());
+    /* ホストが後から data-theme を外したら light を付け直す(付いていないと、切り替えボタンごと消える)。付けた値(dark など)には従う */
+    new MutationObserver(() => {
+      if (!root.hasAttribute('data-theme')) root.setAttribute('data-theme', 'light');
+      paint();
+    }).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+    paint();
+  })();
+
+  /* 印刷: ダークを選んでいても、印刷の間だけ light にして、印刷のあとで元に戻す(案の画面の暗い上書きも印刷に出さない)。
+     印刷の間に別の値へ変わっていたら、戻さない。利用者がボタンを押したら、控え(saved)を捨てる
+     (afterprint が来ない環境で、古い控えが残って次の印刷を素通りさせたり、選んだ値を戻したりしない)。
+     保存値(localStorage)は触らない。ボタンの押下表示は印刷の間だけ light になる */
+  (() => {
+    const root = document.documentElement;
+    let saved = null;
+    document.querySelectorAll('[data-theme-set]').forEach(b => b.addEventListener('click', () => { saved = null; }));
+    const toLight = () => {
+      if (saved !== null) return;
+      saved = root.getAttribute('data-theme') || 'light';
+      if (saved !== 'light') root.setAttribute('data-theme', 'light');
+    };
+    const restore = () => {
+      if (saved === null) return;
+      const back = saved;
+      saved = null;
+      if (root.getAttribute('data-theme') === 'light') root.setAttribute('data-theme', back);
+    };
+    addEventListener('beforeprint', toLight);
+    addEventListener('afterprint', restore);
+    try {
+      const mq = matchMedia('print');
+      const onChange = e => (e.matches ? toLight() : restore());
+      if (mq.addEventListener) mq.addEventListener('change', onChange); else if (mq.addListener) mq.addListener(onChange);
+    } catch (e) {}
+  })();
+
+  /* 切り替え式の案パネル: クリックと 矢印キー左右 / Home / End で案を切り替える(選んだタブだけ tabindex=0)。
+     見せない案には inert と aria-hidden を付ける。案の数に依存しない。JS が動かないときは .is-ready が付かず、全案が縦に並ぶ。
+     利用者が最初に切り替えたとき .is-live を付け、フェードはそこから動く(最初の描画では動かさない) */
+  (() => {
+    document.querySelectorAll('[data-variants]').forEach(root => {
+      const tabs = [...root.querySelectorAll('[role="tab"]')];
+      const panels = tabs.map(t => document.getElementById(t.getAttribute('aria-controls')));
+      if (!tabs.length || panels.some(p => !p)) return;
+      const select = (i, focus) => {
+        tabs.forEach((t, j) => {
+          const on = i === j;
+          t.setAttribute('aria-selected', String(on));
+          t.setAttribute('tabindex', on ? '0' : '-1');
+          panels[j].classList.toggle('is-active', on);
+          if (on) { panels[j].removeAttribute('inert'); panels[j].removeAttribute('aria-hidden'); }
+          else { panels[j].setAttribute('inert', ''); panels[j].setAttribute('aria-hidden', 'true'); }
+        });
+        if (focus) tabs[i].focus();
+      };
+      const live = () => root.classList.add('is-live');
+      tabs.forEach((t, i) => {
+        t.addEventListener('click', () => { live(); select(i, false); });
+        t.addEventListener('keydown', e => {
+          if (e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) return;
+          let next = -1;
+          if (e.key === 'ArrowRight') next = (i + 1) % tabs.length;
+          else if (e.key === 'ArrowLeft') next = (i - 1 + tabs.length) % tabs.length;
+          else if (e.key === 'Home') next = 0;
+          else if (e.key === 'End') next = tabs.length - 1;
+          if (next < 0) return;
+          e.preventDefault();
+          live();
+          select(next, true);
+        });
+      });
+      const first = tabs.findIndex(t => t.getAttribute('aria-selected') === 'true');
+      select(first < 0 ? 0 : first, false);
+      root.classList.add('is-ready');
+    });
+  })();
+</script>
+</body>
+</html>
