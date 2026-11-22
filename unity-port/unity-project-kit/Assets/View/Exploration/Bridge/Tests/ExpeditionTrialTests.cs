@@ -254,7 +254,7 @@ namespace Exploration.Bridge.Tests
             // js: Expedition.js:60 / :63 (`new RunStart({ ...start, Trial: true })`)
             var start = new RunStart
             {
-                Seed = 7, Hp = 31, Calendar = new CalendarState(200), Region = Region.Ghost, Loadout = RunStart.TrialLoadout(),
+                Seed = 7, Hp = 31, Calendar = new CalendarState(80), Region = Region.Ghost, Loadout = RunStart.TrialLoadout(),
             };
             var ex = new Expedition(start, options: new ExpeditionOptions { Trial = true, CarvingKnown = true });
             Assert.That(start.Trial, Is.False);
@@ -264,7 +264,7 @@ namespace Exploration.Bridge.Tests
             Assert.That(ex.Session.RunSeed, Is.EqualTo(7UL));
             Assert.That(ex.Session.State.Hp, Is.EqualTo(31));
             Assert.That(ex.Session.State.Loadout, Is.SameAs(start.Loadout));
-            Assert.That(ex.Session.Calendar.DaysLeft, Is.EqualTo(199), "the copy carries the calendar (the entry took a day)");
+            Assert.That(ex.Session.Calendar.DaysLeft, Is.EqualTo(79), "the copy carries the calendar (the entry took a day)");
             Assert.That(ex.Session.Region, Is.EqualTo(Region.Ghost), "and the region");
         }
 

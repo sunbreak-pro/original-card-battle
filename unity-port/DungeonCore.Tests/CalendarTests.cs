@@ -12,7 +12,7 @@ namespace DungeonCore.Tests
         public void TheNumbersAreTheTable()
         {
             // §2.1 and §2.2.
-            Assert.That(Calendar.TotalDays, Is.EqualTo(360));
+            Assert.That(Calendar.TotalDays, Is.EqualTo(100));
             Assert.That(Calendar.HandoverSurvivedDays, Is.EqualTo(3));
             Assert.That(Calendar.HandoverShortDays, Is.EqualTo(1));
             Assert.That(Calendar.HandoverFallenDays, Is.EqualTo(10));
@@ -24,12 +24,12 @@ namespace DungeonCore.Tests
         public void AFreshWorldHasEveryDayAndEveryKing()
         {
             var fresh = CalendarState.Fresh;
-            Assert.That(fresh.DaysLeft, Is.EqualTo(360));
+            Assert.That(fresh.DaysLeft, Is.EqualTo(100));
             Assert.That(fresh.KingReturns, Is.Empty);
             Assert.That(fresh.IsFrozen, Is.False);
             Assert.That(fresh.IsExpired, Is.False);
             Assert.That(fresh.ClearReached, Is.False);
-            Assert.That(new CalendarState(360), Is.EqualTo(fresh));
+            Assert.That(new CalendarState(100), Is.EqualTo(fresh));
         }
 
         [Test]
@@ -39,9 +39,9 @@ namespace DungeonCore.Tests
             for (int i = 1; i <= 10; i++)
             {
                 state = state.Advance();
-                Assert.That(state.DaysLeft, Is.EqualTo(360 - i));
+                Assert.That(state.DaysLeft, Is.EqualTo(100 - i));
             }
-            Assert.That(CalendarState.Fresh.Advance(30).DaysLeft, Is.EqualTo(330));
+            Assert.That(CalendarState.Fresh.Advance(30).DaysLeft, Is.EqualTo(70));
             Assert.That(CalendarState.Fresh.Advance(0), Is.SameAs(CalendarState.Fresh));
             Assert.Throws<ArgumentOutOfRangeException>(() => CalendarState.Fresh.Advance(-1));
         }
@@ -61,41 +61,41 @@ namespace DungeonCore.Tests
         [Test]
         public void ADownedKingFreezesTheCalendarUntilItComesBack()
         {
-            var down = new CalendarState(200).KingDown(Region.Dragon);
+            var down = new CalendarState(80).KingDown(Region.Dragon);
             Assert.That(down.KingReturns, Is.EqualTo(Kings((Region.Dragon, 60))));
             Assert.That(down.IsFrozen, Is.True);
 
             var later = down.Advance(59);
-            Assert.That(later.DaysLeft, Is.EqualTo(200), "frozen days do not count down");
+            Assert.That(later.DaysLeft, Is.EqualTo(80), "frozen days do not count down");
             Assert.That(later.KingReturns[Region.Dragon], Is.EqualTo(1));
 
             var back = later.Advance();
-            Assert.That(back.DaysLeft, Is.EqualTo(200), "the day the king comes back is still frozen");
+            Assert.That(back.DaysLeft, Is.EqualTo(80), "the day the king comes back is still frozen");
             Assert.That(back.KingReturns, Is.Empty);
             Assert.That(back.IsFrozen, Is.False);
-            Assert.That(back.Advance().DaysLeft, Is.EqualTo(199));
+            Assert.That(back.Advance().DaysLeft, Is.EqualTo(79));
 
             // 60 frozen days in all: the calendar is 60 days longer than it would have been.
-            Assert.That(down.Advance(100).DaysLeft, Is.EqualTo(200 - 40));
+            Assert.That(down.Advance(100).DaysLeft, Is.EqualTo(80 - 40));
         }
 
         [Test]
         public void OverlappingKingsFreezeOneDayPerDay()
         {
             // §2.2: two kings down at once still count one day as one day.
-            var first = new CalendarState(200).KingDown(Region.Dragon).Advance(20);
+            var first = new CalendarState(80).KingDown(Region.Dragon).Advance(20);
             Assert.That(first.KingReturns[Region.Dragon], Is.EqualTo(40));
 
             var both = first.KingDown(Region.Ghost);
             Assert.That(both.KingReturns, Is.EqualTo(Kings((Region.Dragon, 40), (Region.Ghost, 60))));
 
             var dragonBack = both.Advance(40);
-            Assert.That(dragonBack.DaysLeft, Is.EqualTo(200));
+            Assert.That(dragonBack.DaysLeft, Is.EqualTo(80));
             Assert.That(dragonBack.KingReturns, Is.EqualTo(Kings((Region.Ghost, 20))));
 
             var allBack = dragonBack.Advance(20);
             Assert.That(allBack.KingReturns, Is.Empty);
-            Assert.That(allBack.DaysLeft, Is.EqualTo(200), "80 days passed, all of them frozen");
+            Assert.That(allBack.DaysLeft, Is.EqualTo(80), "80 days passed, all of them frozen");
         }
 
         [Test]
@@ -142,7 +142,7 @@ namespace DungeonCore.Tests
             Assert.Throws<ArgumentOutOfRangeException>(() => new CalendarState(10, Kings((Region.Dragon, 61))));
             Assert.Throws<ArgumentOutOfRangeException>(() => new CalendarState(10, Kings((Region.Dragon, 0))));
             Assert.Throws<ArgumentOutOfRangeException>(() => new CalendarState(-1));
-            Assert.Throws<ArgumentOutOfRangeException>(() => new CalendarState(361));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new CalendarState(101));
         }
 
         [Test]
