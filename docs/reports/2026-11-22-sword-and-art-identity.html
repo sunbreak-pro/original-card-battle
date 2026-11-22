@@ -1,0 +1,948 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>剣術と魔術の札の性格</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* 左に追従する目次 + 右に 1 本の読み筋(題 → 結論 → 理由 → 根拠 → 参考)。
+     ライトが既定。ダークは右上のボタンで選んだときだけ使う(OS の設定には追従しない)。
+     色は :root とダークのブロックにだけ hex で書き、ほかはすべてトークン(var(--…))で当てる。 */
+  :root {
+    --ground: #f6f8f9; --panel: #ffffff; --ink: #1c2327; --muted: #56636b;
+    --line: #d9e0e3; --accent: #0e6b74; --accent-ink: #ffffff; --accent-soft: #e2f0f0;
+    --row: #f1f5f6; --ok: #2c7a4b; --warn: #966010; --stop: #a23c3c; --idle: #e3e8eb; --code-bg: #eef3f4;
+    --shadow: 0 1px 2px rgba(20, 40, 45, .05), 0 6px 18px rgba(20, 40, 45, .04);
+    --font-body: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+    --font-mono: "IBM Plex Mono", "Consolas", "Courier New", monospace;
+    /* 余白のスケール */
+    --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px; --sp-7: 48px; --sp-8: 72px; --sp-9: 96px;
+    /* チャート: カテゴリ(系列そのものが主題のときだけ使う。ふつうは accent 1 本 + グレー) */
+    --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --c4: #eda100; --c5: #e87ba4; --c6: #008300;
+    /* チャート: 連続(1 色相。明るい → 濃い)と、各段に載せる文字の色 */
+    --seq-1: #cde2fb; --seq-2: #86b6ef; --seq-3: #3987e5; --seq-4: #1c5cab; --seq-5: #0d366b;
+    --seq-1-ink: #1c2327; --seq-2-ink: #1c2327; --seq-3-ink: #0b1114; --seq-4-ink: #ffffff; --seq-5-ink: #ffffff;
+    /* チャート: 罫線と軸(軸は棒の「その他」の塗りにも使う) */
+    --grid: #e4e9ec; --axis: #75848b;
+    color-scheme: light;
+  }
+  @media not print {
+    :root[data-theme="dark"] {
+      --ground: #111618; --panel: #1a2125; --ink: #e4e9eb; --muted: #99a6ad;
+      --line: #2c363b; --accent: #5fc4cc; --accent-ink: #0f1c1e; --accent-soft: #163338;
+      --row: #1e262a; --ok: #6fc48f; --warn: #e0a94a; --stop: #e07a7a; --idle: #2c363b; --code-bg: #0f1417;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .35);
+      --c1: #3987e5; --c2: #d95926; --c3: #199e70; --c4: #c98500; --c5: #d55181; --c6: #008300;
+      --seq-1: #1f3a57; --seq-2: #2a5a92; --seq-3: #3987e5; --seq-4: #86b6ef; --seq-5: #cde2fb;
+      --seq-1-ink: #e4e9eb; --seq-2-ink: #ffffff; --seq-3-ink: #0b1114; --seq-4-ink: #0b1114; --seq-5-ink: #0b1114;
+      --grid: #2a3439; --axis: #7f8d94;
+      color-scheme: dark;
+    }
+  }
+  :root { --gap-section: var(--sp-8); --gap-card: var(--sp-5); }
+  @media (max-width: 599px) { :root { --gap-section: var(--sp-7); --gap-card: var(--sp-4); } }
+
+  * { box-sizing: border-box; }
+  /* scroll-padding-top: 固定のテーマボタン(下端 56px)に、目次・脚注・Shift+Tab で飛んだ先を隠さない(節ごとの scroll-margin は持たない) */
+  html { scroll-behavior: smooth; scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 72px); }
+  body { margin: 0; background: var(--ground); color: var(--ink); font-family: var(--font-body);
+    font-size: 16px; line-height: 1.9; -webkit-font-smoothing: antialiased; }
+  code, pre, .mono { font-family: var(--font-mono); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { transition: none !important; animation: none !important; }
+  }
+
+  /* テーマ切り替え(右上に固定。.page の上に 64px の予約余白を取って本文と重ねない)。
+     JS が data-theme を付けるまで出さない(JS が動かないとき、効かないボタンを残さない)。印刷では出さない */
+  .themeswitch { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 12px); right: calc(env(safe-area-inset-right, 0px) + 16px); z-index: 50;
+    display: none; gap: 2px; padding: 3px; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 8px; box-shadow: var(--shadow); }
+  @media screen { :root[data-theme] .themeswitch { display: inline-flex; } }
+  .themeswitch button { appearance: none; font: inherit; font-size: 14px; line-height: 1; height: 36px; min-width: 64px; padding: 0 14px;
+    border: 0; border-radius: 4px; background: transparent; color: var(--muted); cursor: pointer; }
+  .themeswitch button:hover { background: var(--row); color: var(--ink); }
+  .themeswitch button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+
+  /* レイアウト: 目次 250px + 本文 最大 880px。本文の列は子の間を gap で空ける */
+  .page { max-width: 1226px; margin: 0 auto; padding: 64px 24px 96px; display: grid;
+    grid-template-columns: 250px minmax(0, 880px); gap: var(--sp-7); justify-content: center; }
+  .page.no-toc { grid-template-columns: minmax(0, 880px); }
+  .main { min-width: 0; display: flex; flex-direction: column; gap: var(--sp-6); }
+  section { display: flex; flex-direction: column; gap: var(--sp-5); min-width: 0; }
+  /* 節と節の間 = main の gap(32px) + この margin = 72px(幅 600px 未満は 48px) */
+  .main > section { margin-top: calc(var(--gap-section) - var(--sp-6)); }
+  /* 幅 999px 以下は 1 列。並びは 題の面 → 結論カード → 目次 → 節(結論カードがない報告書は 題の面 → 目次 → 節) */
+  @media (max-width: 999px) {
+    .page { display: flex; flex-direction: column; gap: var(--sp-6); padding: 64px 16px 72px; }
+    .main { display: contents; }
+    .hero { order: -2; }
+    .main > :is(.verdicts, .tiles) { order: -1; }
+  }
+
+  /* 目次 */
+  .toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 24px); align-self: start;
+    max-height: calc(100vh - 48px); overflow-y: auto; font-size: 14px; }
+  .toc-title { font-size: 13px; font-weight: 700; color: var(--muted); margin: 0 0 var(--sp-2); }
+  .toc-progress { height: 3px; background: var(--idle); border-radius: 4px; overflow: hidden; margin: 0 0 var(--sp-3); }
+  .toc-progress > span { display: block; height: 100%; width: 0; background: var(--accent); transition: width .15s linear; }
+  .toc ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+  .toc a { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; align-items: start; padding: 8px 10px;
+    border-radius: 4px; color: var(--muted); text-decoration: none; line-height: 1.5; border-left: 3px solid transparent; }
+  .toc a:hover { background: var(--row); color: var(--ink); }
+  /* .toc は overflow-y: auto で横も切るので、焦点の輪は外ではなくリンクの内側に描く */
+  .toc a:focus-visible { outline-offset: -2px; }
+  .toc .lbl { display: block; font-size: 14px; }
+  .toc .toc-claim { display: block; font-size: 13px; color: var(--muted); font-weight: 400; line-height: 1.5; }
+  .toc a[aria-current="location"] .toc-claim { color: var(--ink); }
+  .toc .no { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 13px;
+    font-weight: 700; font-family: var(--font-mono); background: var(--idle); color: var(--ink); }
+  .toc a.done .no { background: transparent; color: var(--ok); box-shadow: inset 0 0 0 1.5px var(--ok); }
+  .toc a.done .no::before { content: "✓"; font-family: var(--font-body); }
+  .toc a.done .no > span { display: none; }
+  .toc a[aria-current="location"] { background: var(--accent-soft); color: var(--accent); font-weight: 700; border-left-color: var(--accent); }
+  .toc a[aria-current="location"] .no { background: var(--accent); color: var(--accent-ink); box-shadow: none; }
+  @media (max-width: 999px) {
+    .toc { order: 0; position: static; max-height: none; align-self: stretch; }
+  }
+
+  /* 題の面 */
+  .hero { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow);
+    padding: 40px 44px; display: flex; flex-direction: column; gap: var(--sp-4); }
+  @media (max-width: 599px) { .hero { padding: 24px 20px; } }
+  .eyebrow { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-3); align-items: center; font-size: 13px; color: var(--muted); font-weight: 700; margin: 0; }
+  h1 { font-size: clamp(26px, 3.4vw, 36px); line-height: 1.4; margin: 0; text-wrap: balance; font-weight: 700; letter-spacing: .01em; }
+  .lede { font-size: 17px; color: var(--muted); margin: 0; }
+  .meta { display: flex; flex-direction: row; flex-wrap: wrap; gap: var(--sp-2) var(--sp-5); margin: 0; padding: var(--sp-4) 0 0; border-top: 1px solid var(--line);
+    font-size: 13px; color: var(--muted); list-style: none; }
+  .meta b { color: var(--ink); font-weight: 700; margin-right: 4px; font-variant-numeric: tabular-nums; }
+
+  /* 見出しと本文。本文の 1 行は全角 40 字前後(40em)。図・表・カードは列の幅いっぱい */
+  .kicker { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--accent); font-weight: 700; margin: 0; max-width: none; }
+  .kicker .no { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+  .kicker::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  h2 { font-size: 24px; line-height: 1.5; margin: 0; text-wrap: balance; }
+  /* 小さな分類名(kicker)と主張(h2)は近づけて 1 組に見せる。この 1 か所だけ負の margin で gap を詰める */
+  .kicker + h2 { margin-top: calc(var(--sp-3) - var(--sp-5)); }
+  h3 { font-size: 17px; line-height: 1.5; margin: 0; }
+  p { margin: 0; }
+  p, ul, ol { max-width: 40em; }
+  ul, ol { padding-left: 1.4em; margin: 0; display: flex; flex-direction: column; gap: var(--sp-2); }
+  /* flex でない箱(.callout・.finding・li・td・dd)の中で段落や一覧が続くとき、間隔が 0 にならないようにする */
+  :is(.callout, .finding, li, td, dd) > :is(p, ul, ol) + :is(p, ul, ol) { margin-top: var(--sp-4); }
+  /* 日本語の折り返し: 見出し・リード文・カードの文は語や句の途中で割らない。段落の最終行を 1〜2 字にしない。
+     対応していないブラウザでは無視され、従来どおりに折り返す */
+  h1, h2, h3, .lede, .verdict p, .fig > figcaption, .compare figcaption, .hbar-label, .tile .l, .vhead p { word-break: auto-phrase; }
+  .page :is(p, li, td, dd, caption) { word-break: auto-phrase; }
+  p, li, td, dd, caption { text-wrap: pretty; }
+  /* 英単語・ファイル名・製品名を折り返させない(見出し・カード・図のラベルは全角 12 字以内にするか、これで守る) */
+  .nobr { white-space: nowrap; }
+  a { color: var(--accent); }
+  sup.ref { font-size: 13px; margin-left: 1px; line-height: 0; }
+  sup.ref a { text-decoration: none; }
+
+  /* 大きな塊(図・表・カード列・案パネル)の上下は、gap(24px) + この margin(8px) = 32px 以上 */
+  .fig, .tablewrap, .rowcards, .decision, .verdicts, .tiles, .compare, .split, .variants, .callout, .steps, pre { margin-block: var(--sp-2); }
+  .main > section > :last-child { margin-bottom: 0; }
+
+  /* 部品: 結論カード・チップ・数字タイル */
+  .verdicts, .tiles, .meta, .legend, .hbar, .steps, .refs, .rowcards, .toc ol { max-width: none; }
+  .verdicts { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--gap-card); padding: 0; list-style: none; }
+  .verdict { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); padding: var(--sp-5);
+    display: flex; flex-direction: column; gap: var(--sp-3); min-width: 0; break-inside: avoid; }
+  .verdict .tag { font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: var(--sp-2); }
+  .verdict .tag::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+  .verdict.now .tag { color: var(--ok); } .verdict.later .tag { color: var(--warn); } .verdict.skip .tag { color: var(--stop); }
+  .verdict h3 { font-size: 18px; text-wrap: balance; }
+  .verdict p { color: var(--muted); font-size: 15px; line-height: 1.8; }
+  .chip { display: inline-block; border-radius: 4px; padding: 1px 8px; font-size: 13px; font-weight: 700; line-height: 1.6; color: var(--accent-ink); white-space: nowrap; }
+  .chip.ok { background: var(--ok); } .chip.warn { background: var(--warn); } .chip.stop { background: var(--stop); }
+  .chip.idle { background: var(--idle); color: var(--ink); } .chip.kind { background: var(--accent); }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: var(--gap-card); padding: 0; list-style: none; }
+  .tile { background: var(--panel); border: 1px solid var(--line); border-top: 4px solid var(--idle); border-radius: 8px; box-shadow: var(--shadow);
+    padding: var(--sp-4) var(--sp-5) var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-1); }
+  .tile.ok { border-top-color: var(--ok); } .tile.warn { border-top-color: var(--warn); } .tile.stop { border-top-color: var(--stop); }
+  .tile .n { font-size: 32px; font-weight: 700; line-height: 1.3; font-family: var(--font-mono); display: block; white-space: nowrap; }
+  /* 数字の後ろの単位(36<span class="u">か月</span>)は小さく添える。数字と単位が別の行に割れない */
+  .tile .n .u { font: 700 16px var(--font-body); margin-left: 4px; }
+  .tile .l { font-size: 14px; line-height: 1.6; color: var(--muted); text-wrap: balance; }
+  .dist { display: flex; height: 10px; border-radius: 4px; overflow: hidden; background: var(--idle); gap: 2px; }
+  .dist > span { display: block; height: 100%; }
+  .dist .ok { background: var(--ok); } .dist .warn { background: var(--warn); } .dist .stop { background: var(--stop); } .dist .idle { background: var(--muted); }
+  /* 進捗バー(HTML)。svg の帯(rect.bar、.chart .bar)には当てない: CSS の height が rect の height 属性を上書きするため */
+  .bar:not(rect) { height: 8px; background: var(--idle); border-radius: 4px; overflow: hidden; min-width: 80px; }
+  .bar:not(rect) > span { display: block; height: 100%; background: var(--accent); }
+  .compare { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--gap-card); }
+  .compare > figure { margin: 0; min-width: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: var(--sp-5);
+    display: flex; flex-direction: column; gap: var(--sp-3); }
+  .compare figcaption { font-size: 14px; font-weight: 700; color: var(--muted); }
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: var(--sp-4) var(--sp-5); overflow-x: auto; font-size: 14px; line-height: 1.7; }
+  pre code { background: none; padding: 0; }
+  p code, li code, td code { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: .9em; }
+  .callout { border: 1px solid var(--line); background: var(--accent-soft); padding: var(--sp-5); border-radius: 8px; font-size: 15px; line-height: 1.8; }
+  .callout strong { color: var(--accent); }
+  .finding { border-left: 3px solid var(--line); padding: var(--sp-1) 0 var(--sp-1) var(--sp-4); }
+  .finding.stop { border-left-color: var(--stop); } .finding.warn { border-left-color: var(--warn); } .finding.ok { border-left-color: var(--ok); }
+  .note { font-size: 14px; color: var(--muted); }
+
+  /* 表: セルの内側は 12px × 20px */
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); box-shadow: var(--shadow); }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; line-height: 1.7; font-variant-numeric: tabular-nums; }
+  caption { caption-side: top; text-align: left; font-weight: 700; font-size: 15px; line-height: 1.7; padding: var(--sp-4) 20px var(--sp-3); border-bottom: 1px solid var(--line); }
+  th, td { text-align: left; padding: 12px 20px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 13px; color: var(--muted); background: var(--row); font-weight: 700; white-space: nowrap; }
+  tbody tr:nth-child(even) td { background: var(--row); }
+  th.num, td.num { text-align: right; white-space: nowrap; font-family: var(--font-mono); }
+  td.nowrap { white-space: nowrap; }
+  tr { break-inside: avoid; }
+  tr:last-child td { border-bottom: 0; }
+  td.state { white-space: nowrap; font-weight: 700; }
+  td.state.wrap { white-space: normal; } /* 結果が文のセル(td class="state wrap yes")。短い状態語は wrap なしで折り返さない */
+  td.state.yes { color: var(--ok); } td.state.no { color: var(--stop); } td.state.maybe { color: var(--warn); }
+  /* 3 列以上の表は、狭い幅で列が数文字に潰れないよう、表の枠の中で横に動かす。列が多いほど最小幅を広げる(後ろの規則が勝つ)。
+     :where() で詳しさを 0 にしてあるので、table.stack や印刷の min-width: 0 が素直に勝つ */
+  .tablewrap > table:where(:has(thead th:nth-child(3))) { min-width: 36em; }
+  .tablewrap > table:where(:has(thead th:nth-child(4))) { min-width: 44em; }
+  .tablewrap > table:where(:has(thead th:nth-child(5))) { min-width: 48em; }
+  /* 標題は、表が横に動いても枠の見えている幅に留めて左端に残す。幅は枠の幅(100cqw)で決める。
+     container query の単位が使えない古いブラウザでは、幅 999px 以下だけ画面の幅から近似する */
+  .tablewrap caption { position: sticky; left: 0; box-sizing: border-box; }
+  @media (max-width: 999px) { .tablewrap caption { width: min(100%, calc(100vw - 34px)); } }
+  @supports (width: 1cqw) {
+    .tablewrap { container-type: inline-size; }
+    .tablewrap caption { width: 100cqw; }
+  }
+  /* 列が 4 つ以上の表(table class="wide")。列を押し縮めて 1 行を数文字にせず、列の幅を保ったまま、表の枠(.tablewrap)の中だけを横に動かす。
+     文のセルは全角 12 字ぶんに左右の余白(40px)を足した幅を、列の最小幅にする(足りなければ枠の中で横に動く)。
+     Chrome はセルの width を「望ましい幅」として表の幅に合わせて縮めるので min-width も付ける(Firefox は width を最小幅として扱う)。
+     数値・状態語・折り返さない語のセルは指定せず、語の幅に任せる。
+     :where() で詳しさを下げてあるので、幅 599px 以下の table.stack と印刷の指定が素直に勝つ */
+  table.wide :where(td:not(.num, .nowrap, .state:not(.wrap))) { width: calc(12em + 40px); min-width: calc(12em + 40px); }
+  /* 縦積みの表(table class="stack"。各 td に data-label="列の名前")。幅 599px 以下では、行を縦に積み、
+     セルの前に data-label の文字を出す。thead は見えない位置に置く(読み上げには残る)。
+     全セルが短い表だけに付ける。長い文の比較は .rowcards にする。数字が主体の表と評価表(table.heat)には付けない */
+  @media (max-width: 599px) {
+    .tablewrap > table.stack { min-width: 0; }
+    table.stack colgroup { display: none; }
+    table.stack tbody, table.stack tr, table.stack td { display: block; }
+    table.stack thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    table.stack td { border-bottom: 0; padding: var(--sp-1) var(--sp-5); text-align: left; white-space: normal; width: auto; min-width: 0; }
+    table.stack td[data-label]::before { content: attr(data-label); display: block; font-size: 13px; line-height: 1.6; font-weight: 700; color: var(--muted); }
+    table.stack td:first-child { padding-top: var(--sp-3); font-weight: 700; }
+    table.stack td:last-child { padding-bottom: var(--sp-3); border-bottom: 1px solid var(--line); }
+    table.stack tbody tr:last-child td:last-child { border-bottom: 0; }
+  }
+
+  /* 行のカード(ul class="rowcards")。文章が主体の比較は表にせず、1 件を 1 枚のカードにして、題(h3)の下に項目名(dt)と文(dd)を積む。
+     幅 760px 以上は項目名を左の列に置く(狭い列に長い文を押し込まない) */
+  .rowcards { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--gap-card); }
+  .rowcards > li { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); padding: var(--sp-5);
+    display: flex; flex-direction: column; gap: var(--sp-3); min-width: 0; break-inside: avoid; }
+  .rowcards dl, .decision dl { margin: 0; display: flex; flex-direction: column; gap: var(--sp-3); }
+  .rowcards dl > div, .decision dl > div { display: flex; flex-direction: column; gap: var(--sp-1); min-width: 0; }
+  .rowcards dt, .decision dt { font-size: 13px; font-weight: 700; line-height: 1.6; color: var(--muted); }
+  .rowcards dd, .decision dd { margin: 0; font-size: 15px; line-height: 1.8; }
+  @media (min-width: 760px) {
+    .rowcards dl > div, .decision dl > div { display: grid; grid-template-columns: 11em minmax(0, 1fr); gap: var(--sp-4); align-items: baseline; }
+  }
+
+  /* 判断カード(article class="decision")。判断 1 つを 1 枚にし、4 つの欄を同じ順で並べる:
+     .d-situation 何が起きているか / .d-reason なぜ決める必要があるか / .d-options 選ぶと何が起きるか(選択肢ごとの li) /
+     .d-pick 推奨と根拠(.d-choice 推す選択肢の名前、.d-basis 根拠)。欄が欠けるか空なら、検査が ERROR にする */
+  .decision { background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 8px; box-shadow: var(--shadow);
+    padding: var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; break-inside: avoid; }
+  .decision h3 { font-size: 18px; text-wrap: balance; }
+  .decision dl { gap: var(--sp-4); }
+  .decision .d-pick { background: var(--accent-soft); border-radius: 4px; padding: var(--sp-3) var(--sp-4); }
+  .decision .d-pick dt { color: var(--accent); }
+  .decision .d-choice { font-weight: 700; }
+  .decision .d-basis { margin-top: var(--sp-1); }
+
+  /* 図の枠: 図の主張(figcaption)を図の上に出す */
+  .fig { margin-inline: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow);
+    padding: var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; overflow-x: auto; break-inside: avoid; }
+  .fig > figcaption { font-size: 16px; font-weight: 700; line-height: 1.6; color: var(--ink); }
+  .fig-note { font-size: 13px; line-height: 1.7; color: var(--muted); max-width: none; }
+  /* svg.chart は幅 640px 未満では横に動く。SVG だけを <div class="chartscroll"> で包み、図の主張(figcaption)・凡例・注記は動かさない。
+     動かせる側の端に影を出して知らせる(動かせるときだけ見える。白(--panel)の覆いが中身と一緒に動き、端まで来ると影を隠す)。
+     右端は初めに切れて見えるので、値は図の左側に置く。color-mix が効かないブラウザでは影を出さず、.fig の白がそのまま残る */
+  .chartscroll { overflow-x: auto; min-width: 0; }
+  @supports (background: color-mix(in srgb, red 50%, transparent)) {
+    .chartscroll {
+      background:
+        linear-gradient(to right, var(--panel) 40%, transparent) left center / 32px 100% no-repeat local,
+        linear-gradient(to left, var(--panel) 40%, transparent) right center / 32px 100% no-repeat local,
+        radial-gradient(farthest-side at 0 50%, color-mix(in srgb, var(--ink) 24%, transparent), transparent) left center / 12px 100% no-repeat scroll,
+        radial-gradient(farthest-side at 100% 50%, color-mix(in srgb, var(--ink) 24%, transparent), transparent) right center / 12px 100% no-repeat scroll,
+        var(--panel);
+    }
+  }
+
+  /* 横棒グラフ: 大きさの比較。値は右に文字でも書く。強調する 1 行だけ accent、ほかはグレー */
+  .hbar { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--sp-3); }
+  .hbar-row { display: grid; grid-template-columns: minmax(8em, 14em) minmax(0, 1fr) 4.5em; gap: var(--sp-2) var(--sp-4); align-items: center; }
+  .hbar-label { font-size: 15px; line-height: 1.6; min-width: 0; }
+  .hbar-track { display: block; height: 14px; background: var(--idle); border-radius: 4px; overflow: hidden; }
+  .hbar-fill { display: block; height: 100%; border-radius: 4px; background: var(--bar, var(--axis)); }
+  .hbar-val { font-family: var(--font-mono); font-size: 15px; text-align: right; font-variant-numeric: tabular-nums; }
+  .hbar .is-focus { --bar: var(--accent); }
+  .hbar-row.is-focus .hbar-label, .hbar-row.is-focus .hbar-val { font-weight: 700; }
+  .hbar .c1 { --bar: var(--c1); } .hbar .c2 { --bar: var(--c2); } .hbar .c3 { --bar: var(--c3); }
+  .hbar .c4 { --bar: var(--c4); } .hbar .c5 { --bar: var(--c5); } .hbar .c6 { --bar: var(--c6); }
+  @media (max-width: 599px) {
+    .hbar-row { grid-template-columns: minmax(0, 1fr) 4em; }
+    .hbar-label { grid-column: 1 / -1; }
+  }
+  /* 文と図の並び(.split)の中の横棒: 列が 325〜490px しかなく、既定のラベル列(最大 14em)だと棒が 0px になる。
+     ラベルを棒の上の行に出して、棒と値だけを並べる(幅 760px 未満は .split が 1 列になるので、既定の並びのまま) */
+  @media (min-width: 760px) {
+    .split .hbar-row { grid-template-columns: minmax(0, 1fr) 3.5em; gap: var(--sp-1) var(--sp-3); }
+    .split .hbar-label { grid-column: 1 / -1; }
+  }
+
+  /* 凡例: 2 系列以上のとき必須 */
+  .legend { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: row; flex-wrap: wrap; gap: var(--sp-2) var(--sp-5); font-size: 14px; line-height: 1.6; color: var(--muted); }
+  .legend li { display: inline-flex; align-items: center; gap: var(--sp-2); }
+  .sw { display: inline-block; width: 12px; height: 12px; border-radius: 4px; background: var(--axis); flex: none; }
+  .sw.c1 { background: var(--c1); } .sw.c2 { background: var(--c2); } .sw.c3 { background: var(--c3); }
+  .sw.c4 { background: var(--c4); } .sw.c5 { background: var(--c5); } .sw.c6 { background: var(--c6); }
+
+  /* SVG チャート: viewBox の幅は 640 にそろえる(最小幅 640px で等倍になり、文字は 13px を下回らない) */
+  svg.chart { display: block; width: 100%; min-width: 640px; height: auto; overflow: visible; }
+  .chart .grid { stroke: var(--grid); stroke-width: 1; fill: none; }
+  .chart .axis { stroke: var(--axis); stroke-width: 1.5; fill: none; }
+  .chart .tick { stroke: var(--axis); stroke-width: 1; fill: none; }
+  .chart .t { fill: var(--ink); font-family: var(--font-body); font-size: 13px; }
+  .chart .t-muted { fill: var(--muted); }
+  .chart .ln-1 { --series: var(--c1); } .chart .ln-2 { --series: var(--c2); }
+  .chart .ln-3 { --series: var(--c3); } .chart .ln-4 { --series: var(--c4); }
+  .chart .is-focus { --series: var(--accent); }
+  .chart .ln { fill: none; stroke: var(--series, var(--axis)); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+  .chart .area { fill: var(--series, var(--axis)); fill-opacity: .14; stroke: none; }
+  .chart .dot { fill: var(--series, var(--axis)); stroke: var(--panel); stroke-width: 2; }
+  /* 期間の帯(rect class="bar" に x・y・width・height を属性で書く)。重なる帯は --panel の縁で分ける */
+  .chart .bar { fill: var(--series, var(--axis)); stroke: var(--panel); stroke-width: 2; }
+  .chart .quad { fill: var(--row); stroke: var(--line); stroke-width: 1; }
+  .chart .quad.is-focus { fill: var(--accent-soft); stroke: var(--accent); }
+  .chart .node { fill: var(--panel); stroke: var(--axis); stroke-width: 1.5; }
+  .chart .node.is-focus { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2; }
+  .chart .edge { fill: none; stroke: var(--axis); stroke-width: 1.5; }
+  .chart .arrowhead { fill: var(--axis); stroke: none; }
+  .chart .edge-label { fill: var(--muted); font-family: var(--font-body); font-size: 13px; paint-order: stroke; stroke: var(--panel); stroke-width: 4px; stroke-linejoin: round; }
+
+  /* 評価表: 案 × 基準の点数を濃淡で見せる(数値は必ず文字で載せる) */
+  table.heat td, table.heat th { text-align: center; }
+  table.heat td { vertical-align: middle; }
+  table.heat th:first-child, table.heat td:first-child { text-align: left; min-width: 9em; }
+  table.heat td[data-l] { font-family: var(--font-mono); font-weight: 700; border-left: 1px solid var(--panel); }
+  table.heat td[data-l="1"] { background: var(--seq-1); color: var(--seq-1-ink); }
+  table.heat td[data-l="2"] { background: var(--seq-2); color: var(--seq-2-ink); }
+  table.heat td[data-l="3"] { background: var(--seq-3); color: var(--seq-3-ink); }
+  table.heat td[data-l="4"] { background: var(--seq-4); color: var(--seq-4-ink); }
+  table.heat td[data-l="5"] { background: var(--seq-5); color: var(--seq-5-ink); }
+  /* 幅 599px 以下で横に動かしても、先頭列(行の名前)は左に残す。固定した列の背景は行の色と同じにして、後ろのセルを隠す */
+  @media (max-width: 599px) {
+    table.heat th:first-child, table.heat td:first-child { position: sticky; left: 0; z-index: 1; box-shadow: 1px 0 0 var(--line); }
+    table.heat tbody td:first-child { background: var(--panel); }
+    table.heat tbody tr:nth-child(even) td:first-child { background: var(--row); }
+  }
+
+  /* 手順: 順番に意味があるときだけ。番号は CSS カウンタ */
+  .steps { list-style: none; padding: 0; margin: 0; counter-reset: step; display: flex; flex-direction: column; gap: var(--sp-4); }
+  .steps > li { counter-increment: step; position: relative; padding: 2px 0 0 52px; min-height: 36px; }
+  .steps > li::before { content: counter(step); position: absolute; left: 0; top: 0; width: 36px; height: 36px; border-radius: 50%;
+    display: grid; place-items: center; background: var(--accent); color: var(--accent-ink); font-family: var(--font-mono); font-weight: 700; font-size: 15px; }
+  .steps strong { display: block; }
+
+  /* 文と図の並び: 幅 760px 未満で縦積み */
+  .split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: var(--sp-6); align-items: start; }
+  .split > div { display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; }
+  .split > .fig { margin-block: 0; }
+  .split.rev > :first-child { order: 2; }
+  @media (max-width: 759px) {
+    .split { grid-template-columns: minmax(0, 1fr); gap: var(--sp-5); }
+    .split.rev > :first-child { order: 0; }
+  }
+
+  /* 参考 */
+  .refs { font-size: 14px; line-height: 1.8; color: var(--muted); padding: var(--sp-5) var(--sp-5) var(--sp-5) calc(var(--sp-5) + 1.6em);
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+  .refs li { overflow-wrap: anywhere; }
+  .refs li:target { color: var(--ink); }
+
+  /* 切り替え式の案パネル(UI/UX 案)。JS が動くと .is-ready が付き、ボタンで 1 案ずつ見せる。
+     動かないときはタブを隠して全案を縦に並べる。全パネルを同じ grid セルに重ねるので、切り替えても高さは変わらない */
+  .variants { display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; }
+  .variants-tabs { display: none; }
+  .variants.is-ready .variants-tabs { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: var(--sp-2); }
+  @media (max-width: 699px) {
+    .variants.is-ready .variants-tabs { grid-auto-flow: row; grid-auto-columns: auto; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    /* 案が奇数個のとき、最後の 1 つは 2 列ぶんの幅にして、左に 1 つだけ残らないようにする */
+    .variants.is-ready .variants-tabs > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+  }
+  .variants-tabs .chip { margin-left: auto; }
+  .variants-tabs [role="tab"] { appearance: none; font: inherit; font-size: 14px; font-weight: 700; line-height: 1.4; color: var(--ink); text-align: left;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px; min-height: 44px; padding: 10px 14px 13px; cursor: pointer;
+    position: relative; overflow: hidden; display: flex; flex-wrap: wrap; align-items: center; align-content: center; gap: var(--sp-1) 10px; }
+  .variants-tabs [role="tab"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: transparent; }
+  .variants-tabs [role="tab"]:hover { background: var(--row); }
+  .variants-tabs [role="tab"][aria-selected="true"] { background: var(--accent-soft); border-color: var(--accent); }
+  .variants-tabs [role="tab"][aria-selected="true"]::after { background: var(--accent); }
+  .vt-name { flex: 1 1 auto; min-width: 0; }
+  .variants-stage { display: flex; flex-direction: column; gap: var(--sp-6); }
+  .variants.is-ready .variants-stage { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .vpanel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); padding: var(--sp-5);
+    display: flex; flex-direction: column; gap: var(--sp-5); min-width: 0; }
+  .variants.is-ready .vpanel { grid-area: 1 / 1; visibility: hidden; opacity: 0; }
+  .variants.is-ready .vpanel.is-active { visibility: visible; opacity: 1; }
+  /* 切り替えのフェードは、利用者が最初に案を切り替えたとき(script が .is-live を付ける)から。
+     最初の描画で動かすと、スクリーンショットや印刷が途中の半透明の画面を写す */
+  .variants.is-live .vpanel { transition: opacity .12s ease, visibility 0s linear .12s; }
+  .variants.is-live .vpanel.is-active { transition: opacity .12s ease; }
+  /* 幅 700px 未満は、見せていない案を高さ 0 にたたむ(重ねたままだと、短い案の下に最も高い案ぶんの空白が残る)。
+     印刷は全案を並べるので、画面(screen)だけに効かせる */
+  @media screen and (max-width: 699px) {
+    .variants.is-ready .vpanel:not(.is-active) { max-height: 0; overflow: hidden; padding-block: 0; border-width: 0; box-shadow: none; }
+  }
+  .vhead { display: flex; flex-direction: column; gap: var(--sp-2); }
+  .vhead h3 { font-size: 18px; }
+  .vhead p { color: var(--muted); }
+  .vnotes { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--sp-4) var(--sp-5); margin: 0; padding: var(--sp-4) 0 0; border-top: 1px solid var(--line); }
+  .vnotes > div { display: flex; flex-direction: column; gap: var(--sp-1); min-width: 0; }
+  .vnotes dt { font-size: 13px; font-weight: 700; color: var(--muted); }
+  .vnotes dd { margin: 0; font-size: 15px; line-height: 1.8; }
+
+  /* モックアップの枠(案の中身は #mockup-styles が .mk-<記号> で持つ。レポートのトークンとは独立) */
+  .mock { container-type: inline-size; min-width: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--panel); }
+  /* container query が効かないブラウザでは、案が枠より広くなる。切り捨てず、枠の中で横に動かして読めるようにする */
+  @supports not (container-type: inline-size) { .mock { overflow-x: auto; } }
+  .mock-bar { display: flex; align-items: center; gap: var(--sp-3); padding: 10px 14px; background: var(--row); border-bottom: 1px solid var(--line); font-size: 13px; line-height: 1.4; color: var(--muted); }
+  .mock-dots { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--axis); margin-right: 40px; box-shadow: 16px 0 0 var(--axis), 32px 0 0 var(--axis); }
+  .mock-url { flex: 1; min-width: 0; padding: 2px 10px; border-radius: 4px; background: var(--panel); border: 1px solid var(--line); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mock[data-device="phone"] { width: 100%; max-width: 390px; margin-inline: auto; border-width: 2px; border-radius: 28px; }
+  .mock[data-device="phone"] .mock-bar { display: none; }
+  .mocks { display: flex; flex-wrap: wrap; gap: var(--sp-5); align-items: flex-start; }
+  .mocks > .mock { flex: 1 1 320px; margin-inline: 0; }
+  .mocks > .mock[data-device="phone"] { flex: 0 1 390px; }
+  /* 広い画面とスマホ画面を縦に重ねるとき(.mocks に stack を付ける)。横に並べると広い画面が 416px 前後に狭まる */
+  .mocks.stack { flex-direction: column; align-items: stretch; }
+  .mocks.stack > .mock { flex: none; width: 100%; }
+  .mocks.stack > .mock[data-device="phone"] { width: min(100%, 390px); align-self: center; }
+
+  @media print {
+    :root { --shadow: none; }
+    /* 背景のグラフィックを刷らない設定(Chrome の既定)でも、評価表・チップ・棒グラフ・手順の番号の色を残す */
+    *, *::before, *::after { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { background: var(--panel); }
+    .chartscroll { background: var(--panel); }
+    /* 印刷では表を横に動かせない。枠を切らず、最小幅を外して列を詰め、見出しも折り返して、右端の列(評価表の合計など)を失わない */
+    .tablewrap { overflow: visible; }
+    .tablewrap > table { min-width: 0; }
+    table.wide td { width: auto; min-width: 0; }
+    th { white-space: normal; word-break: auto-phrase; }
+    .themeswitch, .toc { display: none; }
+    .page { display: block; padding: 0; max-width: none; }
+    .main { display: flex; }
+    h2, .kicker, h3 { break-after: avoid; }
+    .refs a::after { content: " (" attr(href) ")"; }
+    .variants-tabs, .variants.is-ready .variants-tabs { display: none; }
+    .variants.is-ready .variants-stage { display: flex; flex-direction: column; gap: var(--sp-6); }
+    .variants.is-ready .vpanel { visibility: visible; opacity: 1; }
+  }
+</style>
+<!-- 案(UI/UX のモックアップ)が必要な報告書だけ、この直後に <style id="mockup-styles"> を足す。セレクタは必ず .mk-<案の記号> から始める。 -->
+</head>
+<body>
+<script>
+  /* テーマの初期化: 描画前に data-theme を決める。保存値(light / dark)があればそれ、なければ light。
+     本文の最初の要素に置く(Artifact で外枠を外しても動く)。localStorage が使えなくても止まらない */
+  (function () {
+    var t = 'light';
+    try {
+      var s = localStorage.getItem('html-report-theme');
+      if (s === 'light' || s === 'dark') t = s;
+    } catch (e) {}
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+
+<div class="themeswitch" role="group" aria-label="表示の明るさ">
+  <button type="button" data-theme-set="light" aria-pressed="true">ライト</button>
+  <button type="button" data-theme-set="dark" aria-pressed="false">ダーク</button>
+</div>
+
+<div class="page" lang="ja">
+  <nav class="toc" aria-label="目次">
+    <p class="toc-title">目次</p>
+    <div class="toc-progress" aria-hidden="true"><span></span></div>
+    <ol>
+      <li><a href="#s-why" data-target="s-why"><span class="no"><span>1</span></span><span><span class="lbl">なぜこの結論か</span><span class="toc-claim">剣術は読み、魔術は残す</span></span></a></li>
+      <li><a href="#s-now" data-target="s-now"><span class="no"><span>2</span></span><span><span class="lbl">剣術の今の形</span><span class="toc-claim">読む札が厚い</span></span></a></li>
+      <li><a href="#s-base" data-target="s-base"><span class="no"><span>3</span></span><span><span class="lbl">魔術の土台</span><span class="toc-claim">土台は同じ形</span></span></a></li>
+      <li><a href="#s-compare" data-target="s-compare"><span class="no"><span>4</span></span><span><span class="lbl">3 案の比べ</span><span class="toc-claim">タイプと語が違う</span></span></a></li>
+      <li><a href="#s-range" data-target="s-range"><span class="no"><span>5</span></span><span><span class="lbl">間合いと役割で分ける案</span><span class="toc-claim">足すものは 0</span></span></a></li>
+      <li><a href="#s-lineage" data-target="s-lineage"><span class="no"><span>6</span></span><span><span class="lbl">系統とタイプで呼ぶ案</span><span class="toc-claim">4 タイプに分ける</span></span></a></li>
+      <li><a href="#s-time" data-target="s-time"><span class="no"><span>7</span></span><span><span class="lbl">効く時間で分ける案</span><span class="toc-claim">今効くと残る</span></span></a></li>
+      <li><a href="#s-samples" data-target="s-samples"><span class="no"><span>8</span></span><span><span class="lbl">見本の札</span><span class="toc-claim">同じ札が重なった</span></span></a></li>
+      <li><a href="#s-open" data-target="s-open"><span class="no"><span>9</span></span><span><span class="lbl">仮定と未確認</span><span class="toc-claim">測っていない</span></span></a></li>
+      <li><a href="#s-next" data-target="s-next"><span class="no"><span>10</span></span><span><span class="lbl">次に判断が要る点</span><span class="toc-claim">決めることは 3 つ</span></span></a></li>
+      <li><a href="#s-refs" data-target="s-refs"><span class="no"><span>11</span></span><span><span class="lbl">参考</span><span class="toc-claim">出典 5 件</span></span></a></li>
+    </ol>
+  </nav>
+
+  <main class="main">
+    <header class="hero">
+      <p class="eyebrow"><span class="chip kind">判断</span><span>2026-11-22</span><span>剣術と魔術の札</span></p>
+      <h1>剣術は読んで回収する札、魔術は離れて状態を残す札と置けば、規則を足さずに 2&nbsp;つを分けられます</h1>
+      <p class="lede">剣術と魔術の札をどう分けるかを、3&nbsp;つの切り口で案にしました。3&nbsp;案とも設計書と突き合わせて成り立ち、魔術の土台はほぼ同じ形に着きました。選ぶのは、性格づけの方向・敵の術が由来の剣術の札の扱い・亡霊の系統の状態の 3&nbsp;つです。</p>
+      <ul class="meta"><li><b>5</b>件の出典</li><li><b>約 18 分</b>で読めます(推定)</li></ul>
+    </header>
+
+    <ul class="verdicts">
+      <li class="verdict now"><span class="tag">確かめた結果</span><h3>3&nbsp;案とも成り立ちます</h3><p>設計書と突き合わせて、案が成り立たない食い違いは 0 件でした。直せば成り立つ点と細かい誤りが、案ごとに 11〜13 件あります。</p></li>
+      <li class="verdict now"><span class="tag">魔術の土台</span><h3>魔術の土台は同じ形に着きました</h3><p>3 案とも、魔術はスキルを 36〜45% に厚くし、状態を付ける側に置き、Guard を剣術より薄くしました。互いの案を見ずに、同じ札を 2 組作っています。</p></li>
+      <li class="verdict later"><span class="tag">決めること</span><h3>決めることは 3&nbsp;つあります</h3><p>性格づけの方向、敵の術が由来の剣術の札を魔術に移すか、亡霊の系統が受け持つ状態の 3 つです。あとの 2 つは、魔術の札 37〜40 種の中身を左右します。</p></li>
+    </ul>
+
+    <section id="s-why">
+      <p class="kicker"><span class="no">01</span>なぜこの結論か</p>
+      <h2>剣術は読む札が厚く、離れて状態を残す札が空いています</h2><ul class="tiles"><li class="tile ok"><span class="n">9</span><span class="l">相手の状態を読む札</span></li><li class="tile ok"><span class="n">10</span><span class="l">間合いを読む札</span></li><li class="tile warn"><span class="n">0</span><span class="l">離れて状態だけを付ける札</span></li><li class="tile warn"><span class="n">0</span><span class="l">俊敏を付ける札</span></li></ul>
+      <p>剣術の札 64 種を数えると、相手の状態を読む札が 9 枚、間合いを読む札が 10 枚あり、読んで得をする札は厚くそろっています。一方で、離れた所から状態だけを付ける札は 0 枚、スキルの札は 9 枚、俊敏を付ける札は 0 枚です。</p>
+      <p>この空いた所に魔術の札を置くと、剣術の札を書き換えずに 2 つの性格が分かれます。3 つの案は切り口が違いますが、魔術の土台はこの空いた所に集まりました。違いが出たのは、剣術の札のタイプの付け方と、足す語の数です。</p>
+      <p>この報告書で初めて出る語の一言説明です。</p>
+      <ul>
+        <li><b>間合い</b>: 相手との距離を、横 1 列のマスの数で表した値です。</li>
+        <li><b>特性</b>: 札に付く「条件と効果」の組です。条件を満たすと効果が出ます。</li>
+        <li><b>状態</b>: 出血や威圧のように、効果が続いて残る印です。</li>
+        <li><b>Guard</b>: 防御の値です。</li>
+        <li><b>系統</b>: 魔術が写す元になる敵の分類で、竜・寄生・亡霊の 3 つです。</li>
+      </ul>
+    </section>
+
+    <section id="s-now">
+      <p class="kicker"><span class="no">02</span>剣術の今の形</p>
+      <h2>剣術の札は読んで得をする条件が厚く、離れて仕込む札がありません</h2>
+      <p>剣術の札 64 種を、設計書の表から数え直した値です。右の列が少ない所が、魔術の札が入る余地です。<sup class="ref"><a href="#ref-2">[2]</a></sup></p>
+      <div class="tablewrap">
+        <table class="wide">
+          <caption>剣術は攻撃と防御が 66% を占め、スキルは 14% です。</caption>
+          <thead><tr><th>切り口</th><th>厚い所</th><th>薄い所</th></tr></thead>
+          <tbody>
+            <tr><td>属性</td><td>攻撃 25 枚（39%）、防御 17 枚（27%）</td><td>スキル 9 枚（14%）。スタンスは 13 枚（20%）</td></tr>
+            <tr><td>コスト</td><td>コスト 2 が 26 枚、コスト 1 が 19 枚</td><td>コスト 4 は覚醒の 1 枚だけ</td></tr>
+            <tr><td>届く間合い</td><td>0〜1 が 14 枚</td><td>間合い 3 に届く札は 5 枚。状態だけを離れて付ける札は 0 枚</td></tr>
+            <tr><td>特性の条件</td><td>間合い 10 枚、相手の状態 9 枚、連動 7 枚、自分の状態 7 枚</td><td>移動後・温存・死力・初手・手薄が 2 枚ずつ。連動(術) は 0 枚</td></tr>
+            <tr><td>特性の効果</td><td>Guard +n 11 枚、威力 +n 8 枚、スタミナ +1 8 枚、重撃 7 枚</td><td>転換 2 枚、次ターン回復 +1 2 枚、コスト −1 3 枚</td></tr>
+            <tr><td>状態</td><td>威圧と疲労を付ける札が 5 枚ずつ、強化が 4 枚</td><td>見切りを付ける札は 1 枚、俊敏は 0 枚</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul>
+        <li>相手に状態を付けるスキルの札は 3 枚（鬨の声・翻し足・群れの咆哮）で、どれも届く間合いの上限は 2 です。</li>
+        <li>札の巡りの柱に属す剣術の札は 0 枚です。</li>
+        <li>数は、剣術の札を戦法の柱に合わせて書き換えた版（v4.13）で数えました。</li>
+      </ul>
+    </section>
+
+    <section id="s-base">
+      <p class="kicker"><span class="no">03</span>魔術の土台</p>
+      <h2>3&nbsp;つの案は、魔術の土台をほぼ同じ形にしました</h2>
+      <p>3 つの案が、互いを見ずに出した魔術の土台です。値は剣術と同じ目盛りから取り、魔術だけの目盛りは作っていません。<sup class="ref"><a href="#ref-1">[1]</a></sup><sup class="ref"><a href="#ref-2">[2]</a></sup></p>
+      <div class="tablewrap">
+        <table class="wide">
+          <caption>3 案とも、魔術はスキルを厚くし、攻撃と Guard を剣術より軽くしました。</caption>
+          <thead><tr><th>項目</th><th>剣術の今</th><th>間合いと役割で分ける案</th><th>系統とタイプで呼ぶ案</th><th>効く時間で分ける案</th></tr></thead>
+          <tbody>
+            <tr><td>札の数</td><td>64 種</td><td>38 種</td><td>39 種</td><td>38 種</td></tr>
+            <tr><td>攻撃</td><td>25</td><td>9</td><td>12</td><td>7</td></tr>
+            <tr><td>防御</td><td>17</td><td>6</td><td>8</td><td>6</td></tr>
+            <tr><td>スキル</td><td>9（14%）</td><td>17（45%）</td><td>14（36%）</td><td>15（39%）</td></tr>
+            <tr><td>スタンス</td><td>13</td><td>6</td><td>5</td><td>10</td></tr>
+            <tr><td>コスト 1 / 2 / 3</td><td>19 / 26 / 18</td><td>16 / 16 / 6</td><td>15 / 17 / 7</td><td>12 / 17 / 9</td></tr>
+            <tr><td>届く間合い</td><td>0〜1 が中心</td><td>1〜2 と 2〜3</td><td>1〜2 と 2〜3（寄生は 0〜1 も）</td><td>1〜2 と 2〜3（寄生は 0〜1 も）</td></tr>
+            <tr><td>Guard の値</td><td>単独の 4 / 9 / 15</td><td>3 / 6 / 10</td><td>3 / 6 / 10</td><td>3 / 6 / 10</td></tr>
+            <tr><td>移動</td><td>前へ・後ろへ・押す</td><td>後ろへと引くだけ</td><td>引くを 2〜3 枚</td><td>後ろへ・引く・押すだけ</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul>
+        <li>魔術の攻撃は、届く間合いが広い分だけ、同じコストの剣術より威力が下がります。コスト 3 の単独の攻撃は、剣術の 0〜1 が 24、魔術の 2〜3 が 21、1〜3 が 17 です。</li>
+        <li>3 案とも、魔術は状態を付ける側に置き、剣術がそれを読んで回収する形にしました。</li>
+        <li>3 案とも、系統ごとの状態は叩き台のままです。竜が脆化・威圧・鈍足、寄生が出血・疲労・再生、亡霊が俊敏・見切り・集中です。間合いと役割で分ける案だけが、竜に強化を足しました。</li>
+        <li>引くを持つ札は、いまの剣術に 1 枚もありません。引くは、大きさ 2 以上の敵と亡霊の敵には効きません。</li>
+      </ul>
+    </section>
+
+    <section id="s-compare">
+      <p class="kicker"><span class="no">04</span>3 案の比べ</p>
+      <h2>違いが出たのは、剣術のタイプの付け方と、足す語の数です</h2>
+      <p>確認の件数は、案を設計書と突き合わせたときに挙がった、直す点の数です。「案が成り立たない」重さの指摘は、3 案とも 0 件でした。</p>
+      <ul class="rowcards">
+        <li>
+          <h3>間合いと役割で分ける案</h3>
+          <dl>
+            <div><dt>剣術の一文</dt><dd>懐まで踏み込み、相手と場に残ったものを読んで、重く斬るか厚く受ける札です。</dd></div>
+            <div><dt>魔術の一文</dt><dd>懐に届かない距離から、相手か自分に必ず状態を残し、スタミナと手札を整える札です。</dd></div>
+            <div><dt>剣術のタイプ</dt><dd>5 つ（重く斬る・読んで斬る・厚く受ける・足と順番・構え）。物差しが重なり、どれにも入らない札が 7 枚以上残りました。</dd></div>
+            <div><dt>足すもの</dt><dd>規則 0、語 0、画面の印 0。札を作るときの配り方の決まりを 3 行だけ足します。</dd></div>
+            <div><dt>剣術の札の書き換え</dt><dd>2 枚（大上段と伸び突き）。</dd></div>
+            <div><dt>確認で出た直す点</dt><dd>12 件（直せば成り立つ 5、細かい誤り 7）。</dd></div>
+          </dl>
+        </li>
+        <li>
+          <h3>系統とタイプで呼ぶ案</h3>
+          <dl>
+            <div><dt>剣術の一文</dt><dd>間合いの中で、いまの一手を読んで斬る・受ける・動く札です。</dd></div>
+            <div><dt>魔術の一文</dt><dd>敵の術を写して、離れて仕込むか、自分に宿す札です。</dd></div>
+            <div><dt>剣術のタイプ</dt><dd>4 つ（足 19 枚・乱し 19 枚・受け 15 枚・斬り 11 枚）。64 種がもれなく分かれます。</dd></div>
+            <div><dt>足すもの</dt><dd>規則 0、画面の印 0。タイプの名前 4 語を、札の表の分類の列に足します。画面に出すなら印が 1 つ増えます。</dd></div>
+            <div><dt>剣術の札の書き換え</dt><dd>0 枚。</dd></div>
+            <div><dt>確認で出た直す点</dt><dd>13 件（直せば成り立つ 6、細かい誤り 7）。</dd></div>
+          </dl>
+        </li>
+        <li>
+          <h3>効く時間で分ける案</h3>
+          <dl>
+            <div><dt>剣術の一文</dt><dd>出したそのターンに、出した分だけ確かに効く札です。</dd></div>
+            <div><dt>魔術の一文</dt><dd>出したターンには薄く、敵の番か次のターンに遅れて効くか、残って効く札です。</dd></div>
+            <div><dt>剣術のタイプ</dt><dd>4 つ（打つ 20 枚・受ける 10 枚・動く 16 枚・構えと仕掛け 18 枚）。64 種がもれなく分かれます。</dd></div>
+            <div><dt>足すもの</dt><dd>規則 0、画面の印 0。タイプの名前 4 語と「今効く・残る」の呼び名を足します。次のターンに解決する「遅れ」の面を足す形も選べ、その場合は規則 1・語 1・画面の印 1 が増えます。</dd></div>
+            <div><dt>剣術の札の書き換え</dt><dd>0 枚。</dd></div>
+            <div><dt>確認で出た直す点</dt><dd>11 件（直せば成り立つ 6、細かい誤り 5）。</dd></div>
+          </dl>
+        </li>
+      </ul>
+    </section>
+
+    <section id="s-range">
+      <p class="kicker"><span class="no">05</span>間合いと役割で分ける案</p>
+      <h2>間合いと役割で分ける案は、規則も語も足さず、剣術の 2&nbsp;枚だけを書き換えます</h2>
+      <p>いまある部品の配り方だけで分ける案です。規則も語も足しません。</p>
+      <ul>
+        <li>魔術の相手向きの札は、届く間合いが 1 以上から始まります。間合い 0 では出せません。</li>
+        <li>魔術の攻撃と防御の札は、必ず面を 2 つ持ち、片方を状態の面にします。値は剣術の単独の札の約 3 分の 2 になります。</li>
+        <li>魔術の札の特性は、威力 +n・重撃・転換を持ちません。</li>
+      </ul>
+      <div class="tablewrap">
+        <table>
+          <caption>条件と効果は、剣術が読む側、魔術が貯めて付ける側に割り振ります。</caption>
+          <thead><tr><th>持ち主</th><th>条件</th><th>効果</th></tr></thead>
+          <tbody>
+            <tr><td>剣術が主</td><td>連動(防御)・連動(術)・移動後・予兆・締め・崩し後・連打・手薄・相手の状態・自分の状態</td><td>威力 +n・重撃・転換</td></tr>
+            <tr><td>魔術が主</td><td>連動(攻撃)・温存</td><td>次ターン回復 +1・状態</td></tr>
+            <tr><td>両方</td><td>連動(スキル)・連動(スタンス)・間合い・死力・初手</td><td>追撃・Guard +n・ドロー +1・スタミナ +1・コスト −1</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul>
+        <li>剣術の札の書き換えは 2 枚です。大上段の特性を「予兆(攻撃): 重撃」から「相手の状態(脆化): 重撃」に替えます。伸び突きの特性を「連動(スキル): 威力 +5」から「連動(術): 威力 +5」に替えます。</li>
+        <li>間合いを読む効果の 4 つのマスは、剣術が 3 / 2 / 2 / 3 枚です。魔術が 1 / 2 / 2 / 1 枚を足すと、4 枚ずつにそろいます。</li>
+        <li>確認で分かった弱い所は 3 つです。3 行の決まりは剣術の札にも当てはまる札があり、札を見分ける印にはなりません。見分けるのは、すでに決まっている術の印です。習熟の「伸び」は威力・Guard・出血・再生しか伸ばさないので、状態が中心の魔術には配りにくいです。5 つのタイプは物差しが重なります。</li>
+      </ul>
+    </section>
+
+    <section id="s-lineage">
+      <p class="kicker"><span class="no">06</span>系統とタイプで呼ぶ案</p>
+      <h2>系統とタイプで呼ぶ案は、剣術 64&nbsp;種を 4&nbsp;つのタイプにもれなく分けます</h2>
+      <p>遊び手が口で言える名前を、両方の札に付ける案です。魔術は写す元の 3 系統、剣術は 4&nbsp;つのタイプで呼びます。</p>
+      <figure class="fig">
+        <figcaption>剣術の 64&nbsp;種は、足 19・乱し 19・受け 15・斬り 11&nbsp;枚の 4&nbsp;つに分かれます。</figcaption>
+        <ul class="hbar" role="list">
+          <li class="hbar-row"><span class="hbar-label">足</span><span class="hbar-track" aria-hidden="true"><span class="hbar-fill" style="width:30%"></span></span><span class="hbar-val">19</span></li>
+          <li class="hbar-row"><span class="hbar-label">乱し</span><span class="hbar-track" aria-hidden="true"><span class="hbar-fill" style="width:30%"></span></span><span class="hbar-val">19</span></li>
+          <li class="hbar-row"><span class="hbar-label">受け</span><span class="hbar-track" aria-hidden="true"><span class="hbar-fill" style="width:23%"></span></span><span class="hbar-val">15</span></li>
+          <li class="hbar-row"><span class="hbar-label">斬り</span><span class="hbar-track" aria-hidden="true"><span class="hbar-fill" style="width:17%"></span></span><span class="hbar-val">11</span></li>
+        </ul>
+        <p class="fig-note">単位は枚です。出典は [2] の設計書で、4 つの合計は 64 枚です（計算）。</p>
+      </figure>
+      <div class="tablewrap">
+        <table class="wide">
+          <caption>剣術 64 種は、物差しを上から順に当てると 4 つのタイプに分かれます。</caption>
+          <thead><tr><th>タイプ</th><th>物差し</th><th>枚数</th><th>札の例</th><th>効く柱</th></tr></thead>
+          <tbody>
+            <tr><td>足</td><td>マスを動かす札と、間合いか移動後を読む札</td><td class="num">19</td><td>足運び・後ろ跳び・猪突猛進・影踏み・水の構え</td><td>間合いを握る、手数の階段</td></tr>
+            <tr><td>乱し</td><td>残りのうち、相手に状態か崩しを付ける札と、それを読む札</td><td class="num">19</td><td>小手打ち・峰打ち・鬨の声・皮裂き・糸打ち</td><td>出血で削る、崩して休ませる、威圧で凌ぐ</td></tr>
+            <tr><td>受け</td><td>残りのうち、Guard か回復を持つ札と、受けで効く構え</td><td class="num">15</td><td>鉄の受け・受け太刀・柄当て・返しの構え・躱し斬り</td><td>受けて返す、息の貸し借り</td></tr>
+            <tr><td>斬り</td><td>残りの全部。自分の一撃を重くする札</td><td class="num">11</td><td>袈裟斬り・大上段・横薙ぎ・集中・三日月斬り</td><td>重い一太刀、研いで放つ</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="tablewrap">
+        <table class="wide">
+          <caption>魔術は、系統ごとに土台の性能を変えます。</caption>
+          <thead><tr><th>系統</th><th>呼び方</th><th>属性の内訳</th><th>コスト 1 / 2 / 3</th><th>届く間合い</th><th>付ける状態</th></tr></thead>
+          <tbody>
+            <tr><td>竜</td><td>遠くへ重く撃つ</td><td>攻撃 6・スキル 4・防御 2・スタンス 1</td><td class="num">2 / 6 / 5</td><td>攻撃は 1〜2 と 2〜3</td><td>相手に脆化・威圧・鈍足</td></tr>
+            <tr><td>寄生</td><td>付けて待つ</td><td>スキル 5・攻撃 4・防御 3・スタンス 1</td><td class="num">6 / 6 / 1</td><td>状態は 1〜2 と 2〜3、攻撃は 0〜1 と 0〜2</td><td>相手に出血・疲労、自分に再生</td></tr>
+            <tr><td>亡霊</td><td>自分に宿して手を回す</td><td>スキル 5・防御 3・スタンス 3・攻撃 2</td><td class="num">7 / 5 / 1</td><td>自分向きが多い。攻撃は 2〜3</td><td>自分に俊敏・見切り・集中</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul>
+        <li>剣術の札の効果は 1 つも変えません。タイプは、いまの効果の列と特性の列から決まります。</li>
+        <li>確認で分かった弱い所は 3 つです。タイプの名前 4 語は、属性・系統・柱・役割・習熟の型に続く 6 つ目の分類になります。「斬り」と「受け」は攻撃と防御に似た名前なのに、枚数が合いません。同じタイプをそろえても得をする規則が無いので、遊び手がタイプを意識しないおそれがあります。</li>
+        <li>案が前提にした「新しい剣術 10 種」は誤りでした。柱ごとに要る剣術の札は、9 種がいまの札の書き換えで埋まっていて、足りないのは札の巡りの 1 種だけです。</li>
+      </ul>
+    </section>
+
+    <section id="s-time">
+      <p class="kicker"><span class="no">07</span>効く時間で分ける案</p>
+      <h2>効く時間で分ける案は、剣術は今効き、魔術は遅れて残ると置きます</h2>
+      <p>効くまでの時間で分ける案です。剣術は「今を取って先を払う」札、魔術は「今を払って先を取る」札と置きます。世界観の理由は、写した術が人の体を通るのに 1 拍かかることです。<sup class="ref"><a href="#ref-4">[4]</a></sup></p>
+      <div class="tablewrap">
+        <table>
+          <caption>条件と効果は、今のターンに効くものを剣術に、遅れて効くものを魔術に割り振ります。</caption>
+          <thead><tr><th>持ち主</th><th>条件</th><th>効果</th></tr></thead>
+          <tbody>
+            <tr><td>剣術</td><td>連動(攻撃)・連動(防御)・移動後・間合い(n 以下)・予兆・締め・崩し後・連打</td><td>威力 +n・重撃・転換・スタミナ +1・コスト −1</td></tr>
+            <tr><td>魔術</td><td>連動(スタンス)・間合い(n 以上)・温存・初手・手薄・自分の状態</td><td>追撃・状態・次ターン回復 +1</td></tr>
+            <tr><td>両方</td><td>連動(スキル)・連動(術)・死力・相手の状態</td><td>Guard +n・ドロー +1</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul>
+        <li>系統ごとに、効く時間の型を寄せます。寄生は 3 語ともターンで減る型です。竜と亡霊は使うと減る型が主で、竜は相手に、亡霊は自分に付けます。</li>
+        <li>「遅れ」の面を足す形も選べます。出したターンには解決せず、次の自分のターンの開始に、1 つ右の列の値で解決する面です。足すと規則 1・語 1・画面の印 1 が増えます。</li>
+        <li>確認で分かった弱い所は 3 つです。「今効く 46 枚・残る 18 枚」は属性で数えた値で、今効く側にも、出血・疲労・見切りなどの残る状態を付ける札が 11 枚あります。間合いを離れて得の側だけ魔術に足すと、4 つのマスの配分が詰めて得 5 枚・離れて得 10 枚に傾きます。魔術を先に出すターンは出力が薄く、通常戦の 6〜10 ターンで回収しきれるかは測っていません。</li>
+      </ul>
+    </section>
+
+    <section id="s-samples">
+      <p class="kicker"><span class="no">08</span>見本の札</p>
+      <h2>互いの案を見ずに、3&nbsp;つの案が同じ形の札を作りました</h2>
+      <p>3 つの案は互いを見ていませんが、同じ形の札が重なりました。下の表は、確認を通った見本だけを載せています。名前は仮で、値は剣術と同じ目盛りから取りました。<sup class="ref"><a href="#ref-2">[2]</a></sup><sup class="ref"><a href="#ref-3">[3]</a></sup></p>
+      <div class="tablewrap">
+        <table class="wide">
+          <caption>攻撃が当たるたびに出血を付ける構えは、3 つの案すべてが作りました。</caption>
+          <thead><tr><th>札の形</th><th>系統</th><th>属性</th><th>コスト</th><th>届く</th><th>効果</th><th>特性</th><th>作った案の数</th></tr></thead>
+          <tbody>
+            <tr><td>攻撃のたびに出血を付ける構え</td><td>寄生</td><td>スタンス</td><td class="num">2</td><td>—</td><td>攻撃が当たるたび、相手に出血 1</td><td>連動(術): コスト −1</td><td class="num">3</td></tr>
+            <tr><td>離れて出血と疲労を付ける術</td><td>寄生</td><td>スキル</td><td class="num">2</td><td>2〜3</td><td>出血 2 + 疲労 2</td><td>温存(残 ≥ 4): 次ターン回復 +1</td><td class="num">3</td></tr>
+            <tr><td>自分に俊敏を宿す術</td><td>亡霊</td><td>スキル</td><td class="num">1</td><td>—</td><td>俊敏 2</td><td>連動(攻撃): ドロー +1</td><td class="num">2</td></tr>
+            <tr><td>離れて脆化を付ける息</td><td>竜</td><td>攻撃</td><td class="num">1</td><td>1〜2</td><td>威力 5 ／ 脆化 2</td><td>間合い 2 以上: 威圧を 2 付与</td><td class="num">1</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul>
+        <li>上の 2 枚は、特性だけが案ごとに違いました。構えの特性は「連動(術): コスト −1」「連動(攻撃): コスト −1」「初手: ドロー +1」の 3 通りで、表には 1 つ目を載せています。「初手: ドロー +1」は、集中と竜鱗の構えで既に 2 枚あり、足すと上限の 3 枚に届きます。</li>
+        <li>攻撃のたびに状態を付ける構えは、規則にはありますが、持つ札はまだ 1 枚もありません。同じ出血 1 を被弾のたびに付ける槍衾は、コスト 1 です。構えのコストを 1 にするか 2 にするかは決まっていません。</li>
+        <li>確認で外した見本は 9 枚です。理由は 4 つありました。元の敵の術が付ける状態と違う（還らずの英雄の受け流しは威圧で、見切りではありません）。間合いの 4 つのマスの空きとぶつかる。コストが条件の満たしにくさの決め方と合わない。竜王の固有の札（竜吼）とほぼ同じ札になる。</li>
+      </ul>
+    </section>
+
+    <section id="s-open">
+      <p class="kicker"><span class="no">09</span>仮定と未確認</p>
+      <h2>見本の値は目盛りから取っただけで、試験台では測っていません</h2><div class="tablewrap"><table><caption>下の 3 つの区分の件数は、一覧の項目数です（計算）。</caption><thead><tr><th>区分</th><th class="num">件数</th><th>中身</th></tr></thead><tbody><tr><td>置いた仮定</td><td class="num">3</td><td>依頼の読み取り、決まっていること、推奨の組み合わせ</td></tr><tr><td>確かめていないこと</td><td class="num">5</td><td>測った値、遊び手の手触り、デッキの強さ、状態の上限、枚数の版</td></tr><tr><td>設計書の食い違い</td><td class="num">3</td><td>§2.3 と §8.1 の数字、竜王の固有の数え方</td></tr></tbody></table></div>
+      <h3>置いた仮定</h3>
+      <ul>
+        <li>依頼を、方向を選ぶための材料がほしい、と読み取りました。魔術の札 37〜40 種の表そのものは作っていません。</li>
+        <li>こうだいさんが既に決めたことは、3 案とも変えていません。決まったことは、職の壁なし、魔術は敵の術の写し、柱 10 本、術の印と連動(術)、規則はなるべく足さない、の 5 つです。<sup class="ref"><a href="#ref-5">[5]</a></sup></li>
+        <li>推奨は、確認を通った部分を組み合わせたものです。組み合わせた形そのものは、設計書と突き合わせていません。</li>
+      </ul>
+      <h3>確かめていないこと</h3>
+      <ul>
+        <li>見本の値は目盛りから取っただけで、試験台では測っていません。</li>
+        <li>遊び手が、離れて仕込む札と詰めて回収する札の違いを手触りとして感じるかは、試遊でしか分かりません。届く間合い 1〜2 の威力は、0〜1 と同じ値です。</li>
+        <li>魔術を多く入れたデッキが、短い戦いと、付けた状態を消す敵（歪みの根）にどのくらい弱いかは測っていません。</li>
+        <li>魔術は状態を多く使うので、プレイヤーが持てる状態の種類の上限 6 つに当たりやすくなります。どのくらい当たるかは測っていません。</li>
+        <li>案を作ったあとに、変幻の構えの効果が書き換わりました（v4.14）。足の 19 枚などの枚数は、v4.13 で数えた値です。</li>
+      </ul>
+      <h3>設計書の食い違い</h3>
+      <ul>
+        <li>戦闘の設計書の §2.3 は「間合いの境目を条件にする札は 13 枚」と書いていますが、いまの剣術は 10 枚です。</li>
+        <li>戦闘の設計書の §8.1 の表の「既存の剣術」の枚数は、書き換える前の版（v4.12）の値です。</li>
+        <li>剣士の札の設計書は、竜王の固有 3 枚を束に数える節（§1.2）と、数えない節（§4.4）があります。数えると、攻撃で離れて得のマスの枚数が変わります。</li>
+      </ul>
+    </section>
+
+    <section id="s-next">
+      <p class="kicker"><span class="no">10</span>次に判断が要る点</p>
+      <h2>決めることは、方向・由来の札・亡霊の状態の 3&nbsp;つです</h2>
+      <article class="decision">
+        <h3>剣術と魔術の性格づけを、どの方向にしますか</h3>
+        <dl>
+          <div class="d-situation"><dt>何が起きているか</dt><dd>3 つの切り口の案が、どれも設計書と突き合わせて成り立ちました。魔術の土台はほぼ同じで、違うのは、剣術のタイプの付け方と、足す語の数です。</dd></div>
+          <div class="d-reason"><dt>なぜ決める必要があるか</dt><dd>方向が決まらないと、魔術の札 37〜40 種を作る作業が進みません。作業は Issue #934「魔術の札 37〜40 種と合わせ技 約 5 種を設計書に作る」です。属性の割合と特性の割り振りが決まらず、書き始められないためです。札が生む札の対応表も、作る側をどちらの札にするかが決まりません。対応表は Issue #933「ある札を使うと、決まった別の札が生まれる効果を入れる」で決めます。</dd></div>
+          <div class="d-options"><dt>選ぶと何が起きるか</dt><dd><ul>
+            <li><b>間合いと役割を土台に、タイプの名前を添える</b>: 性格は「剣術は読んで回収し、魔術は離れて状態を残す」にします。配り方の決まり 3 行を魔術の設計書に書きます。剣術の 4 つのタイプ（足・乱し・受け・斬り）は、札の表の分類の列にだけ置き、画面には出しません。魔術は 3 系統で呼びます。足す規則は 0 で、足す語はタイプの名前 4 つです。剣術の書き換えは、大上段と伸び突きの 2 枚です。</li>
+            <li><b>間合いと役割で分ける案だけにする</b>: タイプの名前は付けません。足す規則も語も 0 です。剣術の書き換えは 2 枚です。剣術の札を呼ぶ言葉は、いまの属性と柱のままになります。</li>
+            <li><b>系統とタイプで呼ぶ案にする</b>: 剣術の札は 1 枚も書き換えません。タイプの名前 4 語を足し、画面にも出すなら印が 1 つ増えます。特性の割り振りは「剣術はいまの場面を読み、魔術は前に置いたものを読む」になります。</li>
+            <li><b>効く時間で分ける案にする</b>: 性格は「剣術は今効き、魔術は遅れて残る」にします。足す規則は 0 で、「遅れ」の面を足すなら規則 1・語 1・画面の印 1 が増えます。間合いの 4 つのマスの配分を、魔術の近い札で埋め直す必要があります。</li>
+          </ul></dd></div>
+          <div class="d-pick"><dt>推奨と根拠</dt><dd><p class="d-choice">間合いと役割を土台に、タイプの名前を添える</p><p class="d-basis">足す規則が 0 で、こうだいさんの「規則はなるべく足さない」に合います。剣術のタイプは、64 種がもれなく分かれると確かめられた 4 つ（足・乱し・受け・斬り）を使います。間合いと役割で分ける案の 5 つのタイプは、物差しが重なると分かったためです。</p></dd></div>
+        </dl>
+      </article>
+      <article class="decision">
+        <h3>敵の術が由来の剣術の札を、魔術に移しますか</h3>
+        <dl>
+          <div class="d-situation"><dt>何が起きているか</dt><dd>魔術の札は「敵の術を写したもの」と決まりました。ところが、いまの剣術の札にも、敵の術が由来の札があります。大黒蛇・獄竜・歪みの根の固有の札 9 枚と、竜王の固有の 3 枚（竜息・竜吼・竜鱗の構え）です。竜吼は「鈍足 2 + 威圧 2、届く 2〜3」で、案が作った竜の魔術の見本とほぼ同じ札でした。</dd></div>
+          <div class="d-reason"><dt>なぜ決める必要があるか</dt><dd>決まらないと、魔術の札 37〜40 種の数え方と、柱ごとの札の数が定まりません。竜の息と咆哮を写す魔術の札を作ると、竜息・竜吼と重なります。同じ条件と効果の組は 3 枚までなので、重なる札は枠も使います。</dd></div>
+          <div class="d-options"><dt>選ぶと何が起きるか</dt><dd><ul>
+            <li><b>剣術のまま残す</b>: いまの札は動かしません。魔術の札は、剣術に無い形（離れて状態だけを付ける札、引く札、攻撃のたびに状態を付ける構え）から作ります。竜の息と咆哮は、竜息・竜吼と重ならない形にします。「敵の由来だった札を残すか」は、Issue #992「敵を倒して習得する札をやめ、探索のイベントと成長（ひらめき）で習得する形にする」の未決のままです。</li>
+            <li><b>術らしい由来の 7 枚を魔術に移す</b>: 司祭の祈り・遠間の構え・根渡り・棘の一射・根縛り・竜息・竜吼に術の印を付けます。系統は魔術に替えます。剣術は 59 種になり、魔術の新しい札は 30〜33 種で足ります。剣術の札の設計書の集計と、柱ごとの枚数を数え直します。</li>
+            <li><b>習得の形（Issue #992）と一緒に決める</b>: いまは決めず、敵の由来だった札を残すかどうかの判断と合わせます。魔術の札づくりは、竜の系統の札を後回しにして進めます。</li>
+          </ul></dd></div>
+          <div class="d-pick"><dt>推奨と根拠</dt><dd><p class="d-choice">剣術のまま残す</p><p class="d-basis">剣術の札は今日、戦法の柱に合わせて書き換えたばかりで、7 枚を移すと柱ごとの枚数をもう一度数え直すことになります。魔術の札を剣術に無い形から作れば、重なりは作る側で避けられます。</p></dd></div>
+        </dl>
+      </article>
+      <article class="decision">
+        <h3>亡霊の系統が受け持つ状態を、どうしますか</h3>
+        <dl>
+          <div class="d-situation"><dt>何が起きているか</dt><dd>叩き台は、亡霊の系統に俊敏・見切り・集中を割り当てています。ところが、敵の設計書の亡霊の行動は、この 3 語を 1 つも付けません。亡霊の敵が実際に付けるのは、威圧と専用の状態（惑い・凍て・影縫い）です。見切りを付けるのは竜の燐刃の竜兵で、自分に強化を付けるのも竜の統牙の長竜です。</dd></div>
+          <div class="d-reason"><dt>なぜ決める必要があるか</dt><dd>決まらないと、亡霊の魔術の札 12〜13 種に、何の状態を持たせるかが決められません。「敵の術を写した」と言える札の名前と説明も書けません。</dd></div>
+          <div class="d-options"><dt>選ぶと何が起きるか</dt><dd><ul>
+            <li><b>叩き台のまま、読み替えで写す</b>: 亡霊の「跳び」を俊敏に、「受け流し」を見切りに、「魂」を集中に読み替えます。竜吼が、敵の専用の状態（畏れ）を鈍足に読み替えたのと同じやり方です。10 語すべてに持ち主の系統が付きます。敵の設計書は変えません。</li>
+            <li><b>敵が実際に付ける語に合わせる</b>: 亡霊の札は威圧を主に持たせ、俊敏・見切り・集中は系統を決めずに配ります。写しであることは正確になります。威圧は竜の叩き台と重なり、系統の色が薄くなります。</li>
+            <li><b>亡霊の敵の行動に、俊敏・見切り・集中を足す</b>: 敵の設計書の亡霊の行動を書き換え、写す元を作ります。写しの筋は通ります。亡霊の敵は提案の段階なので書き換えはできますが、敵の強さを測り直すことになります。</li>
+          </ul></dd></div>
+          <div class="d-pick"><dt>推奨と根拠</dt><dd><p class="d-choice">叩き台のまま、読み替えで写す</p><p class="d-basis">敵の設計書を変えずに済み、竜吼という前例があります。亡霊は元が人なので、その術だけが人の体になじむ、という理由づけも案の中で出ています。</p></dd></div>
+        </dl>
+      </article>
+    </section>
+
+    <section id="s-refs">
+      <p class="kicker"><span class="no">11</span>参考</p>
+      <ol class="refs">
+        <li id="ref-1">戦闘の設計書 <code>.claude/docs/battle_document/battle_core_v4.md</code> v4.5。§2.3 特性、§5 状態、§7.2 間合い、§7.5 系統ごとの規則、§8.1 戦法の柱</li>
+        <li id="ref-2">剣士の札の設計書 <code>.claude/docs/card_document/swordsman_cards_v4.md</code> v4.13（案を作った時点の版）。§1.1〜§1.4、§2、§3、§4</li>
+        <li id="ref-3">敵の設計書 <code>.claude/docs/enemy_document/enemy_roster_v4.md</code>。§1.6、§2〜§6、§12〜§16</li>
+        <li id="ref-4">世界観の正典 <code>.claude/docs/vision/world-v1.md</code> §2.5 探索者が写す術</li>
+        <li id="ref-5">構想 <code>.claude/docs/vision/concept-v3.md</code> §4.4・§4.5</li>
+      </ol>
+    </section>
+  </main>
+</div>
+
+<script>
+  /* 目次: 現在地の強調(aria-current)、読み終えた節(.done)、上端の進捗バー。節が 3 つ以下で目次がなければ何もしない */
+  (() => {
+    const links = [...document.querySelectorAll('.toc a[data-target]')];
+    const sections = links.map(a => document.getElementById(a.dataset.target));
+    const bar = document.querySelector('.toc-progress > span');
+    if (!links.length || sections.some(s => !s)) return;
+    let ticking = false;
+    const update = () => {
+      ticking = false;
+      const root = document.documentElement;
+      const line = window.innerHeight * 0.3;
+      let idx = 0;
+      sections.forEach((s, i) => { if (s.getBoundingClientRect().top <= line) idx = i; });
+      const max = root.scrollHeight - window.innerHeight;
+      if (max > 0 && window.scrollY >= max - 4) idx = sections.length - 1;
+      links.forEach((a, i) => {
+        a.classList.toggle('done', i < idx);
+        if (i === idx) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current');
+      });
+      if (bar) bar.style.width = (max > 0 ? Math.min(100, (window.scrollY / max) * 100) : 100) + '%';
+      /* 目次が画面より高いとき(.toc は内側でスクロールする)、現在地のリンクを目次の見える範囲に入れる */
+      const box = links[idx].closest('.toc');
+      if (box && box.scrollHeight > box.clientHeight + 1) {
+        const b = box.getBoundingClientRect(), r = links[idx].getBoundingClientRect();
+        if (r.top < b.top) box.scrollTop -= b.top - r.top + 8;
+        else if (r.bottom > b.bottom) box.scrollTop += r.bottom - b.bottom + 8;
+      }
+    };
+    const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+    addEventListener('scroll', onScroll, { passive: true });
+    addEventListener('resize', onScroll);
+    update();
+  })();
+
+  /* テーマ切り替え: data-theme と aria-pressed を更新し、選んだ値を保存する(保存できなくても切り替えは効く) */
+  (() => {
+    const root = document.documentElement;
+    const buttons = [...document.querySelectorAll('[data-theme-set]')];
+    if (!buttons.length) return;
+    const current = () => (root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light');
+    const paint = () => {
+      const now = current();
+      buttons.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.themeSet === now)));
+    };
+    buttons.forEach(b => b.addEventListener('click', () => {
+      const v = b.dataset.themeSet === 'dark' ? 'dark' : 'light';
+      root.setAttribute('data-theme', v);
+      try { localStorage.setItem('html-report-theme', v); } catch (e) {}
+      paint();
+    }));
+    if (root.getAttribute('data-theme') !== current()) root.setAttribute('data-theme', current());
+    /* ホストが後から data-theme を外したら light を付け直す(付いていないと、切り替えボタンごと消える)。付けた値(dark など)には従う */
+    new MutationObserver(() => {
+      if (!root.hasAttribute('data-theme')) root.setAttribute('data-theme', 'light');
+      paint();
+    }).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+    paint();
+  })();
+
+  /* 印刷: ダークを選んでいても、印刷の間だけ light にして、印刷のあとで元に戻す(案の画面の暗い上書きも印刷に出さない)。
+     印刷の間に別の値へ変わっていたら、戻さない。利用者がボタンを押したら、控え(saved)を捨てる
+     (afterprint が来ない環境で、古い控えが残って次の印刷を素通りさせたり、選んだ値を戻したりしない)。
+     保存値(localStorage)は触らない。ボタンの押下表示は印刷の間だけ light になる */
+  (() => {
+    const root = document.documentElement;
+    let saved = null;
+    document.querySelectorAll('[data-theme-set]').forEach(b => b.addEventListener('click', () => { saved = null; }));
+    const toLight = () => {
+      if (saved !== null) return;
+      saved = root.getAttribute('data-theme') || 'light';
+      if (saved !== 'light') root.setAttribute('data-theme', 'light');
+    };
+    const restore = () => {
+      if (saved === null) return;
+      const back = saved;
+      saved = null;
+      if (root.getAttribute('data-theme') === 'light') root.setAttribute('data-theme', back);
+    };
+    addEventListener('beforeprint', toLight);
+    addEventListener('afterprint', restore);
+    try {
+      const mq = matchMedia('print');
+      const onChange = e => (e.matches ? toLight() : restore());
+      if (mq.addEventListener) mq.addEventListener('change', onChange); else if (mq.addListener) mq.addListener(onChange);
+    } catch (e) {}
+  })();
+
+  /* 切り替え式の案パネル: クリックと 矢印キー左右 / Home / End で案を切り替える(選んだタブだけ tabindex=0)。
+     見せない案には inert と aria-hidden を付ける。案の数に依存しない。JS が動かないときは .is-ready が付かず、全案が縦に並ぶ。
+     利用者が最初に切り替えたとき .is-live を付け、フェードはそこから動く(最初の描画では動かさない) */
+  (() => {
+    document.querySelectorAll('[data-variants]').forEach(root => {
+      const tabs = [...root.querySelectorAll('[role="tab"]')];
+      const panels = tabs.map(t => document.getElementById(t.getAttribute('aria-controls')));
+      if (!tabs.length || panels.some(p => !p)) return;
+      const select = (i, focus) => {
+        tabs.forEach((t, j) => {
+          const on = i === j;
+          t.setAttribute('aria-selected', String(on));
+          t.setAttribute('tabindex', on ? '0' : '-1');
+          panels[j].classList.toggle('is-active', on);
+          if (on) { panels[j].removeAttribute('inert'); panels[j].removeAttribute('aria-hidden'); }
+          else { panels[j].setAttribute('inert', ''); panels[j].setAttribute('aria-hidden', 'true'); }
+        });
+        if (focus) tabs[i].focus();
+      };
+      const live = () => root.classList.add('is-live');
+      tabs.forEach((t, i) => {
+        t.addEventListener('click', () => { live(); select(i, false); });
+        t.addEventListener('keydown', e => {
+          if (e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) return;
+          let next = -1;
+          if (e.key === 'ArrowRight') next = (i + 1) % tabs.length;
+          else if (e.key === 'ArrowLeft') next = (i - 1 + tabs.length) % tabs.length;
+          else if (e.key === 'Home') next = 0;
+          else if (e.key === 'End') next = tabs.length - 1;
+          if (next < 0) return;
+          e.preventDefault();
+          live();
+          select(next, true);
+        });
+      });
+      const first = tabs.findIndex(t => t.getAttribute('aria-selected') === 'true');
+      select(first < 0 ? 0 : first, false);
+      root.classList.add('is-ready');
+    });
+  })();
+</script>
+</body>
+</html>
