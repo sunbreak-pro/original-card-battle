@@ -710,8 +710,11 @@ namespace InheritanceCore
             bool carry = lineage.CarriesOver;
             if (carry)
             {
-                // The carry-over (#1025): no trace, no survivor; the record goes on to the next descent.
-                lines.Add(Array.IndexOf(Deaths, ending) >= 0 ? InheritanceText.CarriedAfterFall : InheritanceText.CarriedAfterReturn);
+                // The carry-over (#1025): no trace, no survivor; the record goes on to the next descent — except when the
+                // calendar ran out, where the world (and the lineage holding the record) starts over.
+                lines.Add(ending == LifeEnding.Expired ? InheritanceText.WorldEndedUncarried
+                    : Array.IndexOf(Deaths, ending) >= 0 ? InheritanceText.CarriedAfterFall
+                    : InheritanceText.CarriedAfterReturn);
             }
             else if (Array.IndexOf(Deaths, ending) >= 0)
             {

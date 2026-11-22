@@ -230,6 +230,18 @@ namespace InheritanceCore.Tests
             Assert.That(back.Lines, Is.EqualTo(new[] { InheritanceText.CarriedAfterReturn }));
         }
 
+        [Test]
+        public void TheEndingOfARunOutCalendar_DoesNotPromiseTheRecordGoesOn()
+        {
+            // The trial replaces the whole lineage when the world ends, so the card must say the record is lost.
+            var s = Inheritance.StartLife(Carrying(), 7);
+            var l = Inheritance.RecordEnd(s.Lineage, s.Life, new LifePlace(5, 1, null, RunPhase.Expired), Book(("a", 10, 2)), LifeJournal(), Learned());
+            var view = Inheritance.EndingView(l);
+            Assert.That(view.Ending, Is.EqualTo(LifeEnding.Expired));
+            Assert.That(view.Lines, Is.EqualTo(new[] { InheritanceText.WorldEndedUncarried }));
+            Assert.That(view.Lines, Has.None.Contains("持ち越す"));
+        }
+
         // ---- the save ---------------------------------------------------------------------------------------------
 
         [Test]

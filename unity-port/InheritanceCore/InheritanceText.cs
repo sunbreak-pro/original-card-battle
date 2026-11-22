@@ -185,6 +185,12 @@ namespace InheritanceCore
         /// <summary>The ending card after a life that came back under the carry-over.</summary>
         public const string CarriedAfterReturn = "段も習熟の刻みも、覚えた札・手記も、すべて次の探索へ持ち越す";
 
+        /// <summary>
+        /// The ending card when the calendar ran out under the carry-over. The trial starts a new lineage when the world
+        /// ends (Trial Main.EndLife), so the record does not go on and the card must not promise that it does.
+        /// </summary>
+        public const string WorldEndedUncarried = "世界とともに、届いた段・覚えた札・手記も失われた。次の探索は新しい世界で一から始まる";
+
         /// <summary>The past life's trace line in the hall.</summary>
         public static class TraceStatus
         {
