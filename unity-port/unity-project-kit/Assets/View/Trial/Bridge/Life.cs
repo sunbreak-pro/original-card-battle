@@ -264,6 +264,10 @@ namespace Trial.Bridge
                 // that survivor's 走り書き so the heir starts on a sheet of their own (Inheritance.HeirJournal).
                 Journal = Inheritance.HeirJournal(lifeStart.Journal, lifeStart.JournalFrom).ToJson(),
                 Choice = ChoiceToData(choice, lifeStart.ToolSlots),
+                // The carry-over (#1025): the 段 and the kinds the explorer brings back down. The journal is above (the
+                // record's, less the memo, which the router hands the live life as its memo sheet: LifeStart.Memo).
+                Mastery = lifeStart.Carryover?.Cards.ToList(),
+                Owned = lifeStart.Carryover?.Owned.ToList(),
             };
         }
 
@@ -382,6 +386,9 @@ namespace Trial.Bridge
                 // The pages the heir set out with count among the life's pages from the start, also when the Expedition
                 // begins its life again; they are inherited, not found (InheritedPages, INHERITANCE.md R-27).
                 StartPages = StartPages(start),
+                // The carry-over (#1025): the 段 and the kinds earlier lives grew; none for a life of the generations.
+                StartMastery = start.Mastery,
+                StartOwned = start.Owned,
             };
             var expedition = new Expedition(runStart, DeckFromData(c.Deck), c.BattleToolIds, c.Talent, intel, journal, options);
             intel.Bind(expedition);

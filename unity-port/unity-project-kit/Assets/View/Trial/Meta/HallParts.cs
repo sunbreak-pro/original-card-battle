@@ -934,7 +934,8 @@ namespace Trial.Meta
         internal static RectTransform HeirGen(RectTransform box, HeirView heir, float w)
         {
             RectTransform gen = El(box, "ocbg-meta-heir-gen", HeirGenCss);
-            Span(gen, heir.GenerationLabel, MetaStyle.Text(HeirGenCss), "text");
+            // The carry-over prints no 第 n 代 (HallView.CarriesOver, #1025): 「踏破者」 stands alone.
+            if (!string.IsNullOrEmpty(heir.GenerationLabel)) Span(gen, heir.GenerationLabel, MetaStyle.Text(HeirGenCss), "text");
             Span(gen, InheritanceText.RoleName, MetaStyle.Text(HeirGenCss + HeirGenSpanCss), "span");
             Ocb.Flow(gen, HeirGenCss, null, w, null);
             return gen;

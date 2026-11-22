@@ -821,7 +821,7 @@ namespace InheritanceCore.Tests
             JsonObject First(JsonObject g, string list) => (JsonObject)((List<object?>)g[list]!)[0]!;
 
             ThrowsRule(() => Inheritance.FromJson(null), "not an object");
-            ThrowsRule(() => Inheritance.FromJson(With(g => g["Version"] = 2)), "version");
+            ThrowsRule(() => Inheritance.FromJson(With(g => g["Version"] = Inheritance.SaveVersion + 1)), "version");
             ThrowsRule(() => Inheritance.FromJson(With(g => g["Seed"] = "x")), "seed");
             ThrowsRule(() => Inheritance.FromJson(With(g => First(g, "Lives")["Generation"] = 2)), "out of order");
             ThrowsRule(() => Inheritance.FromJson(With(g => First(g, "Lives")["Ending"] = "Exploring")), "ending");

@@ -62,7 +62,8 @@ namespace Trial.Bridge.Tests
 
                 var parsed = (JsonObject)Json.Parse(good);
                 var lin = (JsonObject)parsed["lineage"];
-                lin["Version"] = (Json.IsNumber(lin["Version"]) ? (int)Json.ToDouble(lin["Version"]) : 1) + 1;
+                // A lineage is written at the oldest version that holds it (#1025): the future is past this build's newest.
+                lin["Version"] = Inheritance.SaveVersion + 1;
                 string future = Json.Stringify(parsed);
                 var variants = new Dictionary<string, string>
                 {

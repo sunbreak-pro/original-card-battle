@@ -248,7 +248,8 @@ namespace Trial.Meta
             _nameRowY = hy;
             _shownName = heir.Name;
             hy += UiNode.Of(nameRow).H + heirGap;
-            if (_lineage.Current == null)
+            // Under the carry-over the same explorer sets out again (#1025): no new name to write.
+            if (_lineage.Current == null && !_view.CarriesOver)
             {
                 // concept-v3 §16.1 (2026-11-03): the drawn name is the default, and the player may write over it. The
                 // field takes the 装束 column's width so the figure keeps its place on the right.

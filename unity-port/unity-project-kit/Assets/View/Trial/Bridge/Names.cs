@@ -94,15 +94,18 @@ namespace Trial.Bridge
 
         /// <summary>
         /// The options Inheritance.RecordEnd takes for this life: the display names (CardName, EnemyName), and 歪みの根's
-        /// cards when the life cleared the dungeon (<paramref name="state"/>.Phase is Completed).
+        /// cards when the life cleared the dungeon (<paramref name="state"/>.Phase is Completed). Owned is the kinds the
+        /// life learned beyond the initial ones, which only the carry-over reads (#1025).
         /// </summary>
         // js: app/names.js:39
         public static EndOptions EndOptions(Expedition expedition, ExplorationState state)
         {
+            var initial = new HashSet<string>(Expedition.InitialKinds, StringComparer.Ordinal);
             var opts = new EndOptions
             {
                 CardName = (id, rank) => CardName(id, rank),
                 EnemyName = EnemyName,
+                Owned = expedition?.Owned.Where(id => !initial.Contains(id)).OrderBy(id => id, StringComparer.Ordinal).ToList(),
             };
             if (state != null && state.Phase == RunPhase.Completed) opts.RootCards = RootCards();
             return opts;

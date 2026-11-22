@@ -312,8 +312,9 @@ namespace InheritanceCore
         public HallView(string title, string lead, string empty, string nextHeirHeading, HeirView nextHeir, string pastLivesHeading,
             IEnumerable<PastLifeView> pastLives, string traceHeading, string noTraces, IEnumerable<TraceView> traces,
             IEnumerable<string> traceRules, string survivorHeading, SurvivorView? survivor, SurvivorSpentView? survivorSpent,
-            string startButton)
+            string startButton, bool carriesOver = false)
         {
+            CarriesOver = carriesOver;
             Title = title;
             Lead = lead;
             Empty = empty;
@@ -349,6 +350,12 @@ namespace InheritanceCore
         public SurvivorView? Survivor { get; }
         public SurvivorSpentView? SurvivorSpent { get; }
         public string StartButton { get; }
+
+        /// <summary>
+        /// The lineage plays the carry-over (#1025): the same explorer sets out again, so the hall takes no new name and
+        /// prints no 第 n 代 over the next one. Not in <see cref="ToJson"/>, which stays the JS's.
+        /// </summary>
+        public bool CarriesOver { get; }
 
         public JsonObject ToJson() => new JsonObject
         {
@@ -501,12 +508,13 @@ namespace InheritanceCore
         }
 
         // js: core/inheritance/Inheritance.js:904
-        private static HeirView HeirViewOf(Heir heir, string reason)
+        private static HeirView HeirViewOf(Heir heir, string reason, bool carriesOver = false)
         {
             var attire = AttireOf(heir.Tier);
             return new HeirView(
                 heir.Generation,
-                InheritanceText.GenerationLabel(heir.Generation),
+                // the same explorer sets out again under the carry-over (#1025): no 第 n 代 over the name
+                carriesOver ? "" : InheritanceText.GenerationLabel(heir.Generation),
                 heir.Name,
                 InheritanceText.HeirTitle(heir.Name),
                 InheritanceText.HeirLine(heir.Generation, heir.Name),
@@ -624,13 +632,15 @@ namespace InheritanceCore
         public static InheritanceCore.HallView HallView(Lineage lineage)
         {
             var heir = NextHeir(lineage);
-            var survivor = SurvivorViewOf(lineage);
+            bool carry = lineage.CarriesOver;
+            // Under the carry-over (#1025) no survivor's bonus comes: the block would promise what StartLife does not give.
+            var survivor = carry ? null : SurvivorViewOf(lineage);
             return new InheritanceCore.HallView(
-                InheritanceText.HallTitle,
+                carry ? InheritanceText.BaseTitle : InheritanceText.HallTitle,
                 InheritanceText.HallLead,
                 lineage.Lives.Count == 0 ? InheritanceText.HallEmpty : "",
                 InheritanceText.NextHeirHeading,
-                HeirViewOf(heir, TierReason(LastLife(lineage))),
+                HeirViewOf(heir, TierReason(LastLife(lineage)), carry),
                 InheritanceText.PastLivesHeading,
                 lineage.Lives.Reverse().Select(l => PastLifeViewOf(lineage, l)),
                 InheritanceText.TraceHeading,
@@ -639,8 +649,9 @@ namespace InheritanceCore
                 InheritanceText.TraceRules,
                 InheritanceText.SurvivorHeading,
                 survivor,
-                survivor != null ? null : SurvivorSpentViewOf(lineage),
-                InheritanceText.StartButton);
+                survivor != null || carry ? null : SurvivorSpentViewOf(lineage),
+                InheritanceText.StartButton,
+                carry);
         }
 
         /// <summary>
@@ -696,7 +707,13 @@ namespace InheritanceCore
             var lines = new List<string>();
             string layerTitle = InheritanceText.LayerTitle(layer, LayerName(lineage, layer));
             var trace = life.TraceId != null ? lineage.Traces.FirstOrDefault(t => t.Id == life.TraceId) : null;
-            if (Array.IndexOf(Deaths, ending) >= 0)
+            bool carry = lineage.CarriesOver;
+            if (carry)
+            {
+                // The carry-over (#1025): no trace, no survivor; the record goes on to the next descent.
+                lines.Add(Array.IndexOf(Deaths, ending) >= 0 ? InheritanceText.CarriedAfterFall : InheritanceText.CarriedAfterReturn);
+            }
+            else if (Array.IndexOf(Deaths, ending) >= 0)
             {
                 lines.Add(InheritanceText.TraceLeft(layerTitle));
                 if (trace != null && CountCandidates(trace).Total > 0)
@@ -738,7 +755,7 @@ namespace InheritanceCore
                 InheritanceText.HeirLine(life.Generation, life.Name),
                 lines,
                 InheritanceText.NextHeirLine(heir.Generation, heir.Name),
-                InheritanceText.ToHallButton);
+                carry ? InheritanceText.ToBaseButton : InheritanceText.ToHallButton);
         }
     }
 }
