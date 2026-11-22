@@ -1,0 +1,1311 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>カード設計の 7 つの選択</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* 左に追従する目次 + 右に 1 本の読み筋(題 → 結論 → 理由 → 根拠 → 参考)。
+     ライトが既定。ダークは右上のボタンで選んだときだけ使う(OS の設定には追従しない)。
+     色は :root とダークのブロックにだけ hex で書き、ほかはすべてトークン(var(--…))で当てる。 */
+  :root {
+    --ground: #f6f8f9; --panel: #ffffff; --ink: #1c2327; --muted: #56636b;
+    --line: #d9e0e3; --accent: #0e6b74; --accent-ink: #ffffff; --accent-soft: #e2f0f0;
+    --row: #f1f5f6; --ok: #2c7a4b; --warn: #966010; --stop: #a23c3c; --idle: #e3e8eb; --code-bg: #eef3f4;
+    --shadow: 0 1px 2px rgba(20, 40, 45, .05), 0 6px 18px rgba(20, 40, 45, .04);
+    --font-body: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+    --font-mono: "IBM Plex Mono", "Consolas", "Courier New", monospace;
+    /* 余白のスケール */
+    --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px; --sp-7: 48px; --sp-8: 72px; --sp-9: 96px;
+    /* チャート: カテゴリ(系列そのものが主題のときだけ使う。ふつうは accent 1 本 + グレー) */
+    --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --c4: #eda100; --c5: #e87ba4; --c6: #008300;
+    /* チャート: 連続(1 色相。明るい → 濃い)と、各段に載せる文字の色 */
+    --seq-1: #cde2fb; --seq-2: #86b6ef; --seq-3: #3987e5; --seq-4: #1c5cab; --seq-5: #0d366b;
+    --seq-1-ink: #1c2327; --seq-2-ink: #1c2327; --seq-3-ink: #0b1114; --seq-4-ink: #ffffff; --seq-5-ink: #ffffff;
+    /* チャート: 罫線と軸(軸は棒の「その他」の塗りにも使う) */
+    --grid: #e4e9ec; --axis: #75848b;
+    color-scheme: light;
+  }
+  @media not print {
+    :root[data-theme="dark"] {
+      --ground: #111618; --panel: #1a2125; --ink: #e4e9eb; --muted: #99a6ad;
+      --line: #2c363b; --accent: #5fc4cc; --accent-ink: #0f1c1e; --accent-soft: #163338;
+      --row: #1e262a; --ok: #6fc48f; --warn: #e0a94a; --stop: #e07a7a; --idle: #2c363b; --code-bg: #0f1417;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .35);
+      --c1: #3987e5; --c2: #d95926; --c3: #199e70; --c4: #c98500; --c5: #d55181; --c6: #008300;
+      --seq-1: #1f3a57; --seq-2: #2a5a92; --seq-3: #3987e5; --seq-4: #86b6ef; --seq-5: #cde2fb;
+      --seq-1-ink: #e4e9eb; --seq-2-ink: #ffffff; --seq-3-ink: #0b1114; --seq-4-ink: #0b1114; --seq-5-ink: #0b1114;
+      --grid: #2a3439; --axis: #7f8d94;
+      color-scheme: dark;
+    }
+  }
+  :root { --gap-section: var(--sp-8); --gap-card: var(--sp-5); }
+  @media (max-width: 599px) { :root { --gap-section: var(--sp-7); --gap-card: var(--sp-4); } }
+
+  * { box-sizing: border-box; }
+  /* scroll-padding-top: 固定のテーマボタン(下端 56px)に、目次・脚注・Shift+Tab で飛んだ先を隠さない(節ごとの scroll-margin は持たない) */
+  html { scroll-behavior: smooth; scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 72px); }
+  body { margin: 0; background: var(--ground); color: var(--ink); font-family: var(--font-body);
+    font-size: 16px; line-height: 1.9; -webkit-font-smoothing: antialiased; }
+  code, pre, .mono { font-family: var(--font-mono); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { transition: none !important; animation: none !important; }
+  }
+
+  /* テーマ切り替え(右上に固定。.page の上に 64px の予約余白を取って本文と重ねない)。
+     JS が data-theme を付けるまで出さない(JS が動かないとき、効かないボタンを残さない)。印刷では出さない */
+  .themeswitch { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 12px); right: calc(env(safe-area-inset-right, 0px) + 16px); z-index: 50;
+    display: none; gap: 2px; padding: 3px; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 8px; box-shadow: var(--shadow); }
+  @media screen { :root[data-theme] .themeswitch { display: inline-flex; } }
+  .themeswitch button { appearance: none; font: inherit; font-size: 14px; line-height: 1; height: 36px; min-width: 64px; padding: 0 14px;
+    border: 0; border-radius: 4px; background: transparent; color: var(--muted); cursor: pointer; }
+  .themeswitch button:hover { background: var(--row); color: var(--ink); }
+  .themeswitch button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+
+  /* レイアウト: 目次 250px + 本文 最大 880px。本文の列は子の間を gap で空ける */
+  .page { max-width: 1226px; margin: 0 auto; padding: 64px 24px 96px; display: grid;
+    grid-template-columns: 250px minmax(0, 880px); gap: var(--sp-7); justify-content: center; }
+  .page.no-toc { grid-template-columns: minmax(0, 880px); }
+  .main { min-width: 0; display: flex; flex-direction: column; gap: var(--sp-6); }
+  section { display: flex; flex-direction: column; gap: var(--sp-5); min-width: 0; }
+  /* 節と節の間 = main の gap(32px) + この margin = 72px(幅 600px 未満は 48px) */
+  .main > section { margin-top: calc(var(--gap-section) - var(--sp-6)); }
+  /* 幅 999px 以下は 1 列。並びは 題の面 → 結論カード → 目次 → 節(結論カードがない報告書は 題の面 → 目次 → 節) */
+  @media (max-width: 999px) {
+    .page { display: flex; flex-direction: column; gap: var(--sp-6); padding: 64px 16px 72px; }
+    .main { display: contents; }
+    .hero { order: -2; }
+    .main > :is(.verdicts, .tiles) { order: -1; }
+  }
+
+  /* 目次 */
+  .toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 24px); align-self: start;
+    max-height: calc(100vh - 48px); overflow-y: auto; font-size: 14px; }
+  .toc-title { font-size: 13px; font-weight: 700; color: var(--muted); margin: 0 0 var(--sp-2); }
+  .toc-progress { height: 3px; background: var(--idle); border-radius: 4px; overflow: hidden; margin: 0 0 var(--sp-3); }
+  .toc-progress > span { display: block; height: 100%; width: 0; background: var(--accent); transition: width .15s linear; }
+  .toc ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+  .toc a { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; align-items: start; padding: 8px 10px;
+    border-radius: 4px; color: var(--muted); text-decoration: none; line-height: 1.5; border-left: 3px solid transparent; }
+  .toc a:hover { background: var(--row); color: var(--ink); }
+  /* .toc は overflow-y: auto で横も切るので、焦点の輪は外ではなくリンクの内側に描く */
+  .toc a:focus-visible { outline-offset: -2px; }
+  .toc .lbl { display: block; font-size: 14px; }
+  .toc .toc-claim { display: block; font-size: 13px; color: var(--muted); font-weight: 400; line-height: 1.5; }
+  .toc a[aria-current="location"] .toc-claim { color: var(--ink); }
+  .toc .no { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 13px;
+    font-weight: 700; font-family: var(--font-mono); background: var(--idle); color: var(--ink); }
+  .toc a.done .no { background: transparent; color: var(--ok); box-shadow: inset 0 0 0 1.5px var(--ok); }
+  .toc a.done .no::before { content: "✓"; font-family: var(--font-body); }
+  .toc a.done .no > span { display: none; }
+  .toc a[aria-current="location"] { background: var(--accent-soft); color: var(--accent); font-weight: 700; border-left-color: var(--accent); }
+  .toc a[aria-current="location"] .no { background: var(--accent); color: var(--accent-ink); box-shadow: none; }
+  @media (max-width: 999px) {
+    .toc { order: 0; position: static; max-height: none; align-self: stretch; }
+  }
+
+  /* 題の面 */
+  .hero { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow);
+    padding: 40px 44px; display: flex; flex-direction: column; gap: var(--sp-4); }
+  @media (max-width: 599px) { .hero { padding: 24px 20px; } }
+  .eyebrow { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-3); align-items: center; font-size: 13px; color: var(--muted); font-weight: 700; margin: 0; }
+  h1 { font-size: clamp(26px, 3.4vw, 36px); line-height: 1.4; margin: 0; text-wrap: balance; font-weight: 700; letter-spacing: .01em; }
+  .lede { font-size: 17px; color: var(--muted); margin: 0; }
+  .meta { display: flex; flex-direction: row; flex-wrap: wrap; gap: var(--sp-2) var(--sp-5); margin: 0; padding: var(--sp-4) 0 0; border-top: 1px solid var(--line);
+    font-size: 13px; color: var(--muted); list-style: none; }
+  .meta b { color: var(--ink); font-weight: 700; margin-right: 4px; font-variant-numeric: tabular-nums; }
+
+  /* 見出しと本文。本文の 1 行は全角 40 字前後(40em)。図・表・カードは列の幅いっぱい */
+  .kicker { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--accent); font-weight: 700; margin: 0; max-width: none; }
+  .kicker .no { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+  .kicker::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  h2 { font-size: 24px; line-height: 1.5; margin: 0; text-wrap: balance; }
+  /* 小さな分類名(kicker)と主張(h2)は近づけて 1 組に見せる。この 1 か所だけ負の margin で gap を詰める */
+  .kicker + h2 { margin-top: calc(var(--sp-3) - var(--sp-5)); }
+  h3 { font-size: 17px; line-height: 1.5; margin: 0; }
+  p { margin: 0; }
+  p, ul, ol { max-width: 40em; }
+  ul, ol { padding-left: 1.4em; margin: 0; display: flex; flex-direction: column; gap: var(--sp-2); }
+  /* flex でない箱(.callout・.finding・li・td・dd)の中で段落や一覧が続くとき、間隔が 0 にならないようにする */
+  :is(.callout, .finding, li, td, dd) > :is(p, ul, ol) + :is(p, ul, ol) { margin-top: var(--sp-4); }
+  /* 日本語の折り返し: 見出し・リード文・カードの文は語や句の途中で割らない。段落の最終行を 1〜2 字にしない。
+     対応していないブラウザでは無視され、従来どおりに折り返す */
+  h1, h2, h3, .lede, .verdict p, .fig > figcaption, .compare figcaption, .hbar-label, .tile .l, .vhead p { word-break: auto-phrase; }
+  .page :is(p, li, td, dd, caption) { word-break: auto-phrase; }
+  p, li, td, dd, caption { text-wrap: pretty; }
+  /* 英単語・ファイル名・製品名を折り返させない(見出し・カード・図のラベルは全角 12 字以内にするか、これで守る) */
+  .nobr { white-space: nowrap; }
+  a { color: var(--accent); }
+  sup.ref { font-size: 13px; margin-left: 1px; line-height: 0; }
+  sup.ref a { text-decoration: none; }
+
+  /* 大きな塊(図・表・カード列・案パネル)の上下は、gap(24px) + この margin(8px) = 32px 以上 */
+  .fig, .tablewrap, .rowcards, .decision, .verdicts, .tiles, .compare, .split, .variants, .callout, .steps, pre { margin-block: var(--sp-2); }
+  .main > section > :last-child { margin-bottom: 0; }
+
+  /* 部品: 結論カード・チップ・数字タイル */
+  .verdicts, .tiles, .meta, .legend, .hbar, .steps, .refs, .rowcards, .toc ol { max-width: none; }
+  .verdicts { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--gap-card); padding: 0; list-style: none; }
+  .verdict { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); padding: var(--sp-5);
+    display: flex; flex-direction: column; gap: var(--sp-3); min-width: 0; break-inside: avoid; }
+  .verdict .tag { font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: var(--sp-2); }
+  .verdict .tag::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+  .verdict.now .tag { color: var(--ok); } .verdict.later .tag { color: var(--warn); } .verdict.skip .tag { color: var(--stop); }
+  .verdict h3 { font-size: 18px; text-wrap: balance; }
+  .verdict p { color: var(--muted); font-size: 15px; line-height: 1.8; }
+  .chip { display: inline-block; border-radius: 4px; padding: 1px 8px; font-size: 13px; font-weight: 700; line-height: 1.6; color: var(--accent-ink); white-space: nowrap; }
+  .chip.ok { background: var(--ok); } .chip.warn { background: var(--warn); } .chip.stop { background: var(--stop); }
+  .chip.idle { background: var(--idle); color: var(--ink); } .chip.kind { background: var(--accent); }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: var(--gap-card); padding: 0; list-style: none; }
+  .tile { background: var(--panel); border: 1px solid var(--line); border-top: 4px solid var(--idle); border-radius: 8px; box-shadow: var(--shadow);
+    padding: var(--sp-4) var(--sp-5) var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-1); }
+  .tile.ok { border-top-color: var(--ok); } .tile.warn { border-top-color: var(--warn); } .tile.stop { border-top-color: var(--stop); }
+  .tile .n { font-size: 32px; font-weight: 700; line-height: 1.3; font-family: var(--font-mono); display: block; white-space: nowrap; }
+  /* 数字の後ろの単位(36<span class="u">か月</span>)は小さく添える。数字と単位が別の行に割れない */
+  .tile .n .u { font: 700 16px var(--font-body); margin-left: 4px; }
+  .tile .l { font-size: 14px; line-height: 1.6; color: var(--muted); text-wrap: balance; }
+  .dist { display: flex; height: 10px; border-radius: 4px; overflow: hidden; background: var(--idle); gap: 2px; }
+  .dist > span { display: block; height: 100%; }
+  .dist .ok { background: var(--ok); } .dist .warn { background: var(--warn); } .dist .stop { background: var(--stop); } .dist .idle { background: var(--muted); }
+  /* 進捗バー(HTML)。svg の帯(rect.bar、.chart .bar)には当てない: CSS の height が rect の height 属性を上書きするため */
+  .bar:not(rect) { height: 8px; background: var(--idle); border-radius: 4px; overflow: hidden; min-width: 80px; }
+  .bar:not(rect) > span { display: block; height: 100%; background: var(--accent); }
+  .compare { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--gap-card); }
+  .compare > figure { margin: 0; min-width: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: var(--sp-5);
+    display: flex; flex-direction: column; gap: var(--sp-3); }
+  .compare figcaption { font-size: 14px; font-weight: 700; color: var(--muted); }
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: var(--sp-4) var(--sp-5); overflow-x: auto; font-size: 14px; line-height: 1.7; }
+  pre code { background: none; padding: 0; }
+  p code, li code, td code { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: .9em; }
+  .callout { border: 1px solid var(--line); background: var(--accent-soft); padding: var(--sp-5); border-radius: 8px; font-size: 15px; line-height: 1.8; }
+  .callout strong { color: var(--accent); }
+  .finding { border-left: 3px solid var(--line); padding: var(--sp-1) 0 var(--sp-1) var(--sp-4); }
+  .finding.stop { border-left-color: var(--stop); } .finding.warn { border-left-color: var(--warn); } .finding.ok { border-left-color: var(--ok); }
+  .note { font-size: 14px; color: var(--muted); }
+
+  /* 表: セルの内側は 12px × 20px */
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); box-shadow: var(--shadow); }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; line-height: 1.7; font-variant-numeric: tabular-nums; }
+  caption { caption-side: top; text-align: left; font-weight: 700; font-size: 15px; line-height: 1.7; padding: var(--sp-4) 20px var(--sp-3); border-bottom: 1px solid var(--line); }
+  th, td { text-align: left; padding: 12px 20px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 13px; color: var(--muted); background: var(--row); font-weight: 700; white-space: nowrap; }
+  tbody tr:nth-child(even) td { background: var(--row); }
+  th.num, td.num { text-align: right; white-space: nowrap; font-family: var(--font-mono); }
+  td.nowrap { white-space: nowrap; }
+  tr { break-inside: avoid; }
+  tr:last-child td { border-bottom: 0; }
+  td.state { white-space: nowrap; font-weight: 700; }
+  td.state.wrap { white-space: normal; } /* 結果が文のセル(td class="state wrap yes")。短い状態語は wrap なしで折り返さない */
+  td.state.yes { color: var(--ok); } td.state.no { color: var(--stop); } td.state.maybe { color: var(--warn); }
+  /* 3 列以上の表は、狭い幅で列が数文字に潰れないよう、表の枠の中で横に動かす。列が多いほど最小幅を広げる(後ろの規則が勝つ)。
+     :where() で詳しさを 0 にしてあるので、table.stack や印刷の min-width: 0 が素直に勝つ */
+  .tablewrap > table:where(:has(thead th:nth-child(3))) { min-width: 36em; }
+  .tablewrap > table:where(:has(thead th:nth-child(4))) { min-width: 44em; }
+  .tablewrap > table:where(:has(thead th:nth-child(5))) { min-width: 48em; }
+  /* 標題は、表が横に動いても枠の見えている幅に留めて左端に残す。幅は枠の幅(100cqw)で決める。
+     container query の単位が使えない古いブラウザでは、幅 999px 以下だけ画面の幅から近似する */
+  .tablewrap caption { position: sticky; left: 0; box-sizing: border-box; }
+  @media (max-width: 999px) { .tablewrap caption { width: min(100%, calc(100vw - 34px)); } }
+  @supports (width: 1cqw) {
+    .tablewrap { container-type: inline-size; }
+    .tablewrap caption { width: 100cqw; }
+  }
+  /* 列が 4 つ以上の表(table class="wide")。列を押し縮めて 1 行を数文字にせず、列の幅を保ったまま、表の枠(.tablewrap)の中だけを横に動かす。
+     文のセルは全角 12 字ぶんに左右の余白(40px)を足した幅を、列の最小幅にする(足りなければ枠の中で横に動く)。
+     Chrome はセルの width を「望ましい幅」として表の幅に合わせて縮めるので min-width も付ける(Firefox は width を最小幅として扱う)。
+     数値・状態語・折り返さない語のセルは指定せず、語の幅に任せる。
+     :where() で詳しさを下げてあるので、幅 599px 以下の table.stack と印刷の指定が素直に勝つ */
+  table.wide :where(td:not(.num, .nowrap, .state:not(.wrap))) { width: calc(12em + 40px); min-width: calc(12em + 40px); }
+  /* 縦積みの表(table class="stack"。各 td に data-label="列の名前")。幅 599px 以下では、行を縦に積み、
+     セルの前に data-label の文字を出す。thead は見えない位置に置く(読み上げには残る)。
+     全セルが短い表だけに付ける。長い文の比較は .rowcards にする。数字が主体の表と評価表(table.heat)には付けない */
+  @media (max-width: 599px) {
+    .tablewrap > table.stack { min-width: 0; }
+    table.stack colgroup { display: none; }
+    table.stack tbody, table.stack tr, table.stack td { display: block; }
+    table.stack thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    table.stack td { border-bottom: 0; padding: var(--sp-1) var(--sp-5); text-align: left; white-space: normal; width: auto; min-width: 0; }
+    table.stack td[data-label]::before { content: attr(data-label); display: block; font-size: 13px; line-height: 1.6; font-weight: 700; color: var(--muted); }
+    table.stack td:first-child { padding-top: var(--sp-3); font-weight: 700; }
+    table.stack td:last-child { padding-bottom: var(--sp-3); border-bottom: 1px solid var(--line); }
+    table.stack tbody tr:last-child td:last-child { border-bottom: 0; }
+  }
+
+  /* 行のカード(ul class="rowcards")。文章が主体の比較は表にせず、1 件を 1 枚のカードにして、題(h3)の下に項目名(dt)と文(dd)を積む。
+     幅 760px 以上は項目名を左の列に置く(狭い列に長い文を押し込まない) */
+  .rowcards { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--gap-card); }
+  .rowcards > li { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); padding: var(--sp-5);
+    display: flex; flex-direction: column; gap: var(--sp-3); min-width: 0; break-inside: avoid; }
+  .rowcards dl, .decision dl { margin: 0; display: flex; flex-direction: column; gap: var(--sp-3); }
+  .rowcards dl > div, .decision dl > div { display: flex; flex-direction: column; gap: var(--sp-1); min-width: 0; }
+  .rowcards dt, .decision dt { font-size: 13px; font-weight: 700; line-height: 1.6; color: var(--muted); }
+  .rowcards dd, .decision dd { margin: 0; font-size: 15px; line-height: 1.8; }
+  @media (min-width: 760px) {
+    .rowcards dl > div, .decision dl > div { display: grid; grid-template-columns: 11em minmax(0, 1fr); gap: var(--sp-4); align-items: baseline; }
+  }
+
+  /* 判断カード(article class="decision")。判断 1 つを 1 枚にし、4 つの欄を同じ順で並べる:
+     .d-situation 何が起きているか / .d-reason なぜ決める必要があるか / .d-options 選ぶと何が起きるか(選択肢ごとの li) /
+     .d-pick 推奨と根拠(.d-choice 推す選択肢の名前、.d-basis 根拠)。欄が欠けるか空なら、検査が ERROR にする */
+  .decision { background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 8px; box-shadow: var(--shadow);
+    padding: var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; break-inside: avoid; }
+  .decision h3 { font-size: 18px; text-wrap: balance; }
+  .decision dl { gap: var(--sp-4); }
+  .decision .d-pick { background: var(--accent-soft); border-radius: 4px; padding: var(--sp-3) var(--sp-4); }
+  .decision .d-pick dt { color: var(--accent); }
+  .decision .d-choice { font-weight: 700; }
+  .decision .d-basis { margin-top: var(--sp-1); }
+
+  /* 図の枠: 図の主張(figcaption)を図の上に出す */
+  .fig { margin-inline: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow);
+    padding: var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; overflow-x: auto; break-inside: avoid; }
+  .fig > figcaption { font-size: 16px; font-weight: 700; line-height: 1.6; color: var(--ink); }
+  .fig-note { font-size: 13px; line-height: 1.7; color: var(--muted); max-width: none; }
+  /* svg.chart は幅 640px 未満では横に動く。SVG だけを <div class="chartscroll"> で包み、図の主張(figcaption)・凡例・注記は動かさない。
+     動かせる側の端に影を出して知らせる(動かせるときだけ見える。白(--panel)の覆いが中身と一緒に動き、端まで来ると影を隠す)。
+     右端は初めに切れて見えるので、値は図の左側に置く。color-mix が効かないブラウザでは影を出さず、.fig の白がそのまま残る */
+  .chartscroll { overflow-x: auto; min-width: 0; }
+  @supports (background: color-mix(in srgb, red 50%, transparent)) {
+    .chartscroll {
+      background:
+        linear-gradient(to right, var(--panel) 40%, transparent) left center / 32px 100% no-repeat local,
+        linear-gradient(to left, var(--panel) 40%, transparent) right center / 32px 100% no-repeat local,
+        radial-gradient(farthest-side at 0 50%, color-mix(in srgb, var(--ink) 24%, transparent), transparent) left center / 12px 100% no-repeat scroll,
+        radial-gradient(farthest-side at 100% 50%, color-mix(in srgb, var(--ink) 24%, transparent), transparent) right center / 12px 100% no-repeat scroll,
+        var(--panel);
+    }
+  }
+
+  /* 横棒グラフ: 大きさの比較。値は右に文字でも書く。強調する 1 行だけ accent、ほかはグレー */
+  .hbar { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--sp-3); }
+  .hbar-row { display: grid; grid-template-columns: minmax(8em, 14em) minmax(0, 1fr) 4.5em; gap: var(--sp-2) var(--sp-4); align-items: center; }
+  .hbar-label { font-size: 15px; line-height: 1.6; min-width: 0; }
+  .hbar-track { display: block; height: 14px; background: var(--idle); border-radius: 4px; overflow: hidden; }
+  .hbar-fill { display: block; height: 100%; border-radius: 4px; background: var(--bar, var(--axis)); }
+  .hbar-val { font-family: var(--font-mono); font-size: 15px; text-align: right; font-variant-numeric: tabular-nums; }
+  .hbar .is-focus { --bar: var(--accent); }
+  .hbar-row.is-focus .hbar-label, .hbar-row.is-focus .hbar-val { font-weight: 700; }
+  .hbar .c1 { --bar: var(--c1); } .hbar .c2 { --bar: var(--c2); } .hbar .c3 { --bar: var(--c3); }
+  .hbar .c4 { --bar: var(--c4); } .hbar .c5 { --bar: var(--c5); } .hbar .c6 { --bar: var(--c6); }
+  @media (max-width: 599px) {
+    .hbar-row { grid-template-columns: minmax(0, 1fr) 4em; }
+    .hbar-label { grid-column: 1 / -1; }
+  }
+  /* 文と図の並び(.split)の中の横棒: 列が 325〜490px しかなく、既定のラベル列(最大 14em)だと棒が 0px になる。
+     ラベルを棒の上の行に出して、棒と値だけを並べる(幅 760px 未満は .split が 1 列になるので、既定の並びのまま) */
+  @media (min-width: 760px) {
+    .split .hbar-row { grid-template-columns: minmax(0, 1fr) 3.5em; gap: var(--sp-1) var(--sp-3); }
+    .split .hbar-label { grid-column: 1 / -1; }
+  }
+
+  /* 凡例: 2 系列以上のとき必須 */
+  .legend { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: row; flex-wrap: wrap; gap: var(--sp-2) var(--sp-5); font-size: 14px; line-height: 1.6; color: var(--muted); }
+  .legend li { display: inline-flex; align-items: center; gap: var(--sp-2); }
+  .sw { display: inline-block; width: 12px; height: 12px; border-radius: 4px; background: var(--axis); flex: none; }
+  .sw.c1 { background: var(--c1); } .sw.c2 { background: var(--c2); } .sw.c3 { background: var(--c3); }
+  .sw.c4 { background: var(--c4); } .sw.c5 { background: var(--c5); } .sw.c6 { background: var(--c6); }
+
+  /* SVG チャート: viewBox の幅は 640 にそろえる(最小幅 640px で等倍になり、文字は 13px を下回らない) */
+  svg.chart { display: block; width: 100%; min-width: 640px; height: auto; overflow: visible; }
+  .chart .grid { stroke: var(--grid); stroke-width: 1; fill: none; }
+  .chart .axis { stroke: var(--axis); stroke-width: 1.5; fill: none; }
+  .chart .tick { stroke: var(--axis); stroke-width: 1; fill: none; }
+  .chart .t { fill: var(--ink); font-family: var(--font-body); font-size: 13px; }
+  .chart .t-muted { fill: var(--muted); }
+  .chart .ln-1 { --series: var(--c1); } .chart .ln-2 { --series: var(--c2); }
+  .chart .ln-3 { --series: var(--c3); } .chart .ln-4 { --series: var(--c4); }
+  .chart .is-focus { --series: var(--accent); }
+  .chart .ln { fill: none; stroke: var(--series, var(--axis)); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+  .chart .area { fill: var(--series, var(--axis)); fill-opacity: .14; stroke: none; }
+  .chart .dot { fill: var(--series, var(--axis)); stroke: var(--panel); stroke-width: 2; }
+  /* 期間の帯(rect class="bar" に x・y・width・height を属性で書く)。重なる帯は --panel の縁で分ける */
+  .chart .bar { fill: var(--series, var(--axis)); stroke: var(--panel); stroke-width: 2; }
+  .chart .quad { fill: var(--row); stroke: var(--line); stroke-width: 1; }
+  .chart .quad.is-focus { fill: var(--accent-soft); stroke: var(--accent); }
+  .chart .node { fill: var(--panel); stroke: var(--axis); stroke-width: 1.5; }
+  .chart .node.is-focus { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2; }
+  .chart .edge { fill: none; stroke: var(--axis); stroke-width: 1.5; }
+  .chart .arrowhead { fill: var(--axis); stroke: none; }
+  .chart .edge-label { fill: var(--muted); font-family: var(--font-body); font-size: 13px; paint-order: stroke; stroke: var(--panel); stroke-width: 4px; stroke-linejoin: round; }
+
+  /* 評価表: 案 × 基準の点数を濃淡で見せる(数値は必ず文字で載せる) */
+  table.heat td, table.heat th { text-align: center; }
+  table.heat td { vertical-align: middle; }
+  table.heat th:first-child, table.heat td:first-child { text-align: left; min-width: 9em; }
+  table.heat td[data-l] { font-family: var(--font-mono); font-weight: 700; border-left: 1px solid var(--panel); }
+  table.heat td[data-l="1"] { background: var(--seq-1); color: var(--seq-1-ink); }
+  table.heat td[data-l="2"] { background: var(--seq-2); color: var(--seq-2-ink); }
+  table.heat td[data-l="3"] { background: var(--seq-3); color: var(--seq-3-ink); }
+  table.heat td[data-l="4"] { background: var(--seq-4); color: var(--seq-4-ink); }
+  table.heat td[data-l="5"] { background: var(--seq-5); color: var(--seq-5-ink); }
+  /* 幅 599px 以下で横に動かしても、先頭列(行の名前)は左に残す。固定した列の背景は行の色と同じにして、後ろのセルを隠す */
+  @media (max-width: 599px) {
+    table.heat th:first-child, table.heat td:first-child { position: sticky; left: 0; z-index: 1; box-shadow: 1px 0 0 var(--line); }
+    table.heat tbody td:first-child { background: var(--panel); }
+    table.heat tbody tr:nth-child(even) td:first-child { background: var(--row); }
+  }
+
+  /* 手順: 順番に意味があるときだけ。番号は CSS カウンタ */
+  .steps { list-style: none; padding: 0; margin: 0; counter-reset: step; display: flex; flex-direction: column; gap: var(--sp-4); }
+  .steps > li { counter-increment: step; position: relative; padding: 2px 0 0 52px; min-height: 36px; }
+  .steps > li::before { content: counter(step); position: absolute; left: 0; top: 0; width: 36px; height: 36px; border-radius: 50%;
+    display: grid; place-items: center; background: var(--accent); color: var(--accent-ink); font-family: var(--font-mono); font-weight: 700; font-size: 15px; }
+  .steps strong { display: block; }
+
+  /* 文と図の並び: 幅 760px 未満で縦積み */
+  .split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: var(--sp-6); align-items: start; }
+  .split > div { display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; }
+  .split > .fig { margin-block: 0; }
+  .split.rev > :first-child { order: 2; }
+  @media (max-width: 759px) {
+    .split { grid-template-columns: minmax(0, 1fr); gap: var(--sp-5); }
+    .split.rev > :first-child { order: 0; }
+  }
+
+  /* 参考 */
+  .refs { font-size: 14px; line-height: 1.8; color: var(--muted); padding: var(--sp-5) var(--sp-5) var(--sp-5) calc(var(--sp-5) + 1.6em);
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+  .refs li { overflow-wrap: anywhere; }
+  .refs li:target { color: var(--ink); }
+
+  /* 切り替え式の案パネル(UI/UX 案)。JS が動くと .is-ready が付き、ボタンで 1 案ずつ見せる。
+     動かないときはタブを隠して全案を縦に並べる。全パネルを同じ grid セルに重ねるので、切り替えても高さは変わらない */
+  .variants { display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; }
+  .variants-tabs { display: none; }
+  .variants.is-ready .variants-tabs { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: var(--sp-2); }
+  @media (max-width: 699px) {
+    .variants.is-ready .variants-tabs { grid-auto-flow: row; grid-auto-columns: auto; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    /* 案が奇数個のとき、最後の 1 つは 2 列ぶんの幅にして、左に 1 つだけ残らないようにする */
+    .variants.is-ready .variants-tabs > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+  }
+  .variants-tabs .chip { margin-left: auto; }
+  .variants-tabs [role="tab"] { appearance: none; font: inherit; font-size: 14px; font-weight: 700; line-height: 1.4; color: var(--ink); text-align: left;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px; min-height: 44px; padding: 10px 14px 13px; cursor: pointer;
+    position: relative; overflow: hidden; display: flex; flex-wrap: wrap; align-items: center; align-content: center; gap: var(--sp-1) 10px; }
+  .variants-tabs [role="tab"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: transparent; }
+  .variants-tabs [role="tab"]:hover { background: var(--row); }
+  .variants-tabs [role="tab"][aria-selected="true"] { background: var(--accent-soft); border-color: var(--accent); }
+  .variants-tabs [role="tab"][aria-selected="true"]::after { background: var(--accent); }
+  .vt-name { flex: 1 1 auto; min-width: 0; }
+  .variants-stage { display: flex; flex-direction: column; gap: var(--sp-6); }
+  .variants.is-ready .variants-stage { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .vpanel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); padding: var(--sp-5);
+    display: flex; flex-direction: column; gap: var(--sp-5); min-width: 0; }
+  .variants.is-ready .vpanel { grid-area: 1 / 1; visibility: hidden; opacity: 0; }
+  .variants.is-ready .vpanel.is-active { visibility: visible; opacity: 1; }
+  /* 切り替えのフェードは、利用者が最初に案を切り替えたとき(script が .is-live を付ける)から。
+     最初の描画で動かすと、スクリーンショットや印刷が途中の半透明の画面を写す */
+  .variants.is-live .vpanel { transition: opacity .12s ease, visibility 0s linear .12s; }
+  .variants.is-live .vpanel.is-active { transition: opacity .12s ease; }
+  /* 幅 700px 未満は、見せていない案を高さ 0 にたたむ(重ねたままだと、短い案の下に最も高い案ぶんの空白が残る)。
+     印刷は全案を並べるので、画面(screen)だけに効かせる */
+  @media screen and (max-width: 699px) {
+    .variants.is-ready .vpanel:not(.is-active) { max-height: 0; overflow: hidden; padding-block: 0; border-width: 0; box-shadow: none; }
+  }
+  .vhead { display: flex; flex-direction: column; gap: var(--sp-2); }
+  .vhead h3 { font-size: 18px; }
+  .vhead p { color: var(--muted); }
+  .vnotes { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--sp-4) var(--sp-5); margin: 0; padding: var(--sp-4) 0 0; border-top: 1px solid var(--line); }
+  .vnotes > div { display: flex; flex-direction: column; gap: var(--sp-1); min-width: 0; }
+  .vnotes dt { font-size: 13px; font-weight: 700; color: var(--muted); }
+  .vnotes dd { margin: 0; font-size: 15px; line-height: 1.8; }
+
+  /* モックアップの枠(案の中身は #mockup-styles が .mk-<記号> で持つ。レポートのトークンとは独立) */
+  .mock { container-type: inline-size; min-width: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--panel); }
+  /* container query が効かないブラウザでは、案が枠より広くなる。切り捨てず、枠の中で横に動かして読めるようにする */
+  @supports not (container-type: inline-size) { .mock { overflow-x: auto; } }
+  .mock-bar { display: flex; align-items: center; gap: var(--sp-3); padding: 10px 14px; background: var(--row); border-bottom: 1px solid var(--line); font-size: 13px; line-height: 1.4; color: var(--muted); }
+  .mock-dots { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--axis); margin-right: 40px; box-shadow: 16px 0 0 var(--axis), 32px 0 0 var(--axis); }
+  .mock-url { flex: 1; min-width: 0; padding: 2px 10px; border-radius: 4px; background: var(--panel); border: 1px solid var(--line); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mock[data-device="phone"] { width: 100%; max-width: 390px; margin-inline: auto; border-width: 2px; border-radius: 28px; }
+  .mock[data-device="phone"] .mock-bar { display: none; }
+  .mocks { display: flex; flex-wrap: wrap; gap: var(--sp-5); align-items: flex-start; }
+  .mocks > .mock { flex: 1 1 320px; margin-inline: 0; }
+  .mocks > .mock[data-device="phone"] { flex: 0 1 390px; }
+  /* 広い画面とスマホ画面を縦に重ねるとき(.mocks に stack を付ける)。横に並べると広い画面が 416px 前後に狭まる */
+  .mocks.stack { flex-direction: column; align-items: stretch; }
+  .mocks.stack > .mock { flex: none; width: 100%; }
+  .mocks.stack > .mock[data-device="phone"] { width: min(100%, 390px); align-self: center; }
+
+  @media print {
+    :root { --shadow: none; }
+    /* 背景のグラフィックを刷らない設定(Chrome の既定)でも、評価表・チップ・棒グラフ・手順の番号の色を残す */
+    *, *::before, *::after { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { background: var(--panel); }
+    .chartscroll { background: var(--panel); }
+    /* 印刷では表を横に動かせない。枠を切らず、最小幅を外して列を詰め、見出しも折り返して、右端の列(評価表の合計など)を失わない */
+    .tablewrap { overflow: visible; }
+    .tablewrap > table { min-width: 0; }
+    table.wide td { width: auto; min-width: 0; }
+    th { white-space: normal; word-break: auto-phrase; }
+    .themeswitch, .toc { display: none; }
+    .page { display: block; padding: 0; max-width: none; }
+    .main { display: flex; }
+    h2, .kicker, h3 { break-after: avoid; }
+    .refs a::after { content: " (" attr(href) ")"; }
+    .variants-tabs, .variants.is-ready .variants-tabs { display: none; }
+    .variants.is-ready .variants-stage { display: flex; flex-direction: column; gap: var(--sp-6); }
+    .variants.is-ready .vpanel { visibility: visible; opacity: 1; }
+  }
+</style>
+<style>
+  .main p, .main li, .main dd { overflow-wrap: anywhere; }
+</style>
+<!-- 案(UI/UX のモックアップ)が必要な報告書だけ、この直後に <style id="mockup-styles"> を足す。セレクタは必ず .mk-<案の記号> から始める。 -->
+</head>
+<body>
+<script>
+  /* テーマの初期化: 描画前に data-theme を決める。保存値(light / dark)があればそれ、なければ light。
+     本文の最初の要素に置く(Artifact で外枠を外しても動く)。localStorage が使えなくても止まらない */
+  (function () {
+    var t = 'light';
+    try {
+      var s = localStorage.getItem('html-report-theme');
+      if (s === 'light' || s === 'dark') t = s;
+    } catch (e) {}
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+
+<div class="themeswitch" role="group" aria-label="表示の明るさ">
+  <button type="button" data-theme-set="light" aria-pressed="true">ライト</button>
+  <button type="button" data-theme-set="dark" aria-pressed="false">ダーク</button>
+</div>
+
+<div class="page" lang="ja">
+  <nav class="toc" aria-label="目次">
+    <p class="toc-title">目次</p>
+    <div class="toc-progress" aria-hidden="true"><span></span></div>
+    <ol>
+      <li><a href="#s-why" data-target="s-why"><span class="no"><span>1</span></span><span><span class="lbl">なぜこの結論か</span><span class="toc-claim">案がそろい選ぶ段階</span></span></a></li>
+      <li><a href="#s-next" data-target="s-next"><span class="no"><span>2</span></span><span><span class="lbl">次に判断が要る点</span><span class="toc-claim">7 つの選択</span></span></a></li>
+      <li><a href="#s-done" data-target="s-done"><span class="no"><span>3</span></span><span><span class="lbl">終わったこと</span><span class="toc-claim">戦闘の規則が main に</span></span></a></li>
+      <li><a href="#s-992" data-target="s-992"><span class="no"><span>4</span></span><span><span class="lbl">習得の形</span><span class="toc-claim">段の上がりでひらめく</span></span></a></li>
+      <li><a href="#s-934" data-target="s-934"><span class="no"><span>5</span></span><span><span class="lbl">剣術の 50 枚</span><span class="toc-claim">形が重なる札を外す</span></span></a></li>
+      <li><a href="#s-903" data-target="s-903"><span class="no"><span>6</span></span><span><span class="lbl">変幻の構え</span><span class="toc-claim">動いて威圧を付ける</span></span></a></li>
+      <li><a href="#s-933" data-target="s-933"><span class="no"><span>7</span></span><span><span class="lbl">札が生む札</span><span class="toc-claim">手札に入る小さな札</span></span></a></li>
+      <li><a href="#s-mage" data-target="s-mage"><span class="no"><span>8</span></span><span><span class="lbl">魔術の札</span><span class="toc-claim">離れて撃ち寄られたら退く</span></span></a></li>
+      <li><a href="#s-open" data-target="s-open"><span class="no"><span>9</span></span><span><span class="lbl">仮定と未確認</span><span class="toc-claim">回数と強さは未測定</span></span></a></li>
+      <li><a href="#s-refs" data-target="s-refs"><span class="no"><span>10</span></span><span><span class="lbl">参考</span><span class="toc-claim">出典 7 件</span></span></a></li>
+    </ol>
+  </nav>
+
+  <main class="main">
+    <header class="hero">
+      <p class="eyebrow"><span class="chip kind">判断</span><span>2026-11-22</span><span>カードの Issue 4 件</span></p>
+      <h1>カードの残りの作業は、7&nbsp;つの選択が決まれば設計書の書き換えに進めます</h1>
+      <p class="lede">寄生と亡霊の規則は main に入り、残るカードの 4&nbsp;つの Issue は案がそろいました。推奨の組み合わせを示すので、遊びの手触りを決める 7&nbsp;つだけ選んでください。選ぶだけなら、2&nbsp;番目の節の 7&nbsp;枚のカード（約 30&nbsp;分）で足ります。</p>
+      <ul class="meta"><li><b>7</b>件の出典</li><li><b>約 72 分</b>で読めます(推定)</li></ul>
+    </header>
+    <div class="callout"><p><strong>この報告書は、2026-11-22 に判断を求めた時点の記録です。</strong>同じ日に、7&nbsp;つのうち 5&nbsp;つが決まりました。ひらめきは、習熟した札の組み合わせで起こします。精鋭とボスの報酬は、消耗品と手記の情報に替えます。剣術の札は、14&nbsp;枚を外して 50&nbsp;種にします。変幻の構えは、鈍足 2 を付ける形にします。生まれた札の置き場は、札ごとに決めます。</p><p>判断を待っているのは、札が生む札の最初の対応表と、魔術師の戦い方の軸です。決定の文は、Issue #992・#903・#933・#934 の 2026-11-22 のコメントにあります。下の本文と表は、選ぶ前の状態のまま残しています。</p></div>
+
+
+    <ul class="verdicts">
+      <li class="verdict now"><span class="tag">選択のあとすぐ</span><h3>剣士の札の書き換えと魔術の 50&nbsp;枚</h3><p>選択が決まり次第、設計書の書き換えを順に始めます。魔術の設計書は並行して書きます。</p></li>
+      <li class="verdict later"><span class="tag">追従のあと</span><h3>札が生む札の実装</h3><p>C# のカード表が設計書に追いついてから（Issue #898 のあと）実装します。</p></li>
+      <li class="verdict skip"><span class="tag">入れない</span><h3>敵を倒して得る札</h3><p>竜王の固有 3 枚と、龍神の報酬の固有カードの枠は、決定のとおり外します。</p></li>
+    </ul>
+
+    <section id="s-why">
+      <p class="kicker"><span class="no">01</span>なぜこの結論か</p>
+      <h2>案は 13 の判断に分かれ、そのうち 7&nbsp;つを選んでもらいます</h2>
+      <ul class="tiles"><li class="tile warn"><span class="n">7</span><span class="l">選んでもらう判断</span></li><li class="tile ok"><span class="n">6</span><span class="l">推奨で進める判断</span></li></ul>
+      <div class="dist" role="img" aria-label="13 件中 選んでもらう 7、推奨で進める 6"><span class="warn" style="flex:7"></span><span class="ok" style="flex:6"></span></div>
+      <p>1 回目の Workflow（複数のエージェントを台本で動かす機能）で、寄生と亡霊の系統の規則と王の階級が main に入りました。同時に、カードの 4 つの Issue の案を、観点の違う設計役・まとめ役・確かめる役の順で作りました。確かめる役は、札の番号・枚数・設計書の行・C# の場所を 1 つずつ読み直しています。確かめる役が最後に残した指摘 16 件は、この報告書を書くときに直しました。</p>
+      <p>案は 13 の判断に分かれます。そのうち 6 つは、こうだいさんの決定（王を倒して札を得ない、など）か、ほかの判断の答えから自然に決まるので、推奨で進めます。残る 7 つは遊びの手触りを決めるので、こうだいさんに選んでもらいます。下の表が 13 の判断と推奨の一覧です。選んでもらう 7 つのカードは次の節に、候補の札の表と推奨で進める判断は Issue ごとの節にあります。</p>
+      <div class="tablewrap">
+        <table class="wide">
+          <caption>13 の判断のうち、7 つを選んでもらい、6 つは推奨で進めます。</caption>
+          <thead><tr><th>Issue</th><th>決めること</th><th>推奨</th><th>扱い</th></tr></thead>
+          <tbody>
+            <tr><td>#992</td><td>ひらめきをいつ起こすか</td><td>習熟の段が上がってひらめく</td><td>選んでもらいます</td></tr>
+            <tr><td>#992</td><td>敵の由来の札を何枚残すか</td><td>棘の一射も外して 4 枚</td><td>50 枚への外し方と一緒に決まります</td></tr>
+            <tr><td>#992</td><td>竜王の固有 3 枚を残すか</td><td>竜王の 3 枚を外す</td><td>推奨で進めます</td></tr>
+            <tr><td>#992</td><td>精鋭とボスの報酬の替わり</td><td>訓練の印で返す</td><td>選んでもらいます</td></tr>
+            <tr><td>#934</td><td>剣術をどの 14 枚で減らすか</td><td>同じ形と多すぎる効果の札を外す</td><td>選んでもらいます</td></tr>
+            <tr><td>#934</td><td>魔術師の戦い方の軸</td><td>離れて撃ち、寄られたら退く</td><td>選んでもらいます</td></tr>
+            <tr><td>#934</td><td>魔術 50 枚の内訳</td><td>間合いを保つスキルを厚くする</td><td>選んだ軸と組む配分で進めます</td></tr>
+            <tr><td>#934</td><td>魔術の札の記法</td><td>剣士の記法を参照してそろえる</td><td>推奨で進めます</td></tr>
+            <tr><td>#903</td><td>変幻の構えの効果</td><td>動いて手元を狂わせる</td><td>選んでもらいます</td></tr>
+            <tr><td>#903</td><td>変幻の構えの特性</td><td>特性は今のまま残す</td><td>推奨で進めます</td></tr>
+            <tr><td>#933</td><td>生まれた札の置き場</td><td>手札に加える</td><td>選んでもらいます</td></tr>
+            <tr><td>#933</td><td>手札がいっぱいのときの扱い</td><td>引いた札と同じく捨て札へ送る</td><td>推奨で進めます</td></tr>
+            <tr><td>#933</td><td>最初の対応表の作り方</td><td>続けて出す小さな札を新しく作る</td><td>選んでもらいます</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <caption>この報告書に出てくる Issue と PR は、次の 7 つです。</caption>
+          <thead><tr><th>番号</th><th>題</th><th>判断を求めた時点の状態</th></tr></thead>
+          <tbody>
+            <tr><td>Issue #992</td><td>敵を倒して習得する札をやめ、探索のイベントと成長（ひらめき）で習得する形にする</td><td>案がそろいました</td></tr>
+            <tr><td>Issue #934</td><td>剣術の札を 64 枚から 50 枚に減らし、魔術の札 50 枚を設計書に作る（決定のあと、題は「魔術の札 50 枚を設計書に作る」に変わりました。剣術の分は Issue #999 に分けました）</td><td>案がそろいました</td></tr>
+            <tr><td>Issue #903</td><td>変幻の構え（#45）の効果を、移動で相手を惑わす形に考え直す</td><td>案がそろいました</td></tr>
+            <tr><td>Issue #933</td><td>ある札を使うと、決まった別の札が生まれる効果を入れる</td><td>案がそろいました</td></tr>
+            <tr><td>Issue #898</td><td>BattleCore のカード表を札 64 種（v4.11）に追従させる（決定のあと、題は「札 50 種に追従させる」に変わりました）</td><td>50 枚への判断を待っています</td></tr>
+            <tr><td>Issue #962</td><td>寄生と亡霊の系統の規則と、王の階級を戦闘の設計書と BattleCore に入れる</td><td>PR #995 で main に入りました</td></tr>
+            <tr><td>PR #988</td><td>瘴気を崩壊の暦と 3 つの領域に置き換える</td><td>こうだいさんの試遊を待っています</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="s-next">
+      <p class="kicker"><span class="no">02</span>次に判断が要る点</p>
+      <h2>7&nbsp;つを選んでもらえば、設計書の書き換えを順に始めます</h2>
+      <article class="decision">
+        <h3>ひらめきをいつ起こし、何を習得させるか</h3>
+        <dl>
+          <div class="d-situation"><dt>何が起きているか</dt><dd>こうだいさんは、新しい札を探索のイベントか成長（ひらめき）で習得すると決めました。ただ、今の v4 の設計には「習熟で札が加わる仕組み」がありません。習熟は持っている札の名前・面・コスト・特性を変えるだけで（battle_core_v4.md §3.2、Mastery.cs:574-609）、旧 Web 版の「使用回数で派生カードを解放する」形は concept-v3.md §4.1 で置き換えると決まっています。札の山の探索の札 19 枚も、ほとんどが通常戦闘の報酬で出ていて、イベント（重い宝箱）から引くのは約 20 回のうち 2.6 回だけです（encounters_and_rewards_v4.md §4.3）。</dd></div>
+          <div class="d-reason"><dt>なぜ決める必要があるか</dt><dd>決めないと、剣士の札の設計書 §1.3 と §3 の入手先の列を何に書き換えるかが決まりません。そのため、Issue #992 の完了条件（入手先に敵の撃破が無い）を満たせません。battle の担当に頼む規則の追加（§3.2 に 1 行足すか、新しい節と新しい C# のファイルを作るか）と、報酬と C# を直す Issue の中身も書けません。</dd></div>
+          <div class="d-options"><dt>選ぶと何が起きるか</dt><dd><ul>
+            <li><b>習熟の段が上がってひらめく</b>: 戦闘の終わりか休息ノードの訓練で、どれかの札が段 2 以上に上がったときに、ひらめきを 1 回起こします。1 回の戦闘で何枚上がっても 1 回です。候補は持っていない札から 3 枚並べ、1 枚を選ぶか見送ります。候補にするのは、今の層と浅い層の探索の札と、由来の敵の開示度が 2 になった敵の由来の札です。並べる順は、段 2 に上がった札と同じ属性の札を先にし、足りない分を乱数で埋めます。段 2 は札 1 種につき 1 回しか来ないので、ひらめきの回数は、その生で段 2 に届いた札の種類の数が上限になります。 札を育てると新しい札を思いつく形になり、こうだいさんの言う「習熟で札が加わる」を v4 の習熟の上に作り直せます。敵の由来の札は、撃破せずに、観察の札か情報収集か継いだ頁で開示度 2 にすると候補に入ります。1 つの生でひらめきが何回起きるかは測っていません。今の試験台（BattleCore.Sim）は 1 戦ずつを測るもので、探索を通した回数は測れないので、多すぎるか少なすぎるかはまだ分かりません。習熟なしの札（敵の由来の札と七層の 4 枚）は段が上がらないので、ひらめきのきっかけになりません。 手間は中です。</li>
+            <li><b>戦いの中の出来事でひらめく</b>: 戦闘に勝った直後、習熟の段を判定した後に、その戦闘で起きたことを数えます。習得の札は 1 枚ずつ、ひらめきの条件を 1 つ持ちます（例: 根縛りは「敵に鈍足を 3 回付けて勝つ」）。条件を満たした札から最大 3 枚を並べ、1 枚を選びます。1 戦で身につくのは 1 枚までです。札ごとにひらめける層の下限を置き、敵の由来の札の下限は由来の敵が出る層にします。 戦い方がそのまま次の札につながるので、3 つの中でいちばん「その生の成長」が見えます。まだ持っていない札の条件を手記か所持カードの画面で前もって見せないと、手に入り方が運に見えます。今の戦い方を強める札ばかり身につき、デッキの向きを変えにくくなるおそれがあります。負けた戦闘では何も起きません。敵の由来の札は、名前と手に入り方の結び付きが弱くなります。 手間は大です。</li>
+            <li><b>層を抜けてひらめく</b>: 第 3〜6 層のボスを倒して次の層へ降りるときに、1 回ずつひらめきを起こします。1 つの生で最大 4 回です。候補は、ひらめきに回した札のうち、持っていない札で、開く層が降りる先の層以下のものです。3 枚を並べ、抜けた層で刻みがいちばん多くたまった属性の札を先にします。イベントの無い第 4〜6 層の探索の札と、残す敵の由来の札をひらめきに回し、第 1〜3 層と第 7 層の探索の札はイベント（重い宝箱と、新しく足す種類のイベント）で拾います。 層を抜ける区切りが成長の節目になり、回数が読みやすくなります。新しい札を得る機会は、今の約 20 回から、ひらめき最大 4 回とイベントの一部へ大きく減ります。降り口から深く出立した生は、飛ばした層のひらめきと浅い層のイベントの札を受け取れません。第 7 層のイベントは 1 つだけなので、第 7 層の 4 枚は拾いにくくなります。戦闘の中で技を思いつく手触りはありません。 手間は大です。</li>
+          </ul></dd></div>
+          <div class="d-pick"><dt>推奨と根拠</dt><dd><p class="d-choice">習熟の段が上がってひらめく</p><p class="d-basis">こうだいさんが残すと決めた「習熟で札が加わる」形は今の v4 に無いので、習熟の段の上がりをきっかけにすれば、その決定を言葉どおりに形にできます。段の上がり（RankUps）・札を選ぶ画面（Offer と Learn）・札の山の配り方は C# にもうあり、新しく作る仕組みが 3 つの中でいちばん小さくなります。中身が無作為に見える弱みは、段 2 に上がった札と同じ属性の札を先に並べることで和らげます。回数を測る試験は今は無いので、採るなら試遊で数えるか、探索を何度も回して段の上がりを数える試験を作ってから値を決めます。</p></dd></div>
+        </dl>
+      </article>
+      <article class="decision">
+        <h3>精鋭とボスを倒したときの報酬を札の代わりに何にするか</h3>
+        <dl>
+          <div class="d-situation"><dt>何が起きているか</dt><dd>今の報酬は、精鋭が札 1 枚 + 消耗品 1 個 + 頁の確率、中ボスと王が固有の札 3 種 + 希少な頁 1 枚で、点（札 2 点、消耗品 1 点、頁 2 点）で期待値を揃えています（encounters_and_rewards_v4.md §4.1・§4.2・§4.4）。札の山から引く場面には、通常戦闘のカード（30〜50%）、代役の精鋭とボス、頁が尽きたときの替わりもあり、どれも戦闘の報酬で札を得る形です。第 4〜6 層にはイベントが無いので頁の山が空で、頁はいつも札に替わります（同 §8 の 6）。重い宝箱のカードだけがイベントの報酬です。</dd></div>
+          <div class="d-reason"><dt>なぜ決める必要があるか</dt><dd>決めないと、encounters_and_rewards_v4.md §4.2 の表と §4.4 の期待値を直す、dungeon の担当宛ての Issue の中身が書けません。C# の BattleRewards.cs と UniqueCards.cs を消すか置き換えるかも決まりません。頁が尽きたときに札へ替える規則（§4.3、Expedition.cs:539-554）の替わり先も決まりません。</dd></div>
+          <div class="d-options"><dt>選ぶと何が起きるか</dt><dd><ul>
+            <li><b>訓練の印で返す</b>: 札 1 枚の代わりに、訓練の印を 2 つ渡します。印は休息ノードの「訓練する」と同じもので、地図の上で 1 つ使うと、選んだ 1 枚に刻みが 1 入ります（battle_core_v4.md §3.2、ExplorationState.TrainingMarks）。印 1 つを §4.1 で 1 点と数えます。精鋭は印 2 つ + 消耗品 + 頁の確率、中ボスと王は印 6 つ + 希少な頁、第 4〜6 層の精鋭の代役のボスは印 4 つ + 消耗品 + 頁、無音の影刺の代役は印 6 つ + 頁にします。通常戦闘のカードの枠、一層〜第 3 層の代役のボスの札、頁の替わりは、どれも印 2 つにします。 印 1 つを 1 点と数えれば、§4.4 の期待値の表は変わりません。強い敵を倒すと、育てたい札を自分で選んで伸ばせます。ひらめきの決め方で「習熟の段が上がってひらめく」を選ぶと、印で段 2 に届いたときにひらめきが起き、ボスの報酬が新しい札にもつながります。印 1 つは刻み 1 で、閾値 3 / 8 / 15 と比べて小さいので、ボスを倒した手応えが薄くなるおそれがあります。習熟なしの札には効きません。 手間は中です。</li>
+            <li><b>その戦闘で出した札に刻みを足す</b>: 札の代わりに、その戦闘で出した札それぞれに刻みを足します。精鋭は刻み +1、中ボスと王は +2 で、希少な頁はそのまま残します。代役の「札の山から 1 枚」と「精鋭の札を習得」は +1、影刺の代役の「札の山から 3 回選ぶ」は +2 にします。通常戦闘のカードの割合は 0 にし、空いた割合の行き先は dungeon の担当が決めます。頁が尽きたときの替わりは消耗品にします。 強い敵との戦いで使った札が一斉に育ち、選ぶ手間がありません。刻みは §4.1 の点の物差しに無いので、§4.4 の期待値を数え直す必要があります。多くの種類の札を出した戦闘ほど得になります。習熟なしの札には効かず、才能の札で 2 倍にするかも決め直しが要ります。 手間は中です。</li>
+            <li><b>消耗品と手記の情報で返す</b>: 札 1 枚を消耗品 1 個に替えます。中ボスは、降りる先の層の敵 1 種の開示度を 2 段目へ上げる形（情報収集 1 回ぶん）と消耗品 1 個に替えます。王は、まだ倒していない別の王 1 体の開示度を 2 へ上げる形と消耗品 1 個に替えます。通常戦闘のカードの割合は消耗品に足し、頁が尽きたときの替わりも消耗品にします。 報酬を札と習熟から切り離すので、札は探索とひらめきでだけ増えます。消耗品は 1 点、札は 2 点なので、§4.4 の期待値は下がり、「深いほど期待値が高い」（concept-v3.md §7.3）を保つための数え直しが要ります。今の情報収集は、その層のボスの枠の敵だけを開示度 2 にする規則（dungeon_exploration_v4.md §6.3）なので、別の層や別の王の開示度を上げるのは新しい規則になります。精鋭を倒して得るものは、消耗品と頁だけになります。敵の頁で候補を開くひらめきと組むと、敵の由来の札を開く手段にもなります。 手間は大です。</li>
+          </ul></dd></div>
+          <div class="d-pick"><dt>推奨と根拠</dt><dd><p class="d-choice">訓練の印で返す</p><p class="d-basis">印は休息ノードと C# の ExplorationState.TrainingMarks にもうあり、新しい種類の報酬を作らずに済みます。印 1 つを 1 点とすれば §4.4 の期待値の並びが崩れず、dungeon の担当の数え直しが最小で済みます。どの札を伸ばすかを遊び手が選ぶので、「札はキャラクターの成長で増える」考え方とも合います。手応えが薄い点は、試遊で見てから印の数を 1 つずつ見直します。</p></dd></div>
+        </dl>
+      </article>
+      <article class="decision">
+        <h3>剣術の札をどの 14&nbsp;枚で 50&nbsp;枚に減らすか</h3>
+        <dl>
+          <div class="d-situation"><dt>何が起きているか</dt><dd>剣術の札は今 64 種（初期 32・習得 32）です。こうだいさんは 50 枚に減らす方針を決めていて、外す 14 枚の候補を見てから最終的に決めます。Issue #992 で、敵の撃破で習得する 13 枚の扱いが変わり、#992 の判断で敵の由来の札のうち何枚かが外れる見込みです。枚数は #992 で決まります。C# のカード表は v4.10 の 73 種のままで、64 種への追従（#898）はこの決定を待っています。</dd></div>
+          <div class="d-reason"><dt>なぜ決める必要があるか</dt><dd>決めないと、#898（BattleCore のカード表を追従させる）に着手できません。剣士の札の設計書 §2〜§4 の書き換えと、BattleCore.Sim の試験台のデッキ（Decks.cs）の組み直しも止まります。敵の由来の札を何枚外すかも、この外し方の選択で一緒に決まります。</dd></div>
+          <div class="d-options"><dt>選ぶと何が起きるか</dt><dd><ul>
+            <li><b>習熟で育たない札をまとめて外す</b>: 習熟で名前も値も変わらない札 17 枚から、効果を考え直す #45 変幻の構えと、こうだいさんが効果を指定した #84 背水の陣・#85 覚醒を除いた 14 枚を外します。外すのは、敵の由来の 11 枚（#41〜#44・#47〜#50・#52・#55・#57）と、七層の探索の 3 枚（#77〜#79）です。残る 50 枚は、3 枚を除いて全て習熟で育ち、遺産の候補にもなれます。#992 で問う敵の由来の 13 枚は、#45 と #85 を除く 11 枚を外すことになります。#992 の判断が別の札を残すときは、この表の該当の札を入れ替えます。ひらめきの決め方は #992 で別に決めます。 初期 32・習得 18 になり、属性は 攻撃 20 / 防御 15 / スキル 8 / スタンス 7 です。§4.7 の習熟の表は 1 行も変わりません。一方で、穴がいちばん多く出ます。見切りを付ける札が無くなるので、#39 鉄壁の構えの特性「自分の状態(見切り): Guard +3」が働かなくなります。崩しの源は #6 と #75 の 2 枚になり、出血を付ける札は #32 皮裂きだけになります。battle_core_v4.md §19.8 の血路の型が名指す槍衾も消えます。被弾でスタミナが戻る札、被弾で出血を返す札、敵の移動を咎める札、相手の疲労を条件にする札、連動(Sk) の札も無くなります。追撃を効果に持つ札は #45 だけになり、間合い 3 に届く札は 4 枚になります。コスト 1 の札は 19 種から 15 種に減るので、§5 の 1 の「コスト 1 の 19 種だけで組んだデッキ」の数が変わります。第 7 層で拾える札は #84 背水の陣だけになり、C# の第 7 層の札の山は空になります。 手間は中〜大です。</li>
+            <li><b>同じ形と多すぎる効果の札を外す</b>: 敵の由来の札から #43 遠間の構え・#48 棘の一射・#50 城壁の受け・#52 群れの咆哮の 4 枚を外し、残りの 10 枚を敵の由来でない札から選びます。#992 の判断が別の札を選んだときは、この表の該当の札を入れ替えます。選ぶ基準は 2 つです。1 つ目は、列と届く間合いと面がほかの札とほぼ同じ札であることです。2 つ目は、特性の効果で多い上位 2 つの Guard +n（12 枚）と威力 +n（9 枚）に、重撃（7 枚）を加えた 3 つに当たる札であることです。重撃はドロー +1 と並んで 4 番目に多い効果で、3 番目はスタミナ +1（8 枚）です。スタミナ +1 は、移動が中心の札 6 種のうち 3 種（#25・#28・#60）の特性なので、動くための手数を減らさないように外しません。外すのは、初期の #3 大上段・#14 受け太刀・#30 牽制と、習得の #61・#64・#68・#69・#71・#78・#79 です。このうち #71 見切りの目（特性の効果はドロー +1）と #78 大狼の構え（特性の効果は追撃）の 2 枚は、2 つ目の基準に当たりません。スタンスの数を減らすために選んだ札で、ほかの 8 枚より理由が弱い候補です。間合いの境目の 13 枚と、ほかの札に無い役を持つ札（#41・#42・#44・#49・#55・#57・#74・#76）は残します。初期で崩しを付ける唯一の札 #6 峰打ちと、初期で崩し後を持つ唯一の札 #8 体幹崩しも残します。#8 の特性「崩し後: 重撃」は #75 急所突きと同じ組ですが、#75 は習得の札です。ひらめきの決め方は #992 で別に決めます。 初期 29・習得 21 になり、属性は 攻撃 18 / 防御 14 / スキル 8 / スタンス 10 です。攻撃の札の割合は 39% から 36% に下がります。崩し、見切り、被弾で返す 2 枚、押す / 引くを受けない #74 錨の構えは残ります。#74 は、獄竜 ガルドと不退の槍竜の引く手への備えです。届く間合いの帯はどれも空かず、間合いの境目の 4 マスも全て残ります。代わりに、予兆を条件にする札は 2 枚（#26・#76）、温存は 1 枚（#11）、追撃は 1 枚（#45）まで減ります。0 にだけ届く攻撃は #36 柄当てだけ、1〜2 に届く札は #10 伸び突きだけになります。ターンの区切りで Guard を足すスタンスは、#47 根渡りだけが残ります。#30 牽制を外すと、攻撃と後ろへの移動を持つ札が 1 枚も無くなります。残る攻撃の札で移動を持つのは #31 猪突猛進と #73 疾風突きの 2 枚で、どちらも前へ 2 です。コスト 1 の札は外さないので、§5 の 1 の「コスト 1 の 19 種」は 19 のままです。§4.7 の習熟の表は 8 行減って 39 種になります。 手間は中です。</li>
+            <li><b>初期と習得から 7 枚ずつ外す</b>: 初期と習得を 7 枚ずつ外して、25 枚ずつにします。敵の由来の札からは、ほかの札と形が重なる #43 遠間の構え・#50 城壁の受け・#52 群れの咆哮の 3 枚だけを外します。残る敵の由来の 10 枚は、探索のイベントかひらめきで習得する札として残します。#992 の判断が別の札を選んだときは、この表の該当の札を入れ替えます。残りの枠は、同じ側（初期どうし、習得どうし）で形が重なる札から選びます。初期は #3・#6・#8・#10・#12・#14・#38 です。初期だけでは崩し後が働かない崩しの 2 枚（#6・#8）も、ここに含めます。習得は #61・#64・#68・#69 です。ひらめきの決め方は #992 で別に決めます。 初期 25・習得 25 になり、属性は 攻撃 18 / 防御 12 / スキル 8 / スタンス 12 です。出立で選べる初期の札が 7 種減り、育って得る札の割合は 64 種のときと同じに保たれます。予兆の札は 5 枚、追撃は 2 枚、相手の状態と自分の状態は 5 枚ずつ残り、少ない条件と効果は 3 つの外し方でいちばん多く残ります。穴は初期の側に出ます。初期の札から崩しが無くなり、崩し後の札は #75 だけになります。初期には 1〜2 に届く札が無くなり、間合い 2 から当てる初期の攻撃は 4 種（#5・#9・#31・#34）になります。素直な札は #5・#19・#37 の 3 枚になるので、§5 の 4 と 5 の試験のデッキを組み直します。コスト 1 の札は #6・#8 が抜けて 19 種から 17 種に減るので、§5 の 1 の数も変わります。§4.7 は 11 行減って 36 種になり、3 つの外し方でいちばん大きく変わります。 手間は大です。</li>
+            <li><b>減らさずに 64 枚のままにする</b>: 50 枚に減らす方針をやめ、64 種の表を残します。ただし、#992 の判断で敵の由来の札が外れれば、その分だけ減ります。64 種をそのまま保つには、#992 で敵の由来の 13 枚をすべて残し、探索のイベントかひらめきで習得する札にする必要があります。 剣士の札の設計書 §4 の集計は、#992 で外す分だけを直します。#898 は完了条件を 64 種（CardCatalog.All.Count が 64、OwnedKindsMax が 64）で書いています。この選択肢なら、#898 は 64 種のまま着手でき、#934 への依存を外せます。#992 で外れる札があれば、その分は #992 が報酬の表と C# のために分ける別の Issue で C# から消します。魔術の札は 50 枚で設計を進めると決まっているので（2026-11-21）、剣術と魔術の札の数が揃いません。ひらめきの候補は、3 つの外し方より多く残ります。2026-11-07 に決めた「50 枚に減らす方針」は取り消しになります。 手間: 剣士の札の設計書 §3 と §4 の、#992 で外す分の直し（cards、小）。</li>
+          </ul></dd></div>
+          <div class="d-pick"><dt>推奨と根拠</dt><dd><p class="d-choice">同じ形と多すぎる効果の札を外す</p><p class="d-basis">敵の由来の札から外すのは形が重なる 4 枚（#43・#48・#50・#52）だけで、ほかの札に無い役を持つ敵の由来の札と、見切り・崩し・引く手への備えがすべて残ります。届く間合いの帯と間合いの境目の 4 マスが 1 つも空かず、穴は予兆・温存・追撃の枚数が減ることと、攻撃と後ろへの移動を持つ札が無くなることに限られます。初期は 29 枚残るので、試作デッキで新しく差し替える札は #30 牽制の 1 枚だけです。「習熟で育たない札をまとめて外す」は考え方が #992 の決定にいちばん素直ですが、#39 の特性が死に、血路の型が崩れるので、採るなら札の直しが別に要ります。</p></dd></div>
+        </dl>
+      </article>
+      <article class="decision">
+        <h3>変幻の構えの効果を、移動の後の攻撃で敵に付ける状態のどれにするか</h3>
+        <dl>
+          <div class="d-situation"><dt>何が起きているか</dt><dd>#45 変幻の構えは、名前が「移動で惑わしたり、相手を混乱させるようなスタンス」を指すと決まりました（2026-11-03 の決定で、深淵の構えから改めた名前です）。ところが効果は、今も「間合い 0 で 威力 +5」のままです（swordsman_cards_v4.md:218）。既にある語だけで「自分が動いて相手を惑わす」を書ける形は、「移動後」に攻撃が当たるたびに、当たった敵へ状態を付ける形です。§4 の型「攻撃ごとの状態付与」（battle_core_v4.md:305）と、C# のフック StatusOnAttack・条件 MovedThisTurn（TurnLoop.Stances.cs:127-158）は、それぞれ実装とテストがあります。ただし、今はどの札にも使われておらず、2 つを組み合わせたテストもまだありません。StatusOnAttack を持つ札がないことは battle_core_v4.md:403 と Types.cs:330 に、MovedThisTurn を使う札が v4.10 から無いことは Types.cs:376 に書いてあります。</dd></div>
+          <div class="d-reason"><dt>なぜ決める必要があるか</dt><dd>決めないと、剣士の札の設計書 §3 の #45 の行（効果と説明の列）を書き換えられません。enemy_roster_v4.md §5.5 の由来の行も直せません。C# の CardCatalog.Learned.cs:50 と、画面の文（CoreText.cs:215-217）を直す Issue の中身も書けません。</dd></div>
+          <div class="d-options"><dt>選ぶと何が起きるか</dt><dd><ul>
+            <li><b>動いて手元を狂わせる</b>: 効果を「移動後の攻撃が当たるたび敵に威圧 1」にします。そのターンに自分のマスが動いた後なら、当たった攻撃 1 枚ごとに、当たった敵へ威圧を 1 付けます。威圧は、敵の次の行動の威力と Guard を 3 下げます（battle_core_v4.md:348）。コスト 3 と特性「間合い 0: 追撃」は変えず、説明は「動き回って相手の手元を狂わせる型」にします。敵の一覧の由来は、淀みを張るから糸を緩めるに替えます。糸を緩めるは、ガルドが自分のマスを動かす唯一の行動です（enemy_roster_v4.md:615、:640）。 使い方の例です。1 ターン目は開始の間合い 3 で、#45 を置きます（コスト 3。間合い 0 ではないので追撃は付きません）。次のターン、間合い 1 で #27 摺り足（前へ 1 + Guard 4）を出して間合い 0 に入ると、移動後になります。続けて #2 袈裟斬り（威力 15、間合い 0: 威力 +5）を当てると、20 のダメージと威圧 1 が入ります。敵の次の攻撃か Guard の行動は、値が 3 下がります。威圧は使うと減る型で、スタック数に上限がありません（battle_core_v4.md:334）。敵の行動は既に威圧 1 を付ける形で使っています（enemy_roster_v4.md:328、:550、:1092、:1158）。#74 錨の構えの特性「相手の状態(威圧): Guard +3」を満たせる場面が増えます。攻撃 + 前への札（#61 斬り上げなど）は攻撃が移動より先に解決されるので、そのターン最初の移動なら、その札の攻撃には付きません（battle_core_v4.md:123）。俊敏の無料の 1 マスも移動後に数えます（battle_core_v4.md:146）。由来の糸を緩めるは 1〜2 の枝の最後に並びます（enemy_roster_v4.md:649）。第 2 段階の後は使わないので（:667）、プレイヤーが見る回数は手繰り寄せるより少なくなります。 手間は小です。</li>
+            <li><b>動いて足を乱す</b>: 効果を「移動後の攻撃が当たるたび敵に鈍足 2」にします。当たった攻撃 1 枚ごとに、当たった敵へ鈍足を 2 付けます。鈍足は、次のターン全体で、敵が自分で動くマスと、敵が押す / 引くマスを 1 減らします（battle_core_v4.md:347、:362）。鈍足を 1 ではなく 2 にするのは、敵のターン開始に 1 減ってから敵が動くためで、1 では効く前に消えます（TurnLoop.Statuses.cs:87-93、battle_core_v4.md:366）。コストと特性は変えず、説明は「動き回って相手の足並みを乱す型」にします。由来は手繰り寄せる（相手を 2 マス引き、鈍足 2 を付ける行動、enemy_roster_v4.md:639）に替えます。 使い方の例です。#45 を置いた後、獄竜と間合い 2 のターンに #25 足運び（前へ 1 + ドロー 1）で間合い 1 に入ります。続けて #10 伸び突き（届く 1〜2、威力 15）を当てると、獄竜に鈍足 2 が付きます。獄竜のターン開始で 1 に減り、そのフェーズの手繰り寄せるは 1 マスしか引けず、糸を緩める（後ろへ 1）は 0 マスで止まります。鈍足は 1 つの語につき 4 までです（battle_core_v4.md:334）。#6 峰打ちと #49 根縛りの特性「相手の状態(鈍足)」を満たせる場面が増えます。一方で、鈍足で敵の 1 マスの移動が 0 になると、その移動は起きないので、#49 根縛りの本体（敵が自ら動くと崩し 1）は働きません（TurnLoop.Hits.cs:31-36、:56-65）。鈍足が効くのは敵がマスを動かす行動だけで、威力と Guard は変わりません（battle_core_v4.md:364）。由来の行動と状態の語と数が、獄竜の手繰り寄せると同じになります。 手間は小です。</li>
+            <li><b>動いて隙を作る</b>: 効果を「移動後の攻撃が当たるたび敵に脆化 1」にします。当たった攻撃 1 枚ごとに、当たった敵へ脆化を 1 付けます。脆化は、敵が次に受ける攻撃を 1.5 倍にします（battle_core_v4.md:346）。付いた脆化は次の撃から効くので、移動後の 2 枚目からの攻撃が 1.5 倍になります（battle_core_v4.md:403）。コストと特性は変えず、説明は「動き回って相手の隙を作る型」にします。獄竜は脆化を付ける行動を持たないので、由来は動きの形だけを写して糸を緩めるにします。 使い方の例です。#45 を置いた後、間合い 1 で #27 摺り足を出して間合い 0 に入ります。#4 小手打ち（威力 7）を当てると脆化 1 が付きます。次の #2 袈裟斬り（15 + 5 = 20）は 1.5 倍の 30 になり、脆化を 1 使った後に、また脆化 1 を付けます。ターンの最後に残った脆化は、使うと減る型なので、次に当たる攻撃まで残ります。1 撃に乗る倍率は 1 つなので、脆化が乗る撃には強化が乗らず、強化は次の撃へ回ります（battle_core_v4.md:399-400）。今のスタンスでダメージを伸ばすのは #78 大狼の構え・#84 背水の陣・#85 覚醒で、この案も同じ攻める側の役になります。脆化を条件にする札は今ありません（swordsman_cards_v4.md:380）。 手間は小です。</li>
+          </ul></dd></div>
+          <div class="d-pick"><dt>推奨と根拠</dt><dd><p class="d-choice">動いて手元を狂わせる</p><p class="d-basis">威圧の −3 は、攻撃の面か Guard の値を持つ敵の行動すべてに効きます。鈍足は敵がマスを動かす行動にしか効かず、札を出す場面の予兆の約 76% は攻撃です（swordsman_cards_v4.md:86）。今のスタンスで敵に何かを付けるのは #57 槍衾と #49 根縛りだけで、自分の攻撃で敵の手を鈍らせる役はほかにありません。ダメージを伸ばすスタンス 3 枚とも役が重ならず、威圧 1 は敵の行動が既に使う量なので、新しい値も持ち込みません。</p></dd></div>
+        </dl>
+      </article>
+      <article class="decision">
+        <h3>生まれた札をどこに置くか</h3>
+        <dl>
+          <div class="d-situation"><dt>何が起きているか</dt><dd>札を作る効果は、剣士の札の設計書にも BattleCore にもまだありません。カードの置き場は、手札・山札・捨札・除外（出したスタンスの札）の 4 つです（battle_core_v4.md §1、TurnLoop.cs:180-190）。生まれた札は戦闘の終わりに消えることが決まっています（2026-11-07 の決定）。どこに置くかで、その札をいつ使えるかが変わります。 battle_core_v4.md §2.2 の解決順にはドローの順が書かれておらず、C# だけが持っています。生む手順を足すときに、ドローの順も設計書に書き足します。</dd></div>
+          <div class="d-reason"><dt>なぜ決める必要があるか</dt><dd>置き場が決まらないと、battle_core_v4.md §2.2 の解決順に「札を生む」手順を足す文を書けません。TurnLoop.Resolve.cs に足す処理の書き先と、テストの期待値も決まりません。生まれる札をその場で使う札にするか、次のターンの札にするかで、対応表の値も変わります。</dd></div>
+          <div class="d-options"><dt>選ぶと何が起きるか</dt><dd><ul>
+            <li><b>手札に加える</b>: 作る側の札の面を解決した後に、生まれた札を手札に 1 枚加えます。そのターンのうちに、スタミナが足りれば続けて出せます。ターン終了ではほかの札と同じく捨札へ行き、山札が切れたら戻ってきます。戦闘の終わりに取り除きます。 「斬り上げてから振り下ろす」のような続けて出す技が、出したその場で手に入ります。札の結び付きが一目で分かります。手札の枚数が増えるので、3 枚目以降で発火する「締め」は満たしやすくなります。逆に、残り手札 2 枚以下で発火する「手薄」（#22 観察・#55 返しの構え）は満たしにくくなります。戦闘が長いと、生まれた札が捨札と山札を巡って少しずつ増えます。 手間: 設計書は battle_core_v4.md §2.2 と §8 に数行、swordsman_cards_v4.md §1 に記法を 1 項目足します（小）。</li>
+            <li><b>山札の上に置く</b>: 生まれた札を山札のいちばん上に置きます。次のターンの開始に引く 6 枚の 1 枚目になります。そのターンのうちに「ドロー +1」を持つ札を出せば、すぐ引けます。 今のターンに仕込んで次のターンに使う形になり、先を読む手触りになります。次のターンに引く札のうち 1 枚が決まるので、山札から引ける札は 1 枚減ります。ターン開始の手札は空から引くので、手札の上限には当たりません。生まれた札がその場で使えないので、対応表の値は決め直します。 手間: 設計書は battle_core_v4.md §2.2 と §8 に数行です（小）。</li>
+            <li><b>捨て札に置く</b>: 生まれた札を捨札に置きます。山札が切れて捨札を混ぜ直したときに、はじめて山札に入ります。 生まれた札を使えるのは、早くても数ターン後です。デッキは 20〜40 枚なので、短い通常戦では一度も引かないことがあります。手札の上限とは関わりません。続けて出す技の手触りは出ず、戦闘の後半に厚みが出る仕組みになります。 手間: 設計書は数行です（小）。</li>
+            <li><b>札ごとに手札か山札の上かを決める</b>: 作る側の札が、生まれた札を手札に入れるか、山札の上に置くかを 1 枚ずつ持ちます。対応表の欄に置き場を書きます。 続けて出す技は手札に、次のターンへの仕込みは山札の上に、と札ごとに性格を分けられます。遊び手が覚えることは 1 つ増えます。札の表示にも置き場を書く必要があります。 手間: 設計書は battle_core_v4.md §2.2 と §8、swordsman_cards_v4.md の対応表に置き場の列を足します（小〜中）。</li>
+          </ul></dd></div>
+          <div class="d-pick"><dt>推奨と根拠</dt><dd><p class="d-choice">手札に加える</p><p class="d-basis">Issue #933 の本文は最初の対応表を数枚で試すとしているので、出したその場で使える置き場がいちばん手触りを確かめやすいです。毎ターンのスタミナの回復は 3 なので、続けて出せる回数はスタミナで抑えられます。下の手札の上限の決定で見るとおり、作る側の札がドローを持たなければ、手札に入れても上限 8 を超えません。</p></dd></div>
+        </dl>
+      </article>
+      <article class="decision">
+        <h3>どの札が何を作るかの最初の対応表</h3>
+        <dl>
+          <div class="d-situation"><dt>何が起きているか</dt><dd>作る側は、いま設計書にある剣士の札から選びます。敵の撃破で習得する札（#41〜57 と #85）は #992 で入手先が変わる見込みなので、作る側から外しました。素直な札 5 枚（特性を持たない初期の札）と、ドローを持つ札も外しました。生まれる札を新しく作るか、既にある札の写しにするかで、手触りと手間が変わります。 作る側の 4 枚のうち #3 大上段・#30 牽制・#61 斬り上げの 3 枚は、剣術を 50 枚に減らす判断の推奨の外し方で、外す候補に入っています。外すと決まったら、作る側を残る札から選び直します。</dd></div>
+          <div class="d-reason"><dt>なぜ決める必要があるか</dt><dd>対応表が決まらないと、swordsman_cards_v4.md に生まれる札の節を書けません。C# の CardCatalog に足す札の数と、試験台で測る組み合わせも決まりません。#934 で剣術を 50 枚に減らす作業でも、作る側と写しの元の札を外さないように気をつける必要があり、その対象が決まりません。</dd></div>
+          <div class="d-options"><dt>選ぶと何が起きるか</dt><dd><ul>
+            <li><b>続けて出す小さな札を新しく作る</b>: 作る側 4 枚に、それぞれ専用の小さな札を 1 枚ずつ新しく作ります。生まれる札はどれもコスト 1 で、特性を持ちません。値は §1.4 の帯の表と §1.1 の目盛りの列 1 から取りました。4 枚は 64 種の外に置き、所持の種類にも数えません。 作る側を出したターンに、残りのスタミナ 1 で続けて出せます。特性を持たないので、「同じ条件と効果の組は 3 枚まで」の数は変わりません。素直な札の +2 は、初期の札だけの決まりなので付けません。#934 で 50 枚に減らしても、生まれる札は影響を受けません。札の名前・説明・絵を 4 枚ぶん新しく用意する必要があります。 手間: swordsman_cards_v4.md に生まれる札の節を 1 つ足し、4 枚と対応表を書きます（中）。</li>
+            <li><b>既にある札の写しを作る</b>: 作る側 4 枚が、初期の札の写しを 1 枚ずつ生みます。生まれる札は元の札と同じ名前・値・特性を持ちます。新しい札は作りません。 新しい札の名前と絵が要りません。写しの元の札はコスト 1〜2 なので、続けて出すには合計 4〜5 のスタミナが要る組があり、ターンをまたいで残す使い方が増えます。特性も写るので、続けて出すと特性が発火しやすい組になります（例: 大上段の後の受け太刀は連動(攻撃) で Guard 12）。写しにどの段の習熟を当てるかを別に決める必要があります。デッキに同じ札があると、どれが生まれた札かを画面で見分ける印が要ります。#934 で写しの元の札が外れると、対応表を作り直すことになります。 手間: swordsman_cards_v4.md の作る側の行に「生む札」を書き足します（小）。</li>
+            <li><b>新しい札と写しを 2 組ずつ混ぜる</b>: 斬り上げと大上段は新しい小さな札を、牽制と弾きは既にある札の写しを生みます。試遊で 2 つのやり方の手触りを並べて比べるための組です。 1 回の試遊で、新しい札と写しの両方の手触りを確かめられます。写しの側には、写しの段の扱いと、画面の見分けの印の問題がそのまま残ります。新しい札は 2 枚ぶんで済みます。 手間: swordsman_cards_v4.md に生まれる札の節を足し、新しい 2 枚と対応表を書きます（中）。</li>
+          </ul></dd></div>
+          <div class="d-pick"><dt>推奨と根拠</dt><dd><p class="d-choice">続けて出す小さな札を新しく作る</p><p class="d-basis">生まれる札をコスト 1 にそろえると、作る側を出したターンに続けて出せるので、続けて出す技の手触りを確かめやすいです。特性を持たないので、同じ組の数の決まりにも、習熟の段の扱いにも触れません。写しの元になる初期の札は、#934 の 50 枚への削減で外れる可能性があり、新しい札はその影響を受けません。ただし、作る側の札が 50 枚への削減で外れると、生まれる札も出番を失います。</p></dd></div>
+        </dl>
+      </article>
+      <article class="decision">
+        <h3>魔術師がどんな戦い方で剣士と分かれるか</h3>
+        <dl>
+          <div class="d-situation"><dt>何が起きているか</dt><dd>魔術の札 50 枚の軸の候補は 3 つあります。札に息・根・影の「系」を持たせて続けて出す札の系で得をする形、今の規則のまま「間合い 2〜3 から撃ち、寄られたら押す・退く・止める」形、詠唱で蓄えて放つ形です。どの軸も、人の側に魔術を置かない世界観（world-v1.md §7.3:294）と食い違います。この点は main が決めることで、どの軸を選んでも札の名前は仮のままになります。</dd></div>
+          <div class="d-reason"><dt>なぜ決める必要があるか</dt><dd>軸が決まらないと、担当が 50 枚の設計書の §1（記法の差分）と、初期 25 枚の行を書き始められません。50 枚の内訳（次の判断）と、battle の担当に戦闘の規則の書き足しを頼むかどうかも、軸で変わります。</dd></div>
+          <div class="d-options"><dt>選ぶと何が起きるか</dt><dd><ul>
+            <li><b>離れて撃ち、寄られたら退く</b>: 攻撃の札の大半を届く 2〜3 か 1〜3 に置き、間合い 0 で出せない札を主にします。近づかれたら、後ろへ・押す・鈍足の札で間合いを作り直します。詠唱は、集中と強化を自分に付けるスキルの札と、それを条件に放つ攻撃の札の組で作ります。新しい規則は足しません。ただし、battle_core_v4.md §7.2 の配分の決まり 2 つは、魔術師について外す必要があります。 遊び手は、開始の間合い 3 から 1 ターン目に撃てます。通常の敵 7 体のうち 5 体は間合い 3 以上で寄ってくるので、寄られては退くかどうかの読み合いになります。灰弩の竜兵（弩は 2〜5）と燐弓の竜兵（靄の矢は 2〜4）は前へ出ず、得意な間合いが魔術師と重なります。大きさ 2 以上の敵（鉄壁の門竜・中ボス・王）と亡霊には押すが効きません。第 1〜3 層の場は 6 マスで、プレイヤーの後ろには 1 マスしかありません。剣士の離れて戦う札（#9 投げ刃・#31 猪突猛進・#34 石礫・#48 棘の一射・#73 疾風突き・#16 水の構え・#43 遠間の構え・#47 根渡り）と役が重なります。報酬の表は変わりません。 手間は小〜中です。</li>
+            <li><b>三つの系をつなぐ</b>: 札 1 枚に息・根・影のどれか 1 つの系を持たせます。直前に出した札と同じ系なら「同系」、違う系なら「転系」の特性が成り立ちます。最後に出した系はターンをまたいで残します。間合いは 1〜3 を主にし、懐（間合い 0）を苦手にします。新しい状態と倍率は足しません。 遊び手は、手札の系の並びを読んで出す順を組みます。剣士の連打（4 枚）と連動（6 枚）と働きが近く、属性の代わりに系を読む形です。1 つの系に 16〜17 種あるので、1 つの系だけで 20 枚のデッキを組むと同系がほぼ毎回成り立ちます。ボスの適応は属性の並びを読み、系を読みません（battle_core_v4.md §6.3）。画面には系の印と最後の系の表示が要ります。魔術師は札の設計だけ先に進める決定（2026-11-21）で戦闘のコアに入れないので、試験台で測れるのはコアに入れた後です。届く上限 3 の札が多くなるので、§7.2 の「少数にする」とも食い違います。 手間は大です。</li>
+            <li><b>唱えて蓄え、放って崩す</b>: 集中と強化を自分に付ける詠唱の札と、自分の状態(集中 / 強化) を条件に大きく放つ札の組を軸にします。間合いの配り方は剣士と同じにし、境目の 4 マスに同数ずつ配ります。届く上限 3 の札は剣士と同じく少数にします。新しい規則も、§7.2 の例外も要りません。 遊び手は、唱えるターンと放つターンを組み立てます。集中は次に出した札で必ず 1 減るので、唱えた後に何を出すかの読み合いになります（battle_core_v4.md §5）。ボスの適応はスキル → 攻撃の並びを読めるので、今の規則のまま詠唱を咎められます。一方で、間合いの上では剣士と同じ戦い方になり、職の違いは小さくなります。剣士の #21 集中・#23 鬨の声・#52 群れの咆哮・#66 静の受け・#72 覚悟・#78 大狼の構えが、すでに集中か強化を使っています。 手間は小です。</li>
+          </ul></dd></div>
+          <div class="d-pick"><dt>推奨と根拠</dt><dd><p class="d-choice">離れて撃ち、寄られたら退く</p><p class="d-basis">魔術師は札の設計だけ先に進める決定（2026-11-21）で戦闘のコアに入らないので、新しい規則を 4 つ足す軸は、書いても当分測れません。間合いで分ける軸は、エンジンの規則を変えず、§7.2 の配分の決まりを職ごとに外すだけで済みます。§7.2 の配分を確かめるテストは CardCatalogTests.cs に 2 つあり、どちらも剣士の札表だけを見るので、魔術師は札表に入らないかぎり当たりません。魔術師を札表に入れるときに、職ごとの扱いを決めます。詠唱だけの軸は手間が最も小さいですが、剣士の集中・強化の札と重なり、2 つ目の職を置く理由が薄くなります。</p></dd></div>
+        </dl>
+      </article>
+      <p>選んでもらうのは、ひらめきをいつ起こすか、報酬の替わり、剣術の 14 枚の外し方、変幻の構えの効果、生まれた札の置き場、最初の対応表の作り方、魔術師の戦い方の軸の 7 つです。上の 7 枚のカードが、判断ごとの状況・理由・選択肢・推奨です。候補の札の表は、Issue ごとの節にあります。</p>
+      <p>選択が決まったら、剣士の札の設計書を、習得の形、変幻の構え、50 枚への削減の順に 1 本ずつ書き換えます。同じ設計書を触るので、PR は前の PR の上に積みます。魔術の札 50 枚の設計書は新しいファイルなので、並行して書きます。そのあと、C# のカード表の追従（Issue #898）と、札が生む札（Issue #933）に進みます。</p>
+    </section>
+
+    <section id="s-done">
+      <p class="kicker"><span class="no">03</span>終わったこと</p>
+      <h2>寄生と亡霊の規則と王の階級は、main に入りました</h2>
+      <ul>
+        <li><b>Issue #962 の実装。</b> PR #995 を main に入れました（merge でできた commit は d1ff1709）。全体確認の 8 つのコマンドはすべて終了コード 0 で、別の役の確認で直さないと通せない指摘は 0 件でした<sup class="ref"><a href="#ref-6">[6]</a></sup>。</li>
+        <li><b>画面からはまだ呼べません。</b> 爛れた世界樹・死霊王・還らずの英雄の 3 体は、戦闘のコアに入りましたが、出現表と戦闘画面には出していません。Unity Editor での手触りの確認は、画面の作業が入ってからになるので、Issue #962 は open のままです。</li>
+        <li><b>PR #988 の確かめ直し。</b> main を取り込んだ merge commit（65542a9c）を別の役が確かめ、直さないと通せない指摘は 0 件でした<sup class="ref"><a href="#ref-7">[7]</a></sup>。確認の記録を書いたので、こうだいさんの試遊が済めば入れられます。</li>
+        <li><b>構想の文書。</b> 2026-11-21 の 2 つの決定（敵を倒して札を得ない、魔術師は札の設計だけ先に進める）を concept-v3 に入れました（PR #994、merge でできた commit は d82f43c8）。別の役の確認で出た 2 つの指摘は、入れる前に直しています。</li>
+        <li><b>メモリ。</b> Workflow の 1 時間のあいだ、空きメモリの最小は 8.96 GB で、下限の 6 GB を切りませんでした。記録の抜けはありません。</li>
+      </ul>
+    </section>
+
+    <section id="s-992">
+      <p class="kicker"><span class="no">04</span>習得の形</p>
+      <h2>習得の形は、習熟の段の上がりでひらめく形を推します</h2>
+      <p>Issue #992 の 4 つの判断です。推奨の 4 つ（習熟の段が上がってひらめく・棘の一射も外して 4 枚・竜王の 3 枚を外す・訓練の印で返す）は、互いに支え合います。訓練の印で札の段が上がると、ひらめきが起きるためです。根拠にした設計書の節と C# の場所は、参考の 1 番にまとめました<sup class="ref"><a href="#ref-1">[1]</a></sup>。</p>
+      <h3>推奨で進める判断</h3>
+      <p>次の判断は、こうだいさんの決定か、選んでもらう判断の答えから決まるので、推奨で進めます。違う形にしたいときは教えてください。</p>
+      <article class="decision">
+        <h3>敵の由来だった札を何枚残すか</h3>
+        <dl>
+          <div class="d-situation"><dt>何が起きているか</dt><dd>入手先が敵の撃破になっている札は、64 種の中に 13 枚あります（ボス 9 枚と精鋭 4 枚、swordsman_cards_v4.md §3）。13 枚はどれも習熟なしの札です。残す札はひらめきの候補に回すので、手に入り方はひらめきの決め方で決まります。判断が分かれるのは、#41 瘴気の刃・#44 糸打ち・#48 棘の一射の 3 枚を残すかどうかです。#43 遠間の構え・#50 城壁の受け・#52 群れの咆哮は、ほかの札と形が重なるので、どの選択肢でも外します。#45 変幻の構え・#85 覚醒・#55 返しの構えなどは、どの選択肢でも残します。</dd></div>
+          <div class="d-reason"><dt>なぜ決める必要があるか</dt><dd>外す枚数が決まらないと、Issue #934（剣術を 50 枚に減らすかの判断）で外す残りの 8〜11 枚の候補を選べません。剣士の札の設計書 §4 の集計と、C# のカード表の枚数（Constants.cs:32 の OwnedKindsMax、CardCatalogTests.cs）の書き換えも止まります。enemy_roster_v4.md §4.5・§5.5・§6.6 の固有カードの表を、由来の記録としてどう残すかも書けません。</dd></div>
+          <div class="d-options"><dt>選ぶと何が起きるか</dt><dd><ul>
+            <li><b>重なる 3 枚だけ外す</b>: ほかの札と形が重なる 3 枚を外します。#43 遠間の構えは、#16 水の構えと #47 根渡りと同じく、間合い 2 以上のターンに効くスタンスです。#50 城壁の受けは、#13 低い構えと列 3・Guard 15 が同じです。#52 群れの咆哮は、#23 鬨の声と列 2・届く 0〜2・強化 2 + 状態 2 の形が同じです。残す 10 枚のうち #41 は、名前の「瘴気」を付け替えます。 64 種は 61 種になり、50 枚まではあと 11 枚を外す必要があります。崩しの源の 4 枚、間合い 3 に届く 5 枚、見切りを付ける唯一の #55 は残ります。被弾でスタミナが戻る #42、被弾で出血を返す #57、敵の移動を咎める #49 も残ります。 手間: 剣士の札の設計書 §3 の 3 行・§1.3・§4 の集計・§4.4 の入手先の行（小〜中）。</li>
+            <li><b>棘の一射も外して 4 枚</b>: 上の 3 枚に加えて、#48 棘の一射を外します。#48 は、#9 投げ刃と列 2・届く 0〜3・威力 8 が同じです。特性の「予兆(攻撃): 重撃」も #3 大上段と同じです。残す 9 枚のうち #41 は、名前の「瘴気」を付け替えます。 64 種は 60 種になり、50 枚まではあと 10 枚です。間合い 3 に届く相手向きの札は、5 枚から 4 枚（#9 / #31 / #34 / #73）に減ります。崩しの源の 4 枚と、敵の由来の札だけが持つ役（被弾でスタミナ、被弾で出血、敵の移動を咎める、見切り）はすべて残ります。 手間: 上の案の量に、剣士の札の設計書 §1.4 の「上限が 3 に届くのは 5 枚」の文を直す分が加わります（小〜中）。</li>
+            <li><b>瘴気の刃と糸打ちまで外す</b>: 上の 4 枚に加えて、#41 瘴気の刃と #44 糸打ちを外します。#41 は、名前の「瘴気」が concept-v3.md §14.2（瘴気の語は景色と敵の名前にだけ残す）と食い違います。#44 は、崩しを付ける攻撃の 1 枚です。 64 種は 58 種になり、50 枚まではあと 8 枚です。「相手の状態(疲労)」を条件にする札は #41 だけなので、この条件が無くなります。崩しの源は 4 枚から 3 枚（#6 / #75 / #49）になり、崩し 2 を付ける札は #75 だけになります。そのため、崩し後を条件にする #8 体幹崩しと #75 急所突きが働きにくくなります。名前の付け替えは要りません。 手間: 上の案の量に、剣士の札の設計書 §1.2 の崩しの源の段落と、§4.2 の条件の集計を直す分が加わります（中）。</li>
+          </ul></dd></div>
+          <div class="d-pick"><dt>推奨と根拠</dt><dd><p class="d-choice">棘の一射も外して 4 枚</p><p class="d-basis">#48 が #9 と列・届く間合い・威力まで同じで、特性も #3 と同じことは、表を読んで確かめた事実で、外す理由がいちばんはっきりしています。#41 と #44 は、それぞれ疲労の条件と崩し 2 という、ほかの札に無い役を持っています。外すと崩し後の札まで弱るので、残して #41 の名前だけを直すほうが失うものが少なくなります。</p></dd></div>
+        </dl>
+      </article>
+      <article class="decision">
+        <h3>竜王の固有 3&nbsp;枚を残すか</h3>
+        <dl>
+          <div class="d-situation"><dt>何が起きているか</dt><dd>#81 竜息・#82 竜吼・#83 竜鱗の構えは、王の竜王を倒して習得する 3 枚で、64 種の外に置かれています（swordsman_cards_v4.md §3.1）。3 枚とも C# のカード表に入っていません。龍神の報酬にも「固有カード 3 種」の枠があり（concept-v3.md §15.2、enemy_roster_v4.md §7.4）、これも撃破で札を得る形です。</dd></div>
+          <div class="d-reason"><dt>なぜ決める必要があるか</dt><dd>決めないと、剣士の札の設計書 §3.1 を消すか、ひらめきの候補として書き直すかが決まりません。enemy_roster_v4.md §12.7 と §7.4、concept-v3.md §15.2 の固有カードの行も直せません。残すなら、3 枚を C# のカード表に入れる battle 宛ての Issue が要ります。</dd></div>
+          <div class="d-options"><dt>選ぶと何が起きるか</dt><dd><ul>
+            <li><b>竜王の 3 枚を外す</b>: §3.1 を節ごと消します。§3.2 の新しい王と中ボスの札の案 9 つも、Issue #992 のとおり消します。龍神の固有カード 3 種の枠も外します。竜王の行動を写した由来は、enemy_roster_v4.md §12.7 に記録として残すか消します。 王を倒しても札は増えなくなり、王を倒して札を得ない決定と揃います。64 種と C# のカード表は変わりません。遠くから重く吐く息、寄る敵を止める吼え、懐の相手を受ける構えの 3 つは遊べなくなります。 手間: 剣士の札の設計書 §3.1・§3.2 の削除と §1.3（小）。</li>
+            <li><b>竜王の頁を読んでひらめく札として残す</b>: 3 枚を撃破の報酬から外し、竜王の開示度が 2 になると、ひらめきの候補に入るようにします。開示度は、観察の札か、継いだ頁で 2 になります。第 7 層には情報収集ノードがないので、竜王の間で情報収集はできません。64 種の外に置く扱いは変えません。 竜王と戦った経験が札として残り、由来の話も保てます。竜王の札が候補に入る手段は、竜王との戦闘で観察の札を出すか、前の生の頁を遺産で継ぐかの 2 つだけなので、ほかの敵の由来の札より手に入りにくくなります。三体の王を倒すとクリアなので、得た札を同じ生で使えるのは、別の王との戦いか龍神だけです（encounters_and_rewards_v4.md §4.2）。ひらめきの決め方で「戦いの中の出来事でひらめく」を選ぶと、条件が「竜王に勝つ」になりやすく、王を倒して札を得ない決定と食い違います。 手間: 剣士の札の設計書 §3.1 の入手先の列と本文（小）。</li>
+          </ul></dd></div>
+          <div class="d-pick"><dt>推奨と根拠</dt><dd><p class="d-choice">竜王の 3 枚を外す</p><p class="d-basis">王を倒して札を得ないという決定に、いちばん素直に合います。3 枚は 64 種の外で C# にも無いので、外しても枚数・集計・コードのどれも動きません。残すと、カード表に 3 枚を足す作業と、50 枚に減らす方針と逆向きの枚数の決め直しが増えます。</p></dd></div>
+        </dl>
+      </article>
+      <h3>入手先が敵の撃破になっている 16&nbsp;枚の扱い</h3>
+      <div class="tablewrap">
+        <table class="wide">
+          <caption>敵の由来の 13 枚のうち、外す札は選択肢ごとに 3 枚・4 枚・6 枚です。</caption>
+          <thead><tr><th>#</th><th>名前</th><th>今の入手先</th><th>3 枚だけ外す</th><th>4 枚外す</th><th>6 枚外す</th></tr></thead>
+          <tbody>
+            <tr><td>41</td><td>瘴気の刃</td><td>ボス 大黒蛇 セルク</td><td>名前を替えて残します</td><td>名前を替えて残します</td><td>外します</td></tr>
+            <tr><td>42</td><td>司祭の祈り</td><td>ボス 大黒蛇 セルク</td><td>残します</td><td>残します</td><td>残します</td></tr>
+            <tr><td>43</td><td>遠間の構え</td><td>ボス 大黒蛇 セルク</td><td>外します</td><td>外します</td><td>外します</td></tr>
+            <tr><td>44</td><td>糸打ち</td><td>ボス 獄竜 ガルド</td><td>残します</td><td>残します</td><td>外します</td></tr>
+            <tr><td>45</td><td>変幻の構え</td><td>ボス 獄竜 ガルド</td><td>残します</td><td>残します</td><td>残します</td></tr>
+            <tr><td>85</td><td>覚醒</td><td>ボス 獄竜 ガルド</td><td>残します</td><td>残します</td><td>残します</td></tr>
+            <tr><td>47</td><td>根渡り</td><td>ボス 歪みの根</td><td>残します</td><td>残します</td><td>残します</td></tr>
+            <tr><td>48</td><td>棘の一射</td><td>ボス 歪みの根</td><td>残します</td><td>外します</td><td>外します</td></tr>
+            <tr><td>49</td><td>根縛り</td><td>ボス 歪みの根</td><td>残します</td><td>残します</td><td>残します</td></tr>
+            <tr><td>50</td><td>城壁の受け</td><td>精鋭 鉄壁の門竜</td><td>外します</td><td>外します</td><td>外します</td></tr>
+            <tr><td>52</td><td>群れの咆哮</td><td>精鋭 統牙の長竜</td><td>外します</td><td>外します</td><td>外します</td></tr>
+            <tr><td>55</td><td>返しの構え</td><td>精鋭 不退の槍竜</td><td>残します</td><td>残します</td><td>残します</td></tr>
+            <tr><td>57</td><td>槍衾</td><td>精鋭 不退の槍竜</td><td>残します</td><td>残します</td><td>残します</td></tr>
+            <tr><td>81</td><td>竜息</td><td>王 竜王</td><td>竜王の札の判断で決めます</td><td>竜王の札の判断で決めます</td><td>竜王の札の判断で決めます</td></tr>
+            <tr><td>82</td><td>竜吼</td><td>王 竜王</td><td>竜王の札の判断で決めます</td><td>竜王の札の判断で決めます</td><td>竜王の札の判断で決めます</td></tr>
+            <tr><td>83</td><td>竜鱗の構え</td><td>王 竜王</td><td>竜王の札の判断で決めます</td><td>竜王の札の判断で決めます</td><td>竜王の札の判断で決めます</td></tr>
+            <tr><td>—</td><td>64 種の残り</td><td>—</td><td>61 種です</td><td>60 種です</td><td>58 種です</td></tr>
+            <tr><td>—</td><td>50 枚まで外す残り</td><td>—</td><td>11 枚です</td><td>10 枚です</td><td>8 枚です</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>表の右の 3 列は、順に「重なる 3 枚だけ外す」「棘の一射も外して 4 枚」「瘴気の刃と糸打ちまで外す」です。竜王の 3 枚は、64 種の外にあるので、どれを選んでも 64 種の数は変わりません。</p>
+    </section>
+
+    <section id="s-934">
+      <p class="kicker"><span class="no">05</span>剣術の 50 枚</p>
+      <h2>剣術の 50&nbsp;枚は、形が重なる札と多すぎる効果の札を外す形を推します</h2>
+      <p>Issue #934 のうち、剣術を 64 枚から 50 枚に減らす判断です。外す 14 枚の候補を、考え方の違う 3 通りで並べました。どの外し方でも、外したあとは 50 枚ちょうどです。敵の由来の札を何枚外すかも、この選択で一緒に決まります。出典は参考の 2 番です<sup class="ref"><a href="#ref-2">[2]</a></sup>。</p>
+      <h3>外す 14&nbsp;枚の候補: 同じ形と多すぎる効果の札を外す（推奨）</h3>
+      <p>初期 3 枚・習得 11 枚を外し、残りは初期 29・習得 21 です。#71 見切りの目と #78 大狼の構えの 2 枚は、ほかの 12 枚より理由が弱い候補です。</p>
+      <div class="tablewrap">
+        <table>
+          <caption>推奨の外し方は、初期 3 枚と習得 11 枚を外します。</caption>
+          <thead><tr><th>札</th><th>属性と入手</th><th>外す理由</th></tr></thead>
+          <tbody>
+            <tr><td>#3 大上段</td><td>攻撃・初期</td><td>#2 袈裟斬りと列 2・届く 0〜1・威力 15 が同じです。特性の効果は重撃です</td></tr>
+            <tr><td>#14 受け太刀</td><td>防御・初期</td><td>#11 呼吸を整えると列 2・Guard 9 が同じです。特性の効果は最多の Guard +n です</td></tr>
+            <tr><td>#30 牽制</td><td>攻撃・初期</td><td>攻撃面が #76 躱し斬りと同じです。特性の効果は Guard +n です</td></tr>
+            <tr><td>#43 遠間の構え</td><td>スタンス・習得（ボス）</td><td>敵の由来の札のうち、この外し方で外す 4 枚の 1 枚です</td></tr>
+            <tr><td>#48 棘の一射</td><td>攻撃・習得（ボス）</td><td>敵の由来の札のうち、この外し方で外す 4 枚の 1 枚です</td></tr>
+            <tr><td>#50 城壁の受け</td><td>防御・習得（精鋭）</td><td>敵の由来の札のうち、この外し方で外す 4 枚の 1 枚です</td></tr>
+            <tr><td>#52 群れの咆哮</td><td>スキル・習得（精鋭）</td><td>敵の由来の札のうち、この外し方で外す 4 枚の 1 枚です</td></tr>
+            <tr><td>#61 斬り上げ</td><td>攻撃・習得（二層）</td><td>攻撃と前への移動の札が列 3 に 3 枚あります。特性は威力 +n です</td></tr>
+            <tr><td>#64 受け歩き</td><td>防御・習得（三層）</td><td>Guard と前へ 1 の札が 3 枚あります。特性は Guard +n です</td></tr>
+            <tr><td>#68 三日月斬り</td><td>攻撃・習得（四層）</td><td>#2・#3 と列 2・届く 0〜1・威力 15 が同じです。特性の効果は重撃です</td></tr>
+            <tr><td>#69 柄頭打ち</td><td>攻撃・習得（四層）</td><td>状態の面（威圧 2 + 疲労 2）が #67 弾きと同じです。特性の効果は威力 +n です</td></tr>
+            <tr><td>#71 見切りの目</td><td>スタンス・習得（五層）</td><td>ターン開始に Guard +3 のスタンスです。区切りで守る役は #47 が残ります</td></tr>
+            <tr><td>#78 大狼の構え</td><td>スタンス・習得（七層）</td><td>以後の攻撃に上乗せするスタンスは #84・#85 にもあります。特性は #52 と同じ組です</td></tr>
+            <tr><td>#79 影踏み</td><td>攻撃・習得（七層）</td><td>#10 と届く 1〜2 が同じです。特性の条件は約 8% でしか満たせません</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>外す 14&nbsp;枚の候補: 習熟で育たない札をまとめて外す</h3>
+      <p>習得の 14 枚を外し、残りは初期 32・習得 18 です。#45 変幻の構え・#84 背水の陣・#85 覚醒は、習熟なしでも残します。</p>
+      <div class="tablewrap">
+        <table>
+          <caption>習熟で育たない札を外す形は、敵の由来の 11 枚と七層の 3 枚を外します。</caption>
+          <thead><tr><th>札</th><th>属性と入手</th><th>外す理由</th></tr></thead>
+          <tbody>
+            <tr><td>#41 瘴気の刃</td><td>攻撃・習得（ボス）</td><td>習熟なしです。名前の「瘴気」が concept-v3.md §14.2 と食い違います</td></tr>
+            <tr><td>#42 司祭の祈り</td><td>スタンス・習得（ボス）</td><td>習熟なしです。被弾でスタミナが戻る役は、この札とともに消えます</td></tr>
+            <tr><td>#43 遠間の構え</td><td>スタンス・習得（ボス）</td><td>習熟なしです。#16・#47 と同じく間合い 2 以上で働くスタンスです</td></tr>
+            <tr><td>#44 糸打ち</td><td>攻撃・習得（ボス）</td><td>習熟なしです。崩しの源の 1 枚なので、源は #6 と #75 の 2 枚になります</td></tr>
+            <tr><td>#47 根渡り</td><td>スタンス・習得（ボス）</td><td>習熟なしです。連動(Sk) を持つ札はこの 1 枚だけです</td></tr>
+            <tr><td>#48 棘の一射</td><td>攻撃・習得（ボス）</td><td>習熟なしです。#9 投げ刃と列 2・届く 0〜3・威力 8 が同じです</td></tr>
+            <tr><td>#49 根縛り</td><td>スタンス・習得（ボス）</td><td>習熟なしです。敵の移動を咎める役は、この札とともに消えます</td></tr>
+            <tr><td>#50 城壁の受け</td><td>防御・習得（精鋭）</td><td>習熟なしです。#13 低い構えと列 3・Guard 15 が同じです</td></tr>
+            <tr><td>#52 群れの咆哮</td><td>スキル・習得（精鋭）</td><td>習熟なしです。#23 鬨の声と列 2・届く 0〜2・強化 2 + 状態 2 の形が同じです</td></tr>
+            <tr><td>#55 返しの構え</td><td>防御・習得（精鋭）</td><td>習熟なしです。見切りを付ける唯一の札なので、#39 の特性が働かなくなります</td></tr>
+            <tr><td>#57 槍衾</td><td>スタンス・習得（精鋭）</td><td>習熟なしです。battle_core_v4.md §19.8 の血路の型が名指す札です</td></tr>
+            <tr><td>#77 血の舞</td><td>攻撃・習得（七層）</td><td>習熟なしです。出血 2 を付ける攻撃はこの 1 枚だけです</td></tr>
+            <tr><td>#78 大狼の構え</td><td>スタンス・習得（七層）</td><td>習熟なしです。出血中の敵への上乗せの役は、この札とともに消えます</td></tr>
+            <tr><td>#79 影踏み</td><td>攻撃・習得（七層）</td><td>習熟なしです。条件の予兆(移動) は、札を出す場面の約 8% でしか出ません（§1.2）</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>外す 14&nbsp;枚の候補: 初期と習得から 7&nbsp;枚ずつ外す</h3>
+      <p>初期 7 枚・習得 7 枚を外し、残りは初期 25・習得 25 です。</p>
+      <div class="tablewrap">
+        <table>
+          <caption>7 枚ずつ外す形は、初期の崩しの 2 枚（#6・#8）も外します。</caption>
+          <thead><tr><th>札</th><th>属性と入手</th><th>外す理由</th></tr></thead>
+          <tbody>
+            <tr><td>#3 大上段</td><td>攻撃・初期</td><td>初期の #2 と列 2・届く 0〜1・威力 15 が同じです</td></tr>
+            <tr><td>#6 峰打ち</td><td>攻撃・初期</td><td>崩し 1 は敵の毎ターンの回復に消され、初期だけでは崩し後が働きません（§1.2）</td></tr>
+            <tr><td>#8 体幹崩し</td><td>攻撃・初期</td><td>崩し後: 重撃 が #75 と同じです。初期だけでは働きません（§1.2）</td></tr>
+            <tr><td>#10 伸び突き</td><td>攻撃・初期</td><td>間合い 2 以上: 威力 +n の組が、初期の #31 と同じです</td></tr>
+            <tr><td>#12 鉄の受け</td><td>防御・初期</td><td>初期の #13 と同じく、列 3 で Guard を出すだけの札です</td></tr>
+            <tr><td>#14 受け太刀</td><td>防御・初期</td><td>初期の #11 と列 2・Guard 9 が同じです</td></tr>
+            <tr><td>#38 足捌き・後</td><td>防御・初期</td><td>Guard と後ろへの移動の札が、初期の #26・#28 にもあります</td></tr>
+            <tr><td>#43 遠間の構え</td><td>スタンス・習得（ボス）</td><td>敵の由来の札のうち、ほかの札と形が重なるので外す 3 枚の 1 枚です</td></tr>
+            <tr><td>#50 城壁の受け</td><td>防御・習得（精鋭）</td><td>敵の由来の札のうち、ほかの札と形が重なるので外す 3 枚の 1 枚です</td></tr>
+            <tr><td>#52 群れの咆哮</td><td>スキル・習得（精鋭）</td><td>敵の由来の札のうち、ほかの札と形が重なるので外す 3 枚の 1 枚です</td></tr>
+            <tr><td>#61 斬り上げ</td><td>攻撃・習得（二層）</td><td>習得の #73 と、列 3 で攻撃と前への移動を持つ形が重なります</td></tr>
+            <tr><td>#64 受け歩き</td><td>防御・習得（三層）</td><td>習得の #58 と、列 2・Guard 6 に移動を持つ形が重なります</td></tr>
+            <tr><td>#68 三日月斬り</td><td>攻撃・習得（四層）</td><td>習得の中で重撃の札が #44・#48・#68・#75 の 4 枚あります</td></tr>
+            <tr><td>#69 柄頭打ち</td><td>攻撃・習得（四層）</td><td>習得の #67 と状態の面（威圧 2 + 疲労 2）が同じです</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>推奨の外し方と 7 枚ずつの外し方は、#3・#14・#43・#50・#52・#61・#64・#68・#69 の 9 枚が共通です。どちらの考え方でも候補に上がる札です。</p>
+      <figure class="fig">
+        <figcaption>推奨の外し方では、攻撃の札が 25&nbsp;枚から 18&nbsp;枚に減ります。</figcaption>
+        <ul class="hbar" role="list">
+          <li class="hbar-row is-focus"><span class="hbar-label">攻撃</span><span class="hbar-track" aria-hidden="true"><span class="hbar-fill" style="width:72%"></span></span><span class="hbar-val">18</span></li>
+          <li class="hbar-row"><span class="hbar-label">防御</span><span class="hbar-track" aria-hidden="true"><span class="hbar-fill" style="width:56%"></span></span><span class="hbar-val">14</span></li>
+          <li class="hbar-row"><span class="hbar-label">スタンス</span><span class="hbar-track" aria-hidden="true"><span class="hbar-fill" style="width:40%"></span></span><span class="hbar-val">10</span></li>
+          <li class="hbar-row"><span class="hbar-label">スキル</span><span class="hbar-track" aria-hidden="true"><span class="hbar-fill" style="width:32%"></span></span><span class="hbar-val">8</span></li>
+        </ul>
+        <p class="fig-note">単位は枚です。棒の長さは、今の攻撃の 25 枚を 100% とした割合です（計算）。出典は参考の 2 番です。</p>
+      </figure>
+      <h3>外したあとの集計</h3>
+      <p>表の列の「育たない札を外す」「同じ形の札を外す」「7 枚ずつ外す」は、順に上の 3 つの外し方です。属性の欄は、初期 / 習得 / 計の順です。</p>
+      <div class="tablewrap">
+        <table class="wide">
+          <caption>推奨の外し方は、攻撃 18・防御 14・スキル 8・スタンス 10 になります。</caption>
+          <thead><tr><th>属性</th><th>今の 64 種</th><th>育たない札を外す</th><th>同じ形の札を外す</th><th>7 枚ずつ外す</th></tr></thead>
+          <tbody>
+            <tr><td>攻撃</td><td>14 / 11 / 25</td><td>14 / 6 / 20</td><td>12 / 6 / 18</td><td>10 / 8 / 18</td></tr>
+            <tr><td>防御</td><td>10 / 7 / 17</td><td>10 / 5 / 15</td><td>9 / 5 / 14</td><td>7 / 5 / 12</td></tr>
+            <tr><td>スキル</td><td>6 / 3 / 9</td><td>6 / 2 / 8</td><td>6 / 2 / 8</td><td>6 / 2 / 8</td></tr>
+            <tr><td>スタンス</td><td>2 / 11 / 13</td><td>2 / 5 / 7</td><td>2 / 8 / 10</td><td>2 / 10 / 12</td></tr>
+            <tr><td>計</td><td>32 / 32 / 64</td><td>32 / 18 / 50</td><td>29 / 21 / 50</td><td>25 / 25 / 50</td></tr>
+            <tr><td>習得の入手先（今の表のまま）</td><td>ボス 9 / 精鋭 4 / 探索 19</td><td>ボス 2 / 精鋭 0 / 探索 16</td><td>ボス 7 / 精鋭 2 / 探索 12</td><td>ボス 8 / 精鋭 2 / 探索 15</td></tr>
+            <tr><td>コスト 1 の札（§5 の 1）</td><td>19</td><td>15</td><td>19</td><td>17</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="tablewrap">
+        <table class="wide">
+          <caption>どの外し方でも、届く間合いの帯は 1 つも空きません。</caption>
+          <thead><tr><th>届く</th><th class="num">今の 64 種</th><th>育たない札を外す</th><th>同じ形の札を外す</th><th>7 枚ずつ外す</th></tr></thead>
+          <tbody>
+            <tr><td>0</td><td class="num">3</td><td>3</td><td>2（#36 / #58）</td><td>2（#36 / #58）</td></tr>
+            <tr><td>0〜1</td><td class="num">14</td><td>13</td><td>10</td><td>10</td></tr>
+            <tr><td>1〜2</td><td class="num">2</td><td>1（#10）</td><td>1（#10）</td><td>1（#79）</td></tr>
+            <tr><td>0〜2</td><td class="num">6</td><td>3</td><td>5</td><td>4</td></tr>
+            <tr><td>2〜3</td><td class="num">1</td><td>1</td><td>1</td><td>1</td></tr>
+            <tr><td>1〜3</td><td class="num">1</td><td>1</td><td>1</td><td>1</td></tr>
+            <tr><td>0〜3</td><td class="num">3</td><td>2</td><td>2</td><td>3</td></tr>
+            <tr><td>間合いを見ない</td><td class="num">34</td><td>26</td><td>28</td><td>28</td></tr>
+            <tr><td>間合い 3 に届く札</td><td class="num">5</td><td>4</td><td>4</td><td>5</td></tr>
+            <tr><td>間合いの境目の札（§4.4）</td><td class="num">13</td><td>12（#77 が抜けます）</td><td>13</td><td>12（#10 が抜けます）</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="tablewrap">
+        <table class="wide">
+          <caption>推奨の外し方は、予兆を条件にする札が 8 枚から 2 枚に減ります。</caption>
+          <thead><tr><th>条件</th><th class="num">今の 64 種</th><th class="num">育たない札を外す</th><th class="num">同じ形の札を外す</th><th class="num">7 枚ずつ外す</th></tr></thead>
+          <tbody>
+            <tr><td>連動</td><td class="num">6</td><td class="num">5</td><td class="num">5</td><td class="num">5</td></tr>
+            <tr><td>移動後</td><td class="num">1</td><td class="num">1</td><td class="num">1</td><td class="num">1</td></tr>
+            <tr><td>間合い</td><td class="num">13</td><td class="num">12</td><td class="num">13</td><td class="num">12</td></tr>
+            <tr><td>予兆</td><td class="num">8</td><td class="num">4</td><td class="num">2</td><td class="num">5</td></tr>
+            <tr><td>温存</td><td class="num">2</td><td class="num">2</td><td class="num">1</td><td class="num">2</td></tr>
+            <tr><td>死力</td><td class="num">1</td><td class="num">1</td><td class="num">1</td><td class="num">1</td></tr>
+            <tr><td>初手</td><td class="num">3</td><td class="num">3</td><td class="num">2</td><td class="num">2</td></tr>
+            <tr><td>締め</td><td class="num">3</td><td class="num">3</td><td class="num">2</td><td class="num">2</td></tr>
+            <tr><td>崩し後</td><td class="num">2</td><td class="num">2</td><td class="num">2</td><td class="num">1</td></tr>
+            <tr><td>連打</td><td class="num">4</td><td class="num">3</td><td class="num">2</td><td class="num">2</td></tr>
+            <tr><td>手薄</td><td class="num">2</td><td class="num">1</td><td class="num">2</td><td class="num">2</td></tr>
+            <tr><td>相手の状態</td><td class="num">6</td><td class="num">3</td><td class="num">6</td><td class="num">5</td></tr>
+            <tr><td>自分の状態</td><td class="num">6</td><td class="num">3</td><td class="num">4</td><td class="num">5</td></tr>
+            <tr><td>計</td><td class="num">57</td><td class="num">43</td><td class="num">43</td><td class="num">45</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="tablewrap">
+        <table class="wide">
+          <caption>推奨の外し方は、追撃を効果に持つ札が 4 枚から 1 枚に減ります。</caption>
+          <thead><tr><th>効果</th><th class="num">今の 64 種</th><th class="num">育たない札を外す</th><th class="num">同じ形の札を外す</th><th class="num">7 枚ずつ外す</th></tr></thead>
+          <tbody>
+            <tr><td>スタミナ +1</td><td class="num">8</td><td class="num">8</td><td class="num">8</td><td class="num">8</td></tr>
+            <tr><td>威力 +n</td><td class="num">9</td><td class="num">7</td><td class="num">6</td><td class="num">5</td></tr>
+            <tr><td>Guard +n</td><td class="num">12</td><td class="num">8</td><td class="num">8</td><td class="num">9</td></tr>
+            <tr><td>ドロー +1</td><td class="num">7</td><td class="num">6</td><td class="num">6</td><td class="num">7</td></tr>
+            <tr><td>状態</td><td class="num">4</td><td class="num">3</td><td class="num">4</td><td class="num">4</td></tr>
+            <tr><td>コスト −1</td><td class="num">3</td><td class="num">2</td><td class="num">3</td><td class="num">3</td></tr>
+            <tr><td>次ターン回復 +1</td><td class="num">2</td><td class="num">2</td><td class="num">2</td><td class="num">2</td></tr>
+            <tr><td>重撃</td><td class="num">7</td><td class="num">5</td><td class="num">4</td><td class="num">4</td></tr>
+            <tr><td>転換</td><td class="num">1</td><td class="num">1</td><td class="num">1</td><td class="num">1</td></tr>
+            <tr><td>追撃</td><td class="num">4</td><td class="num">1</td><td class="num">1</td><td class="num">2</td></tr>
+            <tr><td>計</td><td class="num">57</td><td class="num">43</td><td class="num">43</td><td class="num">45</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="tablewrap">
+        <table class="wide">
+          <caption>習熟で名前が変わる札は、推奨の外し方で 47 種から 39 種になります。</caption>
+          <thead><tr><th>型</th><th class="num">今の 64 種</th><th class="num">育たない札を外す</th><th class="num">同じ形の札を外す</th><th class="num">7 枚ずつ外す</th></tr></thead>
+          <tbody>
+            <tr><td>伸び</td><td class="num">9 / 10 / 5（24）</td><td class="num">9 / 10 / 5（24）</td><td class="num">9 / 6 / 5（20）</td><td class="num">8 / 6 / 4（18）</td></tr>
+            <tr><td>軽さ</td><td class="num">0 / 2 / 7（9）</td><td class="num">0 / 2 / 7（9）</td><td class="num">0 / 1 / 6（7）</td><td class="num">0 / 2 / 5（7）</td></tr>
+            <tr><td>型替え</td><td class="num">6 / 6 / 2（14）</td><td class="num">6 / 6 / 2（14）</td><td class="num">6 / 4 / 2（12）</td><td class="num">5 / 4 / 2（11）</td></tr>
+            <tr><td>名前が変わる札の計</td><td class="num">47</td><td class="num">47</td><td class="num">39</td><td class="num">36</td></tr>
+            <tr><td>習熟なし</td><td class="num">17</td><td class="num">3</td><td class="num">11</td><td class="num">14</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>外す札は、設計書とコードの多くの場所で名指しされています。C# のカード表・試作デッキ・試験台のデッキ・札の山のほかに、戦闘の設計書・戦闘画面の設計書・絵の設計書の例にも出てきます。直す場所の一覧は、実装の Issue に写します。</p>
+    </section>
+
+    <section id="s-903">
+      <p class="kicker"><span class="no">06</span>変幻の構え</p>
+      <h2>変幻の構えは、動いたあとの攻撃で威圧を付ける形を推します</h2>
+      <p>Issue #903 の 2 つの判断です。どの案も、既にある状態の語と、C# にもうある仕組みだけで書けます。新しい状態は足しません。出典は参考の 3 番です<sup class="ref"><a href="#ref-3">[3]</a></sup>。</p>
+      <h3>推奨で進める判断</h3>
+      <p>次の判断は、こうだいさんの決定か、選んでもらう判断の答えから決まるので、推奨で進めます。違う形にしたいときは教えてください。</p>
+      <article class="decision">
+        <h3>変幻の構えの特性「間合い 0: 追撃」を残すか</h3>
+        <dl>
+          <div class="d-situation"><dt>何が起きているか</dt><dd>今の特性は、引き込んだ間合いで押し切る型だったころの名残です。この特性は、間合いの境目を条件にする 13 枚の 1 枚で、「攻撃 × 詰めて得」の列 3 を埋めています（swordsman_cards_v4.md:410、:421）。効果を移動の形に替えても、「動いて間合い 0 まで詰めてから構える」使い方なら、今の特性のままでも働きます。</dd></div>
+          <div class="d-reason"><dt>なぜ決める必要があるか</dt><dd>決めないと、#45 の行の特性の列が決まりません。§4.2・§4.4 の集計を直すかどうかも決まりません。battle の担当に battle_core_v4.md §2.3 の「13 枚」（:166）の書き換えを頼むかと、C# の間合いの札のテスト（CardCatalogTests.cs:365-369）を直すかも決まりません。</dd></div>
+          <div class="d-options"><dt>選ぶと何が起きるか</dt><dd><ul>
+            <li><b>特性は今のまま残す</b>: 効果だけを替え、特性は「間合い 0: 追撃」のままにします。特性は構えを出した瞬間に 1 回だけ判定し、自分向きの札なので、いちばん近い敵との間合いを読みます（swordsman_cards_v4.md:57、:85）。§1.4 の「変幻の構えの「間合い 0 で」だけは選んだ相手との N を読みます」の文（:147）は、効果の条件の話なので消します。 移動で間合い 0 まで詰めてから構えると、その次の攻撃が +5 になり、効果の状態も付きます。「間合い 0: 追撃」の組はこの 1 枚だけで、§1.2 の 3 枚までに収まります。間合いの境目の 13 枚と 4 マスの配分、C# のテストは動きません。 追加の作業はありません。</li>
+            <li><b>特性も移動後に替える</b>: 特性を「移動後: 追撃」に替えます。移動後を条件にする札は今 #16 水の構えの 1 枚だけで（swordsman_cards_v4.md:366）、組は 1 枚なので §1.2 の上限に収まります。効果と特性の両方が移動を読む札になります。 移動してから構えれば、間合いに関係なく追撃が付きます。間合いの境目の札は 12 枚になり、「攻撃 × 詰めて得」の列 3 が空きます。§1.3 の列の決め方では、移動後は基準の列の一覧（:94）にありません。追撃を持つ札は列 2 へ下げる決まり（:97）があるので、コストを 3 のままにする理由を書き足す必要があります。 手間は中です。</li>
+          </ul></dd></div>
+          <div class="d-pick"><dt>推奨と根拠</dt><dd><p class="d-choice">特性は今のまま残す</p><p class="d-basis">移動で詰めてから構える使い方は今の特性でも成り立つので、Issue の求める形には効果を替えるだけで届きます。特性を替えると、間合いの 4 マスの配分・battle の文書の枚数・C# のテストまで動きます。コストを 3 に置く理由も書き直しになります。</p></dd></div>
+        </dl>
+      </article>
+      <h3>効果の 3&nbsp;案の文</h3>
+      <div class="tablewrap">
+        <table class="wide">
+          <caption>3 案は、付ける状態が威圧・鈍足・脆化で違います。</caption>
+          <thead><tr><th>効果の案</th><th>効果の列</th><th>説明の列</th><th>付ける語の効き方</th><th>減り方と上限</th></tr></thead>
+          <tbody>
+            <tr><td>動いて手元を狂わせる</td><td>移動後の攻撃が当たるたび敵に威圧 1</td><td>動き回って相手の手元を狂わせる型</td><td>威圧: 次の行動の威力と Guard を −3（:348）</td><td>使うと減る型です。上限はありません（:334）</td></tr>
+            <tr><td>動いて足を乱す</td><td>移動後の攻撃が当たるたび敵に鈍足 2</td><td>動き回って相手の足並みを乱す型</td><td>鈍足: 次のターン全体、自分で動くマスと押す / 引くマスが 1 減る（:347）</td><td>ターンで減る型です。1 語 4 までです（:334）</td></tr>
+            <tr><td>動いて隙を作る</td><td>移動後の攻撃が当たるたび敵に脆化 1</td><td>動き回って相手の隙を作る型</td><td>脆化: 次に受ける攻撃の raw ×1.5（:346）</td><td>使うと減る型です。上限はありません</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>ほかのスタンスの札との見比べ</h3>
+      <div class="tablewrap">
+        <table class="wide">
+          <caption>移動後を条件にするスタンスは、今は 1 枚もありません。</caption>
+          <thead><tr><th>#</th><th>名前</th><th class="num">コスト</th><th>効果</th><th>働く条件</th><th>誰に効くか</th></tr></thead>
+          <tbody>
+            <tr><td>45（今）</td><td>変幻の構え</td><td class="num">3</td><td>間合い 0 で 威力 +5</td><td>当てる敵との間合い 0</td><td>敵へのダメージ</td></tr>
+            <tr><td>45（推奨の案）</td><td>変幻の構え</td><td class="num">3</td><td>移動後の攻撃が当たるたび敵に威圧 1</td><td>そのターンに自分が動いた後</td><td>敵の次の行動</td></tr>
+            <tr><td>16</td><td>水の構え</td><td class="num">2</td><td>間合い 2 以上で始まるターンに回復 +2</td><td>間合い 2 以上</td><td>自分のスタミナ</td></tr>
+            <tr><td>39</td><td>鉄壁の構え</td><td class="num">2</td><td>毎ターン 1 回、防御のカードのコスト −1</td><td>毎ターン</td><td>自分のコスト</td></tr>
+            <tr><td>42</td><td>司祭の祈り</td><td class="num">2</td><td>被弾のたび（ターン 1 回）スタミナ +1、Guard +3</td><td>被弾</td><td>自分</td></tr>
+            <tr><td>43</td><td>遠間の構え</td><td class="num">2</td><td>間合い 2 以上で始まるターンに Guard +3</td><td>間合い 2 以上</td><td>自分の Guard</td></tr>
+            <tr><td>47</td><td>根渡り</td><td class="num">3</td><td>間合い 2 以上で終えたターンに Guard +5</td><td>間合い 2 以上</td><td>自分の Guard</td></tr>
+            <tr><td>49</td><td>根縛り</td><td class="num">1</td><td>敵が自ら動くと崩し 1</td><td>敵が自分で動く</td><td>敵のスタミナ</td></tr>
+            <tr><td>57</td><td>槍衾</td><td class="num">1</td><td>被弾のたび敵に出血 1</td><td>被弾</td><td>敵の HP</td></tr>
+            <tr><td>71</td><td>見切りの目</td><td class="num">2</td><td>予兆が攻撃のターン開始に Guard +3</td><td>予兆が攻撃</td><td>自分の Guard</td></tr>
+            <tr><td>74</td><td>錨の構え</td><td class="num">1</td><td>押す / 引くを受けない</td><td>いつも</td><td>自分の位置</td></tr>
+            <tr><td>78</td><td>大狼の構え</td><td class="num">2</td><td>出血中の敵へ 威力 +3</td><td>敵が出血中</td><td>敵へのダメージ</td></tr>
+            <tr><td>84</td><td>背水の陣</td><td class="num">3</td><td>攻撃の威力 ×3、受けるダメージ ×2</td><td>いつも</td><td>両方のダメージ</td></tr>
+            <tr><td>85</td><td>覚醒</td><td class="num">4</td><td>以後に出す札の威力 +5、Guard +5、移動 +1</td><td>いつも</td><td>自分の札</td></tr>
+            <tr><td>83（64 種の外）</td><td>竜鱗の構え</td><td class="num">3</td><td>間合い 0 の相手がいるターン開始 Guard +5</td><td>間合い 0</td><td>自分の Guard</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="s-933">
+      <p class="kicker"><span class="no">07</span>札が生む札</p>
+      <h2>札が生む札は、手札に入る小さな新しい札から試す形を推します</h2>
+      <p>Issue #933 の 3 つの判断です。札を作る効果は、設計書にも BattleCore にもまだありません。実装は、C# のカード表の追従（Issue #898）が終わってからになります。出典は参考の 4 番です<sup class="ref"><a href="#ref-4">[4]</a></sup>。</p>
+      <h3>推奨で進める判断</h3>
+      <p>次の判断は、こうだいさんの決定か、選んでもらう判断の答えから決まるので、推奨で進めます。違う形にしたいときは教えてください。</p>
+      <article class="decision">
+        <h3>手札がいっぱいのときに生まれた札をどう扱うか</h3>
+        <dl>
+          <div class="d-situation"><dt>何が起きているか</dt><dd>手札の上限は 8 枚で、上限を超えて引いた札は捨札へ送ります（battle_core_v4.md §8、§17.6 の手札上限の超過、Cards.cs:104-108）。出した札は、面を解決する前に手札から出ます（TurnLoop.cs:155-157）。このため、生む札が 1 枚だけなら、手札は 8 を超えません。超えるのは、作る側の札が同じ 1 枚の中でドローもするとき（TurnLoop.Resolve.cs:100-103 で先に引く）か、1 回に 2 枚以上生むときだけです。</dd></div>
+          <div class="d-reason"><dt>なぜ決める必要があるか</dt><dd>扱いが決まらないと、生む処理の上限の判定と、超えたときのイベントを C# に書けません。最初の対応表に、ドローを持つ札（#22 観察・#25 足運び・#60 跳び退り・#9 投げ刃など）を作る側として入れてよいかも決まりません。</dd></div>
+          <div class="d-options"><dt>選ぶと何が起きるか</dt><dd><ul>
+            <li><b>引いた札と同じく捨て札へ送る</b>: 手札が 8 枚のときに生まれた札は、捨札へ送ります。引いた札が上限を超えたときと同じ扱いです。その戦闘のうちは、山札が切れれば戻ってきます。 遊び手が覚える決まりは 1 つで済みます。生まれた札は失われず、後のターンに引けます。最初の対応表の 4 組はどれもドローを持たないので、この扱いが働く場面はまずありません。 手間: 設計書は battle_core_v4.md §8 の手札上限の行に「生まれた札も同じ」と足します（小）。</li>
+            <li><b>生まれずに消える</b>: 手札が 8 枚のときは、札を生みません。作る側の札のほかの面は通常どおり解決します。 生まれた札が後で思わぬ時に出てくることはありません。代わりに、手札が多いときに作る側の札を出すと、効果の一部を捨てることになります。画面には「生まれなかった」ことを見せる必要があります。 手間: 設計書は数行です（小）。</li>
+            <li><b>山札の上へ回す</b>: 手札が 8 枚のときに生まれた札は、山札のいちばん上に置きます。次のターンの開始に引きます。 生まれた札は失われず、次のターンには必ず手に入ります。引いた札の超過（捨札へ送る）とは扱いが違うので、遊び手が覚える決まりが 1 つ増えます。 手間: 設計書は battle_core_v4.md §8 に 1 行です（小）。</li>
+            <li><b>上限を数えずに手札へ入れる</b>: 生まれた札だけは、手札の上限 8 を超えて手札に入れます。 生まれた札を必ずその場で使えます。手札が 9 枚以上になる場面ができます。画面の扇は 6〜8 枚の間隔までしか決まっていないので（battle_core_v4.md §11 の View の行）、扇の詰め方を決め直す必要があります。 手間: 設計書は battle_core_v4.md §8 と画面の設計書（battle-visual-v1.md §4.8）を直します（中）。</li>
+          </ul></dd></div>
+          <div class="d-pick"><dt>推奨と根拠</dt><dd><p class="d-choice">引いた札と同じく捨て札へ送る</p><p class="d-basis">引いた札の超過と同じ扱いなので、遊び手が覚える決まりが増えません。Cards.Draw がすでにこの形なので、C# の書き足しも小さく済みます。最初の対応表ではドローを持つ札を作る側から外したので、試遊でこの扱いが働く場面はほとんどなく、決め直すとしても後から変えやすいです。</p></dd></div>
+        </dl>
+      </article>
+      <h3>対応表の案: 続けて出す小さな札を新しく作る（推奨）</h3>
+      <div class="tablewrap">
+        <table class="wide">
+          <caption>生まれる 4 枚は、どれもコスト 1 で特性を持ちません。</caption>
+          <thead><tr><th>作る側</th><th>生まれる札</th><th>属性</th><th>届く</th><th class="num">スタミナ</th><th>効果</th><th>値の根拠</th></tr></thead>
+          <tbody>
+            <tr><td>#61 斬り上げ</td><td>振り下ろし</td><td>攻撃</td><td>0〜1</td><td class="num">1</td><td>威力 7</td><td>§1.4 単独・幅 2・列 1</td></tr>
+            <tr><td>#30 牽制</td><td>迎え突き</td><td>攻撃</td><td>1〜2</td><td class="num">1</td><td>威力 7</td><td>§1.4 単独・幅 2・列 1</td></tr>
+            <tr><td>#67 弾き</td><td>隙打ち</td><td>攻撃</td><td>0</td><td class="num">1</td><td>威力 8</td><td>§1.4 単独・幅 1・列 1</td></tr>
+            <tr><td>#3 大上段</td><td>構え直し</td><td>防御</td><td>—</td><td class="num">1</td><td>Guard 4</td><td>§1.1 単独の防御面・列 1</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul>
+        <li>振り下ろしは、斬り上げで前へ 1 動いた後の間合い 0〜1 に届きます。</li>
+        <li>迎え突きは、牽制で後ろへ 1 退いた後の間合い 1〜2 に届きます。端で退けず、間合い 0 のままのときは出せません。間合い 1 のまま端で退けなかったときは、間合い 1 なので出せます（battle_core_v4.md §2.2 の「動いた結果は次の行動から効く」、§7.3 の「行けるところまで動く」）。</li>
+        <li>隙打ちは間合い 0 にだけ届き、弾きの特性（間合い 0）と同じ場面で働きます。</li>
+        <li>構え直しは、大上段の重撃で次のターンの回復が 1 減るときの守りになります。</li>
+        <li>4 枚とも特性を持たず、習熟もありません。名前は仮です。設計書の札名と敵の一覧の技名に重ならないことだけを grep で確かめました（「斬り下ろし」は還らずの英雄の行動名なので避けました）。</li>
+      </ul>
+      <h3>対応表の案: 既にある札の写しを作る</h3>
+      <div class="tablewrap">
+        <table class="wide">
+          <caption>写しの元の 4 枚は、どれも初期の札です。</caption>
+          <thead><tr><th>作る側</th><th>生まれる札</th><th>属性</th><th>届く</th><th class="num">スタミナ</th><th>効果</th><th>特性</th></tr></thead>
+          <tbody>
+            <tr><td>#61 斬り上げ</td><td>#2 袈裟斬り</td><td>攻撃</td><td>0〜1</td><td class="num">2</td><td>威力 15</td><td>間合い 0: 威力 +5</td></tr>
+            <tr><td>#30 牽制</td><td>#10 伸び突き</td><td>攻撃</td><td>1〜2</td><td class="num">2</td><td>威力 15</td><td>間合い 2 以上: 威力 +5</td></tr>
+            <tr><td>#67 弾き</td><td>#4 小手打ち</td><td>攻撃</td><td>0〜1</td><td class="num">1</td><td>威力 7</td><td>間合い 0: スタミナ +1</td></tr>
+            <tr><td>#3 大上段</td><td>#14 受け太刀</td><td>防御</td><td>—</td><td class="num">2</td><td>Guard 9</td><td>連動(A): Guard +3</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>対応表の案: 新しい札と写しを 2 組ずつ混ぜる</h3>
+      <div class="tablewrap">
+        <table class="wide">
+          <caption>混ぜる形は、新しい札 2 枚と写し 2 枚で試します。</caption>
+          <thead><tr><th>作る側</th><th>生まれる札</th><th>種類</th><th>属性</th><th>届く</th><th class="num">スタミナ</th><th>効果</th></tr></thead>
+          <tbody>
+            <tr><td>#61 斬り上げ</td><td>振り下ろし</td><td>新しい札</td><td>攻撃</td><td>0〜1</td><td class="num">1</td><td>威力 7</td></tr>
+            <tr><td>#3 大上段</td><td>構え直し</td><td>新しい札</td><td>防御</td><td>—</td><td class="num">1</td><td>Guard 4</td></tr>
+            <tr><td>#30 牽制</td><td>#10 伸び突きの写し</td><td>写し</td><td>攻撃</td><td>1〜2</td><td class="num">2</td><td>威力 15、間合い 2 以上: 威力 +5</td></tr>
+            <tr><td>#67 弾き</td><td>#4 小手打ちの写し</td><td>写し</td><td>攻撃</td><td>0〜1</td><td class="num">1</td><td>威力 7、間合い 0: スタミナ +1</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>作る側から外した札</h3>
+      <div class="tablewrap">
+        <table>
+          <caption>作る側は、入手先が変わる札・素直な札・ドローを持つ札を除いて選びました。</caption>
+          <thead><tr><th>外した札</th><th>理由</th></tr></thead>
+          <tbody>
+            <tr><td>#41〜45、#47〜50、#52、#55、#57、#85</td><td>入手先が王・精鋭の撃破で、#992 で入手先が変わる見込みです</td></tr>
+            <tr><td>#5、#12、#19、#37、#38</td><td>特性を持たない素直な札で、上乗せ +2 の考え方と合わせにくいためです</td></tr>
+            <tr><td>#9、#21、#22、#25、#60、#63 など、面か特性にドローを持つ札</td><td>同じ 1 枚の中で引いてから生むと、手札が 8 を超えることがあるためです</td></tr>
+            <tr><td>#81〜83</td><td>竜王の撃破で習得する札で、王を倒して札を得ない決定（2026-11-21） でなくなります</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="s-mage">
+      <p class="kicker"><span class="no">08</span>魔術の札</p>
+      <h2>魔術師は、離れて撃ち、寄られたら退く戦い方を推します</h2>
+      <p>Issue #934 のうち、魔術の札 50 枚の方向の判断です。魔術師は札の設計だけ先に進める決定（2026-11-21）なので、ここで決めるのは設計書の書き方までです。見本の札の数値は叩き台で、名前は仮です。出典は参考の 5 番です<sup class="ref"><a href="#ref-5">[5]</a></sup>。</p>
+      <h3>推奨で進める判断</h3>
+      <p>次の判断は、こうだいさんの決定か、選んでもらう判断の答えから決まるので、推奨で進めます。違う形にしたいときは教えてください。</p>
+      <article class="decision">
+        <h3>魔術の 50&nbsp;枚を攻撃・防御・スキル・スタンスに何枚ずつ配るか</h3>
+        <dl>
+          <div class="d-situation"><dt>何が起きているか</dt><dd>剣士の今の 64 枚を数え直すと、初期 32 枚は攻撃 14・防御 10・スキル 6・スタンス 2、習得 32 枚は攻撃 11・防御 7・スキル 3・スタンス 11 でした。計は攻撃 25・防御 17・スキル 9・スタンス 13 で、§4.1 と一致します。魔術の内訳は、どの選択肢も初期 25・習得 25 です。剣士を 50 枚に減らしたあとの内訳は、まだ決まっていません。</dd></div>
+          <div class="d-reason"><dt>なぜ決める必要があるか</dt><dd>内訳が決まらないと、担当が初期 25 枚と習得 25 枚の表の行数を決められず、§4 の集計も書けません。習得 25 枚の枚数が決まらないと、#992 でひらめきと探索のイベントに何枚ずつ割り振るかも決められません。</dd></div>
+          <div class="d-options"><dt>選ぶと何が起きるか</dt><dd><ul>
+            <li><b>間合いを保つスキルを厚くする</b>: 攻撃 18・防御 12・スキル 10・スタンス 10 にします。初期は 10・7・6・2、習得は 8・5・4・8 です。押す・鈍足・詠唱の札をスキルに入れるため、スキルを剣士の 14% から 20% に上げます。防御は 24% で、剣士の 27% に近く保ちます。 寄られたときに退く札と、唱える札が手札に来やすくなります。攻撃は 36% で、剣士の 39% より少し少なくなります。スタンスは 10 枚で、習得の札に寄せる形は剣士と同じです。軸の「離れて撃ち、寄られたら退く」と組む配分です。 手間は小です。</li>
+            <li><b>スキルをさらに厚くし、防御を薄くする</b>: 攻撃 17・防御 10・スキル 12・スタンス 11 にします。初期は 10・6・7・2、習得は 7・4・5・9 です。鈍足・疲労・押すの札で間合いを保つために、スキルを 24% まで上げます。系ごとに 16〜17 枚を持たせる配分です。 状態を付けて相手の足を止める戦い方が中心になります。防御は 20% で、受けて耐える手は剣士より少なくなります。スタンスは 11 枚で、系を読むスタンスの置き場を取ります。軸の「三つの系をつなぐ」と組む配分です。 手間は小です。</li>
+            <li><b>剣士の割合に合わせる</b>: 剣士の 64 枚の割合を 50 枚に縮めて、攻撃 20・防御 13・スキル 7・スタンス 10 にします。初期は 11・8・4・2、習得は 9・5・3・8 です。初期と習得の割合も剣士に合わせています。 職ごとの違いを、属性の枚数ではなく札の中身だけで出す形になります。スキルが 7 枚なので、押す・鈍足・詠唱の札を十分に置けません。軸の「唱えて蓄え、放って崩す」なら、詠唱の札を防御の札（Guard と集中を持つ札）に寄せれば組めます。 手間は小です。</li>
+          </ul></dd></div>
+          <div class="d-pick"><dt>推奨と根拠</dt><dd><p class="d-choice">間合いを保つスキルを厚くする</p><p class="d-basis">推奨の軸「離れて撃ち、寄られたら退く」は、退く・押す・止める・唱える札の多くがスキルに入るので、スキルを剣士より増やす必要があります。この配分は防御を剣士に近く保つので、寄られたときに受けて耐える手も残ります。別の軸を選ぶときは、その軸と組む配分を選ぶのが自然です。</p></dd></div>
+        </dl>
+      </article>
+      <article class="decision">
+        <h3>間合い・スタミナ・習熟・特性の書き方を剣士とそろえるか</h3>
+        <dl>
+          <div class="d-situation"><dt>何が起きているか</dt><dd>剣士の設計書 §1 は、属性と面・目盛り・特性の 13 条件と 10 効果・列の決め方・届く間合いの帯の表・習熟の段の型を持ちます。この §1 は、battle_core_v4.md・battle_ui_ux_v2.md・enemy_roster_v4.md と、C# のコメント（Columns.cs・TurnLoop.Resolve.cs・テスト 2 本）から、17 か所で参照されています。スタミナ（回復は毎ターン 3、最大 10）と HP 50 は、職で分ける規則が今はありません。剣士の設計書は、64 → 50 枚と #992 の習得の変更で、これから続けて書き換わります。</dd></div>
+          <div class="d-reason"><dt>なぜ決める必要があるか</dt><dd>これが決まらないと、担当は魔術の設計書の §1 を「剣士の §1 を指す」か「写して持つ」かを決められず、書き出せません。同じ組の上限などを職ごとに数えるかどうかも、ここで決まります。</dd></div>
+          <div class="d-options"><dt>選ぶと何が起きるか</dt><dd><ul>
+            <li><b>剣士の記法を参照してそろえる</b>: 魔術の設計書の §1 は「記法は swordsman_cards_v4.md §1 に従う」と書き、違う点だけを並べます。違う点は、入手先の欄の値（初期 / 探索のイベント / ひらめき）、届く間合い 3 だけの帯の行（使うとき）、上限を職ごとに数えること、段の名前で魔術の語を避ける決まりの扱いです。目盛り・帯の表・特性の語・習熟の 3 つの型と 4 つの文脈は、剣士と同じものを使います。 目盛りや帯の表を 1 か所で直せば、両方の職に効きます。習熟の「間合い」の文脈は、境目を持たない遠くの札だと届く間合いの遠い端で満たすので、魔術師の札は刻みが増えやすくなります。この点は試験台で見ます。 手間は小です。</li>
+            <li><b>記法を両方の職の共通の文書に移す</b>: 剣士の §1 を、職に依らない記法の文書へ切り出します。剣士と魔術の設計書は、どちらもその文書を指します。 遊び手から見える違いはありません。職が 3 つ目に増えたときも、記法の置き場は 1 つで済みます。剣士の設計書が 64 → 50 枚と #992 で書き換わる時期と重なるので、同じファイルを触る PR がぶつかりやすくなります。 手間は中です。</li>
+            <li><b>魔術師だけの記法を持つ</b>: 剣士の §1 を魔術の設計書に写し、魔術師に合わせて変えます。系の列や詠唱の書き方を、剣士の記法とは別に足せます。 魔術師の札の書き方の自由は増えます。目盛りや帯の表を直すたびに 2 か所を揃える必要があり、ずれが起きやすくなります。魔術師は札の設計だけ先に進める決定（2026-11-21）で戦闘のコアに入れないので、ずれても試験台で気づけません。 手間: 魔術の設計書に §1 を丸ごと書きます。</li>
+          </ul></dd></div>
+          <div class="d-pick"><dt>推奨と根拠</dt><dd><p class="d-choice">剣士の記法を参照してそろえる</p><p class="d-basis">スタミナ・HP・習熟の規則は職で分かれていないので、記法も 1 つにそろえるのが今の規則に合います。共通の文書へ移す形は、剣士の設計書がこれから続けて書き換わる時期と重なり、PR がぶつかります。参照してそろえる形なら、移すかどうかは 3 つ目の職を考えるときにあらためて決められます。</p></dd></div>
+        </dl>
+      </article>
+      <h3>剣士と魔術師の内訳</h3>
+      <p>欄は初期 / 習得 / 計の順です。列の「スキルを厚く」は「間合いを保つスキルを厚くする」、「スキル厚く防御薄く」は「スキルをさらに厚くし、防御を薄くする」です。</p>
+      <div class="tablewrap">
+        <table class="wide">
+          <caption>魔術の 3 つの内訳は、どれも初期 25・習得 25 の 50 枚です。</caption>
+          <thead><tr><th>属性</th><th>剣士の 64 枚</th><th>スキルを厚く</th><th>スキル厚く防御薄く</th><th>剣士の割合に合わせる</th></tr></thead>
+          <tbody>
+            <tr><td>攻撃</td><td>14 / 11 / 25（39%）</td><td>10 / 8 / 18（36%）</td><td>10 / 7 / 17（34%）</td><td>11 / 9 / 20（40%）</td></tr>
+            <tr><td>防御</td><td>10 / 7 / 17（27%）</td><td>7 / 5 / 12（24%）</td><td>6 / 4 / 10（20%）</td><td>8 / 5 / 13（26%）</td></tr>
+            <tr><td>スキル</td><td>6 / 3 / 9（14%）</td><td>6 / 4 / 10（20%）</td><td>7 / 5 / 12（24%）</td><td>4 / 3 / 7（14%）</td></tr>
+            <tr><td>スタンス</td><td>2 / 11 / 13（20%）</td><td>2 / 8 / 10（20%）</td><td>2 / 9 / 11（22%）</td><td>2 / 8 / 10（20%）</td></tr>
+            <tr><td>計</td><td>32 / 32 / 64</td><td>25 / 25 / 50</td><td>25 / 25 / 50</td><td>25 / 25 / 50</td></tr>
+            <tr><td>組む軸</td><td>—</td><td>離れて撃ち、寄られたら退く</td><td>三つの系をつなぐ</td><td>唱えて蓄え、放って崩す</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>見本の札: 離れて撃ち、寄られたら退く（推奨）</h3>
+      <div class="tablewrap">
+        <table class="wide">
+          <caption>攻撃の多くは届く 2〜3 で、寄られたときの札を別に持ちます。</caption>
+          <thead><tr><th>名前</th><th>属性</th><th class="num">コスト</th><th>届く</th><th>効果</th><th>特性</th><th>習熟</th><th>入手先</th></tr></thead>
+          <tbody>
+            <tr><td>遠火</td><td>A</td><td class="num">2</td><td>2〜3</td><td>威力 13</td><td>間合い 3 以上: 威力 +5</td><td>あり（伸び）</td><td>初期</td></tr>
+            <tr><td>解き放ち</td><td>A</td><td class="num">3</td><td>2〜3</td><td>威力 21</td><td>自分の状態(集中): スタミナ +1</td><td>あり（伸び）</td><td>初期</td></tr>
+            <tr><td>払い火</td><td>A</td><td class="num">1</td><td>0〜1</td><td>威力 5 ／ 後ろへ 1</td><td>間合い 0: Guard +3</td><td>あり（伸び）</td><td>初期</td></tr>
+            <tr><td>迎え火</td><td>A</td><td class="num">2</td><td>1〜3</td><td>威力 10</td><td>予兆(移動): 威力 +5</td><td>あり（軽さ）</td><td>探索のイベント</td></tr>
+            <tr><td>風押し</td><td>G</td><td class="num">2</td><td>0〜1</td><td>Guard 6 ／ 押す 1</td><td>間合い 0: Guard +3</td><td>あり（伸び）</td><td>初期</td></tr>
+            <tr><td>唱え</td><td>Sk</td><td class="num">1</td><td>—</td><td>集中 2</td><td>温存(残 ≥ 6): 次ターン回復 +1</td><td>あり（型替え）</td><td>初期</td></tr>
+            <tr><td>風に退く</td><td>Sk</td><td class="num">1</td><td>—</td><td>後ろへ 2 + スタミナ +1</td><td>予兆(攻撃): ドロー +1</td><td>あり（伸び）</td><td>初期</td></tr>
+            <tr><td>遠詠みの構え</td><td>St</td><td class="num">2</td><td>—</td><td>いちばん近い敵との間合いが 2 以上のとき、攻撃に威力 +3</td><td>移動後: コスト −1</td><td>なし</td><td>ひらめき</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>遠火は幅 3・列 2 で 13、解き放ちは幅 3・列 3 で 21、迎え火は幅 4・列 2 で 10、払い火は面を 2 つ持つ札の幅 2・列 1 で 5 です（swordsman_cards_v4.md §1.4）。風押しは、出した案の「押す 2」を、今ある押すの札（#58 盾押し）と同じ「押す 1」に直しました。遠詠みの構えは、ほかのスタンスと同じく、いちばん近い敵との N を読みます（swordsman_cards_v4.md §1.4:147）。</p>
+      <h3>見本の札: 三つの系をつなぐ</h3>
+      <div class="tablewrap">
+        <table class="wide">
+          <caption>札に系を持たせ、同じ系か違う系を続けると特性が成り立ちます。</caption>
+          <thead><tr><th>名前</th><th>属性</th><th class="num">コスト</th><th>届く</th><th>効果</th><th>特性</th><th>習熟</th><th>入手先</th></tr></thead>
+          <tbody>
+            <tr><td>灼け息</td><td>A（息）</td><td class="num">2</td><td>1〜3</td><td>威力 10</td><td>同系: 威力 +5</td><td>あり（伸び）</td><td>初期</td></tr>
+            <tr><td>熾の礫</td><td>A（息）</td><td class="num">1</td><td>1〜2</td><td>威力 7</td><td>相手の状態(疲労): 威力 +5</td><td>あり（伸び）</td><td>初期</td></tr>
+            <tr><td>根の棘</td><td>A（根）</td><td class="num">2</td><td>2〜3</td><td>威力 8 ／ 鈍足 2 + 疲労 2</td><td>転系: ドロー +1</td><td>あり（伸び）</td><td>初期</td></tr>
+            <tr><td>吹き払い</td><td>A（息）</td><td class="num">2</td><td>0</td><td>威力 11 ／ 押す 1</td><td>同系: 威力 +3</td><td>あり（軽さ）</td><td>探索のイベント</td></tr>
+            <tr><td>根の覆い</td><td>G（根）</td><td class="num">2</td><td>—</td><td>Guard 6 ／ 再生 2</td><td>同系: 次ターン回復 +1</td><td>あり（軽さ）</td><td>初期</td></tr>
+            <tr><td>影の囁き</td><td>Sk（影）</td><td class="num">1</td><td>1〜2</td><td>威圧 2</td><td>手薄: 脆化を 2 付与</td><td>あり（型替え）</td><td>探索のイベント</td></tr>
+            <tr><td>息の継ぎ</td><td>St（息）</td><td class="num">2</td><td>—</td><td>同系が成り立った攻撃の札に威力 +3</td><td>初手: ドロー +1</td><td>なし</td><td>ひらめき</td></tr>
+            <tr><td>巡りの構え</td><td>St（影）</td><td class="num">2</td><td>—</td><td>毎ターン 1 回、転系が成り立つ札のコスト −1</td><td>移動後: ドロー +1</td><td>なし</td><td>ひらめき</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>灼け息は幅 4・列 2 で 10、熾の礫は幅 2・列 1 で 7、根の棘は面を 2 つ持つ札の幅 3・列 2 で 8、吹き払いは面を 2 つ持つ札の幅 1・列 2 で 11 です。根の覆いは、同系を連打と同じ列 2 に置く決まりに合わせて列 2 に下げ、面を 2 つ持つ札の防御面の列 2 で Guard 6、再生は列 2 で 2 です（swordsman_cards_v4.md §1.1:33、§1.3:94）。同系と転系は今の条件 13 種に無い語です。</p>
+      <h3>見本の札: 唱えて蓄え、放って崩す</h3>
+      <div class="tablewrap">
+        <table class="wide">
+          <caption>集中と強化を付ける札と、それを条件に放つ札を対で持ちます。</caption>
+          <thead><tr><th>名前</th><th>属性</th><th class="num">コスト</th><th>届く</th><th>効果</th><th>特性</th><th>習熟</th><th>入手先</th></tr></thead>
+          <tbody>
+            <tr><td>唱え</td><td>Sk</td><td class="num">1</td><td>—</td><td>集中 2</td><td>温存(残 ≥ 6): 次ターン回復 +1</td><td>あり（型替え）</td><td>初期</td></tr>
+            <tr><td>熱を蓄える</td><td>G</td><td class="num">2</td><td>—</td><td>Guard 6 ／ 強化 2 + 集中 2</td><td>予兆(攻撃): Guard +3</td><td>あり（伸び）</td><td>初期</td></tr>
+            <tr><td>守り唱え</td><td>G</td><td class="num">1</td><td>—</td><td>Guard 3 ／ 集中 2</td><td>手薄: Guard +3</td><td>あり（伸び）</td><td>初期</td></tr>
+            <tr><td>近放ち</td><td>A</td><td class="num">2</td><td>0〜1</td><td>威力 15</td><td>自分の状態(集中): 威力 +5</td><td>あり（伸び）</td><td>初期</td></tr>
+            <tr><td>遠放ち</td><td>A</td><td class="num">3</td><td>2〜3</td><td>威力 21</td><td>自分の状態(強化): ドロー +1</td><td>あり（伸び）</td><td>探索のイベント</td></tr>
+            <tr><td>散り火</td><td>A</td><td class="num">1</td><td>0〜1</td><td>威力 5 ／ 脆化 2</td><td>自分の状態(強化): 追撃</td><td>あり（伸び）</td><td>初期</td></tr>
+            <tr><td>詠みの構え</td><td>St</td><td class="num">2</td><td>—</td><td>毎ターン 1 回、スキルのカードのコスト −1</td><td>自分の状態(集中): Guard +3</td><td>なし</td><td>ひらめき</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>近放ちは幅 2・列 2 で 15、遠放ちは幅 3・列 3 で 21、散り火は面を 2 つ持つ札の幅 2・列 1 で 5 です。熱を蓄えるの防御面は面を 2 つ持つ札の列 2 で 6、スキル面は列 2 の「2 種」です。守り唱えは面を 2 つ持つ札の列 1 で Guard 3 と 1 種です。詠みの構えは、#39 鉄壁の構え（防御のカードのコスト −1）のスキル版で、列 2 です。</p>
+    </section>
+
+    <section id="s-open">
+      <p class="kicker"><span class="no">09</span>仮定と未確認</p>
+      <h2>ひらめきの回数と、札を外したあとの強さは、まだ測っていません</h2>
+      <ul>
+        <li><b>読み取った意図。</b> 「習熟で札が加わる仕組みを残す」は、今の v4 に当たる仕組みがありません。旧い Web 版の「使った回数で派生の札を得る」形を指すと読み、習熟の段の上がりでひらめく形を推しました。読み違いなら、ひらめきの判断を選び直します。</li>
+        <li><b>読み取った意図。</b> 「それ以外の習得はすべて外す」には、通常戦闘の報酬のカード（30〜50%）も含むと読みました。残すなら、報酬の替わりの案は通常戦闘の行を直さない形に変えます。</li>
+        <li><b>未測定。</b> 1 つの生でひらめきが何回起きるかは測っていません。今の試験台は 1 戦ずつを測るもので、探索を通した回数を測る試験がありません。</li>
+        <li><b>未測定。</b> 札を外したあとの勝率と、変幻の構えの新しい効果の強さは測っていません。数値はどれも叩き台です。</li>
+        <li><b>重なり。</b> 札が生む札の作る側 4 枚のうち、#3 大上段・#30 牽制・#61 斬り上げの 3 枚は、剣術の 50 枚の推奨の外し方で外す候補です。外すと決まったら、作る側を選び直します。</li>
+        <li><b>世界観。</b> 人の側に魔術を置かない決まり（world-v1.md §7.3）と、魔術師の札は食い違います。魔術がある理由は構想の文書で決めるので、札の名前と説明はそれまで仮です。</li>
+        <li><b>C# の遅れ。</b> C# のカード表は 73 種のままで、設計書の 64 種に追いついていません（Issue #898）。どの選択でも、C# の直しはこの追従と一緒になります。</li>
+        <li><b>設計書の食い違い。</b> 読んでいて 4 つ見つけました。剣士の札の設計書は歪みの根を七層と書きますが、敵の一覧は寄生の第 6 層です。剣士の札の設計書にカタカナの固有名（セルク・ガルド）が残っています。#41 瘴気の刃の名前が、瘴気の語を景色と敵の名前にだけ残す決まりと合いません。敵の一覧の獄竜の節は「威圧を配る」と書きますが、行動の表に威圧を付ける行動がありません。剣士の札の設計書の 3 つは、今回の書き換えで一緒に直します。</li>
+        <li><b>待つもの。</b> 報酬の表の設計書（encounters_and_rewards_v4.md）は、PR #988 が同じ文書を変えています。報酬の直しは、PR #988 が main に入ってから始めます。</li>
+      </ul>
+    </section>
+
+    <section id="s-refs">
+      <p class="kicker"><span class="no">10</span>参考</p>
+      <ol class="refs">
+        <li id="ref-1">Issue #992 の案が根拠にした場所: gh issue view 992 -R sunbreak-pro/original-card-battle、swordsman_cards_v4.md §1.2（:84-89 崩しの源）、swordsman_cards_v4.md §1.3（:93-103 入手先）、swordsman_cards_v4.md §1.4（:148 間合い 3 に届く 5 枚）、swordsman_cards_v4.md §2（:176 #3、:181 #9、:185 #13、:187 #16、:191 #23、:205 #39）、swordsman_cards_v4.md §3（:212-258）、swordsman_cards_v4.md §3.1（:260-275）、swordsman_cards_v4.md §3.2（:277-296）、swordsman_cards_v4.md §4.4（:415 入手先の集計）、battle_core_v4.md §3.2（:235-264 習熟・閾値・習熟訓練）、concept-v3.md §4.1（:82 派生カードの置き換え）、concept-v3.md §7.3、concept-v3.md §14（:297 開示度、:303 習熟訓練、:305 遺産の候補）、concept-v3.md §14.2（:335 瘴気の語）、concept-v3.md §15.2（:388 龍神の報酬）、encounters_and_rewards_v4.md §1、§4.1〜§4.4、§5、§8、enemy_roster_v4.md §4.5、§7.4、§9（:1242-1290）、§12.7、dungeon_exploration_v4.md §2.1（:36-38）、§6.3（:220-225）、§6.11（:331、:344 七層に情報収集ノードが無い、:346 第 7 層の王を開示度 2 で読む手段、:361）、seven_layers_v4.md §7（:185 層ごとのノードの表、:196 第 4〜6 層にイベントを置かない、:197 情報収集を第 7 層に置かない）、world-v1.md 冒頭の v5.3 の差分（カタカナの固有名を使わない）、git diff main...origin/feat/dungeon-888（.claude/docs と Exploration/Bridge）、unity-port/BattleCore/Mastery.cs:494-609、unity-port/BattleCore/Types.cs:623、unity-port/BattleCore/BattleEvents.cs:87、:108、unity-port/BattleCore/Constants.cs:32、unity-port/BattleCore/CardCatalog.cs:46-66、unity-port/BattleCore/CardCatalog.Learned.cs:94、:112、:127、:321、:332、unity-port/BattleCore.Tests/CardCatalogTests.cs:27-28、unity-port/InheritanceCore/Inheritance.cs:30、:519、unity-port/DungeonCore/ExplorationState.cs:116、unity-port/DungeonCore/ExplorationReducer.cs:251-266、unity-port/unity-project-kit/Assets/View/Exploration/Bridge/BattleRewards.cs:47-84、unity-port/unity-project-kit/Assets/View/Exploration/Bridge/UniqueCards.cs:35-49、unity-port/unity-project-kit/Assets/View/Exploration/Bridge/Expedition.cs:363、:380-393、:470、:508-513、:544-550、unity-port/unity-project-kit/Assets/View/Exploration/Bridge/Expedition.Trial.cs:76-96、:362、unity-port/unity-project-kit/Assets/View/Exploration/Bridge/CardPicks.cs:106、:130</li>
+        <li id="ref-2">剣術の 50 枚の案が根拠にした場所: gh issue view 934 -R sunbreak-pro/original-card-battle --comments、gh issue view 898 -R sunbreak-pro/original-card-battle（Definition of Done と依存）、gh issue view 992 -R sunbreak-pro/original-card-battle（先に決めること・Scope）、git grep -n -E "重なる 3 枚だけ外す|棘の一射も外して|瘴気の刃と糸打ち|習熟の段が上がってひらめく"（0 件）、swordsman_cards_v4.md §1.1（:43 移動が中心の 6 枚）、swordsman_cards_v4.md §1.2（:51 同じ組は 3 枚まで、:86 予兆の出る割合、:87 崩しの源）、swordsman_cards_v4.md §1.3（:93-103）、swordsman_cards_v4.md §1.4（:147-148 スタンスの条件と間合い 3 に届く 5 枚）、swordsman_cards_v4.md §2（:173-206、#6 :179・#8 :180・#30 :197）、swordsman_cards_v4.md §3（:212-258、#75 :239・#76 :240）、swordsman_cards_v4.md §4.1〜§4.5（:300-487、§4.2 :363-378、§4.3 :383-396）、swordsman_cards_v4.md §4.7（:556-624）、swordsman_cards_v4.md §5（:628-652、§5 の 1 :632）、swordsman_cards_v4.md §6 の v4.11 の表（:662-672）、enemy_roster_v4.md §4.5（:592-598）、§5.5（:671-679）、§6.6（:763-771）、:513、:639、:1538、encounters_and_rewards_v4.md :189-191、battle_core_v4.md §19.8（:1238-1250）、battle_ui_ux_v2.md:452、SOURCES.md :39・:52・:53・:64（持ち主の担当）、unity-port/BattleCore/CardCatalog.cs:31-53、:73、:110、:186-198、unity-port/BattleCore/Constants.cs:32、unity-port/BattleCore/Mastery.cs:90、:585-586、unity-port/BattleCore.Sim/Decks.cs:48-115、:118-126（CostOneOnly）、:145-155、:182、unity-port/BattleCore.Tests/CardCatalogTests.cs:27-29、unity-port/InheritanceCore/Inheritance.cs:30、unity-port/unity-project-kit/Assets/View/Exploration/Bridge/BattleRewards.cs:47-56、unity-port/unity-project-kit/Assets/View/Exploration/Bridge/UniqueCards.cs:35-49、unity-port/unity-project-kit/Assets/View/Exploration/Bridge/Expedition.cs:29、unity-port/unity-project-kit/Assets/View/Depiction/Bridge/DeckBuilder.cs:413-447、unity-port/unity-project-kit/Assets/View/Trial/Meta/MetaDevBoot.cs:102、:118、:184、:191、git diff main...origin/feat/dungeon-888（BattleRewards.cs・UniqueCards.cs・encounters_and_rewards_v4.md）</li>
+        <li id="ref-3">Issue #903 の案が根拠にした場所: gh issue view 903 -R sunbreak-pro/original-card-battle --comments（本文「いま何が起きているか」）、swordsman_cards_v4.md §1.1（:20 スタンスの決まり、:41 付与の既定、:45 解決順）、swordsman_cards_v4.md §1.2（:51 同じ組は 3 枚まで、:56 移動後、:57 間合いの読み方、:85 スタンスの特性の判定、:86 予兆の種別の割合）、swordsman_cards_v4.md §1.3（:94 基準の列、:97 追撃で列 2 へ下げる）、swordsman_cards_v4.md §1.4（:147 スタンスの条件）、swordsman_cards_v4.md §2（:187 #16、:205 #39）、swordsman_cards_v4.md §3（:214-245 習得の札、:218 #45、:254 id を変えない扱い）、swordsman_cards_v4.md §3.1（:268 #83、:273）、swordsman_cards_v4.md §4.2（:366-367、:380）、§4.3（:395）、§4.4（:405、:410、:417-424）、battle_core_v4.md §2.2（:123）、§2.3（:133、:146、:166）、§2.4（:179）、battle_core_v4.md §4（:286-326、:305 攻撃ごとの状態付与、:320 when の書き方）、battle_core_v4.md §5（:334 上限、:343-354 状態の表、:362-366 鈍足、:373-377 威圧）、§5.1（:399-404、:403 次の撃から効く規則と、持たせた札はまだない文）、battle_core_v4.md §7.3（:477-484 移動と開始の間合い）、enemy_roster_v4.md §5（:610-615）、§5.1（:628）、§5.2（:632-640）、§5.3（:649、:654）、§5.4（:665、:667）、§5.5（:671-679）、enemy_roster_v4.md の威圧 1 を付ける行動（:328、:550、:1092、:1158）、world-v1.md:7（v5.3 のカタカナの固有名）、unity-port/BattleCore/Types.cs:104-161（StatusKind）、:305-360（StanceHook、:330 No card uses it）、:363-381（StanceWhen、:376 MovedThisTurn の注釈）、:410-426（StanceDef）、unity-port/BattleCore/CardCatalog*.cs（StatusOnAttack の使用なし、grep で確認）、unity-port/BattleCore/TurnLoop.Stances.cs:85-158、unity-port/BattleCore/TurnLoop.Resolve.cs:311-331、:344、unity-port/BattleCore/TurnLoop.Hits.cs:21-66、unity-port/BattleCore/TurnLoop.Statuses.cs:24-105、unity-port/BattleCore/TurnLoop.cs:245、:267、unity-port/BattleCore/Combat.cs:65-69、unity-port/BattleCore/CardCatalog.Learned.cs:44-53、unity-port/BattleCore.Tests/CardCatalogTests.cs:81、:287、:291-308、:318-351、:365-369、unity-port/BattleCore.Tests/VocabularyTests.cs:1553、:1793-1870、unity-port/unity-project-kit/Assets/View/Depiction/Bridge/CoreText.cs:178-252、unity-port/unity-project-kit/Assets/View/Depiction/Bridge/Tests/CoreVocabularyTests.cs:205-245、unity-port/unity-project-kit/Assets/View/Depiction/Bridge/Tests/CardFaceFitTests.cs:132-143</li>
+        <li id="ref-4">Issue #933 の案が根拠にした場所: gh issue view 933（本文「先に決めること」の対応表の項目「最初は数枚で試す」と、コメント 2026-11-07）、gh issue view 992、gh issue view 934、battle_core_v4.md §2.2（1 枚の中の解決順、124 行目「動いた結果は、次の行動から効きます」）、battle_core_v4.md §3.2（習熟の刻みと段）、battle_core_v4.md §4（スタンスの除外）、battle_core_v4.md §7.3（478 行目「行けるところまで動きます」、端で止まる）、battle_core_v4.md §8（手札とデッキ）、battle_core_v4.md §9（ターン進行の手順 4 と 8）、battle_core_v4.md §10（COPIES_MAX、OWNED_KINDS_MAX、SAME_TRAIT_MAX）、battle_core_v4.md §11（View の手札の扇）、battle_core_v4.md §17.6（手札上限の超過は捨札へ）、swordsman_cards_v4.md §1.1（目盛り、素直な札）、swordsman_cards_v4.md §1.2（同じ条件と効果の組は 3 枚まで）、swordsman_cards_v4.md §1.4（届く間合いと帯の表）、swordsman_cards_v4.md §2（初期 32 種。197 行目 #30 牽制: 0〜1、威力 10 ／ 後ろへ 1）、swordsman_cards_v4.md §3、§3.1、§3.2（習得 32 種と入手先、竜王の 3 枚、固有カードの案）、swordsman_cards_v4.md §4.4（同じ組の最大は 2 枚）、enemy_roster_v4.md:1155（還らずの英雄の行動名「斬り下ろし」）、world-v1.md §7.1、§7.2（敵の命名の規則。札の名前の規則ではないことの確認）、unity-port/BattleCore/Constants.cs:23-29、32、89、unity-port/BattleCore/Cards.cs:66-117（Draw と上限の超過）、119-130（DiscardHand）、unity-port/BattleCore/Combat.cs:89-93（DrawCount）、unity-port/BattleCore/TurnLoop.cs:108、152-190、259-269、367-386、unity-port/BattleCore/TurnLoop.Resolve.cs:88-113（ResolveGuardAndSkill、ResolveStatuses、ResolveStance の後に draw = r.Face.Draw + r.Outcome.Draw をプレイヤーだけ DrawCards で引く）、unity-port/BattleCore/Types.cs:253-282（TraitEffect）、482-495（Face）、526-557（CardDef、CardInstance）、unity-port/BattleCore/Mastery.cs:48（MasteryPlay）、unity-port/ と unity-project-kit/Assets/View/Exploration/Bridge/ の grep（札を足す処理と、戦闘の山の読み戻しがないこと）</li>
+        <li id="ref-5">魔術の札の案が根拠にした場所: gh issue view 934 -R sunbreak-pro/original-card-battle --comments（本文と 2026-11-07・2026-11-21 のコメント）、gh issue view 992 -R sunbreak-pro/original-card-battle（ひらめきと探索のイベントでの習得、決めること 1〜4）、gh issue view 993 -R sunbreak-pro/original-card-battle（concept-v3 への反映。PR #994 で main に入り、close 済みです）、swordsman_cards_v4.md §1.1〜§1.5（目盛り、特性 13 条件と 10 効果、帯の表、段の型、165〜166 行の型替えの数と名前の決まり）、swordsman_cards_v4.md:33（出血 / 再生のスタックの目盛り、列 2 は 2）、:94（連打は列 2 が基準）、:147（スタンスの条件はいちばん近い敵との N、#45 の間合い 0 だけ選んだ相手）、swordsman_cards_v4.md §2・§3（初期 32 と習得 32 の表を数え直し、攻撃 14/11・防御 10/7・スキル 6/3・スタンス 2/11、入手先はボス 9・精鋭 4・探索 19。連打の札は #23・#44・#64・#69）、swordsman_cards_v4.md §3.1（#81〜83 竜王の札）、§4.1・§4.4・§4.5（集計、コスト 19/26/18/1、届く間合い）、battle_core_v4.md §2.1〜§2.4（属性・解決順・特性・reach）、battle_core_v4.md §3.1・§3.2（目盛り、習熟の 4 文脈と 3 つの型）、battle_core_v4.md §4（スタンスの 9 つの型、when はいちばん近い敵）、§5・§5.1（状態 10 語、集中の減り方、倍率は 1 つまで）、battle_core_v4.md §6.3（ボスの適応は属性の並びを読む）、battle_core_v4.md §7.2:471〜473（届く上限 3 以上の札は少数、4 マスに同数ずつ）、§7.3（押す、大きさ 2 以上は受けない、開始のマス 2）、battle_core_v4.md §9（回復は固定 3、1 ターンに 2 枚以上出す前提）、§19.4 の S9（4 マス均等の理由）、§21.1 の 4、enemy_roster_v4.md §1.1:70・§1.9:235〜242（亡霊は押し引きを受けない・跳ぶ、根の這い）、enemy_roster_v4.md §2.1〜§2.7（通常 7 体の決定木。灰弩の竜兵 §2.4:328 弩は 2〜5、燐弓の竜兵 §2.5:352・360 靄の矢は 2〜4 で自分では動かない）、seven_layers_v4.md §6（第 1〜3 層の通常戦闘は 6 マス、開始はマス 2 とマス 6）、vision/world-v1.md §7.3:294（人の側に魔術は無い）、vision/concept-v3.md §1:19、§4.1:77〜83、§12 の 23（277 行）、313 行、§16.1 の表、vision/core.md:26（魔術師は後追い）、card_document/MAGE_CARDS_40.md 冒頭（共鳴 0→1→2）、src/constants/characterConstants.ts:20（RESONANCE_MULTIPLIER）、unity-port/BattleCore/Types.cs:204（TraitCondition）、:239（連打はこのターンの直前の札）、:526〜536（CardDef に系は無い）、:813〜816（Played はターン終了で消える）、unity-port/BattleCore.Tests/CardCatalogTests.cs:369（TheFourteenGapCards_FillTheFourCells_OnColumnsOneTwoTwoThree。剣士の札表の境目の 4 マスの配分を検査）、SOURCES.md:99（MAGE_CARDS_40.md は Web 版の記録、魔術師は未設計）、swordsman_cards_v4.md §1 を指す参照 15 か所（battle_core_v4.md、battle_ui_ux_v2.md、enemy_roster_v4.md、unity-port/BattleCore/Columns.cs、TurnLoop.Resolve.cs）</li>
+        <li id="ref-6">PR #995「feat(battle): add the parasite and ghost lineage rules and the king rank」 <a href="https://github.com/sunbreak-pro/original-card-battle/pull/995">https://github.com/sunbreak-pro/original-card-battle/pull/995</a></li>
+        <li id="ref-7">PR #988「feat(dungeon): replace miasma with the collapse calendar and three regions」 <a href="https://github.com/sunbreak-pro/original-card-battle/pull/988">https://github.com/sunbreak-pro/original-card-battle/pull/988</a></li>
+      </ol>
+    </section>
+  </main>
+</div>
+
+<script>
+  /* 目次: 現在地の強調(aria-current)、読み終えた節(.done)、上端の進捗バー。節が 3 つ以下で目次がなければ何もしない */
+  (() => {
+    const links = [...document.querySelectorAll('.toc a[data-target]')];
+    const sections = links.map(a => document.getElementById(a.dataset.target));
+    const bar = document.querySelector('.toc-progress > span');
+    if (!links.length || sections.some(s => !s)) return;
+    let ticking = false;
+    const update = () => {
+      ticking = false;
+      const root = document.documentElement;
+      const line = window.innerHeight * 0.3;
+      let idx = 0;
+      sections.forEach((s, i) => { if (s.getBoundingClientRect().top <= line) idx = i; });
+      const max = root.scrollHeight - window.innerHeight;
+      if (max > 0 && window.scrollY >= max - 4) idx = sections.length - 1;
+      links.forEach((a, i) => {
+        a.classList.toggle('done', i < idx);
+        if (i === idx) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current');
+      });
+      if (bar) bar.style.width = (max > 0 ? Math.min(100, (window.scrollY / max) * 100) : 100) + '%';
+      /* 目次が画面より高いとき(.toc は内側でスクロールする)、現在地のリンクを目次の見える範囲に入れる */
+      const box = links[idx].closest('.toc');
+      if (box && box.scrollHeight > box.clientHeight + 1) {
+        const b = box.getBoundingClientRect(), r = links[idx].getBoundingClientRect();
+        if (r.top < b.top) box.scrollTop -= b.top - r.top + 8;
+        else if (r.bottom > b.bottom) box.scrollTop += r.bottom - b.bottom + 8;
+      }
+    };
+    const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+    addEventListener('scroll', onScroll, { passive: true });
+    addEventListener('resize', onScroll);
+    update();
+  })();
+
+  /* テーマ切り替え: data-theme と aria-pressed を更新し、選んだ値を保存する(保存できなくても切り替えは効く) */
+  (() => {
+    const root = document.documentElement;
+    const buttons = [...document.querySelectorAll('[data-theme-set]')];
+    if (!buttons.length) return;
+    const current = () => (root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light');
+    const paint = () => {
+      const now = current();
+      buttons.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.themeSet === now)));
+    };
+    buttons.forEach(b => b.addEventListener('click', () => {
+      const v = b.dataset.themeSet === 'dark' ? 'dark' : 'light';
+      root.setAttribute('data-theme', v);
+      try { localStorage.setItem('html-report-theme', v); } catch (e) {}
+      paint();
+    }));
+    if (root.getAttribute('data-theme') !== current()) root.setAttribute('data-theme', current());
+    /* ホストが後から data-theme を外したら light を付け直す(付いていないと、切り替えボタンごと消える)。付けた値(dark など)には従う */
+    new MutationObserver(() => {
+      if (!root.hasAttribute('data-theme')) root.setAttribute('data-theme', 'light');
+      paint();
+    }).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+    paint();
+  })();
+
+  /* 印刷: ダークを選んでいても、印刷の間だけ light にして、印刷のあとで元に戻す(案の画面の暗い上書きも印刷に出さない)。
+     印刷の間に別の値へ変わっていたら、戻さない。利用者がボタンを押したら、控え(saved)を捨てる
+     (afterprint が来ない環境で、古い控えが残って次の印刷を素通りさせたり、選んだ値を戻したりしない)。
+     保存値(localStorage)は触らない。ボタンの押下表示は印刷の間だけ light になる */
+  (() => {
+    const root = document.documentElement;
+    let saved = null;
+    document.querySelectorAll('[data-theme-set]').forEach(b => b.addEventListener('click', () => { saved = null; }));
+    const toLight = () => {
+      if (saved !== null) return;
+      saved = root.getAttribute('data-theme') || 'light';
+      if (saved !== 'light') root.setAttribute('data-theme', 'light');
+    };
+    const restore = () => {
+      if (saved === null) return;
+      const back = saved;
+      saved = null;
+      if (root.getAttribute('data-theme') === 'light') root.setAttribute('data-theme', back);
+    };
+    addEventListener('beforeprint', toLight);
+    addEventListener('afterprint', restore);
+    try {
+      const mq = matchMedia('print');
+      const onChange = e => (e.matches ? toLight() : restore());
+      if (mq.addEventListener) mq.addEventListener('change', onChange); else if (mq.addListener) mq.addListener(onChange);
+    } catch (e) {}
+  })();
+
+  /* 切り替え式の案パネル: クリックと 矢印キー左右 / Home / End で案を切り替える(選んだタブだけ tabindex=0)。
+     見せない案には inert と aria-hidden を付ける。案の数に依存しない。JS が動かないときは .is-ready が付かず、全案が縦に並ぶ。
+     利用者が最初に切り替えたとき .is-live を付け、フェードはそこから動く(最初の描画では動かさない) */
+  (() => {
+    document.querySelectorAll('[data-variants]').forEach(root => {
+      const tabs = [...root.querySelectorAll('[role="tab"]')];
+      const panels = tabs.map(t => document.getElementById(t.getAttribute('aria-controls')));
+      if (!tabs.length || panels.some(p => !p)) return;
+      const select = (i, focus) => {
+        tabs.forEach((t, j) => {
+          const on = i === j;
+          t.setAttribute('aria-selected', String(on));
+          t.setAttribute('tabindex', on ? '0' : '-1');
+          panels[j].classList.toggle('is-active', on);
+          if (on) { panels[j].removeAttribute('inert'); panels[j].removeAttribute('aria-hidden'); }
+          else { panels[j].setAttribute('inert', ''); panels[j].setAttribute('aria-hidden', 'true'); }
+        });
+        if (focus) tabs[i].focus();
+      };
+      const live = () => root.classList.add('is-live');
+      tabs.forEach((t, i) => {
+        t.addEventListener('click', () => { live(); select(i, false); });
+        t.addEventListener('keydown', e => {
+          if (e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) return;
+          let next = -1;
+          if (e.key === 'ArrowRight') next = (i + 1) % tabs.length;
+          else if (e.key === 'ArrowLeft') next = (i - 1 + tabs.length) % tabs.length;
+          else if (e.key === 'Home') next = 0;
+          else if (e.key === 'End') next = tabs.length - 1;
+          if (next < 0) return;
+          e.preventDefault();
+          live();
+          select(next, true);
+        });
+      });
+      const first = tabs.findIndex(t => t.getAttribute('aria-selected') === 'true');
+      select(first < 0 ? 0 : first, false);
+      root.classList.add('is-ready');
+    });
+  })();
+</script>
+</body>
+</html>
