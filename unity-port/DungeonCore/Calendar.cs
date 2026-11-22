@@ -12,8 +12,8 @@ namespace DungeonCore
     /// </summary>
     public static class Calendar
     {
-        /// <summary>§2.1: the days left when the world starts.</summary>
-        public const int TotalDays = 360;
+        /// <summary>§2.1: the days left when the world starts. Provisional (concept-v3.md §14.6, #1026).</summary>
+        public const int TotalDays = 100;
 
         /// <summary>§2.1: the next heir sets out this many days after a life that came back alive.</summary>
         public const int HandoverSurvivedDays = 3;

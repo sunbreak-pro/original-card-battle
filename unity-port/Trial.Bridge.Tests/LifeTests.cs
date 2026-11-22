@@ -283,9 +283,9 @@ namespace Trial.Bridge.Tests
         {
             LifeStart ls = Inheritance.StartLife(Inheritance.NewLineage(13));
             ExplorationState st = Life.LifeSetup(Life.MakeStart(ls, Departure(ls, 2))).Expedition.Session.State;
-            var frozen = new CalendarState(200, new Dictionary<Region, int> { [Region.Dragon] = 41 });
+            var frozen = new CalendarState(80, new Dictionary<Region, int> { [Region.Dragon] = 41 });
             LifeClose close = Life.CloseLife(ls.Lineage, st.With(phase: RunPhase.Survived, calendar: frozen), NoNewLineage);
-            Assert.That(close.Next.Calendar.DaysLeft, Is.EqualTo(200));
+            Assert.That(close.Next.Calendar.DaysLeft, Is.EqualTo(80));
             Assert.That(close.Next.Calendar.KingReturns[Region.Dragon], Is.EqualTo(41 - Calendar.HandoverSurvivedDays));
         }
 
@@ -295,7 +295,7 @@ namespace Trial.Bridge.Tests
         {
             LifeStart ls = Inheritance.StartLife(Inheritance.NewLineage(13));
             LayerProfile kingRoom = Lair.Of(Lair.KingLayer, Region.Dragon);
-            ExplorationState at = ExplorationReducer.Enter(kingRoom, kingRoom.Map(5UL), RunLoadout.Empty, 50, 50, 10, new CalendarState(200));
+            ExplorationState at = ExplorationReducer.Enter(kingRoom, kingRoom.Map(5UL), RunLoadout.Empty, 50, 50, 10, new CalendarState(80));
             while (at.Phase == RunPhase.Exploring)
             {
                 int row = at.Map.Node(at.CurrentNodeId).Row;

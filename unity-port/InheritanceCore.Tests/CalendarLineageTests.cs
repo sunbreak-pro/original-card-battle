@@ -16,7 +16,7 @@ namespace InheritanceCore.Tests
     {
         private const ulong Seed = 42;
 
-        private static CalendarState Moved => new CalendarState(312, new Dictionary<Region, int> { [Region.Dragon] = 41 });
+        private static CalendarState Moved => new CalendarState(62, new Dictionary<Region, int> { [Region.Dragon] = 41 });
 
         // ---- the calendar on the lineage -------------------------------------------------------------------
 
@@ -35,7 +35,7 @@ namespace InheritanceCore.Tests
         {
             var l = Inheritance.NewLineage(Seed).WithCalendar(Moved);
             string text = Inheritance.Serialize(l);
-            Assert.That(text, Does.EndWith(",\"Calendar\":{\"DaysLeft\":312,\"KingReturns\":{\"dragon\":41}}}"));
+            Assert.That(text, Does.EndWith(",\"Calendar\":{\"DaysLeft\":62,\"KingReturns\":{\"dragon\":41}}}"));
 
             var back = Inheritance.Deserialize(text);
             Assert.That(back.Calendar, Is.EqualTo(Moved));
@@ -45,9 +45,9 @@ namespace InheritanceCore.Tests
         [Test]
         public void ACalendarWithNoKingDownWritesAnEmptyKingList()
         {
-            var l = Inheritance.NewLineage(Seed).WithCalendar(new CalendarState(100));
-            Assert.That(Inheritance.Serialize(l), Does.EndWith(",\"Calendar\":{\"DaysLeft\":100,\"KingReturns\":{}}}"));
-            Assert.That(Inheritance.Deserialize(Inheritance.Serialize(l)).Calendar, Is.EqualTo(new CalendarState(100)));
+            var l = Inheritance.NewLineage(Seed).WithCalendar(new CalendarState(70));
+            Assert.That(Inheritance.Serialize(l), Does.EndWith(",\"Calendar\":{\"DaysLeft\":70,\"KingReturns\":{}}}"));
+            Assert.That(Inheritance.Deserialize(Inheritance.Serialize(l)).Calendar, Is.EqualTo(new CalendarState(70)));
         }
 
         [Test]
@@ -72,7 +72,7 @@ namespace InheritanceCore.Tests
             Assert.That(Inheritance.FromJson(explicitNull).Calendar, Is.EqualTo(CalendarState.Fresh));
         }
 
-        [TestCase("{\"DaysLeft\":361,\"KingReturns\":{}}", "calendar days")]
+        [TestCase("{\"DaysLeft\":101,\"KingReturns\":{}}", "calendar days")]
         [TestCase("{\"DaysLeft\":-1}", "calendar days")]
         [TestCase("{\"KingReturns\":{}}", "calendar days")]
         [TestCase("{\"DaysLeft\":10,\"KingReturns\":{\"common\":5}}", "no king of common")]
@@ -110,7 +110,7 @@ namespace InheritanceCore.Tests
                 .WithCurrent(null).Calendar, Is.EqualTo(Moved));
 
             var handedOver = alive.WithCalendar(alive.Calendar.Handover(RunPhase.Survived, shortReturn: false));
-            Assert.That(handedOver.Calendar.DaysLeft, Is.EqualTo(312), "a king is down, so the handover days are frozen");
+            Assert.That(handedOver.Calendar.DaysLeft, Is.EqualTo(62), "a king is down, so the handover days are frozen");
             Assert.That(handedOver.Calendar.KingReturns[Region.Dragon], Is.EqualTo(38));
         }
 
