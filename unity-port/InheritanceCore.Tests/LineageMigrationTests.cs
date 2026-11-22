@@ -8,8 +8,8 @@ namespace InheritanceCore.Tests
 {
     /// <summary>
     /// The lineage save's version policy (#109, dungeon_exploration_v4.md §7.9): an older save is converted step by
-    /// step, a newer one is refused, a version with no step is refused. The version-2 steps here are made up for the
-    /// test; the build has none while Inheritance.SaveVersion is 1.
+    /// step, a newer one is refused, a version with no step is refused. The steps here are made up for the test; the
+    /// build's own (1 → 2, the carry-over of #1025) is tested in CarryoverTests.
     /// </summary>
     public class LineageMigrationTests
     {

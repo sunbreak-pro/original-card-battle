@@ -573,6 +573,9 @@ namespace Trial.Meta
         // ---- what the supplies view reads ------------------------------------------------------------------------------
 
         internal DepartureCtx Ctx => _ctx;
+
+        /// <summary>「継承の間へ」, or 「拠点へ」 under the carry-over (#1025), whose hall is titled 拠点.</summary>
+        private string HallLabel => _ctx.LifeStart?.Carryover != null ? InheritanceText.ToBaseButton : InheritanceText.ToHallButton;
         internal MetaSound Sound => _sound;
         internal SceneClock Clock => _clock;
         internal DeckBuilder Deck => _deck;
@@ -653,7 +656,7 @@ namespace Trial.Meta
                 .Done();
             _backBtn.OnClick = Back;
             MetaUtil.Icon(_backBtn.Root, "back", 22f, DsTokens.Ink);
-            _backText = Label.Make(_backBtn.Root, InheritanceText.ToHallButton, MetaStyle.Text(BackCss + BackNoWrapCss), "span");
+            _backText = Label.Make(_backBtn.Root, HallLabel, MetaStyle.Text(BackCss + BackNoWrapCss), "span");
             _backBtn.Node.Place(64f, 24f);
             LayoutBack();
 
@@ -1532,7 +1535,7 @@ namespace Trial.Meta
             DrawGrid(0);
             _stepSup.SetOn(false);
             _stepDeck.SetOn(true);
-            Label.SetText(_backText, InheritanceText.ToHallButton);
+            Label.SetText(_backText, HallLabel);
             LayoutBack();
             global::Trial.Kit.Styler a = global::Trial.Kit.Styler.Of(_supPage), b = global::Trial.Kit.Styler.Of(_deckPage, o: 0f, x: -80f);
             UiNode.Of(_deckPage).Visible = true;

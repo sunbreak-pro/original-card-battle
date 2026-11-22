@@ -107,8 +107,14 @@ namespace InheritanceCore
         public static Lineage FromJson(object? data)
         {
             if (!Js.IsObject(data)) throw new InheritanceRuleException("bad save: not an object");
-            // An older save is converted first, a newer one refused (LineageMigrations, #109).
-            if (data is JsonObject saved) data = LineageMigrations.Upgrade(saved);
+            // An older save is converted first, a newer one refused (LineageMigrations, #109). The lineage keeps the
+            // version it was saved at, so a lineage read and written again is the same text (the JS's, at version 1).
+            int savedVersion = SaveVersion;
+            if (data is JsonObject saved)
+            {
+                data = LineageMigrations.Upgrade(saved);
+                if (Json.IsInteger(Js.Get(saved, "Version"))) savedVersion = (int)Json.ToDouble(Js.Get(saved, "Version"));
+            }
             var version = Js.Get(data, "Version");
             if (!(Json.IsNumber(version) && Json.ToDouble(version) == SaveVersion))
                 throw new InheritanceRuleException($"bad save: version {Js.Display(version)}");
@@ -160,14 +166,37 @@ namespace InheritanceCore
             }
             var player = Js.Get(data, "Player");
             return new Lineage(
-                SaveVersion,
+                savedVersion,
                 Ulong(Js.SeedOf(Js.Get(data, "Seed"))),
                 lives,
                 current,
                 traces,
                 survivor,
                 new PlayerKnowledge(Js.Truthy(Js.Get(player, "CarvingTaken")), Js.Truthy(Js.Get(player, "RootDefeated"))),
-                CheckCalendar(Js.Get(data, "Calendar")));
+                CheckCalendar(Js.Get(data, "Calendar")),
+                CheckCarryover(Js.Get(data, "Carryover")));
+        }
+
+        /// <summary>
+        /// The saved carry-over (#1025): { Cards: [{ CardId, Rank, Ticks }], Owned: [ids], Journal }. Absent or null: the
+        /// lineage plays the generations. A version-1 save never holds one (LineageMigrations' first step drops the key).
+        /// </summary>
+        private static Carryover? CheckCarryover(object? c)
+        {
+            if (Js.IsNullish(c)) return null;
+            if (!(c is JsonObject)) throw new InheritanceRuleException("bad save: the carry-over");
+            var cards = Js.List(Js.Get(c, "Cards"), "carried cards").Select(card =>
+            {
+                if (!(Js.Get(card, "CardId") is string id) || id.Length == 0) throw new InheritanceRuleException("bad save: a carried card");
+                return new BattleCore.CardMastery(
+                    id,
+                    Js.RequireInt(Js.Get(card, "Ticks"), $"carried ticks of {id}", 0),
+                    Js.RequireInt(Js.Get(card, "Rank"), $"carried rank of {id}", 0, 3));
+            }).ToList();
+            var owned = Js.List(Js.Get(c, "Owned"), "carried kinds").Select(id =>
+                id is string s && s.Length > 0 ? s : throw new InheritanceRuleException("bad save: a carried kind")).ToList();
+            var journal = Js.Get(c, "Journal");
+            return new Carryover(cards, owned, Js.IsNullish(journal) ? null : CheckJournalShape(journal, "carried"));
         }
 
         /// <summary>

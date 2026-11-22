@@ -173,6 +173,24 @@ namespace InheritanceCore
 
         public static string SurvivorSpentLimits(int tools, int deck) => Invariant($"ツール枠 {tools} ／ デッキ上限 {deck} に戻った");
 
+        /// <summary>The hall's title under the carry-over (#1025): one explorer comes back to the same base.</summary>
+        public const string BaseTitle = "拠点";
+
+        /// <summary>The way back to the hall under the carry-over (the ending card, 出立's back button).</summary>
+        public const string ToBaseButton = "拠点へ";
+
+        /// <summary>The ending card after a fall under the carry-over: what the next descent starts with.</summary>
+        public const string CarriedAfterFall = "届いた段・覚えた札・手記は次の探索へ持ち越す。次の段に届かなかった習熟は失われた";
+
+        /// <summary>The ending card after a life that came back under the carry-over.</summary>
+        public const string CarriedAfterReturn = "段も習熟の刻みも、覚えた札・手記も、すべて次の探索へ持ち越す";
+
+        /// <summary>
+        /// The ending card when the calendar ran out under the carry-over. The trial starts a new lineage when the world
+        /// ends (Trial Main.EndLife), so the record does not go on and the card must not promise that it does.
+        /// </summary>
+        public const string WorldEndedUncarried = "世界とともに、届いた段・覚えた札・手記も失われた。次の探索は新しい世界で一から始まる";
+
         /// <summary>The past life's trace line in the hall.</summary>
         public static class TraceStatus
         {

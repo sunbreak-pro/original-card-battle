@@ -105,6 +105,9 @@ namespace Exploration.Bridge
             // under 0 (js: app/life.js:74 startPages reads anything but a positive count as 0).
             _startPages = Math.Max(0, options?.StartPages ?? 0);
             InheritedPages = _startPages;
+            // Trial extension (#1025): what the explorer carries in from earlier lives.
+            _startMastery = options?.StartMastery?.Where(c => c != null).ToList() ?? new List<CardMastery>();
+            _startOwned = options?.StartOwned?.Where(id => !string.IsNullOrEmpty(id)).ToList() ?? new List<string>();
             BeginLife();
         }
 
@@ -586,7 +589,7 @@ namespace Exploration.Bridge
             _learnedCopies = 0;
             Battle = null;
             Mastery = MasteryBook.Begin(_talent);
-            BeginLifeTrial(); // Trial extension: nothing pending, and the pages the heir set out with
+            BeginLifeTrial(); // Trial extension: nothing pending, the pages the heir set out with, what is carried in
         }
 
         /// <summary>

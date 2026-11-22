@@ -487,6 +487,57 @@ namespace InheritanceCore
     }
 
     /// <summary>
+    /// What one explorer keeps from one life to the next when the lineage plays the carry-over (#1025, opt-in): the
+    /// cards with their 段 and ticks, the card kinds learned on the way (beyond the ones every character owns), and the
+    /// whole journal. A fall keeps each card at the 段 it reached and drops the ticks short of the next one; a life that
+    /// comes back keeps the ticks too. Cards and kinds are kept in ordinal id order, the journal normalised.
+    /// </summary>
+    public sealed class Carryover
+    {
+        public Carryover(IEnumerable<CardMastery>? cards = null, IEnumerable<string>? owned = null, Journal? journal = null)
+        {
+            var byId = new SortedDictionary<string, CardMastery>(StringComparer.Ordinal);
+            foreach (var c in cards ?? Array.Empty<CardMastery>())
+            {
+                if (c == null || string.IsNullOrEmpty(c.CardId)) throw new InheritanceRuleException("a carried card needs a CardId");
+                if (byId.ContainsKey(c.CardId)) throw new InheritanceRuleException($"card {c.CardId} is carried twice");
+                Inheritance.RequireInt(c.Rank, $"rank of {c.CardId}", 0, 3);
+                Inheritance.RequireInt(c.Ticks, $"ticks of {c.CardId}", 0);
+                byId[c.CardId] = c;
+            }
+            Cards = Frozen.List(byId.Values);
+            Owned = Frozen.List((owned ?? Array.Empty<string>())
+                .Where(id => !string.IsNullOrEmpty(id))
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(id => id, StringComparer.Ordinal));
+            Journal = Inheritance.NormalizeJournal(journal);
+        }
+
+        /// <summary>The record before the first life: nothing carried yet.</summary>
+        public static Carryover Empty { get; } = new Carryover();
+
+        /// <summary>The cards the next life starts its mastery book with.</summary>
+        public IReadOnlyList<CardMastery> Cards { get; }
+
+        /// <summary>The card kinds learned in earlier lives: the next life owns them from its start.</summary>
+        public IReadOnlyList<string> Owned { get; }
+
+        /// <summary>The journal the next life starts with, its memo among it.</summary>
+        public Journal Journal { get; }
+
+        /// <summary>The cards as a mastery book's records (MergeMastery's input), in ordinal id order.</summary>
+        public IReadOnlyDictionary<string, CardMastery> Records =>
+            new OrderedMap<CardMastery>(Cards.Select(c => new KeyValuePair<string, CardMastery>(c.CardId, c)), jsOrder: false);
+
+        public JsonObject ToJson() => new JsonObject
+        {
+            ["Cards"] = Cards.Select(c => (object?)new JsonObject { ["CardId"] = c.CardId, ["Rank"] = c.Rank, ["Ticks"] = c.Ticks }).ToList(),
+            ["Owned"] = Owned.Cast<object?>().ToList(),
+            ["Journal"] = Journal.ToJson(),
+        };
+    }
+
+    /// <summary>
     /// A lineage (R-01): the closed lives, the life in progress, the untaken traces, the one survivor, the
     /// player's own knowledge and 崩壊の暦 every life shares. No lives counter, no reset. Seed is a decimal string
     /// (it draws the heirs' names).
@@ -494,6 +545,11 @@ namespace InheritanceCore
     public sealed class Lineage
     {
         /// <param name="calendar">Null is <see cref="CalendarState.Fresh"/>: a world with every day left.</param>
+        /// <param name="carryover">
+        /// Null plays the generations as the browser trial does. Set, one explorer keeps what the record holds from life
+        /// to life (#1025); such a lineage is saved at <see cref="Inheritance.CarryoverVersion"/> at least, so a build that
+        /// cannot read the record refuses the save instead of dropping it.
+        /// </param>
         public Lineage(
             int version,
             string seed,
@@ -502,9 +558,10 @@ namespace InheritanceCore
             IEnumerable<Trace> traces,
             Survivor? survivor,
             PlayerKnowledge player,
-            CalendarState? calendar = null)
+            CalendarState? calendar = null,
+            Carryover? carryover = null)
         {
-            Version = version;
+            Version = carryover != null ? Math.Max(version, Inheritance.CarryoverVersion) : version;
             Seed = seed ?? throw new ArgumentNullException(nameof(seed));
             Lives = Frozen.List(lives);
             Current = current;
@@ -512,8 +569,13 @@ namespace InheritanceCore
             Survivor = survivor;
             Player = player ?? throw new ArgumentNullException(nameof(player));
             Calendar = calendar ?? CalendarState.Fresh;
+            Carryover = carryover;
         }
 
+        /// <summary>
+        /// The save version this lineage is written at: the one it was read at (or <see cref="Inheritance.PlainVersion"/>
+        /// for a new one), and <see cref="Inheritance.CarryoverVersion"/> once it holds a carry-over.
+        /// </summary>
         public int Version { get; }
         public string Seed { get; }
         public IReadOnlyList<LifeRecord> Lives { get; }
@@ -529,14 +591,27 @@ namespace InheritanceCore
         /// </summary>
         public CalendarState Calendar { get; }
 
-        public Lineage WithLives(IEnumerable<LifeRecord> lives) => new Lineage(Version, Seed, lives, Current, Traces, Survivor, Player, Calendar);
-        public Lineage WithCurrent(LifeRecord? current) => new Lineage(Version, Seed, Lives, current, Traces, Survivor, Player, Calendar);
-        public Lineage WithTraces(IEnumerable<Trace> traces) => new Lineage(Version, Seed, Lives, Current, traces, Survivor, Player, Calendar);
-        public Lineage WithSurvivor(Survivor? survivor) => new Lineage(Version, Seed, Lives, Current, Traces, survivor, Player, Calendar);
-        public Lineage WithPlayer(PlayerKnowledge player) => new Lineage(Version, Seed, Lives, Current, Traces, Survivor, player, Calendar);
+        /// <summary>
+        /// What one explorer carries from life to life (#1025), or null: the lineage plays the generations (traces, the
+        /// survivor and its bonus). Set, StartLife hands the record to the next life, a closed life adds to it, and no
+        /// trace or survivor bonus is made.
+        /// </summary>
+        public Carryover? Carryover { get; }
+
+        /// <summary>The lineage plays the carry-over (<see cref="Carryover"/> is set).</summary>
+        public bool CarriesOver => Carryover != null;
+
+        public Lineage WithLives(IEnumerable<LifeRecord> lives) => new Lineage(Version, Seed, lives, Current, Traces, Survivor, Player, Calendar, Carryover);
+        public Lineage WithCurrent(LifeRecord? current) => new Lineage(Version, Seed, Lives, current, Traces, Survivor, Player, Calendar, Carryover);
+        public Lineage WithTraces(IEnumerable<Trace> traces) => new Lineage(Version, Seed, Lives, Current, traces, Survivor, Player, Calendar, Carryover);
+        public Lineage WithSurvivor(Survivor? survivor) => new Lineage(Version, Seed, Lives, Current, Traces, survivor, Player, Calendar, Carryover);
+        public Lineage WithPlayer(PlayerKnowledge player) => new Lineage(Version, Seed, Lives, Current, Traces, Survivor, player, Calendar, Carryover);
 
         public Lineage WithCalendar(CalendarState calendar) =>
-            new Lineage(Version, Seed, Lives, Current, Traces, Survivor, Player, calendar ?? throw new ArgumentNullException(nameof(calendar)));
+            new Lineage(Version, Seed, Lives, Current, Traces, Survivor, Player, calendar ?? throw new ArgumentNullException(nameof(calendar)), Carryover);
+
+        /// <summary>The same lineage carrying <paramref name="carryover"/> (null: the generations again, at the version it has).</summary>
+        public Lineage WithCarryover(Carryover? carryover) => new Lineage(Version, Seed, Lives, Current, Traces, Survivor, Player, Calendar, carryover);
 
         /// <summary>
         /// The lineage as the JS writes it (Inheritance.toJSON): a fresh JSON value. The calendar is the C#'s own
@@ -556,6 +631,7 @@ namespace InheritanceCore
                 ["Player"] = Player.ToJson(),
             };
             if (!Calendar.Equals(CalendarState.Fresh)) o["Calendar"] = CalendarJson(Calendar);
+            if (Carryover != null) o["Carryover"] = Carryover.ToJson();
             return o;
         }
 
@@ -645,8 +721,12 @@ namespace InheritanceCore
             bool survivorBonus,
             IEnumerable<int> traceLayers,
             bool carvingKnown,
-            AttireTier attire)
+            AttireTier attire,
+            Carryover? carryover = null,
+            string? memo = null)
         {
+            Carryover = carryover;
+            Memo = memo ?? "";
             Lineage = lineage;
             Life = life;
             Seed = seed;
@@ -678,6 +758,15 @@ namespace InheritanceCore
         public IReadOnlyList<int> TraceLayers { get; }
         public bool CarvingKnown { get; }
         public AttireTier Attire { get; }
+
+        /// <summary>
+        /// What the life starts with under the carry-over (#1025): the cards for its mastery book and the kinds it owns.
+        /// <see cref="Journal"/> is the record's journal less its memo, which is <see cref="Memo"/>. Null: the generations.
+        /// </summary>
+        public Carryover? Carryover { get; }
+
+        /// <summary>The memo sheet the explorer picks up again under the carry-over; "" otherwise (a new heir's sheet is empty).</summary>
+        public string Memo { get; }
     }
 
     /// <summary>Where and how a life ended: layer 1..7, the node, its kind, and the RunPhase that ended it.</summary>
@@ -846,6 +935,12 @@ namespace InheritanceCore
 
         /// <summary>A won extra boss stretches the survivor bonus to two lives.</summary>
         public bool ExtraBossWon { get; set; }
+
+        /// <summary>
+        /// The card kinds the life owned at its end beyond the ones every character starts with. Read only under the
+        /// carry-over (#1025), which keeps them for the next life; the generations leave them behind.
+        /// </summary>
+        public IReadOnlyCollection<string>? Owned { get; set; }
     }
 
     /// <summary>An enum as its JSON value: its name (the JS's enums are their names), null for none.</summary>
