@@ -285,7 +285,7 @@ namespace Exploration.Bridge
 
             return new BattleHandIn(
                 layer, kind, encounter, cells,
-                state.Hp, state.MaxHp, state.Stamina, state.MaxStamina, state.MiasmaPercent,
+                state.Hp, state.MaxHp, state.Stamina, state.MaxStamina,
                 disclosure, Mastery.MasteredDeck(_deck), Tools, seed, _limits); // Trial extension: the life's limits
         }
 

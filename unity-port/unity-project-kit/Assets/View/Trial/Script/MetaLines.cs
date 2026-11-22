@@ -59,9 +59,9 @@ namespace Trial.Script
             }
             else if (view.Ending == LifeEnding.Completed)
             {
-                string left = InheritanceText.ClearedTraceLeft(
-                    InheritanceText.LayerTitle(layer, SevenLayers.Of(layer).DisplayName(lineage.Player.CarvingTaken)));
-                int at = IndexOf(view.Lines, left);
+                // The line that says the cleared life's trace was left on this layer, whatever name the inheritance
+                // module gives the layer (a deep layer's region is not in the record, #888): 「第 n 層　…に札の痕跡が残った…」.
+                int at = IndexOfLeft(view.Lines, layer);
                 if (at < 0) return view;
                 lines = view.Lines.Take(at + 1).Concat(new[] { wait }).Concat(view.Lines.Skip(at + 1)).ToList();
             }
@@ -72,11 +72,26 @@ namespace Trial.Script
             return new EndingView(view.Ending, view.Title, view.Sentence, view.HeirLine, lines, view.NextLine, view.Button);
         }
 
-        private static int IndexOf(IReadOnlyList<string> lines, string line)
+        /// <summary>
+        /// Where a life ended, as the meta screens title it: a shared layer with its name (「第 2 層　■■の秘跡」); a deeper
+        /// one by its depth alone (「第 4 層」), since a life's record keeps no region (Lair.LayerLabel).
+        /// </summary>
+        public static string PlaceTitle(int layer, bool carvingTaken)
         {
+            string label = Lair.LayerLabel(layer, carvingTaken);
+            return layer <= Lair.SacramentLayer ? InheritanceText.LayerTitle(layer, label) : label;
+        }
+
+        /// <summary>The first of the lines that is InheritanceText.ClearedTraceLeft of a title of <paramref name="layer"/>, or −1.</summary>
+        private static int IndexOfLeft(IReadOnlyList<string> lines, int layer)
+        {
+            string head = InheritanceText.LayerTitle(layer, "");
+            string tail = InheritanceText.ClearedTraceLeft("");
             for (int i = 0; i < lines.Count; i++)
             {
-                if (lines[i] == line) return i;
+                string l = lines[i] ?? "";
+                if (l.Length >= head.Length + tail.Length && l.StartsWith(head, System.StringComparison.Ordinal) &&
+                    l.EndsWith(tail, System.StringComparison.Ordinal)) return i;
             }
             return -1;
         }

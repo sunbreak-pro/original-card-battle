@@ -27,7 +27,7 @@ namespace Exploration
 
         /// <summary>
         /// Trial extension (js: ExplorationSession.js:60): the layer-two carving was read in an earlier life
-        /// (docs/INHERITANCE.md R-20), so every life after shows 竜神の秘跡 from its start. Null leaves it to the map
+        /// (docs/INHERITANCE.md R-20), so every life after shows 龍神の秘跡 from its start. Null leaves it to the map
         /// seam (ExplorationSession.CarvingKnownAt).
         /// </summary>
         public bool? CarvingKnown { get; set; }
@@ -77,14 +77,14 @@ namespace Exploration
         /// <summary>The 標の石 slot being aimed (the map picks where it lands), or −1.</summary>
         public int AimingSlot { get; private set; } = None;
 
-        /// <summary>A 標の石 jump waiting on the 瘴気死 confirmation: its slot, or −1.</summary>
+        /// <summary>A 標の石 jump waiting on the confirmation that the calendar runs out: its slot, or −1.</summary>
         public int PendingJumpSlot { get; private set; } = None;
 
         /// <summary>The state the last event left (its result card is pending while the state is still this one), or null.</summary>
         public ExplorationState EventState { get; private set; }
 
         /// <summary>
-        /// The state the last 階層間の休憩 left: the interlude card's own lines (HP, stamina, gauge) read it, so a
+        /// The state the last 階層間の休憩 left: the interlude card's own lines (HP, stamina, calendar) read it, so a
         /// consumable used at the interlude does not rewrite what the rest gave (§6.5). Null outside trial.
         /// </summary>
         public ExplorationState InterludeState { get; private set; }
@@ -109,7 +109,7 @@ namespace Exploration
         public bool IsAiming => AimingSlot != None;
 
         /// <summary>
-        /// Whether the item in this slot can be used now. 標の石 needs the map live with a 刻限 left and a node to land
+        /// Whether the item in this slot can be used now. 標の石 needs the map live and a node to land
         /// on; any other item must change something (試作で決めたこと: a use that changes nothing is not offered).
         /// 「Changes something」 is the slot's forecast (ExplorationScreenBuilder.ChangeLines) not being empty — one
         /// definition for both, so a lit slot always says what it changes. Outside trial: any carried item, as the C#.
@@ -130,7 +130,7 @@ namespace Exploration
 
         /// <summary>
         /// 標の石 lands on <paramref name="nodeId"/> (tools_and_consumables_v4.md §3: 「同じ層の未踏ノードへ 1 度だけ跳ぶ」,
-        /// paying the node's 刻限 and 瘴気). A jump that would end the life by 瘴気 waits for ScreenAction.ConfirmStep,
+        /// paying the node's day). A jump that would run the calendar out waits for ScreenAction.ConfirmStep,
         /// like a step. False when no 標の石 is aimed or it cannot land there.
         /// </summary>
         // js: bridge/explorationScript/ExplorationSession.js:268
@@ -140,7 +140,7 @@ namespace Exploration
             if (!ExplorationReducer.CanTeleport(State, nodeId)) return false;
 
             int slot = AimingSlot;
-            if (ExplorationReducer.Teleport(State, slot, nodeId, choice).Phase == RunPhase.MiasmaDeath)
+            if (ExplorationReducer.Teleport(State, slot, nodeId, choice).Phase == RunPhase.Expired)
             {
                 PendingStepNode = nodeId;
                 PendingStepChoice = choice;
@@ -418,7 +418,7 @@ namespace Exploration
             return true;
         }
 
-        /// <summary>The jump itself (Jump, or ConfirmStep after the 瘴気死 warning).</summary>
+        /// <summary>The jump itself (Jump, or ConfirmStep after the warning that the calendar runs out).</summary>
         // js: bridge/explorationScript/ExplorationSession.js:592
         private void ApplyJump(int slot, int nodeId, RestChoice choice)
         {
@@ -494,7 +494,7 @@ namespace Exploration
 
         /// <summary>
         /// Whether the life starts knowing the carving (docs/INHERITANCE.md R-20, seven_layers_v4.md §5: 「生をまたぐ。
-        /// 一度拾ったら次の生でも 竜神の秘跡 と表示し、ノードは出ない」). RunStart.CarvingKnown says so when the game passes
+        /// 一度拾ったら次の生でも 龍神の秘跡 と表示し、ノードは出ない」). RunStart.CarvingKnown says so when the game passes
         /// it. Otherwise the lineage's map seam does: a layer whose spec holds a carving but whose map (RunStart.MapFor)
         /// holds none had it taken out because the name is known. False outside trial and without a seam: the C#'s
         /// carving is read again each life.
@@ -505,11 +505,10 @@ namespace Exploration
             if (!Trial) return false;
             if (_start.CarvingKnown.HasValue) return _start.CarvingKnown.Value;
             if (_start.MapFor == null) return false;
-            for (int layer = 1; layer <= SevenLayers.Count; layer++)
+            foreach (var profile in Lair.Profiles)
             {
-                var profile = SevenLayers.Of(layer);
                 if (!(profile.MapSpec.Quotas.TryGetValue(NodeKind.Carving, out int quota) && quota > 0)) continue;
-                if (MapOf(profile, LayerSeed(seed, layer)).CountOf(NodeKind.Carving) == 0) return true;
+                if (MapOf(profile, LayerSeed(seed, profile.Layer)).CountOf(NodeKind.Carving) == 0) return true;
             }
             return false;
         }
@@ -548,12 +547,12 @@ namespace Exploration
         /// <summary>
         /// Arrived's trial part: an event happens (泉) or waits on 受ける / 受けない, also outside trial when the
         /// session resolves events (#718); 写しの帳 asks for the survey's target, or the intel names it (ISurveyIntel)
-        /// and the Keeper raises it. Like a fight, nothing happens on the node that ended the life by 瘴気.
+        /// and the Keeper raises it. Like a fight, nothing happens on the node where the calendar ran out.
         /// </summary>
         // js: bridge/explorationScript/ExplorationSession.js:745
         private void ArrivedTrial(int nodeId, NodeKind kind)
         {
-            if (!ResolvesEvents || State.Phase == RunPhase.MiasmaDeath) return;
+            if (!ResolvesEvents || State.Phase == RunPhase.Expired) return;
             if (kind == NodeKind.Event)
             {
                 var happening = EventAt(nodeId);

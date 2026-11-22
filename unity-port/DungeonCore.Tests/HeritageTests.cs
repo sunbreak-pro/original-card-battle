@@ -39,17 +39,17 @@ namespace DungeonCore.Tests
         }
 
         [Test]
-        public void TheGaugeReachingDeathAt_IsADeath_OnTheNodeThatTippedIt()
+        public void TheCalendarRunningOut_IsADeath_OnTheNodeThatSpentTheLastDay()
         {
-            var profile = SevenLayers.Of(1);
+            var profile = Lair.Of(1);
             ExplorationState dead = ExplorationReducer.Enter(profile, profile.Map(3UL), RunLoadout.Empty,
-                PlayerMaxHp, PlayerMaxHp, 10, miasmaPercent: Miasma.DeathAt - 1);
-            Assert.That(dead.Phase, Is.EqualTo(RunPhase.MiasmaDeath));
+                PlayerMaxHp, PlayerMaxHp, 10, new CalendarState(1));
+            Assert.That(dead.Phase, Is.EqualTo(RunPhase.Expired));
 
             DeathTrace trace = Heritage.Leave(dead, 4, 2, "ソラ", null, null);
             Assert.Multiple(() =>
             {
-                Assert.That(Heritage.CauseOf(dead), Is.EqualTo(DeathCause.Miasma));
+                Assert.That(Heritage.CauseOf(dead), Is.EqualTo(DeathCause.Expired));
                 Assert.That(trace.Place, Is.EqualTo(new DeathPlace(1, NodeKind.Battle)));
                 Assert.That(trace.Id, Is.EqualTo(4));
                 Assert.That(trace.Life, Is.EqualTo(2));
@@ -93,7 +93,7 @@ namespace DungeonCore.Tests
         {
             Assert.Multiple(() =>
             {
-                for (int layer = 1; layer <= SevenLayers.Count; layer++)
+                for (int layer = 1; layer <= Lair.LayerCount; layer++)
                 {
                     Assert.That(Heritage.IsHeritable(0, layer), Is.False, $"step 0 on layer {layer}");
                     Assert.That(Heritage.IsHeritable(1, layer), Is.True, $"step 1 on layer {layer}");
@@ -273,7 +273,7 @@ namespace DungeonCore.Tests
         [Test]
         public void EveryLayer_TakesATrace_InPlaceOfOneBattle_OnADetour()
         {
-            foreach (LayerProfile profile in SevenLayers.All)
+            foreach (LayerProfile profile in Lair.Profiles)
             {
                 TraceLedger ledger = TraceLedger.Empty.Add(new DeathTrace(1, 1, "x", new DeathPlace(profile.Layer, NodeKind.Battle), DeathCause.Fallen, Array.Empty<LegacyCandidate>()));
                 for (ulong seed = 1; seed <= 20; seed++)
@@ -282,7 +282,7 @@ namespace DungeonCore.Tests
                     LayerMap traced = ledger.MapFor(profile, seed);
                     Assert.Multiple(() =>
                     {
-                        Assert.That(traced.CountOf(NodeKind.Trace), Is.EqualTo(1), $"layer {profile.Layer} seed {seed}");
+                        Assert.That(traced.CountOf(NodeKind.Trace), Is.EqualTo(1), $"{profile} seed {seed}");
                         Assert.That(traced.CountOf(NodeKind.Battle), Is.EqualTo(plain.CountOf(NodeKind.Battle) - 1));
                         Assert.That(traced.NodeCount, Is.EqualTo(plain.NodeCount));
                         Assert.That(traced.Node(traced.EntryId).Kind, Is.EqualTo(NodeKind.Battle), "the entry stays a battle");
@@ -297,9 +297,9 @@ namespace DungeonCore.Tests
         public void ALayerWithoutATrace_DrawsTheSameMapAsBefore()
         {
             TraceLedger ledger = TraceLedger.Empty.Add(new DeathTrace(1, 1, "x", new DeathPlace(4, NodeKind.Boss), DeathCause.Fallen, Array.Empty<LegacyCandidate>()));
-            foreach (LayerProfile profile in SevenLayers.All.Where(p => p.Layer != 4))
+            foreach (LayerProfile profile in Lair.Profiles.Where(p => p.Layer != 4))
             {
-                Assert.That(ledger.MapFor(profile, 9UL).Fingerprint(), Is.EqualTo(profile.Map(9UL).Fingerprint()), $"layer {profile.Layer}");
+                Assert.That(ledger.MapFor(profile, 9UL).Fingerprint(), Is.EqualTo(profile.Map(9UL).Fingerprint()), $"{profile}");
             }
         }
 
@@ -307,8 +307,8 @@ namespace DungeonCore.Tests
 
         private static ExplorationState Enter(int layer, ulong seed)
         {
-            var profile = SevenLayers.Of(layer);
-            return ExplorationReducer.Enter(profile, profile.Map(seed), RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10);
+            var profile = Lair.Of(layer, Region.Dragon);
+            return ExplorationReducer.Enter(profile, profile.Map(seed), RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10, CalendarState.Fresh);
         }
 
         private static ExplorationState Fallen(int layer) => ExplorationReducer.ReportBattle(Enter(layer, 5UL), 0, 0);

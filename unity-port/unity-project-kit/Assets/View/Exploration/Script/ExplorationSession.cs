@@ -3,6 +3,7 @@
 // confirmations, what the top band has open), and the inputs the View forwards. Every rule is the core's: this class only chooses which ExplorationReducer call a click
 // becomes, and refuses clicks the screen should not have offered.
 using System;
+using System.Globalization;
 using System.Linq;
 using DungeonContent;
 using DungeonCore;
@@ -21,10 +22,19 @@ namespace Exploration
 
         public int Hp { get; set; } = DefaultMaxHp;
 
-        public int Stamina { get; set; } = Miasma.BaseMaxStamina;
+        public int Stamina { get; set; } = StaminaRules.BaseMaxStamina;
 
-        /// <summary>The gauge the life starts at. 0 for a fresh life; higher to try the deep end of the gauge.</summary>
-        public int MiasmaPercent { get; set; }
+        /// <summary>
+        /// The collapse calendar the life starts on, shared by every life (seven_layers_v4.md §2). Fresh (360 days) for
+        /// the first life; the game hands in what the lives before left of it. Null reads as fresh.
+        /// </summary>
+        public CalendarState Calendar { get; set; } = CalendarState.Fresh;
+
+        /// <summary>
+        /// The region the life goes down into after layer 2 (seven_layers_v4.md §3.1), when it is already known; null
+        /// leaves the choice to the layer-two interlude (ScreenAction.ChooseRegion). Common reads as null.
+        /// </summary>
+        public Region? Region { get; set; }
 
         public RunLoadout Loadout { get; set; } = RunLoadout.Empty;
 
@@ -38,15 +48,15 @@ namespace Exploration
         public bool ResolvesEvents { get; set; }
 
         /// <summary>
-        /// A loadout for trying the screen: 防瘴の面 and two 浄化の香 — the carried items whose
-        /// effect the exploration core already honours. Amounts come from the catalogue.
+        /// A loadout for trying the screen: 帰り道の糸 and two 早駆けの丸薬 (tools_and_consumables_v4.md §2.4), carried
+        /// items whose effect the exploration core honours.
         /// </summary>
         public static RunLoadout TrialLoadout()
         {
-            var mask = ItemCatalogue.Tool("bosho_no_men");
+            var thread = ItemCatalogue.Tool("kaerimichi_no_ito");
             return new RunLoadout(
-                new[] { ReliefItem.Density(mask.Id, mask.Amount) },
-                new[] { Consumable("joka_no_ko"), Consumable("joka_no_ko") });
+                new[] { ReliefItem.Return(thread.Id) },
+                new[] { Consumable("hayagake_no_gan"), Consumable("hayagake_no_gan") });
         }
 
         /// <summary>
@@ -58,7 +68,7 @@ namespace Exploration
             var item = ItemCatalogue.Consumable(id);
             return item.Effect switch
             {
-                ItemEffect.MiasmaGauge => ReliefItem.Gauge(item.Id, item.Amount),
+                ItemEffect.NextStepFree => ReliefItem.Haste(item.Id),
                 ItemEffect.HealHp => ReliefItem.HealHp(item.Id, item.Amount),
                 ItemEffect.MaxStamina => ReliefItem.MaxStamina(item.Id, item.Amount),
                 ItemEffect.RefillStamina => ReliefItem.RefillStamina(item.Id),
@@ -92,6 +102,7 @@ namespace Exploration
             Intel = intel ?? new NoEnemyIntel();
             Traces = _start.Traces ?? TraceLedger.Empty;
             Trial = _start.Trial; // Trial extension (js: ExplorationSession.js:113), read once like the JS
+            _calendar = _start.Calendar ?? CalendarState.Fresh;
             Begin(_start.Seed);
         }
 
@@ -111,6 +122,25 @@ namespace Exploration
 
         // A life leaves one trace: the death is settled once, on the state that ended it.
         private bool _traceLeft;
+
+        // The calendar the next Begin enters layer one on: the start's, then what NewLife handed over.
+        private CalendarState _calendar;
+
+        /// <summary>The collapse calendar as this life has left it so far (seven_layers_v4.md §2).</summary>
+        public CalendarState Calendar => State.Calendar;
+
+        /// <summary>
+        /// The region this life goes down into after layer 2, or null until the layer-two interlude's choice
+        /// (ScreenAction.ChooseRegion). Layers 1〜2 are Region.Common either way. The choice holds for the life.
+        /// </summary>
+        public Region? Region { get; private set; }
+
+        /// <summary>
+        /// The layer-two interlude waits on the choice of a region (dungeon_exploration_v4.md §6.5): its card offers
+        /// the three ways down instead of 「次の層へ降りる」, and Descend is refused until one is chosen.
+        /// </summary>
+        public bool NeedsRegion =>
+            State.Phase == RunPhase.Interlude && State.Profile.Layer == Lair.SacramentLayer && Region == null;
 
         /// <summary>The seed this life was started from. Each layer's map is drawn from it.</summary>
         public ulong RunSeed { get; private set; }
@@ -146,14 +176,14 @@ namespace Exploration
         /// </summary>
         public Encounter PendingEncounter { get; private set; }
 
-        /// <summary>The node whose step waits on a confirmation because it ends the life, or −1.</summary>
+        /// <summary>The node whose step waits on a confirmation because it runs the calendar out, or −1.</summary>
         public int PendingStepNode { get; private set; } = None;
 
         public RestChoice PendingStepChoice { get; private set; }
 
         public bool ConfirmingEndLife { get; private set; }
 
-        /// <summary>A descent waits on a confirmation: the next layer's entry would end the life by 瘴気.</summary>
+        /// <summary>A descent waits on a confirmation: the day the next layer's entry takes would run the calendar out.</summary>
         public bool ConfirmingDescend { get; private set; }
 
         /// <summary>HP the last 階層間の休憩 actually gave back, after the maximum clamped it.</summary>
@@ -195,9 +225,9 @@ namespace Exploration
         public ExplorationScreen Screen() => ExplorationScreenBuilder.Build(this);
 
         /// <summary>
-        /// Walks to a neighbouring node. A step that would end the life by 瘴気 waits for
-        /// ScreenAction.ConfirmStep instead of being taken. False when the screen should not
-        /// have offered the step.
+        /// Walks to a neighbouring node. A step that would run the calendar out waits for
+        /// ScreenAction.ConfirmStep instead of being taken (dungeon_exploration_v4.md §6.4). False when the screen
+        /// should not have offered the step.
         /// </summary>
         public bool Step(int nodeId, RestChoice choice = RestChoice.Rest)
         {
@@ -206,7 +236,7 @@ namespace Exploration
             if (!ExplorationReducer.CanStep(State, nodeId)) return false;
 
             bool fresh = !State.HasResolved(nodeId);
-            if (fresh && ExplorationReducer.Step(State, nodeId, choice).Phase == RunPhase.MiasmaDeath)
+            if (fresh && ExplorationReducer.Step(State, nodeId, choice).Phase == RunPhase.Expired)
             {
                 PendingStepNode = nodeId;
                 PendingStepChoice = choice;
@@ -218,7 +248,7 @@ namespace Exploration
         }
 
         /// <summary>
-        /// Burns the consumable in this slot. Costs no 刻限. False for an empty slot and, outside trial, for 標の石.
+        /// Burns the consumable in this slot. Costs no day. False for an empty slot and, outside trial, for 標の石.
         /// Trial extension (js: ExplorationSession.js:224): every consumable acts (ExplorationReducer.UseConsumable),
         /// one that would change nothing now is refused (CanUseSlot), and a 標の石 starts aiming instead — the map then
         /// offers Jump to the nodes it can land on. Using the aimed slot again stops aiming; using another slot that
@@ -294,7 +324,7 @@ namespace Exploration
         /// A button on a card, or 「この生を終える」. False when the action does not apply now.
         /// Trial extension (js: ExplorationSession.js:320): <paramref name="arg"/> carries what the button names
         /// (CardButton.Arg) — the slot of TakeFound (an invariant-culture integer), the enemy id of ChooseSurvey. The
-        /// C#'s actions ignore it.
+        /// C#'s actions ignore it, except ChooseRegion, whose argument is (int)Region (#888).
         /// </summary>
         public bool Act(ScreenAction action, string arg = null)
         {
@@ -319,8 +349,9 @@ namespace Exploration
                     if (!IsIdle) return false;
                     var below = TryDescend();
                     if (below == null) return false;
-                    // Like a step, a descent that ends the life asks first (dungeon_exploration_v4.md §6.5).
-                    if (below.Phase == RunPhase.MiasmaDeath)
+                    // Like a step, a descent whose entry day runs the calendar out asks first (dungeon_exploration_v4.md
+                    // §6.5). With 日読みの砂 the entry takes no day, so the core never answers Expired here.
+                    if (below.Phase == RunPhase.Expired)
                     {
                         ConfirmingDescend = true;
                         return true;
@@ -371,14 +402,55 @@ namespace Exploration
                 case ScreenAction.ChooseSurvey:
                     return ActTrial(action, arg);
 
+                case ScreenAction.ChooseRegion:
+                    if (!IsIdle || !NeedsRegion || !RegionOf(arg, out DungeonCore.Region region)) return false;
+                    Region = region;
+                    return true;
+
                 case ScreenAction.NewLife:
                     if (!State.IsOver || !IsIdle) return false;
+                    if (State.Phase == RunPhase.Expired)
+                    {
+                        // The calendar run out ends the world, not only the life (§6.9): the next life starts on a fresh
+                        // calendar and finds no trace of the world before, as the trial's new lineage does (Trial.Bridge's Life).
+                        _calendar = CalendarState.Fresh;
+                        Traces = TraceLedger.Empty;
+                    }
+                    else
+                    {
+                        // The hand-over to the next life takes its days from the shared calendar (seven_layers_v4.md §2.1).
+                        _calendar = State.Calendar.Handover(State.Phase, State.Loadout.ShortHandover);
+                    }
                     Begin(RunSeed + 1UL);
                     return true;
 
                 default:
                     throw new ArgumentOutOfRangeException(nameof(action), action, null);
             }
+        }
+
+        /// <summary>
+        /// <see cref="Act(ScreenAction, string)"/> with an integer argument, as ScreenAction.ChooseRegion takes it:
+        /// <c>Act(ScreenAction.ChooseRegion, (int)Region.Dragon)</c>.
+        /// </summary>
+        public bool Act(ScreenAction action, int arg) => Act(action, arg.ToString(CultureInfo.InvariantCulture));
+
+        /// <summary>
+        /// ChooseRegion's argument: (int)Region as an invariant-culture integer, or the region's token (「dragon」).
+        /// Only the three regions a layer-two interlude leads to are taken.
+        /// </summary>
+        private static bool RegionOf(string arg, out DungeonCore.Region region)
+        {
+            region = DungeonCore.Region.Common;
+            if (arg == null) return false;
+            foreach (DungeonCore.Region candidate in Lair.Regions)
+            {
+                bool number = int.TryParse(arg, NumberStyles.Integer, CultureInfo.InvariantCulture, out int value) && value == (int)candidate;
+                if (!number && !string.Equals(arg, candidate.ToToken(), StringComparison.Ordinal)) continue;
+                region = candidate;
+                return true;
+            }
+            return false;
         }
 
         /// <summary>
@@ -438,13 +510,26 @@ namespace Exploration
 
         /// <summary>
         /// The state the next layer's entry would leave, tried without taking it: the core's own
-        /// Descend on the immutable state. Null outside the interlude and below the last layer.
+        /// Descend on the immutable state. Null outside the interlude, on the king layer, and at the layer-two
+        /// interlude until a region is chosen (layer 3 belongs to a region: seven_layers_v4.md §3.1).
         /// </summary>
         public ExplorationState TryDescend()
         {
-            if (State.Phase != RunPhase.Interlude || State.Profile.IsLast) return null;
-            var next = SevenLayers.Of(State.Profile.Layer + 1);
-            return ExplorationReducer.Descend(State, next, MapOf(next, LayerSeed(RunSeed, next.Layer)));
+            if (State.Phase != RunPhase.Interlude || State.Profile.IsKingLayer) return null;
+            var next = NextLayer();
+            return next == null ? null : ExplorationReducer.Descend(State, next, MapOf(next, LayerSeed(RunSeed, next.Layer)));
+        }
+
+        /// <summary>
+        /// The layer below this one on the life's route (Lair.Of with the chosen region), or null below the king layer
+        /// and while the region below layer 2 is not chosen yet.
+        /// </summary>
+        public LayerProfile NextLayer()
+        {
+            int layer = State.Profile.Layer + 1;
+            if (layer > Lair.LayerCount) return null;
+            if (layer > Lair.SacramentLayer && Region == null) return null;
+            return Lair.Of(layer, Region ?? DungeonCore.Region.Common);
         }
 
         /// <summary>A layer's map seed, drawn from the life's seed so a life replays from one number.</summary>
@@ -473,9 +558,11 @@ namespace Exploration
             InterludeHealed = 0;
             Traces = Traces.BeginLife();
             _traceLeft = false;
+            // A region handed in with the start is taken as chosen; layers 1〜2 belong to no region (seven_layers_v4.md §3.1).
+            Region = _start.Region is DungeonCore.Region chosen && Lair.Regions.Contains(chosen) ? chosen : (DungeonCore.Region?)null;
             BeginTrial(); // Trial extension: a new life starts with nothing waiting and no events behind it
 
-            var first = SevenLayers.Of(1);
+            var first = Lair.Of(1);
             State = ExplorationReducer.Enter(
                 first,
                 MapOf(first, LayerSeed(seed, first.Layer)),
@@ -483,7 +570,7 @@ namespace Exploration
                 _start.Hp,
                 _start.MaxHp,
                 _start.Stamina,
-                _start.MiasmaPercent,
+                _calendar,
                 0,
                 Trial);
 
@@ -537,8 +624,8 @@ namespace Exploration
             }
             // The first trace a life steps on is the one it receives from (#106). A death on the step claims nothing.
             if (kind == NodeKind.Trace && !State.IsOver) Traces = Traces.Visit(State.Profile.Layer);
-            // 瘴気死 ends the life on the node before any fight starts.
-            if (kind.IsCombat() && State.Phase != RunPhase.MiasmaDeath)
+            // An expired calendar ends the world on the node before any fight starts.
+            if (kind.IsCombat() && State.Phase != RunPhase.Expired)
             {
                 PendingBattleNode = nodeId;
                 int layer = State.Profile.Layer;

@@ -29,8 +29,8 @@ namespace DungeonCore
         /// <summary>The layer's line for a node of this kind, before the enemies' sizes are counted.</summary>
         public static int Cells(int layer, NodeKind kind)
         {
-            if (layer < 1 || layer > SevenLayers.Count)
-                throw new ArgumentOutOfRangeException(nameof(layer), layer, $"the lair has {SevenLayers.Count} layers");
+            if (layer < 1 || layer > Lair.LayerCount)
+                throw new ArgumentOutOfRangeException(nameof(layer), layer, $"the lair has {Lair.LayerCount} layers");
 
             int normal = layer <= 3 ? 6 : layer <= 6 ? 7 : 8;
             return kind switch

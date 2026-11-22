@@ -45,11 +45,11 @@ namespace Trial.Bridge.Tests
             Assert.That(DepartureCarry.NewBuilder().Limits, Is.EqualTo(DeckLimits.Default));
             Assert.That(DepartureCarry.NewBuilder(Survivor).Limits, Is.EqualTo(Survivor));
             DepartureBuilder sup = DepartureCarry.NewBuilder(Survivor);
-            foreach (string id in new[] { "bosho_no_men", "bosho_no_men", "maai_no_kutsu", "ikitsugi_no_fue" }) Assert.That(sup.AddTool(id), Is.True, id);
-            Assert.That(sup.AddTool("bosho_no_men"), Is.False, "four slots with the bonus");
+            foreach (string id in new[] { "kaerimichi_no_ito", "kaerimichi_no_ito", "maai_no_kutsu", "ikitsugi_no_fue" }) Assert.That(sup.AddTool(id), Is.True, id);
+            Assert.That(sup.AddTool("kaerimichi_no_ito"), Is.False, "four slots with the bonus");
             DepartureBuilder plain = DepartureCarry.NewBuilder();
-            for (int i = 0; i < 3; i++) Assert.That(plain.AddTool("bosho_no_men"), Is.True);
-            Assert.That(plain.AddTool("bosho_no_men"), Is.False, "the C#'s 3 slots");
+            for (int i = 0; i < 3; i++) Assert.That(plain.AddTool("kaerimichi_no_ito"), Is.True);
+            Assert.That(plain.AddTool("kaerimichi_no_ito"), Is.False, "the C#'s 3 slots");
         }
 
         /// <summary>A lineage whose last life closed alive (js: limits.test.mjs:66 survivorLineage).</summary>
@@ -78,7 +78,7 @@ namespace Trial.Bridge.Tests
                 if (deck.Total >= 45) break;
             }
             DepartureBuilder sup = DepartureCarry.NewBuilder(limits);
-            foreach (string id in new[] { "bosho_no_men", "bosho_no_men", "maai_no_kutsu", "ikitsugi_no_fue" }) Assert.That(sup.AddTool(id), Is.True, id);
+            foreach (string id in new[] { "kaerimichi_no_ito", "kaerimichi_no_ito", "maai_no_kutsu", "ikitsugi_no_fue" }) Assert.That(sup.AddTool(id), Is.True, id);
             Assert.That(sup.AddConsumable("yakuso"), Is.True);
             Assert.That(sup.ChooseTalent(deck, deck.Build()[0].Def.Id), Is.True);
             Assert.That(sup.CanSetOut(deck), Is.True);
@@ -119,7 +119,7 @@ namespace Trial.Bridge.Tests
             // the exploration's RunLoadout, through a save: 4 tools in 4 slots
             RunLoadout runLoadout = SavedRunLoadout(carry.Loadout, limits.ToolSlots);
             Assert.That(runLoadout.ToolSlotCount, Is.EqualTo(4));
-            Assert.That(runLoadout.Tools.Select(t => t.Id), Is.EqualTo(new[] { "bosho_no_men", "bosho_no_men", "maai_no_kutsu", "ikitsugi_no_fue" }));
+            Assert.That(runLoadout.Tools.Select(t => t.Id), Is.EqualTo(new[] { "kaerimichi_no_ito", "kaerimichi_no_ito", "maai_no_kutsu", "ikitsugi_no_fue" }));
             Expedition Begin(ExpeditionOptions options) => new Expedition(new RunStart { Seed = 20261020, Loadout = runLoadout }, departure.Deck,
                 carry.BattleToolIds, departure.TalentCardId, null, null, options);
             // without the limits the C#'s Expedition refuses the 45 cards: the router must forward them
@@ -145,7 +145,7 @@ namespace Trial.Bridge.Tests
             Expedition life = Life.LifeSetup(start).Expedition;
             Assert.That(life.Deck.Select(c => c.InstanceId), Is.EqualTo(departure.Deck.Select(c => c.InstanceId)));
             Assert.That(life.DeckMax, Is.EqualTo(45));
-            Assert.That(life.Session.State.Loadout.Tools.Select(t => t.Id), Is.EqualTo(new[] { "bosho_no_men", "bosho_no_men", "maai_no_kutsu", "ikitsugi_no_fue" }));
+            Assert.That(life.Session.State.Loadout.Tools.Select(t => t.Id), Is.EqualTo(new[] { "kaerimichi_no_ito", "kaerimichi_no_ito", "maai_no_kutsu", "ikitsugi_no_fue" }));
             Assert.That(ToFirstFight(life).NextLaunch().Limits, Is.EqualTo(limits));
         }
 
@@ -171,9 +171,9 @@ namespace Trial.Bridge.Tests
                 DepartureBuilder sup = DepartureCarry.NewBuilder();
                 Assert.That(sup.AddTool(tool.Id), Is.True);
                 Assert.That(sup.AddTool(tool.Id), Is.True);
-                Assert.That(sup.AddTool("bosho_no_men"), Is.True);
-                Assert.That(sup.AddTool("bosho_no_men"), Is.False, "the C#'s 3 slots");
-                sup.AddConsumable("joka_no_ko");
+                Assert.That(sup.AddTool("kaerimichi_no_ito"), Is.True);
+                Assert.That(sup.AddTool("kaerimichi_no_ito"), Is.False, "the C#'s 3 slots");
+                sup.AddConsumable("hayagake_no_gan");
                 sup.ChooseTalent(deck, "side_sweep");
                 Departure departure = sup.Build(deck);
                 CarriedSupplies carry = DepartureCarry.Carry(departure);
@@ -190,7 +190,7 @@ namespace Trial.Bridge.Tests
         public void Carry_NeverHasFewerSlotsThanTools()
         {
             // js: scenes/meta/DepartureSupplies.js:51 (Math.max(slots, tools.length))
-            var departure = new Departure(PrototypeDeck.Build(), new[] { "bosho_no_men", "bosho_no_men", "bosho_no_men", "bosho_no_men" }, Array.Empty<string>(), 0, null);
+            var departure = new Departure(PrototypeDeck.Build(), new[] { "kaerimichi_no_ito", "kaerimichi_no_ito", "kaerimichi_no_ito", "kaerimichi_no_ito" }, Array.Empty<string>(), 0, null);
             Assert.That(DepartureCarry.Carry(departure).Loadout.ToolSlotCount, Is.EqualTo(4));
             Assert.That(DepartureCarry.Carry(departure).BattleToolIds, Is.Empty);
             Assert.Throws<ArgumentNullException>(() => DepartureCarry.Carry(null));

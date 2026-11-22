@@ -62,8 +62,8 @@ namespace DungeonCore.Tests
         [Test]
         public void TheCarvingCanBePlacedAndIsStillAvoidable()
         {
-            // world-v1.md §5: the layer-two carving names 竜神の秘跡. It is a detour, so a run
-            // that spends no 刻限 on it never learns the name.
+            // world-v1.md §5: the layer-two carving names 龍神の秘跡. It is a detour, so a run
+            // that spends no day on it never learns the name.
             var spec = LayerMapSpec.Full(2).With(NodeKind.Carving, 1);
             var map = MapGenerator.Generate(spec, 41UL);
             Assert.That(map.CountOf(NodeKind.Carving), Is.EqualTo(1));

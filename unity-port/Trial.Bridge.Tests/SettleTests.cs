@@ -203,8 +203,16 @@ namespace Trial.Bridge.Tests
                 if (s.HasPendingSurvey) { s.Act(ScreenAction.ChooseSurvey, s.SurveyChoices[0]); continue; }
                 if (s.ConfirmingDescend) { s.Act(ScreenAction.ConfirmDescend); continue; }
                 if (st.IsOver) return (st, chains);
+                if (NeedsRegion(s)) { s.Act(ScreenAction.ChooseRegion, RegionArg(Region.Dragon)); continue; }
                 if (st.Phase == RunPhase.Interlude) { s.Act(ScreenAction.Descend); continue; }
                 if (ExplorationReducer.CanInterlude(st)) { s.Act(ScreenAction.GoToInterlude); continue; }
+                // A king down with the other two standing: the king's room has no way down, so the life ends alive.
+                if (st.Phase == RunPhase.LayerCleared && st.Profile.IsKingLayer)
+                {
+                    s.Act(ScreenAction.AskEndLife);
+                    s.Act(ScreenAction.ConfirmEndLife);
+                    continue;
+                }
                 List<MapNode> open = st.Map.Nodes.Where(n => ExplorationReducer.CanStep(st, n.Id)).ToList();
                 List<MapNode> fresh = open.Where(n => !st.HasResolved(n.Id)).ToList();
                 List<MapNode> pick = fresh.Count > 0 ? fresh : open;

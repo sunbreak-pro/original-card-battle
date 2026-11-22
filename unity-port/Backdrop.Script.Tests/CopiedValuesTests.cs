@@ -1,6 +1,5 @@
 // dotnet test only: not under the Unity kit, so `unity:sync` never copies it. Backdrop.Script is plain C#
-// and cannot reach BattleTheme (Unity only), the exploration core or the font list, so it writes their
-// values again. This holds each copy to its source, so changing one side turns a test red (#652).
+// and cannot reach BattleTheme (Unity only) or the font list, so it writes their values again. This holds each copy to its source, so changing one side turns a test red (#652).
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -22,32 +21,12 @@ namespace Backdrop.Script.Tests
         private static readonly Regex UiKitFace = new Regex(@"Face\(ref \w+, ""([^""]+)""\)", RegexOptions.Compiled);
 
         [Test]
-        public void MiasmaLookColours_MatchBattleTheme()
-        {
-            var theme = ThemeColours();
-            AssertSame(theme["Violet"], MiasmaLook.FillThick, "FillThick");
-            AssertSame(theme["Violet"], MiasmaLook.SeepColor, "SeepColor");
-            AssertSame(theme["Phosphor"], MiasmaLook.FillThin, "FillThin");
-            AssertSame(theme["PanelOpaque"], MiasmaLook.Track, "Track");
-            AssertSame(theme["Caution"], MiasmaLook.Caution, "Caution");
-            AssertSame(theme["Ground"].WithAlpha(0.9f), MiasmaLook.Tick, "Tick");
-        }
-
-        [Test]
         public void ExplorationBackdropColours_MatchBattleTheme()
         {
             var theme = ThemeColours();
             AssertSame(theme["Ground"], ExplorationBackdropSpec.Ground, "Ground");
             AssertSame(theme["Ink"], ExplorationBackdropSpec.Ink, "Ink");
             AssertSame(theme["Amber"], ExplorationBackdropSpec.Amber, "Amber");
-        }
-
-        [Test]
-        public void MiasmaLookReadings_MatchTheExplorationCore()
-        {
-            Assert.That(MiasmaLook.DeathAt, Is.EqualTo(DungeonCore.Miasma.DeathAt));
-            Assert.That(MiasmaLook.StepPercent, Is.EqualTo(DungeonCore.Miasma.StepPercent));
-            Assert.That(MiasmaLook.LastStepLine, Is.EqualTo(DungeonCore.Miasma.MaxPenalty * DungeonCore.Miasma.StepPercent));
         }
 
         [Test]

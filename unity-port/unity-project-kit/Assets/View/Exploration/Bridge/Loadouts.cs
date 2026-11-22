@@ -1,6 +1,6 @@
 // Trial extension (port of the browser trial's src/bridge/exploration/Loadouts.js; docs/EXTENSIONS.md 「探索の持ち物と
 // イベント」). The C# leaves the step from the departure's choice to the exploration's loadout to #104
-// (DungeonContent/Loadout.cs: 「#104 is where a chosen Loadout becomes a RunLoadout」), and its RunLoadout holds density
+// (DungeonContent/Loadout.cs: 「#104 is where a chosen Loadout becomes a RunLoadout」), and its RunLoadout holds calendar
 // tools only (and, since #651, the consumables). This is that step for the trial: every tool and consumable the departure chose rides along as the
 // core item that says what it does (Exploration.TrialItems), so trial mode (RunStart.Trial / ExpeditionOptions.Trial)
 // can act on each (tools_and_consumables_v4.md §2〜§3).
@@ -23,8 +23,8 @@ namespace Exploration.Bridge
         /// the life's slot count (3, or 4 with the 生存者ボーナス); the loadout's own when null. A null loadout is an
         /// empty trial RunLoadout.
         ///
-        /// Outside trial mode the core reads this RunLoadout exactly as the C# would: only the density tools lower
-        /// the density, and each consumable acts as #651 has it.
+        /// Outside trial mode the core reads this RunLoadout exactly as the C# would: the calendar tools act and each
+        /// consumable acts as #651 has it.
         /// </summary>
         // js: bridge/exploration/Loadouts.js:19
         public static RunLoadout ToRunLoadout(Loadout loadout, int? toolSlots = null)
@@ -58,7 +58,8 @@ namespace Exploration.Bridge
         /// A RunLoadout back from <see cref="RunLoadoutToData"/>'s data (or Json.Parse of it). A save without
         /// <c>trial</c> reads as the C#'s RunLoadout, and one without <c>slots</c> has the C#'s
         /// <see cref="RunLoadout.ToolSlots"/> (the JS hands <c>undefined</c> to the constructor, whose default applies).
-        /// Throws ArgumentException on another shape.
+        /// A save written before #888 may carry the three items the calendar replaced (tools_and_consumables_v4.md §2.4):
+        /// each is read as the item that took its place. Throws ArgumentException on another shape.
         /// </summary>
         // js: bridge/exploration/Loadouts.js:42
         public static RunLoadout RunLoadoutFromData(object data)
@@ -67,6 +68,15 @@ namespace Exploration.Bridge
             int slots = o.ContainsKey("slots") ? IntOf(o["slots"], "slots") : RunLoadout.ToolSlots;
             return new RunLoadout(Items(o["tools"], "tools"), Items(o["consumables"], "consumables"), slots, Equals(o["trial"], true));
         }
+
+        // The ids #887 retired, each with the item that replaced it (tools_and_consumables_v4.md §2.4). Their kinds
+        // (Density, Time, Gauge) are gone from the core, so an old save's row is read as the new item, not by its kind.
+        private static readonly IReadOnlyDictionary<string, string> Replaced = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["bosho_no_men"] = "kaerimichi_no_ito",
+            ["kokugen_no_suna"] = "hiyomi_no_suna",
+            ["joka_no_ko"] = "hayagake_no_gan",
+        };
 
         private static object Row(ReliefItem item) => new List<object> { item.Id, NameOf(item.Kind), item.Amount };
 
@@ -89,6 +99,11 @@ namespace Exploration.Bridge
             {
                 if (!(row is IList<object> cells) || cells.Count < 3 || !(cells[0] is string id))
                     throw new ArgumentException($"Loadouts: a row of {key} is [id, kind, amount]", nameof(list));
+                if (Replaced.TryGetValue(id, out string now))
+                {
+                    items.Add(key == "tools" ? TrialItems.Tool(now) : TrialItems.Consumable(now));
+                    continue;
+                }
                 items.Add(new ReliefItem(id, KindOf(cells[1], key), IntOf(cells[2], key)));
             }
             return items;

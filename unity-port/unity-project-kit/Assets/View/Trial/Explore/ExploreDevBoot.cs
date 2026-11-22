@@ -3,7 +3,8 @@
 // (Inheritance.NewLineage → StartLife, Trial.Bridge Life.MakeStart / BeginLife with the trial options: the same path
 // as main.js beginLife), and mounts ExploreScene with a ctx shaped like main.js toExplore's. Battles are fought
 // unattended with the source's AutoCardId (main.js autoFight, the ?autobattle switch) and the scene is mounted again
-// afterwards (toExploreBack). A life that ends records its end on the lineage and the next heir sets out at once.
+// afterwards (toExploreBack). A life that ends records its end on the lineage, the calendar moves on by the hand-over
+// (a calendar run out starts a new lineage, #888), and the next heir sets out at once.
 // No app overlays: the scene's own fallback journal / page stand in (ctx.onOverlay left out).
 using System;
 using System.Collections.Generic;
@@ -36,10 +37,10 @@ namespace Trial.Explore
         public bool WithAudio = true;
 
         [Tooltip("The tools carried (DungeonContent ItemCatalogue ids).")]
-        public string[] Tools = { "bosho_no_men", "kokugen_no_suna", "ikitsugi_no_fue" };
+        public string[] Tools = { "kaerimichi_no_ito", "hiyomi_no_suna", "ikitsugi_no_fue" };
 
         [Tooltip("The consumables carried (up to three).")]
-        public string[] Consumables = { "yakuso", "joka_no_ko", "shirube_no_ishi" };
+        public string[] Consumables = { "yakuso", "hayagake_no_gan", "shirube_no_ishi" };
 
         private TrialStage _stage;
         private ITrialAudio _audio;
@@ -213,8 +214,12 @@ namespace Trial.Explore
             // a life still exploring has not ended (main.js:488)
             if (!state.IsOver || state.Phase == RunPhase.Exploring) return;
             LifePlace place = Inheritance.PlaceFromState(state);
-            _lineage = Inheritance.RecordEnd(_lineage, null, place, raw.Mastery, Names.LifeJournal(raw, _live), Names.EndOptions(raw, state));
-            Debug.Log("[explore dev] the life ended: " + end.Ending + " on layer " + end.Layer + " (" + end.Title + ")");
+            Lineage recorded = Inheritance.RecordEnd(_lineage, null, place, raw.Mastery, Names.LifeJournal(raw, _live), Names.EndOptions(raw, state));
+            // the calendar moves on by the hand-over; once it ran out the world ends and a new lineage starts (#888)
+            LifeClose close = Trial.Bridge.Life.CloseLife(recorded, state, () => Inheritance.NewLineage(unchecked((ulong)LineageSeed)));
+            _lineage = close.Next;
+            Debug.Log("[explore dev] the life ended: " + end.Ending + " on layer " + end.Layer + " (" + end.Title + "); 残り " +
+                      _lineage.Calendar.DaysLeft + " 日" + (close.WorldEnded ? ", a new lineage starts" : ""));
             _live = null;
             BeginLife();
         }

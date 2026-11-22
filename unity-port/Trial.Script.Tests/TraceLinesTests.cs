@@ -144,14 +144,15 @@ namespace Trial.Script.Tests
             return Inheritance.RecordSurvival(s.Lineage, s.Life, new LifePlace(7, 9, null, RunPhase.Completed), Deck, JournalOf(), new EndOptions());
         }
 
-        private static Lineage DieAt(Lineage lineage, int layer, RunPhase ending)
+        // A null ending is the legacy 瘴気死: RunPhase has none since #888, and a lineage saved before still reads it.
+        private static Lineage DieAt(Lineage lineage, int layer, RunPhase? ending)
         {
             LifeStart s = Inheritance.StartLife(lineage, 1UL);
             return Inheritance.RecordDeath(s.Lineage, s.Life, new LifePlace(layer, 3, null, ending), Deck, JournalOf());
         }
 
         [Test]
-        public void WithWaitingTrace_IsTheJs_ForAClearedLifeBehindTwo_AMiasmaDeath_AndAnotherLayer()
+        public void WithWaitingTrace_IsTheJs_ForAClearedLifeBehindTwo_ALegacyMiasmaDeath_AndAnotherLayer()
         {
             Lineage cleared = ClearAt(DieAt(DieAt(Inheritance.NewLineage(7UL), 7), 7));
             // The JS printed the survivor's two lines first; a cleared life is no survivor since #108 (concept-v3 §8.1),
@@ -167,7 +168,7 @@ namespace Trial.Script.Tests
             EndingView aloneView = Inheritance.EndingView(alone);
             Assert.That(MetaLines.WithWaitingTrace(aloneView, alone), Is.SameAs(aloneView));
 
-            Lineage miasma = DieAt(DieAt(Inheritance.NewLineage(7UL), 3), 3, RunPhase.MiasmaDeath);
+            Lineage miasma = DieAt(DieAt(Inheritance.NewLineage(7UL), 3), 3, null);
             EndingView miasmaView = MetaLines.WithWaitingTrace(Inheritance.EndingView(miasma), miasma);
             Assert.That((miasmaView.Title, MetaTimelines.Chars(miasmaView.Sentence).Count), Is.EqualTo(("瘴気死", 28)));
             Assert.That(miasmaView.Lines, Is.EqualTo(new[]
@@ -186,6 +187,23 @@ namespace Trial.Script.Tests
                 "遺産の候補：技術 2 ／ 頁 1 ／ 走り書き 0",
                 "第 5 層には第 2 代 オスカの古い痕跡がある。それが回収されると現れる",
             }), "the older trace on layer 3 does not count");
+        }
+
+        // #888: the calendar run out closes the life as 期限切れ; the meta screens title a deep layer by its depth alone,
+        // since a life's record keeps no region.
+        [Test]
+        public void AnExpiredLife_ReadsAsItsOwnEnding_AndTheMetaScreensTitleADeepLayerByItsDepth()
+        {
+            Lineage expired = DieAt(Inheritance.NewLineage(7UL), 3, RunPhase.Expired);
+            EndingView view = MetaLines.WithWaitingTrace(Inheritance.EndingView(expired), expired);
+            Assert.That(view.Ending, Is.EqualTo(LifeEnding.Expired));
+            Assert.That(view.Title, Is.EqualTo("期限切れ"));
+
+            Assert.That(MetaLines.PlaceTitle(1, false), Is.EqualTo("第 1 層　燦光の樹海"));
+            Assert.That(MetaLines.PlaceTitle(2, false), Is.EqualTo("第 2 層　■■の秘跡"));
+            Assert.That(MetaLines.PlaceTitle(2, true), Is.EqualTo("第 2 層　" + Lair.Of(2).TrueName));
+            Assert.That(MetaLines.PlaceTitle(4, true), Is.EqualTo("第 4 層"));
+            Assert.That(MetaLines.PlaceTitle(7, false), Is.EqualTo("第 7 層"));
         }
 
         [Test]

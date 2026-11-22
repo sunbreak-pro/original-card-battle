@@ -362,11 +362,11 @@ namespace Exploration.Bridge.Tests
         {
             // js: test/ext/world.test.mjs:165-167, bridge/exploration/Loadouts.js:32-45
             RunLoadout run = Loadouts.ToRunLoadout(
-                Loadout.Of(new[] { Mask, Sand, Book, Wick }, new[] { "joka_no_ko", "yakuso", "shirube_no_ishi" }, 4), 4);
+                Loadout.Of(new[] { Mask, Sand, Book, Wick }, new[] { "hayagake_no_gan", "yakuso", "shirube_no_ishi" }, 4), 4);
             string json = Json.Stringify(Loadouts.RunLoadoutToData(run));
             Assert.That(json, Is.EqualTo(
-                "{\"tools\":[[\"bosho_no_men\",\"Density\",1],[\"kokugen_no_suna\",\"Time\",1],[\"utsushi_no_tobari\",\"Survey\",1],[\"toshin_no_kakera\",\"Interlude\",15]]," +
-                "\"consumables\":[[\"joka_no_ko\",\"Gauge\",10],[\"yakuso\",\"Heal\",20],[\"shirube_no_ishi\",\"Teleport\",1]],\"slots\":4,\"trial\":true}"));
+                "{\"tools\":[[\"kaerimichi_no_ito\",\"Return\",1],[\"hiyomi_no_suna\",\"EntryDay\",1],[\"utsushi_no_tobari\",\"Survey\",1],[\"toshin_no_kakera\",\"Interlude\",15]]," +
+                "\"consumables\":[[\"hayagake_no_gan\",\"Haste\",1],[\"yakuso\",\"Heal\",20],[\"shirube_no_ishi\",\"Teleport\",1]],\"slots\":4,\"trial\":true}"));
             RunLoadout back = Loadouts.RunLoadoutFromData(Json.Parse(json));
             Assert.That(back.Tools, Is.EqualTo(run.Tools));
             Assert.That(back.Consumables, Is.EqualTo(run.Consumables));
@@ -393,7 +393,7 @@ namespace Exploration.Bridge.Tests
             int slots = DeckLimits.Default.ToolSlots;
             foreach (ItemDef tool in ItemCatalogue.Tools)
             {
-                RunLoadout run = Loadouts.ToRunLoadout(Loadout.Of(new[] { tool.Id, tool.Id, Mask }, new[] { "joka_no_ko" }, slots), slots);
+                RunLoadout run = Loadouts.ToRunLoadout(Loadout.Of(new[] { tool.Id, tool.Id, Mask }, new[] { "hayagake_no_gan" }, slots), slots);
                 RunLoadout saved = Loadouts.RunLoadoutFromData(Json.Parse(Json.Stringify(Loadouts.RunLoadoutToData(run))));
                 Assert.That(saved.Tools, Is.EqualTo(run.Tools), tool.Id);
                 Assert.That(saved.Consumables, Is.EqualTo(run.Consumables), tool.Id);

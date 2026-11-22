@@ -78,7 +78,7 @@ namespace InheritanceCore
                 if (!Js.IsMember(endingValue, out LifeEnding parsed))
                     throw new InheritanceRuleException($"bad save: ending {Js.Display(endingValue)}");
                 ending = parsed;
-                layer = Js.RequireInt(Js.Get(l, "Layer"), "layer", 1, SevenLayers.Count);
+                layer = Js.RequireInt(Js.Get(l, "Layer"), "layer", 1, Lair.LayerCount);
             }
             var rawSeed = Js.Get(l, "Seed");
             return new LifeRecord(
@@ -126,7 +126,7 @@ namespace InheritanceCore
             var traces = rawTraces.Select(t =>
             {
                 if (!Js.IsObject(t) || !(Js.Get(t, "Id") is string id)) throw new InheritanceRuleException("bad save: a trace");
-                int layer = Js.RequireInt(Js.Get(t, "Layer"), "trace layer", 1, SevenLayers.Count);
+                int layer = Js.RequireInt(Js.Get(t, "Layer"), "trace layer", 1, Lair.LayerCount);
                 int generation = Js.RequireInt(Js.Get(t, "Generation"), "trace generation", 1);
                 var endingValue = Js.Get(t, "Ending");
                 if (!Js.IsMember(endingValue, out LifeEnding ending))
@@ -166,7 +166,32 @@ namespace InheritanceCore
                 current,
                 traces,
                 survivor,
-                new PlayerKnowledge(Js.Truthy(Js.Get(player, "CarvingTaken")), Js.Truthy(Js.Get(player, "RootDefeated"))));
+                new PlayerKnowledge(Js.Truthy(Js.Get(player, "CarvingTaken")), Js.Truthy(Js.Get(player, "RootDefeated"))),
+                CheckCalendar(Js.Get(data, "Calendar")));
+        }
+
+        /// <summary>
+        /// The saved 崩壊の暦 (#888). A lineage saved without it (the JS's, and every one from before #888) is on a fresh
+        /// calendar; the key is written only once the calendar has moved (Lineage.ToJson), so this adds no save version.
+        /// </summary>
+        private static CalendarState CheckCalendar(object? c)
+        {
+            if (Js.IsNullish(c)) return CalendarState.Fresh;
+            if (!(c is JsonObject)) throw new InheritanceRuleException("bad save: the calendar");
+            int daysLeft = Js.RequireInt(Js.Get(c, "DaysLeft"), "calendar days", 0, DungeonCore.Calendar.TotalDays);
+            var kings = new Dictionary<Region, int>();
+            var rawKings = Js.Get(c, "KingReturns");
+            if (!Js.IsNullish(rawKings))
+            {
+                if (!(rawKings is JsonObject)) throw new InheritanceRuleException("bad save: the kings of the calendar");
+                foreach (var pair in Js.Entries(rawKings))
+                {
+                    if (!RegionExtensions.TryParseToken(pair.Key, out Region region) || !region.HasKing())
+                        throw new InheritanceRuleException($"bad save: no king of {pair.Key}");
+                    kings[region] = Js.RequireInt(pair.Value, $"return of the {pair.Key} king", 1, DungeonCore.Calendar.KingReturnDays);
+                }
+            }
+            return new CalendarState(daysLeft, kings);
         }
 
         /// <summary>JSON text of the lineage (localStorage's / the save file's).</summary>

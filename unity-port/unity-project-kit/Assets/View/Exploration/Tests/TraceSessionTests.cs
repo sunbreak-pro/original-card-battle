@@ -33,11 +33,12 @@ namespace Exploration.Tests
         }
 
         [Test]
-        public void TheGaugeKillingOnArrival_LeavesATrace_AndALaterDeathDoesNotOverwriteIt()
+        public void ASecondDeath_LeavesASecondTrace_AndDoesNotOverwriteTheFirst()
         {
-            var session = new ExplorationSession(new RunStart { Seed = 4, MiasmaPercent = Miasma.DeathAt - 1 });
-            Assert.That(session.State.Phase, Is.EqualTo(RunPhase.MiasmaDeath));
-            Assert.That(session.Traces.Traces.Single().Cause, Is.EqualTo(DeathCause.Miasma));
+            var session = new ExplorationSession(new RunStart { Seed = 4 });
+            Assert.That(session.Act(ScreenAction.FallInBattle), Is.True);
+            Assert.That(session.Act(ScreenAction.NewLife), Is.True);
+            Assert.That(session.Act(ScreenAction.FallInBattle), Is.True);
 
             Assert.That(session.Act(ScreenAction.NewLife), Is.True);
             Assert.That(session.Traces.Traces.Select(t => t.Life), Is.EqualTo(new[] { 1, 2 }), "the first trace stays");

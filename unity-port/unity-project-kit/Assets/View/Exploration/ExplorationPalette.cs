@@ -1,8 +1,8 @@
 // Stand-in colours for the exploration screen: shades of grey and one accent (dungeon_exploration_v4.md
 // §6.10). Deliberately not BattleTheme — the visual direction is the design lane's, and the real
-// colours for the map and its nodes come with #90. Replacing the look starts here. The 瘴気 gauge and
-// the shade are no longer stand-ins: their colours are Backdrop.MiasmaLook's (battle-visual-v1 §2.5, #613).
-// The ground under the backdrop is no longer one either: it is the 地 colour of Backdrop.ExplorationBackdropSpec (#614).
+// colours for the map and its nodes come with #90. Replacing the look starts here. The ground under the
+// backdrop is no longer a stand-in: it is the 地 colour of Backdrop.ExplorationBackdropSpec (#614). The 瘴気 gauge
+// and its shade went with #888; the collapse calendar has no colours of its own yet.
 #if UNITY_2021_2_OR_NEWER
 using UnityEngine;
 
@@ -30,10 +30,10 @@ namespace Exploration.View
         public static readonly Color InkOnNode = Grey(0.06f);
         public static readonly Color InkOnAccent = Grey(0.06f);
 
-        /// <summary>The one accent: what can be done now. Never the 瘴気 gauge: amber is the player's (world-v1 §3 rule 4).</summary>
+        /// <summary>The one accent: what can be done now. Amber is the player's (world-v1 §3 rule 4).</summary>
         public static readonly Color Accent = new Color(0.93f, 0.74f, 0.32f, 1f);
 
-        /// <summary>A step that ends the life. The accent, darkened, so the palette keeps one hue.</summary>
+        /// <summary>A step that runs the calendar out. The accent, darkened, so the palette keeps one hue.</summary>
         public static readonly Color Warning = new Color(0.62f, 0.36f, 0.12f, 1f);
 
         public static Color NodeFill(NodeStanding standing) => standing switch
@@ -56,7 +56,7 @@ namespace Exploration.View
             _ => 0f,
         };
 
-        /// <summary>A colour of the pure-C# look (Backdrop.MiasmaLook) as a Unity colour.</summary>
+        /// <summary>A colour of the pure-C# look (Backdrop.ExplorationBackdropSpec) as a Unity colour.</summary>
         public static Color Of(Backdrop.Rgba c) => new Color(c.R, c.G, c.B, c.A);
 
         private static Color Grey(float v) => new Color(v, v, v, 1f);
