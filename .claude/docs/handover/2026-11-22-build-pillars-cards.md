@@ -14,10 +14,10 @@
 | 目的 | コマンド | 期待 |
 | --- | --- | --- |
 | main が最新か | `git fetch origin && git status -sb` | `main...origin/main` で、遅れが無い |
-| 設計書の版 | `head -3 .claude/docs/card_document/swordsman_cards_v4.md` | 題が `剣士カード v4.14` |
+| 設計書の版 | `grep -c "v4.14（2026-11-22、#903）" .claude/docs/card_document/swordsman_cards_v4.md` | 1 以上（冒頭の Status の行が v4.14。1 行目の題は v4.13 のまま残っている） |
 | 残りの Issue の状態 | `for n in 934 898; do gh issue view $n -R sunbreak-pro/original-card-battle --json state -q .state; done` | `OPEN` が 2 行（順に #934・#898） |
 | 着手済みの PR が無いか | `gh pr list -R sunbreak-pro/original-card-battle --state open --json number,headRefName,title` | #934・#898 の PR が無い（#988 は試遊待ち。#1018 は別のセッションの世界観の PR） |
-| 残った worktree | `git worktree list` | main と `audit` のほかに、`wf-*` と `tracker-main` が無い（`main-1017` は別のセッションのもの。触らない） |
+| 残った worktree | `git worktree list` | `wf-*` と `tracker-main` が無い。ほかの名前（`main-1017`・`reports-main` など）は別のセッションのものなので触らない |
 | 空きメモリ | `node ~/.claude/skills/issue-workflow/scripts/free-mem.mjs` | 6 以上（GB） |
 
 ## 次の一手
@@ -44,6 +44,7 @@
 ## 落とし穴
 
 - **Issue の本文の案は、設計書と突き合わせてから使う。** #999 では、Issue の「目盛り（§1.3）」が実際は §1.1 と §1.4 だった。実装役への注意に「本文の案は設計書で確かめる」と書くと、確かめられない案を書かずに報告してくる。
+- **剣士の札の設計書は、1 行目の題が v4.13 のまま。** #903 の PR が Status の行だけを v4.14 に上げた。この設計書を次に書く PR（#934 か #1016）で、題も合わせる。
 - **設計書から札を外すと、C# のテストが落ちる。** 習熟の表（§4.7）に行がある札は、`MasteryProfilesTests` が C# の側と名前で突き合わせる。外すなら、C# の追従と同じ PR にする。
 - **台本は、セッションの作業フォルダに写してから `scriptPath` で渡す。** スキルのフォルダのパスは断られる。写しは `cmp` で元と同じか確かめる。
 - **空きメモリは、別のセッションが動くと下がる。** 2 回目の回は最小 5.96 GB で、下限の 6 GB を割った。起動の前に `free-mem.mjs` を見て、7 GB 台なら別のセッションの重い作業が終わるのを待つ。
