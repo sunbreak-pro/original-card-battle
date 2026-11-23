@@ -21,7 +21,7 @@ worktree ごとに設計書のコピーを持つので、main を取り込んで
 
 | 主題 | 元になる文書 | 持ち主 | 状態 | 読む担当 |
 | --- | --- | --- | --- | --- |
-| 構想（生と継承） | `.claude/docs/vision/concept-v3.md` | main | APPROVED。§14.6 の同じ 1 人が潜り直す方向（世代の交代をやめる）未反映 | all |
+| 構想（生と継承） | `.claude/docs/vision/concept-v3.md` | main | APPROVED。§14.6 の同じ 1 人が潜り直す方向（世代の交代をやめる）と、§14.7 の最初期の札の束（11 種に絞る）未反映 | all |
 | 設計原則 | `.claude/docs/vision/core.md` | main | APPROVED | all |
 | 世界設定・用語・固有名詞 | `.claude/docs/vision/world-v1.md` | main | 正典。`concept-v3.md` の 2026-11-22 の決定（その 2）未反映 | cards, design, dungeon |
 | ゲーム全体像 | `.claude/docs/Overall_document/game_design_master.md` | main | 現行 | audit |
