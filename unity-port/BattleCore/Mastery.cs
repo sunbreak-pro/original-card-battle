@@ -447,7 +447,8 @@ namespace BattleCore
     /// <summary>
     /// One life's mastery (§3.2 / §17.8, #59). Ticks are kept by card kind: copies of one card share
     /// them, and every kind gathers them at the same pace (#1045). Steps go up only in
-    /// <see cref="AfterBattle(BattleState)"/> and <see cref="Train"/>, never during a battle, so a card in play keeps the face it started the battle with. Only one card of the
+    /// <see cref="AfterBattle(BattleState)"/> and <see cref="Train"/>, never during a battle, so a
+    /// card in play keeps the face it started the battle with. Only one card of the
     /// life may hold step 3; the others stop at 2. A card with no profile gathers ticks but does not
     /// step up until its profile exists.
     ///
