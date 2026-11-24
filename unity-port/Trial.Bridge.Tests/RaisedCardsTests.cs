@@ -14,8 +14,8 @@ namespace Trial.Bridge.Tests
         {
             Assert.Multiple(() =>
             {
-                Assert.That(RaisedCards.Of(new List<RankUp>(), MasteryBook.Begin(null)), Is.Empty);
-                Assert.That(RaisedCards.Of(null, MasteryBook.Begin(null)), Is.Empty);
+                Assert.That(RaisedCards.Of(new List<RankUp>(), MasteryBook.Begin()), Is.Empty);
+                Assert.That(RaisedCards.Of(null, MasteryBook.Begin()), Is.Empty);
                 Assert.That(RaisedCards.OfLastFight(null), Is.Empty);
             });
         }
@@ -23,7 +23,7 @@ namespace Trial.Bridge.Tests
         [Test]
         public void ACard_IsShownAtItsNewRank_WithTheNameItHadBefore()
         {
-            MasteryBook book = MasteryBook.Begin(null);
+            MasteryBook book = MasteryBook.Begin();
             MasteryProfile profile = book.ProfileOf("side_sweep");
             string atOne = Mastery.Master(CardCatalog.ById("side_sweep"), 1, profile).Name;
 
@@ -50,7 +50,7 @@ namespace Trial.Bridge.Tests
                 new RankUp("kesa_cut", 0, 1),
             };
 
-            IReadOnlyList<RaisedCard> cards = RaisedCards.Of(ups, MasteryBook.Begin(null));
+            IReadOnlyList<RaisedCard> cards = RaisedCards.Of(ups, MasteryBook.Begin());
 
             Assert.That(cards.Select(c => c.CardId), Is.EqualTo(new[] { "brace", "side_sweep", "kesa_cut" }));
         }

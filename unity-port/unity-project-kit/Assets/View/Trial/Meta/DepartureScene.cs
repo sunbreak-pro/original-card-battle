@@ -1,5 +1,6 @@
-// Port of scenes/meta/departure.js (出立, CAMP_FACILITIES_DESIGN.md §3.2): the battle deck first, then the tools, the
-// consumables and the talent — Unity's DeckSelectScreen (#190) and DepartureScreen (#58) as two steps of one screen.
+// Port of scenes/meta/departure.js (出立, CAMP_FACILITIES_DESIGN.md §3.2): the battle deck first, then the tools and
+// the consumables (the JS's talent is gone since #1045, TRIAL-PORT.md) — Unity's DeckSelectScreen (#190) and
+// DepartureScreen (#58) as two steps of one screen.
 // This file holds the screen, its header band, the deck step (デッキを組む, departure.js:200-507), the step switch, the
 // leave, the keys and the draft; the supplies step (出立の支度, departure.js:509-658) is DepartureSuppliesView.cs.
 // DepartureSupplies.js is Trial.Bridge.DepartureCarry; cardFace.js is MetaCardFace.
@@ -84,9 +85,6 @@ namespace Trial.Meta
 
         /// <summary>meta.css:162 .ocbg-meta-dep-h2.</summary>
         internal const string DepH2Css = "font: 700 20px/1.4 var(--font-body); letter-spacing: .04em; white-space: nowrap;";
-
-        /// <summary>meta.css:163 .ocbg-meta-dep-h2.is-wrap.</summary>
-        internal const string DepH2WrapCss = "white-space: normal;";
 
         /// <summary>meta.css:165 .ocbg-meta-filters.</summary>
         internal const string FiltersCss = "display: flex; gap: var(--space-8);";
@@ -226,11 +224,6 @@ namespace Trial.Meta
         internal const int PerPage = Columns * Rows;
         internal const float FaceScale = 0.72f;
 
-        // js: scenes/meta/departure.js:35 — DepartureScreen: the talent grid, 3 × 6.
-        internal const int TalentColumns = 3;
-        internal const int TalentRows = 6;
-        internal const int TalentPerPage = TalentColumns * TalentRows;
-
         // js: scenes/meta/departure.js:40 — the attribute's icon and its role colour (battle-visual-v1 §2.2), keyed by BattleAttribute.
         internal static readonly IReadOnlyDictionary<BattleCore.BattleAttribute, string> AttrIcon = new Dictionary<BattleCore.BattleAttribute, string>
         {
@@ -288,14 +281,16 @@ namespace Trial.Meta
 
         private static IKeyValueStore Store => DraftStore ?? PrefsStore.Instance;
 
-        /// <summary>The draft as departure.js keeps it: { id, deck: DeckBuilder.Save, tools, consumables, talent }.</summary>
+        /// <summary>
+        /// The draft as departure.js keeps it, less the talent: { id, deck: DeckBuilder.Save, tools, consumables }. A draft
+        /// stored before #1045 still has a talent; it is read past.
+        /// </summary>
         private sealed class Draft
         {
             public string Id;
             public string Deck;
             public List<string> Tools = new List<string>();
             public List<string> Consumables = new List<string>();
-            public string Talent;
         }
 
         // js: scenes/meta/departure.js:64
@@ -318,7 +313,7 @@ namespace Trial.Meta
                 object d = string.IsNullOrEmpty(text) ? null : global::InheritanceCore.Json.Parse(text);
                 if (d is JsonObject o && o["id"] is string did && did == id && o["deck"] is string deck)
                 {
-                    var draft = new Draft { Id = did, Deck = deck, Talent = o["talent"] as string };
+                    var draft = new Draft { Id = did, Deck = deck };
                     if (o["tools"] is List<object> tools) foreach (object t in tools) if (t is string s) draft.Tools.Add(s);
                     if (o["consumables"] is List<object> cons) foreach (object c in cons) if (c is string s) draft.Consumables.Add(s);
                     return draft;
@@ -350,7 +345,6 @@ namespace Trial.Meta
                 o.Set("deck", d.Deck);
                 o.Set("tools", d.Tools.Cast<object>().ToList());
                 o.Set("consumables", d.Consumables.Cast<object>().ToList());
-                o.Set("talent", d.Talent);
                 Store.Write(DraftKey, global::InheritanceCore.Json.Stringify(o));
             }
             catch (Exception)
@@ -515,7 +509,6 @@ namespace Trial.Meta
             {
                 foreach (string id in draft.Tools) _supplies.AddTool(id);
                 foreach (string id in draft.Consumables) _supplies.AddConsumable(id);
-                if (!string.IsNullOrEmpty(draft.Talent)) _supplies.ChooseTalent(_deck, draft.Talent);
             }
             // js: scenes/meta/departure.js:157 — (Seed & 0x3fffffff) || 1
             ulong seed = _lifeStart != null ? _lifeStart.Seed : (ctx.Seed ?? 1UL);
@@ -594,7 +587,6 @@ namespace Trial.Meta
                 Deck = _deck.Save(),
                 Tools = _supplies.Tools.ToList(),
                 Consumables = _supplies.Consumables.ToList(),
-                Talent = _supplies.Talent,
             });
         }
 
@@ -1507,7 +1499,6 @@ namespace Trial.Meta
             _busy = true;
             _sound.Play("uiConfirm");
             _step = "supplies";
-            _supView.TalentPage = 0;
             _supView.RefreshSupplies();
             _stepDeck.SetOn(false);
             _stepSup.SetOn(true);
@@ -1653,8 +1644,6 @@ namespace Trial.Meta
             }
             else
             {
-                if (e.Key == "ArrowLeft" || e.Key == "PageUp") { _supView.TurnTalent(-1); return true; }
-                if (e.Key == "ArrowRight" || e.Key == "PageDown") { _supView.TurnTalent(1); return true; }
                 if (e.Key == "Enter") { if (_supplies.CanSetOut(_deck)) SetOut(); else _sound.Play("refusal"); return true; }
             }
             return false;
@@ -1808,7 +1797,7 @@ namespace Trial.Meta
         }
 
         /// <summary>
-        /// A button of the departure's own classes (.ocbg-meta-back, -filter, -cell-face, -deckchip, -slot, -talent): its box,
+        /// A button of the departure's own classes (.ocbg-meta-back, -filter, -cell-face, -deckchip, -slot): its box,
         /// its rules in cascade order (the base, :focus-visible, then the rules added with Rule / OnHover / OnClass /
         /// OnDisabled), their transitions (CssStates on the document clock), the pointer (onclick, hover) and its Tab entry.
         /// A Styler made with InlineStyler is an inline style: it wins over the rules' opacity and transform, as in CSS.

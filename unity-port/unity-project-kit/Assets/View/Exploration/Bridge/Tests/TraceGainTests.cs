@@ -221,7 +221,7 @@ namespace Exploration.Bridge.Tests
             InheritanceCore.Journal journal = Inheritance.HeirJournal(ls.Journal, ls.JournalFrom);
             var limits = new DeckLimits(ls.DeckMin, ls.DeckMax, ls.ToolSlots, ls.ConsumableSlots);
             RunLoadout loadout = Loadouts.ToRunLoadout(Loadout.Of(new string[0], new string[0], ls.ToolSlots), ls.ToolSlots);
-            var raw = new Expedition(new RunStart { Seed = ls.Seed, Loadout = loadout }, PrototypeDeck.Build(), new string[0], null, null,
+            var raw = new Expedition(new RunStart { Seed = ls.Seed, Loadout = loadout }, PrototypeDeck.Build(), new string[0], null,
                 journal.Disclosure, new ExpeditionOptions { Trial = true, Limits = limits.IsDefault ? null : limits, StartPages = journal.Pages.Count });
             TraceNodeView view = Inheritance.TraceNodeView(ls.Lineage, 3);
             return (ls, raw, view);

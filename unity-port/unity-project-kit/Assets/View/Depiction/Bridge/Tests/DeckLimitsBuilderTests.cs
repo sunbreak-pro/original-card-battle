@@ -70,7 +70,7 @@ namespace Depiction.Bridge.Tests
             Assert.That(d.LifeTitle, Is.EqualTo(DepartureBuilder.Title));
             Assert.That(d.LifeToolHeading, Is.EqualTo(DepartureBuilder.ToolHeading));
             Assert.That(d.LifeConsumableHeading, Is.EqualTo(DepartureBuilder.ConsumableHeading));
-            Assert.That(DepartureBuilder.Title, Is.EqualTo("出立の支度（ツール 3 枠・消耗品 3 枠・才能 1 枚）"));
+            Assert.That(DepartureBuilder.Title, Is.EqualTo("出立の支度（ツール 3 枠・消耗品 3 枠）"));
             Assert.That(DepartureBuilder.ToolHeading, Is.EqualTo("ツール（探索と戦闘で共通の 3 枠。同じものを 2 つ持てます）"));
             Assert.That(DepartureBuilder.ConsumableHeading, Is.EqualTo("消耗品（3 枠。拠点へは持ち帰りません）"));
             Assert.That(d.RaisedLine, Is.EqualTo(""));
@@ -243,13 +243,13 @@ namespace Depiction.Bridge.Tests
         public void L7_DepartureBuilderWithTheBonus_FourToolSlots_TheFourthIsTheBonuss()
         {
             DepartureBuilder d = Supplies(Survivor);
-            Assert.That(d.LifeTitle, Is.EqualTo("出立の支度（ツール 4 枠・消耗品 3 枠・才能 1 枚）"));
+            Assert.That(d.LifeTitle, Is.EqualTo("出立の支度（ツール 4 枠・消耗品 3 枠）"));
             Assert.That(d.LifeToolHeading, Is.EqualTo("ツール（探索と戦闘で共通の 4 枠。同じものを 2 つ持てます）"));
             Assert.That(d.LifeConsumableHeading, Is.EqualTo("消耗品（3 枠。拠点へは持ち帰りません）"));
             Assert.That(DepartureBuilder.TitleFor(Survivor), Is.EqualTo(d.LifeTitle));
             Assert.That(DepartureBuilder.ToolHeadingFor(Survivor), Is.EqualTo(d.LifeToolHeading));
             Assert.That(DepartureBuilder.ConsumableHeadingFor(Survivor), Is.EqualTo(d.LifeConsumableHeading));
-            Assert.That(DepartureBuilder.Title, Is.EqualTo("出立の支度（ツール 3 枠・消耗品 3 枠・才能 1 枚）"), "the static Title stays");
+            Assert.That(DepartureBuilder.Title, Is.EqualTo("出立の支度（ツール 3 枠・消耗品 3 枠）"), "the static Title stays");
             Assert.That(d.RaisedLine, Is.EqualTo("ツール枠 +1（3 → 4）"));
             Assert.That(DepartureBuilder.BonusLabel, Is.EqualTo("生存者ボーナス"));
             Assert.That(new[] { 0, 1, 2, 3, 4 }.Select(i => d.IsBonusToolSlot(i)).ToArray(), Is.EqualTo(new[] { false, false, false, true, false }));
@@ -265,7 +265,6 @@ namespace Depiction.Bridge.Tests
             Assert.That(d.ConsumablesLine, Is.EqualTo("消耗品 3 / 3: 薬草、薬草、薬草"));
             // set out with a 45-card deck and four tools
             DeckBuilder deck = Filled(45, Survivor);
-            Assert.That(d.ChooseTalent(deck, "side_sweep"), Is.True);
             Assert.That(d.Validate(deck).Errors, Is.Empty);
             Assert.That(d.CanSetOut(deck), Is.True);
             Assert.That(d.StatusText(deck), Is.EqualTo("出立できます"));
@@ -283,7 +282,6 @@ namespace Depiction.Bridge.Tests
             // says), the 4th tool is still refused.
             DeckBuilder deck = Filled(45, Survivor);
             DepartureBuilder d = Supplies();
-            d.ChooseTalent(deck, "side_sweep");
             Assert.That(deck.IsValid, Is.True);
             Assert.That(d.CanSetOut(deck), Is.True);
             Assert.That(d.StatusText(deck), Is.EqualTo("出立できます"));
@@ -293,7 +291,6 @@ namespace Depiction.Bridge.Tests
             // and the other way: a deck builder without limits under a survivor's departure is held to 40
             DeckBuilder plainDeck = Filled(40);
             DepartureBuilder s = Supplies(Survivor);
-            s.ChooseTalent(plainDeck, "side_sweep");
             Assert.That(s.CanSetOut(plainDeck), Is.True);
             Assert.That(plainDeck.CanAdd("observe"), Is.False);
         }
@@ -308,7 +305,6 @@ namespace Depiction.Bridge.Tests
             for (int i = 0; i < 3; i++) Assert.That(deck.Add("side_sweep"), Is.True);
             Assert.That(deck.IsValid, Is.True);
             DepartureBuilder d = Supplies();
-            Assert.That(d.ChooseTalent(deck, "side_sweep"), Is.True);
             Assert.That(d.Validate(deck).Errors, Is.Empty);
             Assert.That(d.StatusText(deck), Is.EqualTo("出立できます"));
             // The same 3 cards on a builder without limits: the 20 floor, in the deck and in the departure.

@@ -21,7 +21,7 @@ namespace InheritanceCore.Tests
         private static Lineage Carrying() => Inheritance.NewLineage(Seed, carryOver: true);
 
         /// <summary>A mastery book of cards with no profile: they read the default thresholds 3 / 8 / 15.</summary>
-        private static MasteryBook Book(params (string Id, int Ticks, int Rank)[] cards) => new MasteryBook(null,
+        private static MasteryBook Book(params (string Id, int Ticks, int Rank)[] cards) => new MasteryBook(
             cards.ToDictionary(c => c.Id, c => new CardMastery(c.Id, c.Ticks, c.Rank), StringComparer.Ordinal));
 
         private static Journal LifeJournal(string memo = "灯は右に寄せる") =>

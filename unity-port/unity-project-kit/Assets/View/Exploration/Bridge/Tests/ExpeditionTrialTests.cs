@@ -354,7 +354,7 @@ namespace Exploration.Bridge.Tests
             Assert.That(runLoadout.Tools.Select(t => t.Id), Is.EqualTo(new[] { Mask, Mask, "maai_no_kutsu", Flute }));
             var battleToolIds = new[] { "maai_no_kutsu", Flute };
             Expedition Begin(ExpeditionOptions options) =>
-                new Expedition(new RunStart { Seed = 20261020, Loadout = runLoadout }, deck, battleToolIds, deck[0].Def.Id, null, null, options);
+                new Expedition(new RunStart { Seed = 20261020, Loadout = runLoadout }, deck, battleToolIds, null, null, options);
 
             // without the limits the C#'s Expedition refuses the 45 cards: the router must forward them
             var refused = Assert.Throws<ArgumentException>(() => Begin(null));
@@ -376,7 +376,7 @@ namespace Exploration.Bridge.Tests
             // js: test/ext/limits.test.mjs:466
             var limits = new DeckLimits(deckMax: 45, toolSlots: 4);
             List<CardInstance> deck = DeckOf(45);
-            var ex = new Expedition(new RunStart { Seed = 20261020 }, deck, new[] { "maai_no_kutsu" }, null, null, null,
+            var ex = new Expedition(new RunStart { Seed = 20261020 }, deck, new[] { "maai_no_kutsu" }, null, null,
                 new ExpeditionOptions { Limits = limits });
             EncounterBattle battle = ex.StartEncounter();
             Assert.DoesNotThrow(() => battle.StartNext(true));
@@ -595,7 +595,7 @@ namespace Exploration.Bridge.Tests
         public void WithoutTheBook_TheIntelsLayerTarget_IsRaisedInTheJournal_InTrialOnly()
         {
             // js: test/ext/world.test.mjs:254
-            Expedition Make(bool trial) => new Expedition(new RunStart { Seed = 3 }, null, null, null, new SurveyIntel(), null,
+            Expedition Make(bool trial) => new Expedition(new RunStart { Seed = 3 }, null, null, new SurveyIntel(), null,
                 trial ? new ExpeditionOptions { Trial = true } : null);
             Expedition ex = Make(true);
             WalkTo(ex, n => n.Kind == NodeKind.Survey);
@@ -808,7 +808,6 @@ namespace Exploration.Bridge.Tests
             // the loadout keeps the 3 tools, the battle tools also go to the battles; the save's round trip is in
             // TraceGainTests, which reads InheritanceCore's JSON)
             IReadOnlyList<CardInstance> deck = PrototypeDeck.Build();
-            Assert.That(deck.Any(c => c.Def.Id == "side_sweep"), Is.True, "the talent is a card of the deck");
             int slots = DeckLimits.Default.ToolSlots;
             foreach (ItemDef tool in ItemCatalogue.Tools)
             {
@@ -816,7 +815,7 @@ namespace Exploration.Bridge.Tests
                 Assert.That(runLoadout.ToolSlotCount, Is.EqualTo(3), tool.Id);
                 Assert.That(runLoadout.Tools.Count, Is.EqualTo(3), tool.Id);
                 string[] battleToolIds = tool.Side == EffectSide.Battle ? new[] { tool.Id, tool.Id } : new string[0];
-                var ex = new Expedition(new RunStart { Seed = 7, Loadout = runLoadout }, deck, battleToolIds, "side_sweep");
+                var ex = new Expedition(new RunStart { Seed = 7, Loadout = runLoadout }, deck, battleToolIds);
                 Assert.That(ex.Deck.Count, Is.EqualTo(20), tool.Id);
             }
         }

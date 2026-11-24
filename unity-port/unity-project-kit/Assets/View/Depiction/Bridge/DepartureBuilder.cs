@@ -1,5 +1,5 @@
 // The 出立 step after the deck (#58): the three tool slots, the three consumable slots, the start a
-// tool moves back, the other battle tools' amounts (#452), and the talent card. Pure C#: BattleCore
+// tool moves back, and the other battle tools' amounts (#452). Pure C#: BattleCore
 // only, no UnityEngine, so every rule the screen shows is held under `dotnet test`. The rules
 // themselves are BattleCore.DeckRules'; this class keeps what the player picked and prints it.
 //
@@ -86,9 +86,6 @@ namespace Depiction.Bridge
 
         public IReadOnlyList<string> Consumables => _consumables;
 
-        /// <summary>The card picked as the talent, or null. Kept while the deck changes; <see cref="TalentIn"/> drops it when its kind leaves.</summary>
-        public string Talent { get; private set; }
-
         // ---- the slots ----
 
         public int ToolCount(string id) => Count(_tools, id);
@@ -171,55 +168,14 @@ namespace Depiction.Bridge
             }
         }
 
-        // ---- the talent ----
-
-        /// <summary>Picks the talent. Only a kind the deck holds is taken; anything else is refused.</summary>
-        public bool ChooseTalent(DeckBuilder deck, string id)
-        {
-            if (deck == null) throw new ArgumentNullException(nameof(deck));
-            if (string.IsNullOrEmpty(id) || deck.CountOf(id) == 0) return false;
-            Talent = id;
-            return true;
-        }
-
-        /// <summary>The talent if its kind is still in <paramref name="deck"/>, else null.</summary>
-        public string TalentIn(DeckBuilder deck)
-        {
-            if (deck == null) throw new ArgumentNullException(nameof(deck));
-            return Talent != null && deck.CountOf(Talent) > 0 ? Talent : null;
-        }
-
-        /// <summary>The deck's kinds in canon order: what the talent may be.</summary>
-        public static List<CardDef> TalentChoices(DeckBuilder deck)
-        {
-            if (deck == null) throw new ArgumentNullException(nameof(deck));
-            var kinds = new List<CardDef>();
-            foreach (CardDef def in CardCatalog.All)
-            {
-                if (deck.CountOf(def.Id) > 0) kinds.Add(def);
-            }
-            return kinds;
-        }
-
-        /// <summary>One page of <see cref="TalentChoices"/>. The page is clamped.</summary>
-        public static DeckPage TalentPage(DeckBuilder deck, int page, int perPage)
-        {
-            if (perPage < 1) throw new ArgumentOutOfRangeException(nameof(perPage), perPage, "1 or more.");
-            List<CardDef> kinds = TalentChoices(deck);
-            int pages = Math.Max(1, (kinds.Count + perPage - 1) / perPage);
-            page = Math.Max(0, Math.Min(pages - 1, page));
-            int first = page * perPage;
-            return new DeckPage(kinds.GetRange(first, Math.Min(perPage, kinds.Count - first)), page, pages, kinds.Count);
-        }
-
         // ---- setting out ----
 
-        /// <summary>What sets out with <paramref name="deck"/>: its cards, the slots, the start and the talent.</summary>
+        /// <summary>What sets out with <paramref name="deck"/>: its cards, the slots and the start.</summary>
         public Departure Build(DeckBuilder deck)
         {
             if (deck == null) throw new ArgumentNullException(nameof(deck));
             return new Departure(deck.Build(), _tools.ToArray(), _consumables.ToArray(),
-                StartCellsBack: StartCellsBack, TalentCardId: TalentIn(deck),
+                StartCellsBack: StartCellsBack,
                 StartStaminaBonus: StartStaminaBonus, FirstHitGuard: FirstHitGuard, BossWordWard: BossWordWard);
         }
 
@@ -257,12 +213,12 @@ namespace Depiction.Bridge
         // js: bridge/depiction/DepartureBuilder.js:220
         public static string ConsumableHeading => ConsumableHeadingFor(DeckLimits.Default);
 
-        /// <summary>Trial extension: 「出立の支度（ツール 4 枠・消耗品 3 枠・才能 1 枚）」 for some limits.</summary>
+        /// <summary>Trial extension: 「出立の支度（ツール 4 枠・消耗品 3 枠）」 for some limits.</summary>
         // js: bridge/depiction/DepartureBuilder.js:223
         public static string TitleFor(DeckLimits limits)
         {
             DeckLimits l = DeckLimits.From(limits);
-            return "出立の支度（ツール " + l.ToolSlots + " 枠・消耗品 " + l.ConsumableSlots + " 枠・才能 1 枚）";
+            return "出立の支度（ツール " + l.ToolSlots + " 枠・消耗品 " + l.ConsumableSlots + " 枠）";
         }
 
         /// <summary>Trial extension: 「ツール（探索と戦闘で共通の 4 枠。同じものを 2 つ持てます）」 for some limits.</summary>
@@ -314,8 +270,6 @@ namespace Depiction.Bridge
         // js: bridge/depiction/DepartureBuilder.js:265
         public bool IsBonusToolSlot(int index) => index >= DeckLimits.Default.ToolSlots && index < Limits.ToolSlots;
 
-        public static string TalentHeading => "才能（デッキの札から 1 枚。その札だけ習熟が 2 倍で溜まります）";
-
         public static string SetOutLabel => "出立する";
 
         public static string BackLabel => "デッキに戻る";
@@ -334,19 +288,11 @@ namespace Depiction.Bridge
             return option.Name + "　" + option.Note + (option.WorksInBattle ? "" : "（この試験の戦闘では効果が出ません）");
         }
 
-        /// <summary>「才能: 突き」, or 「才能: まだ選んでいません」.</summary>
-        public string TalentLine(DeckBuilder deck)
-        {
-            string id = TalentIn(deck);
-            return "才能: " + (id == null ? "まだ選んでいません" : CardCatalog.ById(id).Name);
-        }
-
         /// <summary>The one line beside 「出立する」: what is still missing, or that it may set out.</summary>
         public string StatusText(DeckBuilder deck)
         {
             if (deck == null) throw new ArgumentNullException(nameof(deck));
             if (!deck.IsValid) return "デッキが決まりに合っていません。デッキに戻って直してください";
-            if (TalentIn(deck) == null) return "才能にする札を 1 枚選ぶと出立できます";
             return "出立できます";
         }
 

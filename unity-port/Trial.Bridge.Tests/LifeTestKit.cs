@@ -217,7 +217,6 @@ namespace Trial.Bridge.Tests
                 Deck = PrototypeDeck.Build(),
                 BattleToolIds = tools.Where(id => ItemCatalogue.Tool(id).Side == EffectSide.Battle).ToList(),
                 Loadout = Loadout.Of(tools, consumables, lifeStart.ToolSlots),
-                Talent = null,
             };
         }
 

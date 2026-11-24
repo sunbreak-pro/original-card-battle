@@ -7,8 +7,8 @@ using BattleCore;
 namespace BattleCore.Tests
 {
     /// <summary>
-    /// #59: battle_core_v4 §3.2 / §17.8 / §19.3 習熟 — the four contexts a play meets, 才能 doubling
-    /// one card, the steps at 3 / 8 / 15 (型替え 2 / 6 / 12) judged only once the battle is over, the
+    /// #59: battle_core_v4 §3.2 / §17.8 / §19.3 習熟 — the four contexts a play meets, every kind
+    /// gathering at the same pace (#1045), the steps at 3 / 8 / 15 (型替え 2 / 6 / 12) judged only once the battle is over, the
     /// three kinds of step, step 3 for one card of the life only, and 習熟訓練.
     /// </summary>
     public class MasteryTests
@@ -159,20 +159,31 @@ namespace BattleCore.Tests
             });
         }
 
-        // ---- 才能 ----
+        // ---- One pace for every kind ----
 
         [Test]
-        public void Talent_DoublesThatCardsTicks_AndNoOtherCards()
+        public void TwoKinds_PlayedInTheSameContexts_GatherTheSameTicks()
         {
-            var book = MasteryBook.Begin("lance", new[] { Profile("lance", MasteryKind.Extend), Profile("block", MasteryKind.Lighten) });
+            // pike is lance under another id: the same board meets the same four contexts for both.
+            var pike = Lance with { Id = "pike" };
+            var board = Board(gap: 2, omen: OmenKind.Move, staminaBefore: 10);
+            var plays = new[]
+            {
+                new MasteryPlay(Lance.Id, Contexts(Lance, board)),
+                new MasteryPlay(pike.Id, Contexts(pike, board)),
+            };
+            var book = MasteryBook.Begin(new[] { Profile("lance", MasteryKind.Extend), Profile("pike", MasteryKind.Extend) });
 
-            var after = book.AfterBattle(Tally(("lance", 3), ("block", 3))).Book;
+            var after = book.AfterBattle(MasteryTally.Of(plays)).Book;
 
             Assert.Multiple(() =>
             {
-                Assert.That(after.TicksOf("lance"), Is.EqualTo(6));
-                Assert.That(after.TicksOf("block"), Is.EqualTo(3));
-                Assert.That(after.Train("lance").Book.TicksOf("lance"), Is.EqualTo(7), "training gives a fixed 1, talent or not");
+                Assert.That(plays[0].Ticks, Is.EqualTo(4));
+                Assert.That(plays[1].Ticks, Is.EqualTo(plays[0].Ticks));
+                Assert.That(after.TicksOf("pike"), Is.EqualTo(after.TicksOf("lance")));
+                Assert.That(after.TicksOf("lance"), Is.EqualTo(4), "a battle's ticks count once, for every kind");
+                Assert.That(after.RankOf("pike"), Is.EqualTo(after.RankOf("lance")));
+                Assert.That(after.Train("lance").Book.TicksOf("lance"), Is.EqualTo(5), "training gives a fixed 1");
             });
         }
 
@@ -181,7 +192,7 @@ namespace BattleCore.Tests
         [Test]
         public void Steps_GoUpAt3_8_15()
         {
-            var book = MasteryBook.Begin(null, new[] { Profile("lance", MasteryKind.Extend) });
+            var book = MasteryBook.Begin(new[] { Profile("lance", MasteryKind.Extend) });
             var ranks = new List<int>();
             var ups = new List<RankUp>();
             foreach (int ticks in new[] { 2, 1, 4, 1, 6, 1 })
@@ -204,7 +215,7 @@ namespace BattleCore.Tests
         [Test]
         public void ReformCards_StepUpAt2_6_12()
         {
-            var book = MasteryBook.Begin(null, new[] { Profile("seer", MasteryKind.Reform) });
+            var book = MasteryBook.Begin(new[] { Profile("seer", MasteryKind.Reform) });
 
             Assert.Multiple(() =>
             {
@@ -218,12 +229,12 @@ namespace BattleCore.Tests
         public void Steps_GoUpOnlyOnceTheBattleIsOver()
         {
             var lance = Lance;
-            var book = MasteryBook.Begin("lance", new[] { Profile("lance", MasteryKind.Extend) });
+            var book = MasteryBook.Begin(new[] { Profile("lance", MasteryKind.Extend) });
             var deck = book.MasteredDeck(Deck(lance, lance, lance));
             var state = TurnLoop.Start(new BattleSetup(Fixtures.Enemy(), deck, Cells, StartGap: 2), NoRng).State;
             state = TurnLoop.BeginPlayerTurn(state, NoRng).State;
 
-            // Three lances at N 2: 3 ticks each, 18 with the talent — past 8 already.
+            // Three lances at N 2: 3 ticks each, 9 — past 8 already.
             for (int i = 0; i < 3; i++) state = TurnLoop.PlayCard(state, InHand(state, "lance"), NoRng).State;
 
             Assert.Multiple(() =>
@@ -240,25 +251,25 @@ namespace BattleCore.Tests
             var result = book.AfterBattle(won);
             Assert.Multiple(() =>
             {
-                Assert.That(result.Book.TicksOf("lance"), Is.EqualTo(18));
-                Assert.That(result.Book.RankOf("lance"), Is.EqualTo(3));
-                Assert.That(result.RankUps, Is.EqualTo(new[] { new RankUp("lance", 0, 3) }));
-                Assert.That(result.Book.Mastered(lance).Column, Is.EqualTo(4), "the next battle fights with the grown card");
+                Assert.That(result.Book.TicksOf("lance"), Is.EqualTo(9));
+                Assert.That(result.Book.RankOf("lance"), Is.EqualTo(2));
+                Assert.That(result.RankUps, Is.EqualTo(new[] { new RankUp("lance", 0, 2) }));
+                Assert.That(result.Book.Mastered(lance).Column, Is.EqualTo(3), "the next battle fights with the grown card");
             });
 
             // A lost battle counts the same (§3.2: 勝っても負けても).
             var lost = book.AfterBattle(state with { Result = GameResult.Lost });
             Assert.Multiple(() =>
             {
-                Assert.That(lost.Book.TicksOf("lance"), Is.EqualTo(18));
-                Assert.That(lost.Book.RankOf("lance"), Is.EqualTo(3));
+                Assert.That(lost.Book.TicksOf("lance"), Is.EqualTo(9));
+                Assert.That(lost.Book.RankOf("lance"), Is.EqualTo(2));
             });
         }
 
         [Test]
         public void ACardWithNoProfile_GathersTicks_ButDoesNotStepUp()
         {
-            var book = MasteryBook.Begin(null, Array.Empty<MasteryProfile>());
+            var book = MasteryBook.Begin(Array.Empty<MasteryProfile>());
 
             var after = book.AfterBattle(Tally(("lance", 20))).Book;
 
@@ -387,7 +398,7 @@ namespace BattleCore.Tests
         public void Step3_CannotGoToASecondCard()
         {
             var profiles = new[] { Profile("lance", MasteryKind.Extend), Profile("block", MasteryKind.Lighten) };
-            var book = MasteryBook.Begin(null, profiles).AfterBattle(Tally(("lance", 15))).Book;
+            var book = MasteryBook.Begin(profiles).AfterBattle(Tally(("lance", 15))).Book;
 
             var after = book.AfterBattle(Tally(("block", 40))).Book;
 
@@ -402,12 +413,12 @@ namespace BattleCore.Tests
         }
 
         [Test]
-        public void Step3_ReachedByTwoAtOnce_GoesToTheMoreTicks_ThenTheTalent()
+        public void Step3_ReachedByTwoAtOnce_GoesToTheMoreTicks_ThenTheId()
         {
             var profiles = new[] { Profile("lance", MasteryKind.Extend), Profile("block", MasteryKind.Lighten), Profile("cut", MasteryKind.Extend) };
 
-            var byTicks = MasteryBook.Begin(null, profiles).AfterBattle(Tally(("lance", 15), ("block", 16)));
-            var byTalent = MasteryBook.Begin("lance", profiles).AfterBattle(Tally(("cut", 16), ("lance", 8)));
+            var byTicks = MasteryBook.Begin(profiles).AfterBattle(Tally(("lance", 15), ("block", 16)));
+            var byId = MasteryBook.Begin(profiles).AfterBattle(Tally(("lance", 16), ("cut", 16)));
 
             Assert.Multiple(() =>
             {
@@ -415,9 +426,9 @@ namespace BattleCore.Tests
                 Assert.That(byTicks.Book.RankOf("lance"), Is.EqualTo(2));
                 Assert.That(byTicks.RankUps, Is.EquivalentTo(new[] { new RankUp("block", 0, 3), new RankUp("lance", 0, 2) }));
 
-                // lance 8 × 2 = 16 ties cut's 16: the talent card takes it.
-                Assert.That(byTalent.Book.TopRankHolder, Is.EqualTo("lance"));
-                Assert.That(byTalent.Book.RankOf("cut"), Is.EqualTo(2));
+                // lance ties cut at 16: the id in ordinal order decides, so cut takes it.
+                Assert.That(byId.Book.TopRankHolder, Is.EqualTo("cut"));
+                Assert.That(byId.Book.RankOf("lance"), Is.EqualTo(2));
             });
         }
 
@@ -426,7 +437,7 @@ namespace BattleCore.Tests
         [Test]
         public void Training_GivesTheNamedCardOneTick_AndIsJudgedAtOnce()
         {
-            var book = MasteryBook.Begin(null, new[] { Profile("lance", MasteryKind.Extend) }).AfterBattle(Tally(("lance", 2))).Book;
+            var book = MasteryBook.Begin(new[] { Profile("lance", MasteryKind.Extend) }).AfterBattle(Tally(("lance", 2))).Book;
 
             var trained = book.Train("lance");
 

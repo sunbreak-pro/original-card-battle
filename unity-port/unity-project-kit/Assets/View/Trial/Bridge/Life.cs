@@ -34,9 +34,9 @@ namespace Trial.Bridge
 {
     /// <summary>
     /// The departure's choice as 出立 hands it (js: departure.js onSetOut's <c>{ deck, battleToolIds, consumableIds,
-    /// loadout, talent }</c>, the shape life.js choiceToData reads): the deck by instance, the tools that act in battle,
-    /// the exploration loadout — the DungeonContent Loadout of DepartureCarry.Carry (catalogue ItemDefs), or a RunLoadout
-    /// kept as it is — the talent, and the ids 出立 picked.
+    /// loadout }</c>, the shape life.js choiceToData reads; the JS's talent is gone since #1045): the deck by instance,
+    /// the tools that act in battle, the exploration loadout — the DungeonContent Loadout of DepartureCarry.Carry
+    /// (catalogue ItemDefs), or a RunLoadout kept as it is — and the ids 出立 picked.
     /// </summary>
     public sealed class DepartureChoice
     {
@@ -49,9 +49,6 @@ namespace Trial.Bridge
         /// <summary>An exploration RunLoadout kept as it is (js: <c>choice.loadout instanceof RunLoadout</c>); null: from <see cref="Loadout"/>.</summary>
         public RunLoadout RunLoadout { get; set; }
 
-        /// <summary>才能: a card id, or null.</summary>
-        public string Talent { get; set; }
-
         /// <summary>Always empty today (the departure passes the consumables only).</summary>
         public IReadOnlyList<string> ToolIds { get; set; } = Array.Empty<string>();
 
@@ -62,7 +59,7 @@ namespace Trial.Bridge
 
         /// <summary>
         /// The choice a built Departure and its carry make (js: departure.js:712 — deck, battleToolIds, consumableIds,
-        /// loadout, talent). <paramref name="deckSave"/> is the deck builder's Save().
+        /// loadout). <paramref name="deckSave"/> is the deck builder's Save().
         /// </summary>
         public static DepartureChoice Of(Departure departure, CarriedSupplies carry, string deckSave = null)
         {
@@ -74,7 +71,6 @@ namespace Trial.Bridge
                 BattleToolIds = carry.BattleToolIds,
                 ConsumableIds = carry.ConsumableIds,
                 Loadout = carry.Loadout,
-                Talent = departure.TalentCardId,
                 DeckSave = deckSave,
             };
         }
@@ -201,8 +197,8 @@ namespace Trial.Bridge
 
         /// <summary>
         /// The departure's choice as plain data: the deck by instance id and kind (instance ids and order are what the
-        /// battles shuffle, so they are kept exactly), the tools that act in battle, the exploration loadout as relief
-        /// items, and the talent. The departure hands a DungeonContent Loadout (catalogue ItemDefs, no relief Kind); the
+        /// battles shuffle, so they are kept exactly), the tools that act in battle, and the exploration loadout as
+        /// relief items. The departure hands a DungeonContent Loadout (catalogue ItemDefs, no relief Kind); the
         /// exploration reads it as the RunLoadout Loadouts.ToRunLoadout makes of it, with the life's tool slots
         /// (<paramref name="toolSlots"/>: 4 with the survivor's bonus). A RunLoadout is kept as it is.
         /// </summary>
@@ -217,7 +213,6 @@ namespace Trial.Bridge
                 Deck = (choice.Deck ?? Array.Empty<CardInstance>()).Select(c => new DeckRow(c.InstanceId, c.Def.Id)).ToList(),
                 BattleToolIds = (choice.BattleToolIds ?? Array.Empty<string>()).ToList(),
                 Loadout = Loadouts.RunLoadoutToData(lo),
-                Talent = choice.Talent,
                 ToolIds = (choice.ToolIds ?? Array.Empty<string>()).ToList(),
                 ConsumableIds = (choice.ConsumableIds ?? Array.Empty<string>()).ToList(),
             };
@@ -339,9 +334,9 @@ namespace Trial.Bridge
         // ------------------------------------------------------------------ the life
 
         /// <summary>
-        /// Builds the Expedition of a life from its saved start: the deck by instance, the tools, the talent, the
-        /// loadout, the journal's 開示度, the rare pages the heir set out with, the trial rules, the life's deck limits (a
-        /// survivor's heir may hold 45 cards; a life without the bonus: none, the C#'s), a JournalIntel bound to it, and
+        /// Builds the Expedition of a life from its saved start: the deck by instance, the tools, the loadout, the
+        /// journal's 開示度, the rare pages the heir set out with, the trial rules, the life's deck limits (a survivor's
+        /// heir may hold 45 cards; a life without the bonus: none, the C#'s), a JournalIntel bound to it, and
         /// the map hook: the carving dropped once known, the trace node on the lineage's trace layers until this life has
         /// taken its trace (so a trace taken on layer 2 keeps the trace node off layers 3〜7 of the same life, R-09).
         /// The life walks on <paramref name="calendar"/>, the lineage's collapse calendar (null: a fresh one). The
@@ -390,7 +385,7 @@ namespace Trial.Bridge
                 StartMastery = start.Mastery,
                 StartOwned = start.Owned,
             };
-            var expedition = new Expedition(runStart, DeckFromData(c.Deck), c.BattleToolIds, c.Talent, intel, journal, options);
+            var expedition = new Expedition(runStart, DeckFromData(c.Deck), c.BattleToolIds, intel, journal, options);
             intel.Bind(expedition);
             life.Expedition = expedition;
             return new LifeSetupResult(expedition, life, intel);

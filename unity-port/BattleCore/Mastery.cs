@@ -409,8 +409,8 @@ namespace BattleCore
     }
 
     /// <summary>
-    /// The ticks one battle gave, by card kind, before 才能 doubles any of them. Read off the
-    /// finished battle's history (<see cref="BattleHistory.MasteryPlays"/>).
+    /// The ticks one battle gave, by card kind. Read off the finished battle's history
+    /// (<see cref="BattleHistory.MasteryPlays"/>).
     /// </summary>
     public sealed record MasteryTally(IReadOnlyDictionary<string, int> Ticks)
     {
@@ -446,9 +446,9 @@ namespace BattleCore
 
     /// <summary>
     /// One life's mastery (§3.2 / §17.8, #59). Ticks are kept by card kind: copies of one card share
-    /// them. Talent is the card picked at the start (才能), whose battle ticks count twice. Steps go
-    /// up only in <see cref="AfterBattle(BattleState)"/> and <see cref="Train"/>, never during a
-    /// battle, so a card in play keeps the face it started the battle with. Only one card of the
+    /// them, and every kind gathers them at the same pace (#1045). Steps go up only in
+    /// <see cref="AfterBattle(BattleState)"/> and <see cref="Train"/>, never during a battle, so a
+    /// card in play keeps the face it started the battle with. Only one card of the
     /// life may hold step 3; the others stop at 2. A card with no profile gathers ticks but does not
     /// step up until its profile exists.
     ///
@@ -456,13 +456,12 @@ namespace BattleCore
     /// heritage Issue); a new life starts from <see cref="Begin"/>.
     /// </summary>
     public sealed record MasteryBook(
-        string? Talent = null,
         IReadOnlyDictionary<string, CardMastery>? Records = null,
         IReadOnlyList<MasteryProfile>? Profiles = null)
     {
-        /// <summary>A new life: the talent card (or none) and the profiles to grow by (the canon's by default).</summary>
-        public static MasteryBook Begin(string? talent, IReadOnlyList<MasteryProfile>? profiles = null) =>
-            new MasteryBook(talent, null, profiles);
+        /// <summary>A new life: no ticks yet, and the profiles to grow by (the canon's by default).</summary>
+        public static MasteryBook Begin(IReadOnlyList<MasteryProfile>? profiles = null) =>
+            new MasteryBook(null, profiles);
 
         public IReadOnlyList<MasteryProfile> ProfileList => Profiles ?? MasteryProfiles.All;
 
@@ -488,7 +487,7 @@ namespace BattleCore
 
         /// <summary>
         /// The battle's end (§17.8: the step goes up when the battle is over, never during it). The
-        /// ticks of every play are added — the talent card's twice — and then the steps are judged.
+        /// ticks of every play are added and then the steps are judged.
         /// Refused while the battle is still going.
         /// </summary>
         public MasteryResult AfterBattle(BattleState finished)
@@ -509,19 +508,15 @@ namespace BattleCore
             foreach (var pair in tally.Ticks)
             {
                 if (pair.Value <= 0) continue;
-                int gained = string.Equals(pair.Key, Talent, StringComparison.Ordinal)
-                    ? pair.Value * Constants.TalentTickMultiplier
-                    : pair.Value;
                 ticks.TryGetValue(pair.Key, out int had);
-                ticks[pair.Key] = had + gained;
+                ticks[pair.Key] = had + pair.Value;
             }
             return Rerank(ticks);
         }
 
         /// <summary>
         /// 習熟訓練 (§17.8, one 刻限): the named card gets <see cref="Constants.TrainingTicks"/>. It is
-        /// out of battle, so its step is judged at once. 才能 does not double it: the training gives
-        /// a fixed 1.
+        /// out of battle, so its step is judged at once.
         /// </summary>
         public MasteryResult Train(string cardId)
         {
@@ -567,7 +562,7 @@ namespace BattleCore
         /// <summary>
         /// The steps the new ticks buy. Steps never go down. Step 3 goes to one card only: the one
         /// holding it keeps it, and when several reach it at the same moment the one with the most
-        /// ticks takes it (then the talent card, then the id in ordinal order). The rest stop at 2.
+        /// ticks takes it (then the id in ordinal order). The rest stop at 2.
         /// This assumes <see cref="Constants.MasteryTopRankCards"/> is 1 (a single <see cref="TopRankHolder"/>);
         /// raising that value needs this method to keep a set of holders instead.
         /// </summary>
@@ -596,7 +591,6 @@ namespace BattleCore
             {
                 string chosen = reachingTop
                     .OrderByDescending(id => ticks[id])
-                    .ThenBy(id => string.Equals(id, Talent, StringComparison.Ordinal) ? 0 : 1)
                     .ThenBy(id => id, StringComparer.Ordinal)
                     .First();
                 records[chosen] = records[chosen] with { Rank = Mastery.TopRank };

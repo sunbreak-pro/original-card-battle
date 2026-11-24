@@ -146,8 +146,9 @@ namespace Trial.Bridge
 
     /// <summary>
     /// The departure's choice as plain data (life.js choiceToData): the deck by instance, the tools that act in battle,
-    /// the exploration loadout (JSON: { tools: [[id, kind, amount]], consumables: […], slots, trial }), the talent, and
-    /// the ids 出立 picked.
+    /// the exploration loadout (JSON: { tools: [[id, kind, amount]], consumables: […], slots, trial }), and the ids 出立
+    /// picked. A save written before #1045 (and the JS's) also holds `talent`, the card whose ticks counted twice: it is
+    /// read past and not written back, so those saves still load and every card gathers at one pace.
     /// </summary>
     public sealed class ChoiceData
     {
@@ -157,14 +158,11 @@ namespace Trial.Bridge
         /// <summary>runLoadoutToData's object, as JSON (null when none).</summary>
         public object Loadout { get; set; }
 
-        /// <summary>才能: a card id, or null.</summary>
-        public string Talent { get; set; }
-
         public List<string> ToolIds { get; set; } = new List<string>();
         public List<string> ConsumableIds { get; set; } = new List<string>();
 
         // js: app/life.js:30 (the shape)
-        /// <summary>{ deck, battleToolIds, loadout, talent, toolIds, consumableIds } in the JS order.</summary>
+        /// <summary>{ deck, battleToolIds, loadout, toolIds, consumableIds } in the JS order, less the JS's talent.</summary>
         public JsonObject ToJson()
         {
             var deck = new List<object>(Deck.Count);
@@ -173,7 +171,6 @@ namespace Trial.Bridge
             o["deck"] = deck;
             o["battleToolIds"] = new List<object>(BattleToolIds ?? new List<string>());
             o["loadout"] = Loadout;
-            o["talent"] = Talent;
             o["toolIds"] = new List<object>(ToolIds ?? new List<string>());
             o["consumableIds"] = new List<object>(ConsumableIds ?? new List<string>());
             return o;
@@ -193,9 +190,6 @@ namespace Trial.Bridge
             }
             c.BattleToolIds = Strings(o["battleToolIds"], "battleToolIds");
             c.Loadout = o["loadout"];
-            object talent = o["talent"];
-            if (talent != null && !(talent is string)) throw new SaveFormatException("bad save: the talent");
-            c.Talent = (string)talent;
             c.ToolIds = Strings(o["toolIds"], "toolIds");
             c.ConsumableIds = Strings(o["consumableIds"], "consumableIds");
             return c;

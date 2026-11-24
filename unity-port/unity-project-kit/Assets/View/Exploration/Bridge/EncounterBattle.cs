@@ -143,7 +143,7 @@ namespace Exploration.Bridge
 
         public int Stamina { get; }
 
-        /// <summary>The ticks the fights gave, by card kind, before 才能 doubles any (§3.2).</summary>
+        /// <summary>The ticks the fights gave, by card kind (§3.2).</summary>
         public MasteryTally Ticks { get; }
 
         /// <summary>The cards that went up a step when the fights ended (§17.8).</summary>
