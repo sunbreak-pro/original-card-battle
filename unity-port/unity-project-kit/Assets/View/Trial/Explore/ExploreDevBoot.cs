@@ -93,7 +93,6 @@ namespace Trial.Explore
                 Deck = BattleCore.PrototypeDeck.Build(),
                 BattleToolIds = tools.Where(id => ItemCatalogue.Tool(id).Side == EffectSide.Battle).ToList(),
                 Loadout = Loadout.Of(tools, consumables, ls.ToolSlots),
-                Talent = null,
                 ConsumableIds = consumables,
             };
             LifeStartData start = Trial.Bridge.Life.MakeStart(ls, choice);

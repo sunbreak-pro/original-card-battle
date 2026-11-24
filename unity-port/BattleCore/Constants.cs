@@ -149,9 +149,6 @@ namespace BattleCore
         /// <summary>§3.2 / §17.8: the cards of one life that may hold the third step. The others stop at the second.</summary>
         public const int MasteryTopRankCards = 1;
 
-        /// <summary>§3.2 / §17.8 才能: the one card picked at the start gathers its ticks this many times over.</summary>
-        public const int TalentTickMultiplier = 2;
-
         /// <summary>§3.2 / §17.8 習熟訓練: the ticks one training (one 刻限) gives the card it names.</summary>
         public const int TrainingTicks = 1;
 

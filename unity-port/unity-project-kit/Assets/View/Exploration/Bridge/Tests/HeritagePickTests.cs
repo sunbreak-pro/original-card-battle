@@ -307,13 +307,13 @@ namespace Exploration.Bridge.Tests
         [Test]
         public void CardsOf_ListsEveryCardAtStepOneOrMore_WithItsNameThere()
         {
-            MasteryBook book = MasteryBook.Begin(null);
+            MasteryBook book = MasteryBook.Begin();
             for (int i = 0; i < Constants.MasteryThresholds[0]; i++) book = book.Train(CardCatalog.SideSweep.Id).Book;
             book = book.Train(CardCatalog.KesaCut.Id).Book;
 
             Assert.That(Legacies.CardsOf(book), Is.EqualTo(new[] { new LegacyCard(CardCatalog.SideSweep.Id, 1, "大横薙ぎ") }),
                 "a card with ticks but no step is not left");
-            Assert.That(Legacies.CardsOf(MasteryBook.Begin(null)), Is.Empty);
+            Assert.That(Legacies.CardsOf(MasteryBook.Begin()), Is.Empty);
         }
 
         [Test]
@@ -321,7 +321,7 @@ namespace Exploration.Bridge.Tests
         {
             string thrust = CardCatalog.SideSweep.Id;
             string overhead = CardCatalog.Overhead.Id;
-            MasteryBook book = Legacies.WithRank(MasteryBook.Begin(null), thrust, 2);
+            MasteryBook book = Legacies.WithRank(MasteryBook.Begin(), thrust, 2);
             Assert.Multiple(() =>
             {
                 Assert.That(book.RankOf(thrust), Is.EqualTo(2));

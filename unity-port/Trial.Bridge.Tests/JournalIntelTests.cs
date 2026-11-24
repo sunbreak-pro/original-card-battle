@@ -33,7 +33,7 @@ namespace Trial.Bridge.Tests
             var intel = new JournalIntel();
             var start = new RunStart { Seed = seed, Trial = trial };
             if (loadout != null) start.Loadout = loadout;
-            var ex = new Expedition(start, null, null, null, intel, journal);
+            var ex = new Expedition(start, null, null, intel, journal);
             intel.Bind(ex);
             return new IntelLife { Ex = ex, Intel = intel };
         }
@@ -360,7 +360,7 @@ namespace Trial.Bridge.Tests
             var o = Json.Parse(
                 "{\"v\":1,\"generation\":1,\"name\":\"試\",\"seed\":\"" + seed + "\",\"toolSlots\":3,\"deckMax\":40,\"survivorBonus\":false," +
                 "\"traceLayers\":[],\"carvingKnown\":false,\"journal\":{\"Disclosure\":{}},\"choice\":{\"deck\":[],\"battleToolIds\":[]," +
-                "\"loadout\":{\"tools\":[],\"consumables\":[],\"slots\":3},\"talent\":null,\"toolIds\":[],\"consumableIds\":[]}}");
+                "\"loadout\":{\"tools\":[],\"consumables\":[],\"slots\":3},\"toolIds\":[],\"consumableIds\":[]}}");
             LifeStartData start = LifeStartData.FromJson(o);
             start.Choice.Deck = deck.ToList();
             return start;

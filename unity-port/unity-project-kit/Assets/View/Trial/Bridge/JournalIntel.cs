@@ -55,7 +55,7 @@ namespace Trial.Bridge
 
         /// <summary>
         /// Binds the intel to the Expedition whose session it serves. The session must be the one built with this intel
-        /// (new Expedition(start, deck, tools, talent, intel, journal)): it tells the intel of every node it resolves
+        /// (new Expedition(start, deck, tools, intel, journal)): it tells the intel of every node it resolves
         /// (IArrivalIntel), where the JS's bind hooks the session's Arrived. Binding again starts the survey record over.
         /// </summary>
         // js: app/intel.js:60

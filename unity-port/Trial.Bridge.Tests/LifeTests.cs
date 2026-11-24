@@ -101,6 +101,36 @@ namespace Trial.Bridge.Tests
             Assert.That(Recorder.Replay(Life.LifeSetup(start).Expedition, log).Count, Is.EqualTo(log.Count), "replay keeps every call");
         }
 
+        [Test]
+        public void ALifeSavedWithATalent_Resumes_AndThatCardGathersNoMoreThanItWouldWithout()
+        {
+            // #1045: a start saved before names a talent card. It still resumes, and its replay counts that card's
+            // ticks once, as every card's.
+            Lineage lineage = Inheritance.NewLineage(11);
+            LifeStart ls = Inheritance.StartLife(lineage);
+            LifeStartData start = Life.MakeStart(ls, Departure(ls));
+            RecordedExpedition ex = Recorder.RecordExpedition(Life.LifeSetup(start).Expedition);
+            Walk(ex, (open, st) => open[0]);
+            LifeLog log = Saved(ex.Log);
+            List<string> kinds = start.Choice.Deck.Select(r => r.DefId).Distinct().ToList();
+            string talent = kinds.OrderByDescending(id => ex.Raw.Mastery.TicksOf(id)).First();
+            if (ex.Raw.Mastery.TicksOf(talent) == 0) Assert.Inconclusive("the walk gathered no ticks");
+
+            JsonObject older = (JsonObject)Json.Parse(Json.Stringify(start.ToJson()));
+            ((JsonObject)older["choice"])["talent"] = talent;
+            LiveLife resumed = Life.BeginLife(LifeStartData.FromJson(older), log);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(resumed.Log.Count, Is.EqualTo(log.Count), "every call replays");
+                foreach (string id in kinds)
+                {
+                    Assert.That(resumed.Raw.Mastery.TicksOf(id), Is.EqualTo(ex.Raw.Mastery.TicksOf(id)), id);
+                }
+                Assert.That(((JsonObject)resumed.Start.ToJson()["choice"]).ContainsKey("talent"), Is.False, "the talent is not written back");
+            });
+        }
+
         // js: test/app/life.test.mjs:157
         [Test]
         public void ASurvivor_PassesTheBonus_FourToolSlotsAndDeckCap45_ForTheNextLife()
@@ -134,12 +164,11 @@ namespace Trial.Bridge.Tests
             // js: app/life.js:30
             LifeStart ls = Inheritance.StartLife(Inheritance.NewLineage(5));
             DepartureChoice choice = Departure(ls, 1);
-            choice.Talent = "side_sweep";
             ChoiceData data = Life.ChoiceToData(choice, ls.ToolSlots);
             Assert.That(data.Deck.Select(r => r.InstanceId), Is.EqualTo(choice.Deck.Select(c => c.InstanceId)), "instance ids and order kept exactly");
             Assert.That(data.Deck.Select(r => r.DefId), Is.EqualTo(choice.Deck.Select(c => c.Def.Id)));
             Assert.That(data.BattleToolIds, Is.EqualTo(new[] { "ikitsugi_no_fue" }));
-            Assert.That(data.Talent, Is.EqualTo("side_sweep"));
+            Assert.That(data.ToJson().ContainsKey("talent"), Is.False, "no talent since #1045");
             Assert.That(data.ToolIds, Is.Empty);
             Assert.That(Json.Stringify(data.Loadout), Is.EqualTo(Json.Stringify(Loadouts.RunLoadoutToData(Loadouts.ToRunLoadout(choice.Loadout, ls.ToolSlots)))));
             RunLoadout back = Loadouts.RunLoadoutFromData(Json.Parse(Json.Stringify(data.Loadout)));
@@ -639,7 +668,7 @@ namespace Trial.Bridge.Tests
         public void LifeJournal_HoldsTheKnownEnemiesInOrder_ThePagesAsACount_TheMemo_TheScribbles_TheCarving()
         {
             // js: app/names.js:10
-            Expedition ex = new Expedition(new RunStart { Seed = 3 }, null, null, null, null,
+            Expedition ex = new Expedition(new RunStart { Seed = 3 }, null, null, null,
                 new Dictionary<string, int> { ["shadow_hound"] = 2, ["polearm_warped"] = 0, ["abyss_angler"] = 1 });
             LifeJournalData j = Names.LifeJournal(ex, "m", new[] { Old });
             Assert.That(j.Disclosure.Select(p => p.Key), Is.EqualTo(new[] { "shadow_hound", "abyss_angler" }), "levels above 0, in the life's order");

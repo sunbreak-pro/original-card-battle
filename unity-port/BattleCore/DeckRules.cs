@@ -6,10 +6,10 @@ namespace BattleCore
 {
     /// <summary>
     /// What 出立 (#58) hands the battles of one life: the deck, the ids in the tool and consumable
-    /// slots, how many cells a tool moves the player's start back, the talent card, and what the
-    /// other battle tools add (#452).
+    /// slots, how many cells a tool moves the player's start back, and what the other battle tools
+    /// add (#452).
     ///
-    /// The core reads the deck, the start, the talent and the amounts. It does not read the tool and
+    /// The core reads the deck, the start and the amounts. It does not read the tool and
     /// consumable ids: what each one does is the dungeon side's catalogue (tools_and_consumables_v4.md,
     /// unity-port/DungeonContent), and the four battle effects reach the core as amounts summed over
     /// the slots (the same tool may fill two): 間合いの履 as <see cref="StartCellsBack"/>, 息継ぎの笛
@@ -21,14 +21,13 @@ namespace BattleCore
         IReadOnlyList<string> Tools,
         IReadOnlyList<string> Consumables,
         int StartCellsBack,
-        string? TalentCardId,
         int StartStaminaBonus = 0,
         int FirstHitGuard = 0,
         int BossWordWard = 0)
     {
-        /// <summary>A deck and nothing else: no tools, no consumables, the default start, no talent yet.</summary>
+        /// <summary>A deck and nothing else: no tools, no consumables, the default start.</summary>
         public static Departure Plain(IReadOnlyList<CardInstance> deck) =>
-            new Departure(deck, Array.Empty<string>(), Array.Empty<string>(), 0, null);
+            new Departure(deck, Array.Empty<string>(), Array.Empty<string>(), 0);
 
         /// <summary>§7.3: the cell the player starts every battle of this life on.</summary>
         public int PlayerStartCell => DeckRules.PlayerStartCell(StartCellsBack);
@@ -59,8 +58,6 @@ namespace BattleCore
     ///   The same tool may fill two slots (tools_and_consumables_v4.md §6 の 1).
     /// - The start: the player stands on cell 2 (§7.3); a tool moves it back, never past cell 1
     ///   (間合いの履: cell 1, gap 4). The enemy's cell does not move, so the gap grows by the same.
-    /// - The talent (§17.8): one card id, of a kind in the deck. Only recorded here; the doubled
-    ///   mastery steps are #59's.
     /// </summary>
     public static class DeckRules
     {
@@ -124,8 +121,8 @@ namespace BattleCore
         }
 
         /// <summary>
-        /// The whole departure: the deck (<see cref="ValidateDeck"/>), the two kinds of slots, the
-        /// start, and a talent among the deck's kinds. Empty errors when it may set out.
+        /// The whole departure: the deck (<see cref="ValidateDeck"/>), the two kinds of slots and the
+        /// start. Empty errors when it may set out.
         /// Trial extension: <paramref name="limits"/> (<see cref="DeckLimits"/>) sets the deck's bounds and the
         /// two slot counts (4 tools with the survivor's bonus, L-5). Null is the constants.
         /// </summary>
@@ -154,15 +151,6 @@ namespace BattleCore
             if (departure.StartStaminaBonus < 0 || departure.FirstHitGuard < 0 || departure.BossWordWard < 0)
             {
                 errors.Add("A tool's amount is never negative.");
-            }
-
-            if (string.IsNullOrEmpty(departure.TalentCardId))
-            {
-                errors.Add("No talent card is chosen.");
-            }
-            else if (!departure.Deck.Any(c => c.Def.Id == departure.TalentCardId))
-            {
-                errors.Add($"The talent card \"{departure.TalentCardId}\" is not in the deck.");
             }
 
             return new DeckValidation(errors.Count == 0, errors);

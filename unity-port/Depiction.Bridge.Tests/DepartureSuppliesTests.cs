@@ -71,7 +71,6 @@ namespace Depiction.Bridge.Tests
         {
             DeckBuilder deck = DeckBuilder.Prototype();
             DepartureBuilder builder = DepartureSupplies.NewBuilder();
-            builder.ChooseTalent(deck, PrototypeDeck.Kinds[0].Id);
             Assert.That(builder.AddTool("ikitsugi_no_fue"), Is.True);
 
             BattleState state = DemoSession.Chain(builder.Build(deck), 2).StartBattle().State;
@@ -84,7 +83,6 @@ namespace Depiction.Bridge.Tests
         {
             DeckBuilder deck = DeckBuilder.Prototype();
             DepartureBuilder builder = DepartureSupplies.NewBuilder();
-            builder.ChooseTalent(deck, PrototypeDeck.Kinds[0].Id);
             Assert.That(builder.AddTool("maai_no_kutsu"), Is.True);
             Assert.That(builder.CanSetOut(deck), Is.True);
 

@@ -120,7 +120,7 @@ namespace Trial.Meta
         public ulong? Seed;
 
         /// <summary>
-        /// 出立する: the choice as the router's makeStart reads it (deck, battleToolIds, consumableIds, loadout, talent,
+        /// 出立する: the choice as the router's makeStart reads it (deck, battleToolIds, consumableIds, loadout,
         /// deckSave; DepartureChoice.Of(departure, DepartureCarry.Carry(departure, limits), deck.Save())).
         /// </summary>
         public Action<DepartureChoice> OnSetOut;

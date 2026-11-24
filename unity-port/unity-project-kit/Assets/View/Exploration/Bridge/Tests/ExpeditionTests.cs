@@ -138,14 +138,16 @@ namespace Exploration.Bridge.Tests
         }
 
         [Test]
-        public void TheMasteryTicks_GoToTheBook_WhenTheBattleEnds()
+        public void TheMasteryTicks_GoToTheBook_WhenTheBattleEnds_AtOnePaceForEveryKind()
         {
-            var expedition = new Expedition(new RunStart { Seed = 3 }, talent: "side_sweep");
+            // #1045: two kinds that meet the same contexts gather the same ticks; none counts twice.
+            var expedition = new Expedition(new RunStart { Seed = 3 });
             EncounterBattle battle = expedition.StartEncounter();
             var plays = new[]
             {
                 new MasteryPlay("side_sweep", MasteryContext.Gap | MasteryContext.Omen),
-                new MasteryPlay("brace", MasteryContext.Trait),
+                new MasteryPlay("brace", MasteryContext.Gap | MasteryContext.Omen),
+                new MasteryPlay("kesa_cut", MasteryContext.Trait),
             };
 
             EndEveryFight(battle, GameResult.Won, plays: plays);
@@ -154,9 +156,10 @@ namespace Exploration.Bridge.Tests
             Assert.Multiple(() =>
             {
                 Assert.That(back.Ticks.TicksOf("side_sweep"), Is.EqualTo(2));
-                Assert.That(back.Ticks.TicksOf("brace"), Is.EqualTo(1));
-                Assert.That(expedition.Mastery.TicksOf("side_sweep"), Is.EqualTo(2 * Constants.TalentTickMultiplier), "才能 doubles the talent card");
-                Assert.That(expedition.Mastery.TicksOf("brace"), Is.EqualTo(1));
+                Assert.That(back.Ticks.TicksOf("brace"), Is.EqualTo(2));
+                Assert.That(expedition.Mastery.TicksOf("side_sweep"), Is.EqualTo(2));
+                Assert.That(expedition.Mastery.TicksOf("brace"), Is.EqualTo(expedition.Mastery.TicksOf("side_sweep")), "the same contexts, the same ticks");
+                Assert.That(expedition.Mastery.TicksOf("kesa_cut"), Is.EqualTo(1));
             });
         }
 
@@ -164,12 +167,12 @@ namespace Exploration.Bridge.Tests
         public void EachFightsRankUps_AreReadBeforeReturn_AndAreWhatReturnWrites()
         {
             // #910: the win result card names the 段 its fight raised while the encounter is still out.
-            var expedition = new Expedition(new RunStart { Seed = 3 }, talent: "side_sweep");
+            var expedition = new Expedition(new RunStart { Seed = 3 });
             Assert.That(expedition.RankUpsOfLastFight(), Is.Empty, "no encounter yet");
             EncounterBattle battle = expedition.StartEncounter();
             Assert.That(expedition.RankUpsOfLastFight(), Is.Empty, "no fight has ended");
-            // 2 contexts, doubled by 才能: 4 刻み passes the first threshold (3).
-            EndEveryFight(battle, GameResult.Won, plays: new[] { new MasteryPlay("side_sweep", MasteryContext.Gap | MasteryContext.Omen) });
+            // 3 contexts: 3 刻み reach the first threshold (3).
+            EndEveryFight(battle, GameResult.Won, plays: new[] { new MasteryPlay("side_sweep", MasteryContext.Gap | MasteryContext.Omen | MasteryContext.Trait) });
 
             IReadOnlyList<IReadOnlyList<RankUp>> byFight = expedition.RankUpsByFight();
             IReadOnlyList<RankUp> last = expedition.RankUpsOfLastFight();

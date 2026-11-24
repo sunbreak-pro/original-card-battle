@@ -7,7 +7,8 @@ namespace BattleCore.Tests
 {
     /// <summary>
     /// 出立 (#58): the deck of 20〜40 owned cards with three of a kind at most, the three tool and
-    /// three consumable slots, the start a tool moves back (§7.3), and the talent card recorded.
+    /// three consumable slots, and the start a tool moves back (§7.3). No card has to be picked as a
+    /// talent (#1045).
     /// </summary>
     public class DeckRulesTests
     {
@@ -18,7 +19,7 @@ namespace BattleCore.Tests
             Cards.BuildDeck(CardCatalog.All.Take(kinds).ToList(), copies);
 
         private static Departure Ready(List<CardInstance>? deck = null, int cellsBack = 0) =>
-            new Departure(deck ?? Deck(10, 2), new[] { "maai_no_kutsu" }, new[] { "yakuso" }, cellsBack, CardCatalog.All[0].Id);
+            new Departure(deck ?? Deck(10, 2), new[] { "maai_no_kutsu" }, new[] { "yakuso" }, cellsBack);
 
         // ---- the deck ----
 
@@ -90,14 +91,13 @@ namespace BattleCore.Tests
         public void ThreeToolsAndThreeConsumablesFit_AFourthDoesNot()
         {
             var deck = Deck(10, 2);
-            string talent = deck[0].Def.Id;
             var three = new[] { "a", "b", "a" }; // the same tool twice is allowed
             var four = new[] { "a", "b", "c", "d" };
 
-            Assert.That(DeckRules.Validate(new Departure(deck, three, three, 0, talent), AllOwned).Ok, Is.True);
-            Assert.That(DeckRules.Validate(new Departure(deck, four, three, 0, talent), AllOwned).Errors,
+            Assert.That(DeckRules.Validate(new Departure(deck, three, three, 0), AllOwned).Ok, Is.True);
+            Assert.That(DeckRules.Validate(new Departure(deck, four, three, 0), AllOwned).Errors,
                 Has.Some.EqualTo("4 tools do not fit 3 slots."));
-            Assert.That(DeckRules.Validate(new Departure(deck, three, four, 0, talent), AllOwned).Errors,
+            Assert.That(DeckRules.Validate(new Departure(deck, three, four, 0), AllOwned).Errors,
                 Has.Some.EqualTo("4 consumables do not fit 3 slots."));
         }
 
@@ -157,28 +157,17 @@ namespace BattleCore.Tests
                 Is.EqualTo(deck.Select(c => c.InstanceId).OrderBy(id => id, System.StringComparer.Ordinal)));
         }
 
-        // ---- the talent ----
+        // ---- no talent to pick (#1045) ----
 
         [Test]
-        public void TheTalentIsRecorded()
+        public void ADeckAloneSetsOut_NoCardIsPickedFirst()
         {
-            var deck = Deck(10, 2);
-            var departure = new Departure(deck, new string[0], new string[0], 0, deck[5].Def.Id);
+            var plain = Departure.Plain(Deck(10, 2));
 
-            Assert.That(DeckRules.Validate(departure, AllOwned).Ok, Is.True);
-            Assert.That(departure.TalentCardId, Is.EqualTo(deck[5].Def.Id));
-        }
+            var result = DeckRules.Validate(plain, AllOwned);
 
-        [Test]
-        public void NoTalentOrOneOutsideTheDeckCannotSetOut()
-        {
-            var deck = Deck(10, 2);
-            var none = new Departure(deck, new string[0], new string[0], 0, null);
-            var outside = new Departure(deck, new string[0], new string[0], 0, CardCatalog.All[60].Id);
-
-            Assert.That(DeckRules.Validate(none, AllOwned).Errors, Has.Some.EqualTo("No talent card is chosen."));
-            Assert.That(DeckRules.Validate(outside, AllOwned).Errors,
-                Has.Some.EqualTo("The talent card \"" + CardCatalog.All[60].Id + "\" is not in the deck."));
+            Assert.That(result.Ok, Is.True);
+            Assert.That(result.Errors, Is.Empty);
         }
     }
 }

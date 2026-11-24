@@ -1,11 +1,12 @@
 // The supplies step of 出立 (出立の支度, scenes/meta/departure.js:509-658): the tool and consumable slots and their
-// supply cards, the talent grid (3 × 6) with its page turns, the start-position diagram (DS FloorTile / DistanceChip),
-// the five info lines, the status line and the two buttons. The screen, the deck step, the step switch and the keys are
+// supply cards, the start-position diagram (DS FloorTile / DistanceChip), the four info lines, the status line and the
+// two buttons. The JS's talent grid and its info line are gone since #1045 (TRIAL-PORT.md), so the info panel moves up
+// into the grid's place. The screen, the deck step, the step switch and the keys are
 // DepartureScene.cs; what the supply items are and what a built Departure hands on is Trial.Bridge.DepartureCarry (the
 // port of DepartureSupplies.js).
 //
 // Every word, count, verdict and the start cell come from DepartureBuilder (the life's limits); nothing here decides.
-// The look is meta.css:237-265 and :421-422, copied verbatim below.
+// The look is meta.css:237-265 and :421-422, copied verbatim below, less the talent grid's :256-260.
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -85,21 +86,6 @@ namespace Trial.Meta
         /// <summary>meta.css:255 .ocbg-meta-supply .ocbg-meta-cell-row.</summary>
         internal const string SupplyRowCss = "position: static; width: 152px; flex: none; gap: 6px;";
 
-        /// <summary>meta.css:256 .ocbg-meta-talents.</summary>
-        internal const string TalentsCss = "position: absolute;";
-
-        /// <summary>meta.css:257 .ocbg-meta-talent.</summary>
-        internal const string TalentCss = "position: absolute; display: flex; align-items: center; gap: 8px; padding: 0 12px; background: var(--panel); border: var(--stroke-rule) solid var(--rule); border-radius: var(--radius-panel); font: 700 18px/1 var(--font-body); white-space: nowrap; overflow: hidden; transition: border-color .14s, background .14s;";
-
-        /// <summary>meta.css:258 .ocbg-meta-talent span.</summary>
-        internal const string TalentSpanCss = "overflow: hidden; text-overflow: ellipsis;";
-
-        /// <summary>meta.css:259 .ocbg-meta-talent:hover.</summary>
-        internal const string TalentHoverCss = "border-color: var(--ink);";
-
-        /// <summary>meta.css:260 .ocbg-meta-talent.is-on.</summary>
-        internal const string TalentOnCss = "border: var(--stroke-frame) solid var(--amber); background: color-mix(in srgb, var(--amber) 22%, var(--panel)); box-shadow: 0 0 14px color-mix(in srgb, var(--amber) 35%, transparent);";
-
         /// <summary>meta.css:261 .ocbg-meta-info.</summary>
         internal const string InfoCss = "background: var(--panel); border: var(--stroke-rule) solid var(--rule); border-radius: var(--radius-panel); padding: 14px 20px;";
 
@@ -124,16 +110,9 @@ namespace Trial.Meta
         private readonly List<SupplyCard> _consCards = new List<SupplyCard>();
         private readonly List<DepButton> _toolSlots = new List<DepButton>();
         private readonly List<DepButton> _consSlots = new List<DepButton>();
-        private readonly RectTransform _talentGrid, _talentNav;
-        private readonly List<DepButton> _talents = new List<DepButton>();
-        private readonly MetaButton _tPrev, _tNext;
-        private readonly TextMeshProUGUI _tText;
         private readonly RectTransform _lane, _infoLines;
         private readonly StatusLine _supStatus;
         private readonly MetaButton _backToDeck, _setOutBtn;
-
-        /// <summary>talentPage: the talent grid's page (clamped by DepartureBuilder.TalentPage).</summary>
-        internal int TalentPage;
 
         /// <summary>One supply card (card.option, card.count, card.plus, card.minus, card.kind).</summary>
         private sealed class SupplyCard
@@ -175,20 +154,9 @@ namespace Trial.Meta
             for (int i = 0; i < supplies.ConsumableOptions.Count; i++)
                 _consCards.Add(MakeSupplyCard(_consGrid, supplies.ConsumableOptions[i], "consumable", (i % 2) * 580f, (i / 2) * 90f));
 
-            // talent (DepartureBuilder.TalentPage) and the info panel
-            DepartureScene.Text(_page, DepartureBuilder.TalentHeading, DepartureScene.DepH2Css + DepartureScene.DepH2WrapCss, 1236f, 146f, 636f, null, "ocbg-meta-dep-h2 is-wrap");
-            _talentGrid = Ui.Div(_page, "ocbg-meta-talents", 1236f, 212f, 636f, 300f);
-            UiNode.Of(_talentGrid);
-            _talentNav = Ui.Div(_page, "ocbg-meta-pagenav", 1236f, 520f, 636f, 40f);
-            UiNode.Of(_talentNav);
-            _tPrev = MetaButton.Nav(_talentNav, MetaText.PrevPage, false, 0f, 0f, small: true);
-            _tPrev.Click += () => { TalentPage--; _s.Sound.Play("nodeHover"); DrawTalent(); };
-            _tText = Label.Make(_talentNav, "", MetaStyle.Text(MetaStyle.PageTextCss), "ocbg-meta-pagetext");
-            _tNext = MetaButton.Nav(_talentNav, MetaText.NextPage, true, 0f, 0f, small: true);
-            _tNext.Click += () => { TalentPage++; _s.Sound.Play("nodeHover"); DrawTalent(); };
-
-            // .ocbg-meta-info (1236, 576, 636, 324): border 1 + padding 14 / 20 → the content at (21, 15), 594 wide
-            RectTransform info = Ui.Div(_page, "ocbg-meta-info", 1236f, 576f, 636f, 324f);
+            // .ocbg-meta-info (1236, 146, 636, 324), on the tool heading's line where the JS's talent heading stood (#1045):
+            // border 1 + padding 14 / 20 → the content at (21, 15), 594 wide
+            RectTransform info = Ui.Div(_page, "ocbg-meta-info", 1236f, 146f, 636f, 324f);
             UiNode.Of(info);
             BoxGraphic.On(info, InfoCss);
             TextStyle h4 = MetaStyle.Text(InfoH4Css);
@@ -334,58 +302,6 @@ namespace Trial.Meta
             }
         }
 
-        // js: scenes/meta/departure.js:583
-        /// <summary>drawTalent(): the page of the deck's kinds (3 × 6, 214 × 50 apart, 204 × 42), the chosen one lit.</summary>
-        internal void DrawTalent()
-        {
-            Ui.Clear(_talentGrid);
-            _talents.Clear();
-            DeckBuilder deck = _s.Deck;
-            DeckPage p = DepartureBuilder.TalentPage(deck, TalentPage, DepartureScene.TalentPerPage);
-            TalentPage = p.Index;
-            Label.SetText(_tText, p.Text);
-            _tPrev.Disabled = p.Index == 0;
-            _tNext.Disabled = p.Index >= p.Count - 1;
-            DepartureScene.LayoutPageNav(_talentNav, _tPrev, _tText, _tNext, 636f, 40f);
-            string chosen = _s.Supplies.TalentIn(deck);
-            for (int i = 0; i < p.Cards.Count; i++)
-            {
-                BattleCore.CardDef def = p.Cards[i];
-                bool on = def.Id == chosen;
-                DepButton b = new DepButton(_talentGrid, on ? "ocbg-meta-talent is-on" : "ocbg-meta-talent", TalentCss)
-                    .OnHover(TalentHoverCss)
-                    .OnClass("is-on", TalentOnCss);
-                if (on) b.Toggle("is-on", true, apply: false);
-                b.Done();
-                b.Node.Place((i % DepartureScene.TalentColumns) * 214f, (i / DepartureScene.TalentColumns) * 50f, 204f, 42f);
-                // the content: border (1, 2 while .is-on) + padding 12; the icon 18, gap 8, the name cut with 「…」
-                float border = on ? 2f : 1f;
-                string icon = DepartureScene.AttrIcon.TryGetValue(def.Attribute, out string ic) ? ic : "star";
-                Rgba ink = on ? DsTokens.Ground : DepartureScene.AttrInk.TryGetValue(def.Attribute, out Rgba c) ? c : DsTokens.Ink;
-                PathGraphic g = MetaUtil.Icon(b.Root, icon, 18f, ink);
-                Ui.Place(g.rectTransform, border + 12f, (42f - 18f) / 2f);
-                TextStyle ts = MetaStyle.Text(TalentCss + TalentSpanCss);
-                ts.Overflow = TextOverflow.Ellipsis;
-                float avail = 204f - 2f * border - 24f - 18f - 8f;
-                float tw = Math.Min(TextMeasure.Width(def.Name ?? "", ts), avail);
-                Label.Make(b.Root, def.Name ?? "", ts, border + 12f + 18f + 8f, (42f - ts.LineHeightPx) / 2f, tw + 0.01f, ts.LineHeightPx, "span");
-                string id = def.Id;
-                b.OnClick = () => { if (_s.Supplies.ChooseTalent(_s.Deck, id)) { _s.Sound.Play("uiConfirm"); RefreshSupplies(); } };
-                _talents.Add(b);
-            }
-            _s.SyncFocus();
-        }
-
-        /// <summary>The talent page turned by the keys (departure.js:798-799): only when that way is open, with nodeHover.</summary>
-        internal void TurnTalent(int by)
-        {
-            MetaButton b = by < 0 ? _tPrev : _tNext;
-            if (b.Disabled) return;
-            TalentPage += by;
-            _s.Sound.Play("nodeHover");
-            DrawTalent();
-        }
-
         // js: scenes/meta/departure.js:616
         /// <summary>
         /// drawLane(): the start a tool moves back (DepartureBuilder.PlayerStartCell / StartGap) on max(6, the enemy's cell)
@@ -427,8 +343,8 @@ namespace Trial.Meta
 
         // js: scenes/meta/departure.js:638
         /// <summary>
-        /// refreshSupplies(): every card's count and ＋ / −, both slot rows, the talents, the start diagram, the info lines,
-        /// the status line, 出立する, and the draft.
+        /// refreshSupplies(): every card's count and ＋ / −, both slot rows, the start diagram, the info lines, the status
+        /// line, 出立する, and the draft.
         /// </summary>
         internal void RefreshSupplies()
         {
@@ -446,12 +362,11 @@ namespace Trial.Meta
             }
             DrawSlots(_toolSlotRow, _toolSlots, supplies.Tools, supplies.Limits.ToolSlots, supplies.ToolOptions, id => supplies.RemoveTool(id), i => supplies.IsBonusToolSlot(i));
             DrawSlots(_consSlotRow, _consSlots, supplies.Consumables, supplies.Limits.ConsumableSlots, supplies.ConsumableOptions, id => supplies.RemoveConsumable(id), null);
-            DrawTalent();
             DrawLane();
             Ui.Clear(_infoLines);
             TextStyle ls = MetaStyle.P(InfoLineCss);
             float y = 0f;
-            foreach (string l in new[] { supplies.TalentLine(deck), supplies.StartLine, supplies.ToolsLine, supplies.ConsumablesLine, MetaText.DeckCount(deck.Total) })
+            foreach (string l in new[] { supplies.StartLine, supplies.ToolsLine, supplies.ConsumablesLine, MetaText.DeckCount(deck.Total) })
             {
                 float h = TextMeasure.Height(l ?? "", ls, 594f);
                 Label.Make(_infoLines, l ?? "", ls, 0f, y, 594f, h, "li");
@@ -466,7 +381,7 @@ namespace Trial.Meta
 
         /// <summary>
         /// The supplies step's buttons in DOM order (the Tab order): the tool slots, each tool card's − ＋, the consumable
-        /// slots, each consumable card's − ＋, the talents, the talent page turns, デッキに戻る, 出立する.
+        /// slots, each consumable card's − ＋, デッキに戻る, 出立する.
         /// </summary>
         internal IEnumerable<object> FocusOrder()
         {
@@ -474,9 +389,6 @@ namespace Trial.Meta
             foreach (SupplyCard c in _toolCards) { yield return c.Minus; yield return c.Plus; }
             foreach (DepButton b in _consSlots) yield return b;
             foreach (SupplyCard c in _consCards) { yield return c.Minus; yield return c.Plus; }
-            foreach (DepButton b in _talents) yield return b;
-            yield return _tPrev;
-            yield return _tNext;
             yield return _backToDeck;
             yield return _setOutBtn;
         }

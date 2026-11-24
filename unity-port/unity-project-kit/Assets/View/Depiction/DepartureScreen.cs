@@ -1,9 +1,8 @@
 // The departure screen of the demo (#58), between the deck screen and the mode screen: the three
-// tool slots and the three consumable slots, the start a tool moves back, and the talent card.
+// tool slots and the three consumable slots, and the start a tool moves back.
 // Built in code with UiKit on the demo canvas like the deck screen, so no scene or prefab changes.
-// It decides nothing: what fits a slot, where the battle starts, which cards may be the talent,
-// every word, and whether the run may set out come from Depiction.Bridge.DepartureBuilder, whose
-// rules are BattleCore.DeckRules'.
+// It decides nothing: what fits a slot, where the battle starts, every word, and whether the run
+// may set out come from Depiction.Bridge.DepartureBuilder, whose rules are BattleCore.DeckRules'.
 #if UNITY_2021_2_OR_NEWER
 using System;
 using System.Collections.Generic;
@@ -16,10 +15,6 @@ namespace Depiction.View
 {
     public sealed class DepartureScreen
     {
-        private const int TalentColumns = 3;
-        private const int TalentRows = 6;
-        private const int TalentPerPage = TalentColumns * TalentRows;
-
         // The supply rows on the left, as shares of the screen's height.
         private const float RowHeight = 0.056f;
         private const float ToolsTop = 0.85f;
@@ -29,18 +24,15 @@ namespace Depiction.View
         private readonly DepartureBuilder _builder;
         private readonly Action<Departure> _setOut;
         private DeckBuilder _deck = new DeckBuilder();
-        private int _talentPage;
 
         private readonly RectTransform _tools;
         private readonly RectTransform _consumables;
-        private readonly RectTransform _talentGrid;
-        private readonly Text _talentPageText;
         private readonly Text _info;
         private readonly Text _status;
         private readonly Button _setOutButton;
 
         /// <param name="parent">The demo canvas.</param>
-        /// <param name="builder">What the player picks; kept across visits, so the slots and the talent stay chosen.</param>
+        /// <param name="builder">What the player picks; kept across visits, so the slots stay chosen.</param>
         /// <param name="setOut">Called with the departure when 「出立する」 is pressed.</param>
         /// <param name="back">「デッキに戻る」.</param>
         public DepartureScreen(RectTransform parent, DepartureBuilder builder, Action<Departure> setOut, Action back)
@@ -61,15 +53,8 @@ namespace Depiction.View
             Heading("ConsumableHead", DepartureBuilder.ConsumableHeading, ConsumablesTop + 0.005f);
             _consumables = UiKit.Box(_root, "Consumables", 0.02f, ConsumablesTop - RowHeight * _builder.ConsumableOptions.Count, 0.60f, ConsumablesTop);
 
-            UiKit.Text(UiKit.Box(_root, "TalentHead", 0.62f, 0.855f, 0.98f, 0.905f), "Text", 24, TextAnchor.MiddleLeft, BattleTheme.Warm,
-                DepartureBuilder.TalentHeading);
-            _talentGrid = UiKit.Box(_root, "Talent", 0.62f, 0.50f, 0.98f, 0.85f);
-            RectTransform nav = UiKit.Box(_root, "TalentPages", 0.62f, 0.44f, 0.98f, 0.49f);
-            UiKit.Button(nav, "Prev", "前のページ", () => TurnTalent(-1), BattleTheme.Panel, BattleTheme.Ink, 22, new Vector2(0f, 0f), new Vector2(0.3f, 1f));
-            _talentPageText = UiKit.Text(UiKit.Box(nav, "PageText", 0.32f, 0f, 0.68f, 1f), "Text", 22, TextAnchor.MiddleCenter, BattleTheme.Ink2);
-            UiKit.Button(nav, "Next", "次のページ", () => TurnTalent(1), BattleTheme.Panel, BattleTheme.Ink, 22, new Vector2(0.7f, 0f), new Vector2(1f, 1f));
-
-            RectTransform infoBox = UiKit.Panel(_root, "Info", 0.62f, 0.14f, 0.98f, 0.42f).rectTransform;
+            // Since #1045 nothing else is picked in the right column, so the info panel starts at its top.
+            RectTransform infoBox = UiKit.Panel(_root, "Info", 0.62f, 0.57f, 0.98f, 0.905f).rectTransform;
             _info = UiKit.Text(UiKit.Box(infoBox, "Lines", 0.03f, 0.22f, 0.97f, 0.97f), "Text", 22, TextAnchor.UpperLeft, BattleTheme.Ink);
             _status = UiKit.Text(UiKit.Box(infoBox, "Status", 0.03f, 0.02f, 0.97f, 0.2f), "Text", 22, TextAnchor.MiddleLeft, BattleTheme.Warm);
 
@@ -104,12 +89,6 @@ namespace Depiction.View
             _setOut?.Invoke(_builder.Build(_deck));
         }
 
-        private void TurnTalent(int by)
-        {
-            _talentPage += by;
-            Refresh();
-        }
-
         // ---- drawing ----
 
         private void Refresh()
@@ -118,11 +97,9 @@ namespace Depiction.View
                 id => _builder.AddTool(id), id => _builder.RemoveTool(id));
             DrawSupplies(_consumables, _builder.ConsumableOptions, _builder.ConsumableCount, _builder.CanAddConsumable,
                 id => _builder.AddConsumable(id), id => _builder.RemoveConsumable(id));
-            DrawTalent();
 
             _info.text = string.Join("\n", new[]
             {
-                _builder.TalentLine(_deck),
                 _builder.StartLine,
                 _builder.ToolsLine,
                 _builder.ConsumablesLine,
@@ -160,27 +137,6 @@ namespace Depiction.View
                 Button plus = UiKit.Button(row, "Plus", "＋", () => { add(id); Refresh(); }, BattleTheme.Panel, BattleTheme.Ink, 24,
                     new Vector2(0.92f, 0.08f), new Vector2(0.98f, 0.92f));
                 plus.interactable = canAdd(id);
-            }
-        }
-
-        private void DrawTalent()
-        {
-            UiKit.ClearChildren(_talentGrid);
-            DeckPage page = DepartureBuilder.TalentPage(_deck, _talentPage, TalentPerPage);
-            _talentPage = page.Index;
-            _talentPageText.text = page.Text;
-            string chosen = _builder.TalentIn(_deck);
-            for (int i = 0; i < page.Cards.Count; i++)
-            {
-                CardDef def = page.Cards[i];
-                int column = i % TalentColumns;
-                int row = i / TalentColumns;
-                float x0 = column / (float)TalentColumns;
-                float y1 = 1f - row / (float)TalentRows;
-                bool on = def.Id == chosen;
-                UiKit.Button(_talentGrid, "Talent" + i, def.Name, () => { _builder.ChooseTalent(_deck, def.Id); Refresh(); },
-                    on ? BattleTheme.Accent : BattleTheme.Panel, on ? BattleTheme.InkBlack : BattleTheme.Ink, 22,
-                    new Vector2(x0 + 0.004f, y1 - 1f / TalentRows + 0.008f), new Vector2(x0 + 1f / TalentColumns - 0.004f, y1 - 0.008f));
             }
         }
     }

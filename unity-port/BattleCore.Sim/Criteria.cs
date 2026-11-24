@@ -413,7 +413,7 @@ public static class Criteria
 
     /// <summary>Criterion S17: the mastery ticks, which BattleCore does not carry yet.</summary>
     private static CriterionRow MasteryTicks() =>
-        new CriterionRow("S17", "1 戦の刻み（中央値）", "才能の札で 4 以上、ほかの札で 2 以上", "—", Verdict.NotMeasurable,
+        new CriterionRow("S17", "1 戦の刻み（中央値）", "どの札も 2 以上", "—", Verdict.NotMeasurable,
             "習熟（刻み）は BattleCore にまだ無い");
 
     /// <summary>

@@ -73,8 +73,8 @@ namespace Depiction.Bridge
         public DemoMode Mode { get; }
 
         /// <summary>
-        /// What the run set out with (#58): the deck every battle is shuffled from, the slots, the
-        /// start a tool moved back, and the talent card. The talent is only recorded; #59 reads it.
+        /// What the run set out with (#58): the deck every battle is shuffled from, the slots, and the
+        /// start a tool moved back.
         /// </summary>
         public Departure Departure { get; }
 
@@ -94,8 +94,8 @@ namespace Depiction.Bridge
 
         /// <summary>
         /// The deck is checked against §8 here as well as on the departure screen, because a run can be
-        /// made without the screen (the tests, a bare deck). The slots and the talent are the screen's
-        /// to check (DepartureBuilder.CanSetOut); a run made from a bare deck has neither.
+        /// made without the screen (the tests, a bare deck). The slots are the screen's to check
+        /// (DepartureBuilder.CanSetOut); a run made from a bare deck has none.
         /// </summary>
         private DemoSession(DemoMode mode, IReadOnlyList<EnemyDef> order, Departure departure, int seed, Func<string, int> disclosureOf)
         {

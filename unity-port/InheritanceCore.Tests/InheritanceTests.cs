@@ -263,7 +263,6 @@ namespace InheritanceCore.Tests
         public void R04_AMasteryBookDeck_RecordsAndProfileOfGiveRanksThresholdsAndNames()
         {
             var book = new MasteryBook(
-                null,
                 new Dictionary<string, CardMastery>
                 {
                     ["kansatsu"] = new CardMastery("kansatsu", 9, 2),

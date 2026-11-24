@@ -163,7 +163,7 @@ namespace Trial.Meta
             if (_expedition != null) return _expedition;
             try
             {
-                _expedition = new Expedition(new RunStart { Seed = 20261020UL }, null, null, "side_sweep", null,
+                _expedition = new Expedition(new RunStart { Seed = 20261020UL }, null, null, null,
                     new Dictionary<string, int>(StringComparer.Ordinal) { ["armored_warden"] = 1, ["polearm_warped"] = 2 });
             }
             catch (Exception e)
@@ -188,7 +188,7 @@ namespace Trial.Meta
                 new BattleCore.CardMastery("side_sweep", 11, 2), new BattleCore.CardMastery("kesa_cut", 5, 1), new BattleCore.CardMastery("water_stance", 4, 1),
                 new BattleCore.CardMastery("observe", 12, 3), new BattleCore.CardMastery("footwork", 2, 0), new BattleCore.CardMastery("brace", 3, 1),
             });
-            _book = new BattleCore.MasteryBook("side_sweep", records, null);
+            _book = new BattleCore.MasteryBook(records, null);
             _deckIds = new List<string> { "side_sweep", "kesa_cut", "water_stance", "observe", "brace", "footwork", "reach_thrust", "iron_wall", "feint", "back_leap" };
         }
 
@@ -338,7 +338,7 @@ namespace Trial.Meta
             Def("departure", () => ScreenOf(host => DepartureScene.Mount(host, Common(new DepartureCtx
             {
                 LifeStart = _lifeStart, Owned = _owned,
-                OnSetOut = c => { Log("set out " + c.Deck.Count + " cards, tools " + string.Join(",", c.BattleToolIds) + ", talent " + c.Talent); Show("ending-death"); },
+                OnSetOut = c => { Log("set out " + c.Deck.Count + " cards, tools " + string.Join(",", c.BattleToolIds)); Show("ending-death"); },
                 OnBack = () => Show("hall"),
             }))));
             Def("departure-app", () => ScreenOf(host => DepartureScene.Mount(host, Common(new DepartureCtx

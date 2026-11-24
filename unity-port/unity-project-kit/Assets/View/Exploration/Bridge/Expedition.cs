@@ -39,7 +39,6 @@ namespace Exploration.Bridge
 
         private readonly IReadOnlyList<CardInstance> _startDeck;
         private readonly IReadOnlyDictionary<string, int> _startJournal;
-        private readonly string _talent;
         private readonly Dictionary<string, int> _journal = new Dictionary<string, int>(StringComparer.Ordinal);
         private readonly HashSet<string> _owned = new HashSet<string>(StringComparer.Ordinal);
         private List<CardInstance> _deck;
@@ -61,7 +60,6 @@ namespace Exploration.Bridge
         /// tools_and_consumables_v4.md §2), as catalogue ids. The tools that act on the exploration go in
         /// <see cref="RunStart.Loadout"/>; turning one chosen loadout into both is 出立's (#104).
         /// </param>
-        /// <param name="talent">才能: the card whose battle ticks count twice (§17.8), or null.</param>
         /// <param name="intel">
         /// What the exploration screen says about the enemy behind a node. Null: this expedition's own
         /// <see cref="Journal"/>, which reads the 開示度 the battles leave here (#107).
@@ -76,7 +74,6 @@ namespace Exploration.Bridge
             RunStart start = null,
             IReadOnlyList<CardInstance> deck = null,
             IReadOnlyList<string> battleToolIds = null,
-            string talent = null,
             IEnemyIntel intel = null,
             IReadOnlyDictionary<string, int> journal = null,
             ExpeditionOptions options = null)
@@ -89,8 +86,7 @@ namespace Exploration.Bridge
             DeckValidation validation = Cards.Validate(_startDeck, _limits);
             if (!validation.Ok) throw new ArgumentException("Expedition: the deck breaks §8 — " + string.Join(" / ", validation.Errors), nameof(deck));
             _startJournal = journal ?? new Dictionary<string, int>();
-            _talent = talent;
-            Tools = BattleTools(_startDeck, battleToolIds ?? Array.Empty<string>(), talent);
+            Tools = BattleTools(_startDeck, battleToolIds ?? Array.Empty<string>());
             Journal = new LifeJournal(Learned);
             // Trial extension (js: Expedition.js:105): the session reads the intel it is given, as in the browser trial.
             Session = new ExplorationSession(start, Trial ? intel : intel ?? Journal);
@@ -186,7 +182,7 @@ namespace Exploration.Bridge
         /// </summary>
         public MasteryBook Mastery { get; internal set; }
 
-        /// <summary>The in-battle tools (§9.1, #452) as amounts, with the deck and the talent the battles read.</summary>
+        /// <summary>The in-battle tools (§9.1, #452) as amounts, with the deck the battles read.</summary>
         public Departure Tools { get; }
 
         /// <summary>
@@ -588,7 +584,7 @@ namespace Exploration.Bridge
             _pileRng = null;
             _learnedCopies = 0;
             Battle = null;
-            Mastery = MasteryBook.Begin(_talent);
+            Mastery = MasteryBook.Begin();
             BeginLifeTrial(); // Trial extension: nothing pending, the pages the heir set out with, what is carried in
         }
 
@@ -597,7 +593,7 @@ namespace Exploration.Bridge
         /// core reads. Each tool's four numbers come from DungeonContent.BattleToolAmounts, the one
         /// mapping the departure screen reads too (#648).
         /// </summary>
-        private static Departure BattleTools(IReadOnlyList<CardInstance> deck, IReadOnlyList<string> toolIds, string talent)
+        private static Departure BattleTools(IReadOnlyList<CardInstance> deck, IReadOnlyList<string> toolIds)
         {
             BattleToolAmounts sum = BattleToolAmounts.None;
             foreach (string id in toolIds)
@@ -609,7 +605,7 @@ namespace Exploration.Bridge
                 sum = sum.Plus(BattleToolAmounts.Of(tool));
             }
             return new Departure(deck, toolIds.ToList(), Array.Empty<string>(),
-                StartCellsBack: sum.StartCellsBack, TalentCardId: talent,
+                StartCellsBack: sum.StartCellsBack,
                 StartStaminaBonus: sum.StartStaminaBonus, FirstHitGuard: sum.FirstHitGuard, BossWordWard: sum.BossWordWard);
         }
     }
