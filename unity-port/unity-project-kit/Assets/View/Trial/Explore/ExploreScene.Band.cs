@@ -11,6 +11,10 @@
 // faint. While a king is down the calendar stands still: the label dims, and the bridge's note (「竜王が戻るまで 41 日。
 // 暦は止まっている」) takes the pips' row. Every number and word is the bridge's (ExplorationScreen).
 //
+// A layer drawn as the rock's cross-section (#1050, layer 1) shows the calendar as one bar instead (Exploration's
+// CalendarBar: a tick every ten days, the next step's share dashed) and the body as the battle shows it (a heart and a
+// bar, a pip per point of stamina, Exploration's BodyMarks). Both sets are built once; the screen's Look picks one.
+//
 // This file also holds the helpers the three panel files share (the band, the node detail, the carried items):
 // ExPanelButton (a <button> that is not an .ocbg-btn), the text-style cache, icons and the flex-wrap rows.
 using System;
@@ -145,6 +149,38 @@ namespace Trial.Explore
         private Rgba BandDaysInk;
         private bool BandDaysDimmed;
 
+        // ------------------------------------------------------------------ the band on a strata map (#1050, battle-visual-v1 §2.5)
+
+        /// <summary>The calendar's bar: its trough, what is left, the day the next step takes (dashed), the ticks.</summary>
+        private const string CalBarCss = "background: #06090c; border: 1px solid rgba(157,166,186,.5); border-radius: 3px;";
+
+        private const string CalBarFillCss = "background: #a9adbd;";
+        private const string CalBarFrozenCss = "background: var(--steel);";
+        private const string CalBarNextCss = "background: repeating-linear-gradient(180deg, #a9adbd 0 3px, #06090c 3px 6px);";
+        private const string CalBarTickCss = "background: rgba(6,9,12,.9);";
+
+        /// <summary>The heading over the bar (崩壊まで, or the note of a calendar that stands still).</summary>
+        private const string CalHeadingCss = "font: 700 16px/20px var(--font-body); white-space: nowrap;";
+
+        /// <summary>The HP bar (the battle's heart and bar) and a stamina pip, lit or spent.</summary>
+        private const string HpBarCss = "background: #06090c; border: 1px solid var(--rule); border-radius: 3px;";
+
+        private const string HpBarFillCss = "background: var(--crimson); border-radius: 2px;";
+        private const string StPipLitCss = "border-radius: 50%; background: var(--amber);";
+        private const string StPipSpentCss = "border-radius: 50%; border: 2px solid var(--steel);";
+
+        private const float CalIcon = 30f, CalGap = 12f, CalHeadingH = 20f, CalBarGap = 4f;
+        private const float BodyIcon = 22f, BodyGap = 8f, BodyCol1W = 186f;
+
+        /// <summary>The plain band's calendar and first body row, and the strata band's (one of each pair shows).</summary>
+        private RectTransform BandCalPlain, BandCalStrata, BandBodyPlainRow, BandBodyStrataRow;
+
+        private RollLabel StrataDaysRoll, StrataHpRoll, StrataStRoll;
+        private TMP_Text StrataDaysText, StrataHpText, StrataStText, StrataCalHeading;
+        private RectTransform StrataCalBar, StrataHpBar, StrataPips;
+        private string StrataBarKey, StrataBodyKey, StrataHeadingKey;
+        private bool? BandStrataShown;
+
         /// <summary>
         /// Builds the band into Band (ExploreScene.js:285-323): the layer, the calendar with its pips and its note, the
         /// body block with the marks button, the three buttons; adds the five RollLabels to Rollers and wires the buttons
@@ -180,15 +216,38 @@ namespace Trial.Explore
             float row2Y = BandCalRowH + BandCalRow2Gap;
             BandDayPips = Ui.Div(cal, "ocbg-explore-pips", 0f, row2Y + (BandCalRow2H - CalPipSize) / 2f, BandCalW, CalPipSize);
             BandCalNote = Ui.Div(cal, "ocbg-explore-calendar-note", 0f, row2Y, BandCalW, BandCalRow2H);
+            BandCalPlain = cal;
+
+            // ---- a strata map's calendar (#1050): hourglass 30, the heading over the bar, 「残り N 日」 beside it ----
+            float calStrataH = CalHeadingH + CalBarGap + CalendarBar.Height;
+            BandCalStrata = Ui.Div(Band, "ocbg-explore-band-calendar is-strata", BandCalX, (BandInnerH - calStrataH) / 2f, BandCalW, calStrataH);
+            PanelIcon(BandCalStrata, "hourglass", CalIcon, ExploreStyle.Ink, 0f, (calStrataH - CalIcon) / 2f);
+            float barX = CalIcon + CalGap;
+            TextStyle headTs = PanelText(CalHeadingCss, true);
+            StrataCalHeading = Label.Make(BandCalStrata, "", headTs, barX, 0f, null, CalHeadingH, "heading");
+            StrataCalBar = Ui.Div(BandCalStrata, "ocbg-explore-calbar", barX, CalHeadingH + CalBarGap, CalendarBar.Width, CalendarBar.Height);
+            float barMid = CalHeadingH + CalBarGap + CalendarBar.Height / 2f;
+            StrataDaysText = Label.Make(BandCalStrata, "", labelTs, barX + CalendarBar.Width + 16f, barMid - labelH / 2f + labelShift, null, labelH, "ocbg-explore-band-label");
+            UiNode.Of(BandCalStrata).Visible = false;
 
             // ---- the body: HP, stamina / 訓練の刻み, max stamina (grid 186px 1fr, rows 30 / 26) ----
             // each row (flex, align-items: center) is the label's line box (30), centred in the 30 px grid row
             RectTransform body = Ui.Div(Band, "ocbg-explore-band-body", BandBodyX, (BandInnerH - BandBodyH) / 2f, BandBodyW, BandBodyH);
             float hpRowH = Math.Max(22f, labelH), hpRowY = (30f - hpRowH) / 2f;
-            PanelIcon(body, "heart", 22f, ExploreStyle.Crimson, 0f, hpRowY + (hpRowH - 22f) / 2f);
-            BandHpText = Label.Make(body, "", labelTs, 22f + 8f, hpRowY + (hpRowH - labelH) / 2f + labelShift, null, labelH, "ocbg-explore-band-label");
-            PanelIcon(body, "pip", 20f, ExploreStyle.Amber, BandBodyCol2, hpRowY + (hpRowH - 20f) / 2f);
-            BandStText = Label.Make(body, "", labelTs, BandBodyCol2 + 20f + 8f, hpRowY + (hpRowH - labelH) / 2f + labelShift, null, labelH, "ocbg-explore-band-label");
+            BandBodyPlainRow = Ui.Div(body, "row", 0f, 0f, BandBodyW, 30f);
+            PanelIcon(BandBodyPlainRow, "heart", 22f, ExploreStyle.Crimson, 0f, hpRowY + (hpRowH - 22f) / 2f);
+            BandHpText = Label.Make(BandBodyPlainRow, "", labelTs, 22f + 8f, hpRowY + (hpRowH - labelH) / 2f + labelShift, null, labelH, "ocbg-explore-band-label");
+            PanelIcon(BandBodyPlainRow, "pip", 20f, ExploreStyle.Amber, BandBodyCol2, hpRowY + (hpRowH - 20f) / 2f);
+            BandStText = Label.Make(BandBodyPlainRow, "", labelTs, BandBodyCol2 + 20f + 8f, hpRowY + (hpRowH - labelH) / 2f + labelShift, null, labelH, "ocbg-explore-band-label");
+
+            // ---- a strata map's first body row (#1050): the heart, 「38 / 50」 and the bar; the pips and 「8 / 10」 ----
+            BandBodyStrataRow = Ui.Div(body, "row is-strata", 0f, 0f, BandBodyW, 30f);
+            PanelIcon(BandBodyStrataRow, "heart", BodyIcon, ExploreStyle.Crimson, 0f, (30f - BodyIcon) / 2f);
+            StrataHpText = Label.Make(BandBodyStrataRow, "", labelTs, BodyIcon + BodyGap, hpRowY + (hpRowH - labelH) / 2f + labelShift, null, labelH, "ocbg-explore-band-label");
+            StrataHpBar = Ui.Div(BandBodyStrataRow, "ocbg-explore-hpbar", 0f, (30f - BodyMarks.HpBarH) / 2f, BodyMarks.HpBarMinW, BodyMarks.HpBarH);
+            StrataPips = Ui.Div(BandBodyStrataRow, "ocbg-explore-stpips", BandBodyCol2, 0f, BandBodyW - BandBodyCol2, 30f);
+            StrataStText = Label.Make(BandBodyStrataRow, "", labelTs, BandBodyCol2, hpRowY + (hpRowH - labelH) / 2f + labelShift, null, labelH, "ocbg-explore-band-label");
+            UiNode.Of(BandBodyStrataRow).Visible = false;
 
             // js: scenes/explore/ExploreScene.js:304 (justify-self: start; margin-left: −10px; its line box + the 1 px border,
             // centred in its 26 px row: 「訓練の刻み 0」 carries a number, so the 16px/22px line is 23 and the button 25)
@@ -231,7 +290,10 @@ namespace Trial.Explore
             StRoll = new RollLabel(BandStText);
             MaxRoll = new RollLabel(BandMaxText);
             MarksRoll = new RollLabel(BandMarksText);
-            Rollers.AddRange(new[] { DaysRoll, HpRoll, StRoll, MaxRoll, MarksRoll });
+            StrataDaysRoll = new RollLabel(StrataDaysText);
+            StrataHpRoll = new RollLabel(StrataHpText);
+            StrataStRoll = new RollLabel(StrataStText);
+            Rollers.AddRange(new[] { DaysRoll, HpRoll, StRoll, MaxRoll, MarksRoll, StrataDaysRoll, StrataHpRoll, StrataStRoll });
 
             // ---- the buttons' listeners (ExploreScene.js:2270-2278) and the Tab order (DOM order) ----
             JournalBtn.Click += () => OpenOverlay(ExploreOverlayKind.Journal).Forget();
@@ -313,7 +375,17 @@ namespace Trial.Explore
                 ShownLayerTitle = Screen.LayerTitle;
                 Label.SetText(LayerTitle, Rich(Screen.LayerTitle, Label.StyleOf(LayerTitle), numsInFace: true));
             }
+            bool strata = Screen.Look == MapLook.Strata && Screen.Calendar != null;
+            if (BandStrataShown != strata)
+            {
+                BandStrataShown = strata;
+                UiNode.Of(BandCalPlain).Visible = !strata;
+                UiNode.Of(BandCalStrata).Visible = strata;
+                UiNode.Of(BandBodyPlainRow).Visible = !strata;
+                UiNode.Of(BandBodyStrataRow).Visible = strata;
+            }
             DrawCalendar(now, animate);
+            if (strata) DrawStrataBand(now, animate);
 
             HpRoll.Set(Screen.HpLabel, now, animate);
             StRoll.Set(Screen.StaminaLabel, now, animate);
@@ -377,6 +449,83 @@ namespace Trial.Explore
             string text = Rich(note, ts);
             float w = Math.Min(BandCalW, TextMeasure.Width(text, ts));
             Label.Make(BandCalNote, text, ts, 0f, (BandCalRow2H - line.H) / 2f + PanelBaseShift(ts, line), w, line.H, "label");
+        }
+
+        /// <summary>
+        /// The band of a strata map (#1050): the calendar as one bar under 「崩壊まで」 (the note of a calendar that stands
+        /// still takes the heading's place), 「残り N 日」 beside it; HP as the heart, its numbers and a bar; stamina as a
+        /// pip per point and its numbers. The numbers roll like the plain band's; the bar and the pips are rebuilt only
+        /// when what they show changed.
+        /// </summary>
+        private void DrawStrataBand(float now, bool animate)
+        {
+            bool frozen = Screen.CalendarFrozen;
+            string heading = frozen && Screen.CalendarNote.Length > 0 ? Screen.CalendarNote : ExplorationText.CalendarHeading;
+            if (heading != StrataHeadingKey)
+            {
+                StrataHeadingKey = heading;
+                TextStyle ts = Label.StyleOf(StrataCalHeading) ?? PanelText(CalHeadingCss, true);
+                string markup = Rich(heading, ts);
+                Label.SetText(StrataCalHeading, markup);
+                Ui.Size(StrataCalHeading.rectTransform, Math.Min(BandCalW, TextMeasure.Width(markup, ts)), CalHeadingH);
+            }
+            StrataDaysRoll.Set(Screen.DaysLabel ?? "", now, animate);
+            Label.SetColor(StrataDaysText, frozen ? ExploreStyle.Steel : BandDaysInk);
+            DrawCalendarBar(Screen.Calendar);
+
+            StrataHpRoll.Set(Screen.HpValueLabel ?? "", now, animate);
+            StrataStRoll.Set(Screen.StaminaValueLabel ?? "", now, animate);
+            DrawBodyMarks();
+        }
+
+        /// <summary>The calendar's bar: the trough, what is left, the next step's share dashed, a tick every ten days.</summary>
+        private void DrawCalendarBar(CalendarBar bar)
+        {
+            string key = bar.Left.ToString("R", CultureInfo.InvariantCulture) + "|" + bar.Next.ToString("R", CultureInfo.InvariantCulture) + "|" + bar.Frozen;
+            if (key == StrataBarKey) return;
+            StrataBarKey = key;
+            Ui.Clear(StrataCalBar);
+            const float w = CalendarBar.Width, h = CalendarBar.Height;
+            BoxGraphic.Make(StrataCalBar, CalBarCss, 0f, 0f, w, h, "trough");
+            // inside the trough's 1 px border
+            float iw = w - 2f, ih = h - 2f, left = iw * bar.Left, next = iw * bar.Next;
+            if (next > 0f) BoxGraphic.Make(StrataCalBar, bar.Frozen ? CalBarFrozenCss : CalBarFillCss, 1f, 1f, next, ih, "left");
+            if (left - next > 0.5f) BoxGraphic.Make(StrataCalBar, CalBarNextCss, 1f + next, 1f, left - next, ih, "next");
+            foreach (float t in bar.Ticks)
+                BoxGraphic.Make(StrataCalBar, CalBarTickCss, 1f + iw * t - CalendarBar.TickWidth / 2f, 1f, CalendarBar.TickWidth, ih, "tick");
+        }
+
+        /// <summary>The HP bar after its numbers, the stamina pips before theirs (their widths follow the numbers' text).</summary>
+        private void DrawBodyMarks()
+        {
+            string hpLabel = Screen.HpValueLabel ?? "", stLabel = Screen.StaminaValueLabel ?? "";
+            string key = hpLabel + "|" + Screen.Hp + "/" + Screen.MaxHp + "|" + stLabel + "|" + Screen.Stamina + "/" + Screen.MaxStamina;
+            if (key == StrataBodyKey) return;
+            StrataBodyKey = key;
+            TextStyle ts = Label.StyleOf(StrataHpText) ?? PanelText(BandLabelCss, true);
+
+            // HP: the bar from after the numbers to the column's end
+            float hpX = BodyIcon + BodyGap + TextMeasure.Width(Rich(hpLabel, ts), ts) + 10f;
+            float hpW = Math.Max(BodyMarks.HpBarMinW, BodyCol1W - BodyGap - hpX);
+            Ui.Clear(StrataHpBar);
+            Ui.Place(StrataHpBar, hpX, (30f - BodyMarks.HpBarH) / 2f, hpW, BodyMarks.HpBarH);
+            BoxGraphic.Make(StrataHpBar, HpBarCss, 0f, 0f, hpW, BodyMarks.HpBarH, "trough");
+            float fill = (hpW - 2f) * BodyMarks.HpFill(Screen.Hp, Screen.MaxHp);
+            if (fill > 0f) BoxGraphic.Make(StrataHpBar, HpBarFillCss, 1f, 1f, fill, BodyMarks.HpBarH - 2f, "fill");
+
+            // stamina: a pip per point of the maximum, lit up to what is left, then the numbers
+            float colW = BandBodyW - BandBodyCol2;
+            float stW = TextMeasure.Width(Rich(stLabel, ts), ts);
+            int count = Math.Max(0, Screen.MaxStamina);
+            var (size, pitch) = BodyMarks.Pips(count, Math.Max(0f, colW - stW - 10f));
+            Ui.Clear(StrataPips);
+            for (int i = 0; i < count; i++)
+            {
+                bool lit = i < Screen.Stamina;
+                BoxGraphic.Make(StrataPips, lit ? StPipLitCss : StPipSpentCss, i * pitch, (30f - size) / 2f, size, size, lit ? "is-lit" : "i");
+            }
+            float stX = BandBodyCol2 + (count > 0 ? pitch * (count - 1) + size + 10f : 0f);
+            UiNode.Of(StrataStText.rectTransform).X = stX;
         }
 
         /// <summary>The marks button sized to its label (max-content + padding 0 10 + border 1).</summary>

@@ -16,7 +16,7 @@ namespace Trial.Explore
 
         // js: scenes/explore/ExploreScene.js:47
         /// <summary>AREA: the map area (ExplorationScreenView MapWidth × MapHeight, centred in the map).</summary>
-        public const float AreaCx = 652f, AreaCy = 548f, AreaW = MapLayout.AreaWidth, AreaH = MapLayout.AreaHeight;
+        public const float AreaCx = MapLayout.AreaCentreX, AreaCy = MapLayout.AreaCentreY, AreaW = MapLayout.AreaWidth, AreaH = MapLayout.AreaHeight;
 
         // js: scenes/explore/ExploreScene.js:48-53, :258
         // NODE, WALKER_UP, WALKER_BOX, EDGE_INSET and SEL are the map's MapLayout (ExplorationScreen.Layout): a map of more

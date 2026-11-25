@@ -16,11 +16,16 @@
 //
 // The node, the walker and the selection frame take their sizes from the map's MapLayout (ExplorationScreen.Layout):
 // the JS's on a map of five rows or fewer, smaller on a longer one so that its rows fit the area (#1049).
+//
+// A layer whose ExplorationScreen.Look is Strata (layer 1, #1050) draws its nodes as chambers and its edges as tunnels
+// (StrataLayout's sizes, StrataPalette's colours), walks the walker through the tunnels, and shows the depth column on
+// the map's left. Every other layer draws as above.
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using DungeonCore;
 using Exploration;
+using TMPro;
 using Trial.Geometry;
 using Trial.Kit;
 using UnityEngine;
@@ -121,6 +126,59 @@ namespace Trial.Explore
         /// <summary>The sizes the nodes, the walker and the selection frame are drawn at (the map's ExplorationScreen.Layout).</summary>
         private MapLayout MapSize = MapLayout.Full;
 
+        /// <summary>How the map on screen is drawn (#1050): the plain squares and lines, or chambers and tunnels.</summary>
+        private MapLook ShownLook = MapLook.Plain;
+
+        /// <summary>The chambers' sizes and colours while ShownLook is Strata (null otherwise).</summary>
+        private StrataLayout StrataSize;
+
+        private StrataPalette StrataColours;
+
+        /// <summary>The walker's and the selection frame's sizes for the map on screen.</summary>
+        private MarkSize Marks = MarkSize.Of(MapLayout.Full);
+
+        /// <summary>The selection frame's box as drawn last (a strata map's boss frame is larger than the others).</summary>
+        private float SelDrawnW, SelDrawnH;
+
+        /// <summary>The depth column on the map's left (strata maps only), and what it shows.</summary>
+        private RectTransform DepthLayer;
+
+        private string DepthKey;
+
+        /// <summary>The sizes the walker and the selection frame's hooks take on a map (the plain one's, or the chambers').</summary>
+        private readonly struct MarkSize
+        {
+            public readonly float WalkerBox, WalkerUp, GlowInset, DiscInset, WalkerIcon, SelAbove, SelHook;
+
+            private MarkSize(float walkerBox, float walkerUp, float glowInset, float discInset, float walkerIcon, float selAbove, float selHook)
+            {
+                WalkerBox = walkerBox;
+                WalkerUp = walkerUp;
+                GlowInset = glowInset;
+                DiscInset = discInset;
+                WalkerIcon = walkerIcon;
+                SelAbove = selAbove;
+                SelHook = selHook;
+            }
+
+            public static MarkSize Of(MapLayout l) =>
+                new MarkSize(l.WalkerBox, l.WalkerUp, l.WalkerGlowInset, l.WalkerDiscInset, l.WalkerIcon, l.SelAbove, l.SelHook);
+
+            public static MarkSize Of(StrataLayout s) =>
+                new MarkSize(s.WalkerBox, s.WalkerUp, s.WalkerGlowInset, s.WalkerDiscInset, s.WalkerIcon, s.SelAbove, s.SelHook);
+
+            public bool Same(MarkSize o) =>
+                WalkerBox == o.WalkerBox && WalkerUp == o.WalkerUp && GlowInset == o.GlowInset && DiscInset == o.DiscInset &&
+                WalkerIcon == o.WalkerIcon && SelAbove == o.SelAbove && SelHook == o.SelHook;
+        }
+
+        /// <summary>The selection frame's box round node n, and how far its face's top stands above its centre.</summary>
+        private float SelWOf(NodePanel n) => StrataSize != null ? StrataSize.SelW(n.Kind) : MapSize.SelW;
+
+        private float SelHOf(NodePanel n) => StrataSize != null ? StrataSize.SelH(n.Kind) : MapSize.SelH;
+
+        private float HalfHOf(NodePanel n) => StrataSize != null ? StrataSize.Height(n.Kind) / 2f : MapSize.Node / 2f;
+
         // js: scenes/explore/ExploreScene.js:252
         /// <summary>
         /// Builds the map layer's content into MapLayer (ExploreScene.js:253-269): pool, edges, nodes, selection frame,
@@ -136,19 +194,26 @@ namespace Trial.Explore
             EdgesLayer = Ui.Div(MapLayer, "ocbg-explore-edges", 0f, 0f, ExploreStyle.StageW, ExploreStyle.StageH);
             NodesLayer = Ui.Div(MapLayer, "ocbg-explore-nodes", 0f, 0f, ExploreStyle.StageW, ExploreStyle.StageH);
 
+            // the depth column (a strata map's; empty until one is built), under the marks
+            DepthLayer = Ui.Div(MapLayer, "ocbg-explore-depth", StrataLayout.DepthX, StrataLayout.DepthY, StrataLayout.DepthW,
+                StrataLayout.DepthH(Lair.LayerCount));
+            UiNode.Of(DepthLayer).PointerEvents = PointerEvents.None;
+
             // the selection frame (opacity 0 until a node is pinned; hidden while a step runs)
-            SelFrame = Ui.Div(MapLayer, "ocbg-explore-sel", 0f, 0f, MapSize.SelW, MapSize.SelH);
+            SelDrawnW = MapSize.SelW;
+            SelDrawnH = MapSize.SelH;
+            SelFrame = Ui.Div(MapLayer, "ocbg-explore-sel", 0f, 0f, SelDrawnW, SelDrawnH);
             DrawSelFrame();
             SelStates = CssStates.Of(SelFrame).Base(SelCss).State(".is-on", SelOnCss);
             SelStates.Apply(instant: true);
             WatchRootClass(".is-busy", SelStates, SelBusyCss);
 
             // the walker: glow (breathing) and the disc with the person
-            Walker = Ui.Div(MapLayer, "ocbg-explore-walker", 0f, 0f, MapSize.WalkerBox, MapSize.WalkerBox);
+            Walker = Ui.Div(MapLayer, "ocbg-explore-walker", 0f, 0f, Marks.WalkerBox, Marks.WalkerBox);
             WalkerNode = UiNode.Of(Walker);
             WalkerNode.Z = WalkerZ;
             DrawWalker();
-            WalkerStates = CssStates.Of(Walker).Base(WalkerCss(MapSize.WalkerBox) + WalkerTransitionCss).State(".is-leaping", WalkerLeapingCss);
+            WalkerStates = CssStates.Of(Walker).Base(WalkerCss(Marks.WalkerBox) + WalkerTransitionCss).State(".is-leaping", WalkerLeapingCss);
             WalkerStates.Apply(instant: true);
 
             // explore.css:371 .ocbg-explore.is-interlude .ocbg-explore-node { pointer-events: none; }
@@ -158,16 +223,27 @@ namespace Trial.Explore
             });
         }
 
-        /// <summary>OCB.TargetFrame(SEL.w, SEL.h, …) in the selection frame, at the map's size.</summary>
+        /// <summary>OCB.TargetFrame(SEL.w, SEL.h, …) in the selection frame, at the box drawn last.</summary>
         private void DrawSelFrame()
         {
-            Ocb.TargetFrame(SelFrame, MapSize.SelW, MapSize.SelH, new OcbFrameOpts { Hook = MapSize.SelHook, Width = SelStroke, Glow = SelGlow });
+            Ocb.TargetFrame(SelFrame, SelDrawnW, SelDrawnH, new OcbFrameOpts { Hook = Marks.SelHook, Width = SelStroke, Glow = SelGlow });
+        }
+
+        /// <summary>The selection frame drawn again at another box (a strata map's boss, or a map of another size).</summary>
+        private void RedrawSelFrame(float w, float h)
+        {
+            SelDrawnW = w;
+            SelDrawnH = h;
+            if (!SelFrame) return;
+            Ui.Clear(SelFrame);
+            Ui.Size(SelFrame, w, h);
+            DrawSelFrame();
         }
 
         /// <summary>The walker's glow (breathing) and its disc with the person, at the map's size.</summary>
         private void DrawWalker()
         {
-            float box = MapSize.WalkerBox, glowInset = MapSize.WalkerGlowInset, discInset = MapSize.WalkerDiscInset, icon = MapSize.WalkerIcon;
+            float box = Marks.WalkerBox, glowInset = Marks.GlowInset, discInset = Marks.DiscInset, icon = Marks.WalkerIcon;
             float glowSize = box - 2f * glowInset;
             BoxGraphic glow = BoxGraphic.Make(Walker, WalkerGlowCss, glowInset, glowInset, glowSize, glowSize, "ocbg-explore-walker-glow");
             // explore.css:401 @media (prefers-reduced-motion: reduce) .ocbg-explore-walker-glow { animation: none } (the same
@@ -180,28 +256,29 @@ namespace Trial.Explore
         }
 
         /// <summary>
-        /// A map of another size (#1049): the selection frame and the walker are drawn again at it. Their states (on,
-        /// busy, leaping) stay: only their boxes and what is inside change.
+        /// A map of another size (#1049) or another look (#1050): the selection frame and the walker are drawn again at
+        /// it. Their states (on, busy, leaping) stay: only their boxes and what is inside change.
         /// </summary>
-        private void ResizeMapMarks(MapLayout size)
+        private void ResizeMapMarks(ExplorationScreen scr)
         {
-            // every size follows the face, so the same face is the same look
-            if (size == null || size.Node == MapSize.Node) return;
-            MapSize = size;
-            if (SelFrame)
-            {
-                Ui.Clear(SelFrame);
-                Ui.Size(SelFrame, size.SelW, size.SelH);
-                DrawSelFrame();
-            }
+            bool strata = scr.Look == MapLook.Strata && scr.Strata != null && scr.Palette != null;
+            ShownLook = strata ? MapLook.Strata : MapLook.Plain;
+            StrataSize = strata ? scr.Strata : null;
+            StrataColours = strata ? scr.Palette : null;
+            MapSize = scr.Layout ?? MapLayout.Full;
+            MarkSize next = strata ? MarkSize.Of(scr.Strata) : MarkSize.Of(MapSize);
+            // every size follows the face, so the same marks are the same look
+            if (next.Same(Marks)) return;
+            Marks = next;
+            RedrawSelFrame(SelDrawnW, SelDrawnH);
             if (Walker)
             {
                 Ui.Clear(Walker);
-                Ui.Size(Walker, size.WalkerBox, size.WalkerBox);
+                Ui.Size(Walker, next.WalkerBox, next.WalkerBox);
                 DrawWalker();
                 if (WalkerStates)
                 {
-                    WalkerStates.Base(WalkerCss(size.WalkerBox) + WalkerTransitionCss);
+                    WalkerStates.Base(WalkerCss(next.WalkerBox) + WalkerTransitionCss);
                     WalkerStates.Apply(instant: true);
                 }
             }
@@ -222,8 +299,8 @@ namespace Trial.Explore
         {
             if (WalkerNode)
             {
-                WalkerNode.SetTransform(x - MapSize.WalkerBox / 2f,
-                    y - MapSize.WalkerUp * perch - MapSize.WalkerBox / 2f - hop, 1f, 1f, 0f);
+                WalkerNode.SetTransform(x - Marks.WalkerBox / 2f,
+                    y - Marks.WalkerUp * perch - Marks.WalkerBox / 2f - hop, 1f, 1f, 0f);
             }
             if (PoolNode) PoolNode.SetTransform(x - PoolW / 2f, y - PoolH / 2f, 1f, 1f, 0f);
         }
@@ -260,7 +337,8 @@ namespace Trial.Explore
         /// </summary>
         private void BuildMap(ExplorationScreen scr, bool enter)
         {
-            ResizeMapMarks(scr.Layout);
+            ResizeMapMarks(scr);
+            bool strata = ShownLook == MapLook.Strata;
             Ui.Clear(NodesLayer);
             Ui.Clear(EdgesLayer);
             NodeEls.Clear();
@@ -268,6 +346,7 @@ namespace Trial.Explore
             Trail = null; // went with the edges (textContent = '')
             TrailLine = null;
             TrailStates = null;
+            DrawDepth(scr);
 
             foreach (EdgeLine e in scr.Edges)
             {
@@ -276,16 +355,28 @@ namespace Trial.Explore
                 if (na == null || nb == null) continue;
                 Vector2 a = NodePos(na);
                 Vector2 b = NodePos(nb);
-                float len = Hypot(b.x - a.x, b.y - a.y);
-                float k = MapSize.EdgeInset / len;
-                float x1 = a.x + (b.x - a.x) * k;
-                float y1 = a.y + (b.y - a.y) * k;
-                float x2 = b.x - (b.x - a.x) * k;
-                float y2 = b.y - (b.y - a.y) * k;
-                ExploreEdgeView rec = ExploreEdgeView.Make(EdgesLayer, e, x1, y1, x2, y2, Reduce);
+                ExploreEdgeView rec;
+                if (strata)
+                {
+                    // a tunnel runs from the upper chamber's floor down to the lower one's ceiling
+                    NodePanel up = na.Row <= nb.Row ? na : nb, down = ReferenceEquals(up, na) ? nb : na;
+                    Vector2 pu = NodePos(up), pd = NodePos(down);
+                    Tunnel t = StrataSize.TunnelBetween(new MapPoint(pu.x, pu.y), up.Kind, new MapPoint(pd.x, pd.y), down.Kind);
+                    rec = ExploreEdgeView.MakeTunnel(EdgesLayer, e, t, StrataSize, StrataColours, Reduce);
+                }
+                else
+                {
+                    float len = Hypot(b.x - a.x, b.y - a.y);
+                    float k = MapSize.EdgeInset / len;
+                    float x1 = a.x + (b.x - a.x) * k;
+                    float y1 = a.y + (b.y - a.y) * k;
+                    float x2 = b.x - (b.x - a.x) * k;
+                    float y2 = b.y - (b.y - a.y) * k;
+                    rec = ExploreEdgeView.Make(EdgesLayer, e, x1, y1, x2, y2, Reduce);
+                }
                 if (enter)
                 {
-                    float L = Hypot(x2 - x1, y2 - y1);
+                    float L = rec.DrawnLength;
                     rec.BeginDrawIn(L);
                     int row = na.Row;
                     Timeout(Dur(260f + row * 90f), () =>
@@ -311,7 +402,9 @@ namespace Trial.Explore
             foreach (NodePanel n in scr.Nodes)
             {
                 Vector2 p = NodePos(n);
-                ExploreNodeView rec = ExploreNodeView.Make(NodesLayer, n, MapSize, p.x - MapSize.Node / 2f, p.y - MapSize.Node / 2f);
+                ExploreNodeView rec = strata
+                    ? ExploreNodeView.MakeChamber(NodesLayer, n, StrataSize, StrataColours, p.x, p.y)
+                    : ExploreNodeView.Make(NodesLayer, n, MapSize, p.x - MapSize.Node / 2f, p.y - MapSize.Node / 2f);
                 int id = n.Id;
                 rec.Hit.Enter += _ => OnHover(id, true);
                 rec.Hit.Exit += _ => OnHover(id, false);
@@ -377,8 +470,11 @@ namespace Trial.Explore
             if (pn != null)
             {
                 Vector2 p = NodePos(pn);
-                // the frame sits SelAbove (18 px in the JS) over the node's top: it frames the node and its label
-                float tx = p.x - MapSize.SelW / 2f, ty = p.y - MapSize.Node / 2f - MapSize.SelAbove;
+                float sw = SelWOf(pn), sh = SelHOf(pn);
+                if (sw != SelDrawnW || sh != SelDrawnH) RedrawSelFrame(sw, sh);
+                // the frame sits SelAbove (18 px in the JS) over the node's top: it frames the node and its label (a
+                // chamber's label stands beside it, outside the frame)
+                float tx = p.x - sw / 2f, ty = p.y - HalfHOf(pn) - Marks.SelAbove;
                 SelStates.SetState(".is-on", true, false);
                 // selFrame.style.transform = translate(…): the inline transform (transition: transform 160ms decel)
                 SelStates.State("style", "transform: translate(" + Px(tx) + ", " + Px(ty) + ");", true);
@@ -594,6 +690,9 @@ namespace Trial.Explore
         /// </summary>
         private Promise Walk(NodePanel fromNode, NodePanel toNode)
         {
+            // on a strata map the walker goes through the tunnel between the two chambers, when there is one
+            ExploreEdgeView tunnel = TunnelBetween(fromNode, toNode);
+            if (tunnel != null) return WalkTunnel(tunnel.Tunnel, fromNode.Row < toNode.Row);
             var done = new PromiseSource();
             Vector2 a = NodePos(fromNode);
             Vector2 b = NodePos(toNode);
@@ -608,7 +707,7 @@ namespace Trial.Explore
             float ex = b.x - (b.x - a.x) * k;
             float ey = b.y - (b.y - a.y) * k;
             float segLen = Hypot(ex - sx, ey - sy);
-            PathGraphic trail = TrailFor(sx, sy, ex, ey, segLen);
+            PathGraphic trail = TrailFor(ExploreEdgeView.Segment(sx, sy, ex, ey), segLen);
             // walker.classList.add('is-walking') (no rule draws it)
             const float StepOff = 0.24f; // share of the stride spent stepping off the perch (and back up at the end)
             bool landed = false;
@@ -642,24 +741,80 @@ namespace Trial.Explore
             return done.Promise;
         }
 
+        /// <summary>The tunnel drawn between two chambers of a strata map, or null (a plain map, or no link between them).</summary>
+        private ExploreEdgeView TunnelBetween(NodePanel a, NodePanel b)
+        {
+            if (ShownLook != MapLook.Strata || a == null || b == null) return null;
+            foreach (ExploreEdgeView e in EdgeEls)
+            {
+                if (!e.Alive || e.Tunnel == null) continue;
+                if ((e.Edge.From == a.Id && e.Edge.To == b.Id) || (e.Edge.From == b.Id && e.Edge.To == a.Id)) return e;
+            }
+            return null;
+        }
+
         /// <summary>
-        /// The trail line of a walk (ExploreScene.js:1336-1341): the segment, strokeDasharray `segLen segLen+10`,
+        /// walk() through a tunnel (#1050): the walker steps off its perch, follows the tunnel from one chamber's centre to
+        /// the other's (down it, or back up it), and steps up again; the trail lights the curve behind it. The timing,
+        /// the perch, the hop and the landing are the plain walk's.
+        /// </summary>
+        private Promise WalkTunnel(Tunnel t, bool downward)
+        {
+            var done = new PromiseSource();
+            float len = Math.Max(1f, t.RouteLength);
+            float ms = Dur(Math.Min(820f, 420f + len * 0.9f));
+            float t0 = Now;
+            PathGraphic trail = TrailFor(ExploreEdgeView.Curve(t, !downward), t.Length);
+            const float StepOff = 0.24f;
+            bool landed = false;
+            WalkerAnim = now =>
+            {
+                float f = Math.Min(1f, (now - t0) / ms);
+                float e = Ease.InOut(f);
+                float perch = f < StepOff ? Ease.Smooth(1f - f / StepOff) : f > 1f - StepOff ? Ease.Smooth((f - (1f - StepOff)) / StepOff) : 0f;
+                MapPoint at = t.Route(e, downward);
+                SetWalker(at.X, at.Y, perch, (float)Math.Sin(Math.PI * f) * 10f);
+                if (trail) trail.DashOffset = t.Length * (1f - t.CurveShare(e, downward));
+                if (!landed && f >= 0.7f)
+                {
+                    landed = true;
+                    Render();
+                }
+                if (f >= 1f)
+                {
+                    WalkerAnim = null;
+                    Landed();
+                    CssStates fading = trail ? TrailStates : null;
+                    if (fading) fading.SetState(".is-fading", true);
+                    Timeout(Dur(520f), () =>
+                    {
+                        if (WalkerAnim == null && trail && fading && fading.Has(".is-fading")) RemoveTrail(trail);
+                    });
+                    done.TryResolve();
+                }
+            };
+            if (!(ms > 0f)) WalkerAnim(t0 + 1f);
+            return done.Promise;
+        }
+
+        /// <summary>
+        /// The trail line of a walk (ExploreScene.js:1336-1341): the path walked (`d`), strokeDasharray `segLen segLen+10`,
         /// strokeDashoffset segLen (all gap), is-fading removed, appended last to the edges. A trail still fading from the
         /// walk before comes back (its opacity transitions up again); one that was removed is made anew (no transition).
         /// </summary>
-        private PathGraphic TrailFor(float sx, float sy, float ex, float ey, float segLen)
+        private PathGraphic TrailFor(string d, float segLen)
         {
             if (!Trail)
             {
                 Trail = PathGraphic.Make(EdgesLayer, 0f, 0f, ExploreStyle.StageW, ExploreStyle.StageH, "ocbg-explore-trail");
-                TrailLine = Trail.Add(ExploreEdgeView.LineLayer(ExploreEdgeView.Segment(sx, sy, ex, ey), TrailCss));
+                TrailLine = Trail.Add(ExploreEdgeView.LineLayer(d, TrailCss));
                 TrailStates = CssStates.Of(Trail).Base(TrailCss).State(".is-fading", TrailFadingCss);
                 TrailStates.Apply(instant: true);
             }
             else
             {
                 TrailLine.Paths.Clear();
-                TrailLine.Paths.Add(PathData.Cached(ExploreEdgeView.Segment(sx, sy, ex, ey)));
+                TrailLine.Paths.Add(PathData.Cached(d));
                 TrailStates.SetState(".is-fading", false);
             }
             StrokeStyle st = (TrailLine.StrokeStyle ?? new StrokeStyle(1f)).Clone();
@@ -687,6 +842,65 @@ namespace Trial.Explore
         private void Landed()
         {
             if (WalkerDisc) CssAnimator.Set(WalkerDisc, LandAnim);
+        }
+
+        // ------------------------------------------------------------------ the depth column (#1050)
+
+        /// <summary>A layer's cell: the panel, and how it stands (this one amber, a passed one solid, a deeper one dashed).</summary>
+        private const string DepthCellCss = "border-radius: var(--radius-panel); background: var(--panel-solid);";
+
+        private const string DepthCurrentCss = "border: 3px solid var(--amber);";
+        private const string DepthPassedCss = "border: 1px solid var(--rule);";
+        private const string DepthBelowCss = "border: 1px dashed var(--steel);";
+
+        /// <summary>The king room keeps the boss's double frame.</summary>
+        private const string DepthKingCss = "border: 2px solid var(--boss); outline: 2px solid var(--boss); outline-offset: 3px;";
+
+        /// <summary>
+        /// The depth column on a strata map: 「深さ」 over the seven layers top down, the one the player is on taller, framed
+        /// in amber and lit by a strip of its own light; nothing on a plain map. Rebuilt only when the layer changes.
+        /// </summary>
+        private void DrawDepth(ExplorationScreen scr)
+        {
+            if (!DepthLayer) return;
+            bool on = ShownLook == MapLook.Strata && scr.Depths.Count > 0;
+            string key = on ? scr.Layer.ToString(CultureInfo.InvariantCulture) : "-";
+            if (key == DepthKey) return;
+            DepthKey = key;
+            Ui.Clear(DepthLayer);
+            if (!on) return;
+
+            TextStyle heading = TextStyle.FromCss("font: 700 " + Px(StrataLayout.DepthHeadingSize) + "/" + Px(StrataLayout.DepthHeadingLine)
+                                                  + " var(--font-body); color: var(--ink); white-space: nowrap; text-shadow: 0 0 6px var(--ground);");
+            TextStyle number = TextStyle.FromCss("font: 700 " + Px(StrataLayout.DepthNumberSize) + "/" + Px(StrataLayout.DepthNumberSize + 6f)
+                                                 + " var(--font-mono); color: var(--ink); white-space: nowrap;");
+            TextStyle note = TextStyle.FromCss("font: 700 " + Px(StrataLayout.DepthNoteSize) + "/" + Px(StrataLayout.DepthNoteSize + 4f)
+                                               + " var(--font-body); color: var(--ink); white-space: nowrap;");
+            TMP_Text head = Label.Make(DepthLayer, ExplorationText.DepthHeading, heading, 0f, 0f, null, StrataLayout.DepthHeadingLine, "heading");
+            TextGlow.For(head);
+
+            float y = StrataLayout.DepthHeadingLine + StrataLayout.DepthGap;
+            const float pad = 10f;
+            foreach (DepthCell cell in scr.Depths)
+            {
+                bool current = cell.Mark == DepthMark.Current;
+                float h = current ? StrataLayout.DepthCurrentH : StrataLayout.DepthCellH;
+                string css = DepthCellCss + (cell.King ? DepthKingCss : current ? DepthCurrentCss : cell.Mark == DepthMark.Passed ? DepthPassedCss : DepthBelowCss);
+                if (current && cell.King) css += " " + DepthCurrentCss; // amber wins on the layer the player is on
+                BoxGraphic box = BoxGraphic.Make(DepthLayer, css, 0f, y, StrataLayout.DepthW, h, "ocbg-explore-depth-cell");
+                float x = pad;
+                if (current && StrataColours != null)
+                {
+                    // the layer's own light, as its chambers show it
+                    BoxGraphic.Make(box.rectTransform, "border-radius: 3px; background: linear-gradient(180deg, " + StrataColours.LitTop + ", "
+                                                       + StrataColours.LitBottom + ");", pad, pad, StrataLayout.DepthLightW, h - 2f * pad, "light");
+                    x += StrataLayout.DepthLightW + 8f;
+                }
+                Label.Make(box.rectTransform, cell.Number, number, x, pad - 2f, null, StrataLayout.DepthNumberSize + 6f, "number");
+                if (cell.Note.Length > 0)
+                    Label.Make(box.rectTransform, cell.Note, note, x, h - pad - (StrataLayout.DepthNoteSize + 4f), null, StrataLayout.DepthNoteSize + 4f, "note");
+                y += h + StrataLayout.DepthGap;
+            }
         }
 
         // js: scenes/explore/ExploreScene.js:1369
