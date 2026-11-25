@@ -54,8 +54,10 @@ namespace Exploration.Bridge.Tests
         }
 
         [Test]
-        public void AWonBattlesCardReward_LaysOutThreeCards_OneToPick()
+        public void AWonBattlesCardReward_LaysOutLayerOnesUnownedCards_OneToPick()
         {
+            // Layer 1's pile is #58〜#60, and #60 跳び退り is a starter card since #1038 (swordsman_cards_v4 §2.1), so the
+            // pile lays out the two left. Filling the empty place is #992's.
             Expedition expedition = WinUntilACardIsOffered();
             CardPick pick = CardPicks.For(expedition);
             var ids = pick.Choices.Select(c => c.CardId).ToList();
@@ -63,16 +65,16 @@ namespace Exploration.Bridge.Tests
             {
                 Assert.That(pick.Kind, Is.EqualTo(PickKind.PileCard));
                 Assert.That(pick.Title, Is.EqualTo(CardPicks.PileTitle));
-                Assert.That(ids.Count, Is.EqualTo(CardPile.Choices));
-                Assert.That(ids.All(CardPile.Of(1).Contains), Is.True, "layer 1 deals its own pile");
+                Assert.That(ids, Is.EquivalentTo(CardPile.Of(1).Except(Expedition.InitialKinds)), "layer 1 deals its own pile");
+                Assert.That(ids.Count, Is.EqualTo(CardPile.Choices - 1));
             });
 
-            Assert.That(CardPicks.Choose(expedition, ids[2]), Is.True);
+            Assert.That(CardPicks.Choose(expedition, ids[1]), Is.True);
             Assert.Multiple(() =>
             {
-                Assert.That(expedition.Owned.Contains(ids[2]), Is.True);
-                Assert.That(expedition.Deck.Any(c => c.Def.Id == ids[2]), Is.True);
-                Assert.That(expedition.Owned.Contains(ids[0]) || expedition.Owned.Contains(ids[1]), Is.False, "one of the three");
+                Assert.That(expedition.Owned.Contains(ids[1]), Is.True);
+                Assert.That(expedition.Deck.Any(c => c.Def.Id == ids[1]), Is.True);
+                Assert.That(expedition.Owned.Contains(ids[0]), Is.False, "one of the two");
                 Assert.That(CardPicks.For(expedition).IsShown, Is.False);
             });
         }
@@ -99,7 +101,7 @@ namespace Exploration.Bridge.Tests
                 Assert.That(pick.Kind, Is.EqualTo(PickKind.Training));
                 Assert.That(pick.Title, Is.EqualTo(CardPicks.TrainingTitle));
                 Assert.That(ids, Is.EqualTo(expedition.Deck.Select(c => c.Def.Id).Distinct()), "each kind of the deck once, in deck order");
-                Assert.That(ids.Take(PrototypeDeck.Kinds.Count), Is.EqualTo(PrototypeDeck.Kinds.Select(d => d.Id)), "the deck set out with comes first");
+                Assert.That(ids.Take(StarterDeck.Kinds.Count), Is.EqualTo(StarterDeck.Kinds.Select(d => d.Id)), "the deck set out with comes first");
                 Assert.That(pick.Choices[0].Caption, Is.EqualTo("刻み 0"));
             });
 

@@ -489,9 +489,9 @@ namespace Trial.Boot
             Show(host => DepartureScene.Mount(host, Base(new DepartureCtx
             {
                 LifeStart = lifeStart,
-                // The forty every character owns plus the prototype deck's kinds (Expedition owns its start deck's kinds too),
+                // The starter's eleven plus the starter deck's kinds (Expedition owns its start deck's kinds too, #1038),
                 // and under the carry-over the kinds the explorer learned in earlier lives (#1025).
-                Owned = DeckBuilder.WithPrototypeKinds(Expedition.InitialKinds
+                Owned = DeckBuilder.WithStarterKinds(Expedition.InitialKinds
                     .Concat(lifeStart?.Carryover?.Owned ?? (IEnumerable<string>)Array.Empty<string>())
                     .Distinct(StringComparer.Ordinal)
                     .ToList()),

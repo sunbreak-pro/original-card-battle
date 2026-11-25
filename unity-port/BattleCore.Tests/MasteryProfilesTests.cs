@@ -65,7 +65,9 @@ namespace BattleCore.Tests
                 Assert.That(reforms.Count, Is.EqualTo(14));
                 foreach (var profile in reforms)
                 {
-                    var own = CardCatalog.ById(profile.CardId).Trait!;
+                    // #1038 took the trait off the three starter cards (呼吸を整える / 観察 / 鉄壁の構え); their
+                    // steps keep the trait they had, so the first step stands in for the card's own.
+                    var own = CardCatalog.ById(profile.CardId).Trait ?? profile.RankTraits![0];
                     Assert.That(profile.RankTraits!.Count, Is.EqualTo(3), profile.CardId);
                     foreach (var trait in profile.RankTraits!)
                     {
@@ -80,6 +82,37 @@ namespace BattleCore.Tests
                 {
                     Assert.That(profile.RankTraits, Is.Null, profile.CardId + " keeps its trait");
                 }
+            });
+        }
+
+        [Test]
+        public void TheThreeStarterReformCards_KeepTheirSteps_AndTakeTheTraitAtStepOne()
+        {
+            // #1038 took the trait off the starter cards (swordsman_cards_v4 §2.1) and left their 型替え steps for #1022:
+            // a step still loosens the trait the card had, so the card has none at step 0 and takes one from step 1.
+            var brace = MasteryProfiles.Find("brace")!;
+            var wall = MasteryProfiles.Find("iron_wall")!;
+            Assert.Multiple(() =>
+            {
+                Assert.That(brace.RankTraits, Is.EqualTo(new[]
+                {
+                    new Trait(TraitCondition.Reserve, TraitEffect.NextTurnRecovery, 1, Threshold: 4),
+                    new Trait(TraitCondition.Reserve, TraitEffect.NextTurnRecovery, 1, Threshold: 2),
+                    new Trait(TraitCondition.FirstPlay, TraitEffect.NextTurnRecovery, 1),
+                }));
+                Assert.That(wall.RankTraits, Is.EqualTo(new[]
+                {
+                    new Trait(TraitCondition.Reserve, TraitEffect.GuardBonus, 3, Threshold: 4),
+                    new Trait(TraitCondition.Reserve, TraitEffect.GuardBonus, 3, Threshold: 2),
+                    new Trait(TraitCondition.FirstPlay, TraitEffect.GuardBonus, 3),
+                }));
+                Assert.That(MasteryProfiles.Observe.RankTraits!.Select(t => t.Condition),
+                    Is.EqualTo(new[] { TraitCondition.Finisher, TraitCondition.Combo, TraitCondition.FirstPlay }));
+
+                Assert.That(Mastery.Master(CardCatalog.Brace, 0, brace).Trait, Is.Null);
+                Assert.That(Mastery.Master(CardCatalog.Brace, 1, brace).Trait, Is.EqualTo(brace.RankTraits![0]));
+                Assert.That(Mastery.Master(CardCatalog.IronWall, 3, wall).Trait, Is.EqualTo(wall.RankTraits![2]));
+                Assert.That(Mastery.Master(CardCatalog.Observe, 2, MasteryProfiles.Observe).Trait, Is.EqualTo(MasteryProfiles.Observe.RankTraits![1]));
             });
         }
 

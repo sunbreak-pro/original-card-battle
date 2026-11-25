@@ -210,12 +210,16 @@ namespace BattleCore
 
         /// <summary>
         /// §19.3 S6: the card's own trait with only the condition swapped. The effect, its amount and
-        /// its grant stay; the parameter is the new condition's alone.
+        /// its grant stay; the parameter is the new condition's alone. A starter card carries no trait since #1038, so
+        /// its steps loosen the one the card table still lists for it (<see cref="CardCatalog.StarterTableTraits"/>)
+        /// until #1022 decides the steps of a card with no trait.
         /// </summary>
         private static Trait Loosened(CardDef card, TraitCondition condition, int threshold = 0,
             BattleAttribute attribute = BattleAttribute.None, OmenKind? omen = null)
         {
-            var trait = card.Trait ?? throw new InvalidOperationException($"{card.Id} has no trait to loosen.");
+            var trait = card.Trait
+                ?? (CardCatalog.StarterTableTraits.TryGetValue(card.Id, out var listed) ? listed : null)
+                ?? throw new InvalidOperationException($"{card.Id} has no trait to loosen.");
             return trait with { Condition = condition, Threshold = threshold, Attribute = attribute, Omen = omen, Watch = null };
         }
     }

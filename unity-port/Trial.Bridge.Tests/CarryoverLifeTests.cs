@@ -98,9 +98,38 @@ namespace Trial.Bridge.Tests
         }
 
         [Test]
+        public void UnderTheCarryover_TheKindsLearned_JoinTheStartersEleven()
+        {
+            // #1038: a new explorer owns the starter's eleven kinds (swordsman_cards_v4 §2.1). Under the carry-over the kinds
+            // earlier lives learned are added to them, both in the life and on the departure screen (Main.ToDeparture).
+            var first = OneLife(Inheritance.NewLineage(7, carryOver: true));
+            Carryover carried = first.Lineage.Carryover;
+            Assert.That(carried.Owned, Is.Not.Empty, "the walk learns a card");
+            Assert.That(carried.Owned.Intersect(Expedition.InitialKinds), Is.Empty, "only the kinds beyond the starter's are carried");
+
+            LifeStart ls = Inheritance.StartLife(first.Lineage);
+            var choice = new DepartureChoice
+            {
+                Deck = StarterDeck.Build(),
+                BattleToolIds = Array.Empty<string>(),
+                Loadout = DungeonContent.Loadout.Of(Array.Empty<string>(), Array.Empty<string>(), ls.ToolSlots),
+            };
+            Expedition next = Life.LifeSetup(Clone(Life.MakeStart(ls, choice))).Expedition;
+            var expected = Expedition.InitialKinds.Concat(carried.Owned).Distinct(StringComparer.Ordinal).ToList();
+            Assert.Multiple(() =>
+            {
+                Assert.That(next.Owned, Is.EquivalentTo(expected));
+                Assert.That(Depiction.Bridge.DeckBuilder.WithStarterKinds(expected), Is.EquivalentTo(expected),
+                    "the departure screen offers the same kinds");
+                Assert.That(next.Deck.Select(c => c.InstanceId), Is.EqualTo(StarterDeck.Build().Select(c => c.InstanceId)));
+            });
+        }
+
+        [Test]
         public void AfterAReturn_TheNextLifeStartsWithEveryTick_AndNoBonus()
         {
-            var first = OneLife(Inheritance.NewLineage(3, carryOver: true), surviveAt: 1);
+            // Lineage 4: lineage 3 falls on layer 1 since the starter cards lost their traits (#1038).
+            var first = OneLife(Inheritance.NewLineage(4, carryOver: true), surviveAt: 1);
             Assert.That(first.End.Phase, Is.EqualTo(RunPhase.Survived));
             Lineage l = first.Lineage;
             Assert.That(l.Survivor, Is.Null, "no survivor under the carry-over");

@@ -157,6 +157,64 @@ namespace BattleCore.Tests
                 Is.EqualTo(deck.Select(c => c.InstanceId).OrderBy(id => id, System.StringComparer.Ordinal)));
         }
 
+        // ---- the starter (swordsman_cards_v4 §2.1, #1038) ----
+
+        private static readonly IReadOnlyCollection<string> StarterOwned = CardCatalog.Starter.Select(d => d.Id).ToList();
+
+        [Test]
+        public void TheStarterDeck_IsTheStartersKindsAlone_AndSetsOut()
+        {
+            var deck = StarterDeck.Build();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(deck, Has.Count.EqualTo(Constants.DeckMin), "nine kinds and one stance, two of each");
+                Assert.That(deck.Select(c => c.Def.Id).Distinct(), Is.SubsetOf(StarterOwned));
+                Assert.That(deck.Count(c => CardCatalog.StarterStances.Contains(c.Def)), Is.EqualTo(StarterDeck.Copies), "one stance");
+                Assert.That(Cards.Validate(deck).Ok, Is.True);
+                Assert.That(DeckRules.ValidateDeck(deck, StarterOwned).Errors, Is.Empty);
+                Assert.That(DeckRules.Validate(Departure.Plain(deck), StarterOwned).Ok, Is.True);
+            });
+        }
+
+        [Test]
+        public void BothStarterStances_AreRefused_WithTheOneAlreadyIn()
+        {
+            var deck = StarterDeck.Build(); // 水の構え ×2
+            var both = deck.Concat(Cards.BuildDeck(new[] { CardCatalog.IronWall }, 1)).ToList();
+
+            var result = DeckRules.ValidateDeck(both, StarterOwned);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(DeckRules.CanAdd(deck, "iron_wall", StarterOwned), Is.False, "the second starter stance");
+                Assert.That(DeckRules.StanceRival(deck, "iron_wall"), Is.SameAs(CardCatalog.WaterStance), "the one to take out");
+                Assert.That(DeckRules.CanAdd(deck, "water_stance", StarterOwned), Is.True, "a third copy of the same stance");
+                Assert.That(DeckRules.StanceRival(deck, "water_stance"), Is.Null);
+                Assert.That(DeckRules.StanceRival(deck, "kesa_cut"), Is.Null, "not a stance");
+
+                Assert.That(result.Ok, Is.False);
+                Assert.That(result.Errors, Has.Some.EqualTo(
+                    "Deck holds the starter stances \"iron_wall\" and \"water_stance\"; it may hold one of them."));
+                Assert.That(DeckRules.Validate(Departure.Plain(both), StarterOwned).Ok, Is.False);
+                Assert.That(Cards.Validate(both).Ok, Is.True, "the rule is the departure's, not the card checks'");
+            });
+        }
+
+        [Test]
+        public void ALearnedStance_IsNotHeldToTheStartersOne()
+        {
+            // Whether the one-stance rule reaches the stances learned later is still open (#1038), so it does not.
+            var deck = StarterDeck.Build();
+            var owned = StarterOwned.Concat(new[] { "wolf_stance" }).ToList();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(DeckRules.CanAdd(deck, "wolf_stance", owned), Is.True);
+                Assert.That(DeckRules.ValidateDeck(deck.Concat(Cards.BuildDeck(new[] { CardCatalog.WolfStance }, 1)).ToList(), owned).Ok, Is.True);
+            });
+        }
+
         // ---- no talent to pick (#1045) ----
 
         [Test]

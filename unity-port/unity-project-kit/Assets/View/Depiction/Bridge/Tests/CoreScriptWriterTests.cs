@@ -27,9 +27,14 @@ namespace Depiction.Bridge.Tests
             return (state, writer);
         }
 
+        // #1038 took the traits off the starter cards (swordsman_cards_v4 §2.1). The tests that write a trait's beat play
+        // a copy that keeps the one the card table lists.
+        private static CardDef Listed(CardDef def) =>
+            CardCatalog.StarterTableTraits.TryGetValue(def.Id, out Trait trait) ? def with { Trait = trait } : def;
+
         private static readonly CardDef[] FiveCards =
         {
-            CardCatalog.KesaCut, CardCatalog.Feint, CardCatalog.Brace, CardCatalog.BodyCheck, CardCatalog.StepOutGuard,
+            Listed(CardCatalog.KesaCut), CardCatalog.Feint, Listed(CardCatalog.Brace), CardCatalog.BodyCheck, CardCatalog.StepOutGuard,
         };
 
         private static string InHand(BattleState state, string cardId)
@@ -222,7 +227,7 @@ namespace Depiction.Bridge.Tests
         {
             // battle_ui_ux_v2 §5.9 (#588): the core gives the pip back as soon as the trait is judged; the
             // screen shows it after every face. 小手打ち at gap 0: pay 1, the cue, the cut, then +1.
-            var (state, writer) = Begin(0, CardCatalog.WristCut, CardCatalog.WristCut);
+            var (state, writer) = Begin(0, Listed(CardCatalog.WristCut), Listed(CardCatalog.WristCut));
             StepResult begin = TurnLoop.BeginPlayerTurn(state, NoShuffle);
             writer.Write(begin.Events, begin.State);
 
@@ -304,7 +309,8 @@ namespace Depiction.Bridge.Tests
             List<CardDef> cards = CardCatalog.All
                 .Where(d => d.AllTraits.Any(t => t.Effect == TraitEffect.StaminaGain))
                 .ToList();
-            Assert.That(cards, Has.Count.EqualTo(8), "the swordsman's eight (5 initial, 3 learned) when #588 was filed");
+            Assert.That(cards, Has.Count.EqualTo(5),
+                "the swordsman's eight (5 initial, 3 learned) when #588 was filed, less the starter's three since #1038");
 
             var report = new System.Text.StringBuilder();
             foreach (CardDef card in cards)

@@ -440,8 +440,9 @@ namespace Trial.Bridge.Tests
 
         // test/app/settle.test.mjs walkSettled with today's actions: a whole life walked the way the app does it (every
         // fight finished at its decision, the explore calls on the session), replayed from its log to the same state.
+        // Seed 5 took 4's place in #1038: with the starter deck, life 4 falls in its first fight.
         [TestCase(2UL)]
-        [TestCase(4UL)]
+        [TestCase(5UL)]
         [TestCase(6UL)]
         public void AWholeLife_ReplaysFromItsLog_ToTheSameState(ulong seed)
         {

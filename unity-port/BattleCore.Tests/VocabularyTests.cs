@@ -48,6 +48,18 @@ namespace BattleCore.Tests
         private static readonly CardDef Breathe =
             Fixtures.Card("breathe", 1, new Face(StaminaGain: 1), BattleAttribute.Skill, targets: TargetKind.Self);
 
+        // #1038 took the traits off the starter cards (swordsman_cards_v4 §2.1). The tests that pinned a §2.3 effect on
+        // one of them play a copy that keeps the trait the card table lists, so the effect is still held.
+        private static CardDef Listed(CardDef def) => def with { Trait = CardCatalog.StarterTableTraits[def.Id] };
+
+        private static readonly CardDef MovedWaterStance = Listed(CardCatalog.WaterStance);
+
+        private static readonly CardDef ThinObserve = Listed(CardCatalog.Observe);
+
+        private static readonly CardDef FirstPlayFootwork = Listed(CardCatalog.Footwork);
+
+        private static readonly CardDef ReserveBrace = Listed(CardCatalog.Brace);
+
         /// <summary>A single attack of the given power at reach 0〜1.</summary>
         private static CardDef Jab(int power, int column = 1) => Fixtures.Card("jab" + power, column, new Face(Power: power));
 
@@ -1078,7 +1090,7 @@ namespace BattleCore.Tests
         public void CostDown_MakesAnUnpayableCardPlayable_AndTheLoweredCostIsWhatIsPaid()
         {
             // §2.3 コスト −1: 水の構え (2) costs 1 after a move; CanPlay, CostNow and Preview agree, and 1 is spent.
-            var s = Opened(1, Idle, CardCatalog.WaterStance, StepOut);
+            var s = Opened(1, Idle, MovedWaterStance, StepOut);
             var poor = s with { Player = s.Player with { Stamina = 1 } };
             var moved = Play(s with { Player = s.Player with { Stamina = 2 } }, "step_out").State;
             string water = InHand(moved, "water_stance");
@@ -1088,12 +1100,12 @@ namespace BattleCore.Tests
             Assert.Multiple(() =>
             {
                 Assert.That(TurnLoop.CanPlay(poor, InHand(poor, "water_stance")), Is.EqualTo(PlayRefusal.NotEnoughStamina));
-                Assert.That(TurnLoop.CostNow(poor, CardCatalog.WaterStance), Is.EqualTo(2));
+                Assert.That(TurnLoop.CostNow(poor, MovedWaterStance), Is.EqualTo(2));
                 Assert.That(TurnLoop.Preview(poor, InHand(poor, "water_stance"))!.Cost, Is.EqualTo(2));
 
                 Assert.That(moved.Player.Stamina, Is.EqualTo(1));
                 Assert.That(TurnLoop.CanPlay(moved, water), Is.EqualTo(PlayRefusal.None));
-                Assert.That(TurnLoop.CostNow(moved, CardCatalog.WaterStance), Is.EqualTo(1));
+                Assert.That(TurnLoop.CostNow(moved, MovedWaterStance), Is.EqualTo(1));
                 Assert.That(TurnLoop.Preview(moved, water)!.Cost, Is.EqualTo(1));
                 Assert.That(TurnLoop.Preview(moved, water)!.TraitHolds, Is.True);
 
@@ -1210,7 +1222,7 @@ namespace BattleCore.Tests
             // §2.3 手薄 → ドロー +1 (#193: 2 or fewer left): 観察 draws 1 behind its Guard 3 (v4.5, #352),
             // or 2 when it leaves the hand thin.
             // With six cards a turn (#351) the hand is thin only from the fourth card on: three blocks first.
-            var s = Opened(1, Idle, CardCatalog.Observe, Block, Block, Block, Filler, Filler, Jab(5), Jab(6), Jab(7));
+            var s = Opened(1, Idle, ThinObserve, Block, Block, Block, Filler, Filler, Jab(5), Jab(6), Jab(7));
 
             var full = Play(s, "observe");
             var thinned = Play(Play(Play(s, "block").State, "block").State, "block").State;
@@ -1233,7 +1245,7 @@ namespace BattleCore.Tests
         public void StaminaGain_OnFootwork_AsTheFirstPlay_GivesOneBack()
         {
             // §2.3 初手 → スタミナ +1: 足運び pays 1 and gets 1 back as the turn's first card, not later.
-            var s = Opened(1, Idle, CardCatalog.Footwork, Block);
+            var s = Opened(1, Idle, FirstPlayFootwork, Block);
             s = s with { Player = s.Player with { Stamina = 5 } };
 
             var first = Play(s, "footwork");
@@ -1770,7 +1782,7 @@ namespace BattleCore.Tests
         {
             // §2.3 温存 「使用後の残スタミナ ≥ n」: #11 呼吸を整える (G, cost 2, 温存(残 ≥ 6)) at 7 stamina
             // pays 1 under 鉄壁の構え and keeps 6; without the stance it pays 2 and keeps 5.
-            var s = Opened(1, Idle, CardCatalog.IronWall, CardCatalog.Brace);
+            var s = Opened(1, Idle, CardCatalog.IronWall, ReserveBrace);
             var walled = Play(s, "iron_wall").State;
             var seven = walled with { Player = walled.Player with { Stamina = 7 } };
             var bare = s with { Player = s.Player with { Stamina = 7 } };

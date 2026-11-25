@@ -131,11 +131,12 @@ namespace Trial.Bridge.Tests
             });
         }
 
-        // js: test/app/life.test.mjs:157
+        // js: test/app/life.test.mjs:157. Lineage 4, not the JS's 3: since the starter cards lost their traits (#1038),
+        // life 3 falls on layer 1 and the test would end inconclusive.
         [Test]
         public void ASurvivor_PassesTheBonus_FourToolSlotsAndDeckCap45_ForTheNextLife()
         {
-            Lineage lineage = Inheritance.NewLineage(3);
+            Lineage lineage = Inheritance.NewLineage(4);
             LifeStart ls = Inheritance.StartLife(lineage);
             lineage = ls.Lineage;
             Expedition raw = Life.LifeSetup(Life.MakeStart(ls, Departure(ls))).Expedition;
