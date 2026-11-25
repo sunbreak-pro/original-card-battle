@@ -234,5 +234,19 @@ namespace Trial.Script.Tests
             PastLifeView first = Inheritance.HallView(taken).PastLives.First(p => p.Generation == 1);
             Assert.That(MetaLines.PastTraceLine(taken, first), Is.EqualTo(MetaText.TraceCollected(2, taken.Current.Name)));
         }
+
+        [Test]
+        public void PastTraceLine_UnderTheCarryOver_KeepsTheDescentsLine()
+        {
+            // A trace left before the switch to the carry-over (#1025), taken on a later descent: the hall keeps the
+            // view's line, which names no 第 n 代 (#1031), instead of the generations' 回収した.
+            Lineage l1 = Inheritance.CarryingOver(DieAt(Inheritance.NewLineage(7UL), 4));
+            LifeStart s = Inheritance.StartLife(l1, 1UL);
+            Lineage left = Inheritance.TakeTrace(s.Lineage, l1.Traces[0].Id, Array.Empty<string>(), 4).Lineage;
+            Lineage l2 = Inheritance.RecordDeath(left, null, new LifePlace(2, 1, null, RunPhase.Fallen), Deck, JournalOf());
+            PastLifeView first = Inheritance.HallView(l2).PastLives.First(p => p.Generation == 1);
+            Assert.That(MetaLines.PastTraceLine(l2, first), Is.EqualTo(InheritanceText.TraceStatus.TakenOnDescent(2)));
+            Assert.That(MetaLines.PastTraceLine(l2, first), Does.Not.Contain("代"));
+        }
     }
 }

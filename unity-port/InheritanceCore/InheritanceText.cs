@@ -191,6 +191,36 @@ namespace InheritanceCore
         /// </summary>
         public const string WorldEndedUncarried = "世界とともに、届いた段・覚えた札・手記も失われた。次の探索は新しい世界で一から始まる";
 
+        // Under the carry-over the same explorer goes down again, so the base and the ending card count the descents
+        // where the generations' screens count the 代 and name the 踏破者 (#1031). A descent's number is its life's
+        // Generation: the lineage's lives in order, those before the switch included.
+
+        /// <summary>The base's lead under the carry-over.</summary>
+        public const string BaseLead = "これまでの探索を振り返り、次の探索へ出る部屋。";
+
+        /// <summary>The base's first visit under the carry-over.</summary>
+        public const string BaseEmpty = "最初の探索。持ち越すものはまだ無い。";
+
+        public const string PastDescentsHeading = "これまでの探索";
+        public const string NextDescentHeading = "次の探索";
+
+        /// <summary>The 装束's reason before the first descent under the carry-over.</summary>
+        public const string FirstDescentTier = "最初の探索。支給品は縁なし";
+
+        /// <summary>The 装束's reason after a descent that reached <paramref name="layer"/> under the carry-over.</summary>
+        public static string DescentTierReason(int? layer) => Invariant($"前の探索で第 {JsNullable(layer)} 層まで届いたため");
+
+        public const string DescentTierCleared = "前の探索で歪みの根を倒したため";
+
+        /// <summary>Where the generations print 「第 n 代」 (a past life's card, the next explorer's block).</summary>
+        public static string DescentLabel(int descent) => Invariant($"{descent} 回目");
+
+        /// <summary>Where the generations print 「第 n 代 踏破者 name」.</summary>
+        public static string DescentLine(int descent, string? name) => Invariant($"{descent} 回目の探索 {name}");
+
+        /// <summary>The ending card's footer under the carry-over, where the generations print 「次の踏破者：第 n 代 name」.</summary>
+        public static string NextDescentLine(int descent, string name) => Invariant($"次の探索：{descent} 回目 {name}");
+
         /// <summary>The past life's trace line in the hall.</summary>
         public static class TraceStatus
         {
@@ -198,6 +228,9 @@ namespace InheritanceCore
             public const string Untaken = "痕跡：未回収";
 
             public static string Taken(int generation, string name) => Invariant($"痕跡：第 {generation} 代 {name}が受け取った");
+
+            /// <summary>A trace left before the switch to the carry-over, taken on a later descent.</summary>
+            public static string TakenOnDescent(int descent) => Invariant($"痕跡：{descent} 回目の探索で受け取った");
         }
 
         // A JS template prints a null number as "null".
