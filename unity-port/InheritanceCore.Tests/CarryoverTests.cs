@@ -210,11 +210,13 @@ namespace InheritanceCore.Tests
             Assert.That(plain.CarriesOver, Is.False);
             Assert.That(plain.Title, Is.EqualTo(InheritanceText.HallTitle));
             Assert.That(plain.NextHeir.GenerationLabel, Is.EqualTo("第 2 代"));
+            Assert.That(plain.NextHeir.RoleLabel, Is.EqualTo(InheritanceText.RoleName));
 
             var h = Inheritance.HallView(Inheritance.CarryingOver(SurviveAt(Inheritance.NewLineage(Seed), 2)));
             Assert.That(h.CarriesOver, Is.True);
             Assert.That(h.Title, Is.EqualTo("拠点"));
             Assert.That(h.NextHeir.GenerationLabel, Is.Empty);
+            Assert.That(h.NextHeir.RoleLabel, Is.EqualTo("2 回目"));
             Assert.That(h.Survivor, Is.Null);
             Assert.That(h.SurvivorSpent, Is.Null);
             Assert.That(Json.Stringify(h.ToJson()), Does.Not.Contain("CarriesOver"));
@@ -240,6 +242,112 @@ namespace InheritanceCore.Tests
             Assert.That(view.Ending, Is.EqualTo(LifeEnding.Expired));
             Assert.That(view.Lines, Is.EqualTo(new[] { InheritanceText.WorldEndedUncarried }));
             Assert.That(view.Lines, Has.None.Contains("持ち越す"));
+        }
+
+        // ---- the words: one explorer, counted by the descent (#1031) -----------------------------------------------
+
+        /// <summary>Every word the base prints: the view the JS also has, and the role words beside the name.</summary>
+        private static IEnumerable<string> Words(HallView h) => new[] { Json.Stringify(h.ToJson()), h.NextHeir.RoleLabel };
+
+        private static IEnumerable<string> Words(EndingView e) => new[] { Json.Stringify(e.ToJson()) };
+
+        private static void NoGenerationWords(IEnumerable<string> texts, string what)
+        {
+            foreach (string t in texts)
+            {
+                Assert.That(t, Does.Not.Match(@"第\s*\d+\s*代"), what);
+                Assert.That(t, Does.Not.Contain("代"), what);
+                Assert.That(t, Does.Not.Contain("踏破者"), what);
+            }
+        }
+
+        [Test]
+        public void TheBaseAndTheEnding_NameNoGenerationNorHeir()
+        {
+            var first = Carrying();
+            var fell = Fall(first, Book(("a", 12, 2)));
+            var back = Return(fell, Book(("a", 14, 2)));
+            var s = Inheritance.StartLife(back, 7);
+            var cleared = Inheritance.RecordSurvival(s.Lineage, s.Life, new LifePlace(7, 2, NodeKind.Boss, RunPhase.Completed), Book(("a", 9, 2)),
+                LifeJournal(), Learned("fang"));
+            var e = Inheritance.StartLife(Carrying(), 7);
+            var expired = Inheritance.RecordEnd(e.Lineage, e.Life, new LifePlace(5, 1, null, RunPhase.Expired), Book(("a", 10, 2)), LifeJournal(), Learned());
+
+            NoGenerationWords(Words(Inheritance.HallView(first)), "the base before the first descent");
+            foreach (var (l, what) in new[] { (fell, "a fall"), (back, "a return"), (cleared, "the root defeated"), (expired, "the calendar run out") })
+            {
+                NoGenerationWords(Words(Inheritance.HallView(l)), "the base after " + what);
+                NoGenerationWords(Words(Inheritance.EndingView(l)), "the ending of " + what);
+            }
+        }
+
+        [Test]
+        public void TheBase_CountsTheDescents()
+        {
+            var first = Inheritance.HallView(Carrying());
+            Assert.That(first.Lead, Is.EqualTo("これまでの探索を振り返り、次の探索へ出る部屋。"));
+            Assert.That(first.Empty, Is.EqualTo("最初の探索。持ち越すものはまだ無い。"));
+            Assert.That(first.PastLivesHeading, Is.EqualTo("これまでの探索"));
+            Assert.That(first.NextHeirHeading, Is.EqualTo("次の探索"));
+            Assert.That(first.NextHeir.RoleLabel, Is.EqualTo("1 回目"));
+            Assert.That(first.NextHeir.TierReason, Is.EqualTo("最初の探索。支給品は縁なし"));
+
+            var l = Fall(Carrying(), Book(("a", 12, 2)));
+            string name = l.Lives[0].Name;
+            var h = Inheritance.HallView(l);
+            Assert.That(h.Empty, Is.Empty);
+            Assert.That(h.NextHeir.Name, Is.EqualTo(name));
+            Assert.That(h.NextHeir.RoleLabel, Is.EqualTo("2 回目"));
+            Assert.That(h.NextHeir.Line, Is.EqualTo($"2 回目の探索 {name}"));
+            Assert.That(h.NextHeir.TierReason, Is.EqualTo("前の探索で第 2 層まで届いたため"));
+            Assert.That(h.PastLives.Single().GenerationLabel, Is.EqualTo("1 回目"));
+            Assert.That(h.PastLives.Single().Line, Is.EqualTo($"1 回目の探索 {name}"));
+
+            var s = Inheritance.StartLife(l, 7);
+            var cleared = Inheritance.RecordSurvival(s.Lineage, s.Life, new LifePlace(7, 2, NodeKind.Boss, RunPhase.Completed), Book(("a", 9, 2)),
+                LifeJournal(), Learned("fang"));
+            Assert.That(Inheritance.HallView(cleared).NextHeir.TierReason, Is.EqualTo("前の探索で歪みの根を倒したため"));
+        }
+
+        [Test]
+        public void TheEnding_NamesTheDescentThatClosed_AndTheNextOne()
+        {
+            var l = Fall(Carrying(), Book(("a", 12, 2)));
+            string name = l.Lives[0].Name;
+            var view = Inheritance.EndingView(l);
+            Assert.That(view.HeirLine, Is.EqualTo($"1 回目の探索 {name}"));
+            Assert.That(view.NextLine, Is.EqualTo($"次の探索：2 回目 {name}"));
+        }
+
+        [Test]
+        public void ALineageSwitchedOn_WordsItsOlderLivesAndTracesByTheDescentToo()
+        {
+            // A trace left before the switch stays and is taken on a later descent: the base still names no 代.
+            var l = Inheritance.CarryingOver(DieAt(DieAt(Inheritance.NewLineage(Seed), 3), 2));
+            var s = Inheritance.StartLife(l, 3);
+            var took = Inheritance.TakeTrace(s.Lineage, "trace-1", new[] { "card:tsuki" }, 3);
+            var fell = Inheritance.RecordDeath(took.Lineage, null, new LifePlace(4, 4, NodeKind.Battle, RunPhase.Fallen), Book(("a", 12, 2)),
+                LifeJournal(), Learned("fang"));
+            var h = Inheritance.HallView(fell);
+            Assert.That(h.PastLives.First(p => p.Generation == 1).TraceLine, Is.EqualTo("痕跡：3 回目の探索で受け取った"));
+            Assert.That(h.Traces.Single().HeirLine, Is.EqualTo($"2 回目の探索 {fell.Lives[1].Name}"));
+            NoGenerationWords(new[] { h.PastLives.Select(p => p.GenerationLabel + p.Line + p.TraceLine), h.Traces.Select(t => t.HeirLine) }
+                .SelectMany(x => x), "the switched lineage's lives and traces");
+        }
+
+        [Test]
+        public void TheGenerationsKeepTheirWords()
+        {
+            var g = DieAt(Inheritance.NewLineage(Seed), 3);
+            var h = Inheritance.HallView(g);
+            Assert.That(h.Lead, Is.EqualTo(InheritanceText.HallLead));
+            Assert.That(h.PastLivesHeading, Is.EqualTo(InheritanceText.PastLivesHeading));
+            Assert.That(h.NextHeirHeading, Is.EqualTo(InheritanceText.NextHeirHeading));
+            Assert.That(h.PastLives.Single().GenerationLabel, Is.EqualTo("第 1 代"));
+            Assert.That(h.PastLives.Single().Line, Is.EqualTo(InheritanceText.HeirLine(1, g.Lives[0].Name)));
+            var heir = Inheritance.NextHeir(g);
+            Assert.That(Inheritance.EndingView(g).NextLine, Is.EqualTo(InheritanceText.NextHeirLine(heir.Generation, heir.Name)));
+            Assert.That(Inheritance.HallView(Inheritance.NewLineage(Seed)).Empty, Is.EqualTo(InheritanceText.HallEmpty));
         }
 
         // ---- the save ---------------------------------------------------------------------------------------------
