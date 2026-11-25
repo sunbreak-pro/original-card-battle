@@ -94,14 +94,14 @@ namespace Trial.Meta
         // ---- the draft (departure.js:52-90) --------------------------------------------------------------------------
 
         /// <summary>
-        /// 出立's draft: the deck being built and the supplies picked, not yet set out. It is kept while the heir steps back
-        /// into 継承の間 and comes again, over closing the game and opening it again, so 「← 継承の間へ」 or a closed window
-        /// throws nothing away. Only the life it was made for reads it back (the lineage seed, the generation and the
-        /// life's seed); 出立する clears it, since the router then keeps the deck itself (ctx.SavedDeck). A per-device
-        /// convenience: memory first, the store behind it, every access guarded.
+        /// 出立's draft: the deck being built and the supplies picked, not yet set out. It is kept while the explorer steps
+        /// back to the base (継承の間 in the generations) and comes again, over closing the game and opening it again, so ← or a closed window
+        /// throws nothing away. Only the life it was made for reads it back (Trial.Bridge.DepartureDraft, which the base's
+        /// way down reads too, #1052); 出立する clears it, since the router then keeps the deck itself (ctx.SavedDeck). A
+        /// per-device convenience: memory first, the store behind it, every access guarded.
         /// </summary>
         // js: scenes/meta/departure.js:62
-        public const string DraftKey = "ocb.departure.draft.v1";
+        public const string DraftKey = DepartureDraft.Key;
 
         /// <summary>
         /// Where the draft is kept (the browser's localStorage): the app's store when the router sets one (app.md §2.1:
@@ -109,7 +109,7 @@ namespace Trial.Meta
         /// </summary>
         public static IKeyValueStore DraftStore { get; set; }
 
-        private static Draft _draftInMemory;
+        private static DepartureDraft _draftInMemory;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
@@ -120,85 +120,37 @@ namespace Trial.Meta
 
         private static IKeyValueStore Store => DraftStore ?? PrefsStore.Instance;
 
-        /// <summary>
-        /// The draft as departure.js keeps it, less the talent: { id, deck: DeckBuilder.Save, tools, consumables }. A draft
-        /// stored before #1045 still has a talent; it is read past.
-        /// </summary>
-        private sealed class Draft
-        {
-            public string Id;
-            public string Deck;
-            public List<string> Tools = new List<string>();
-            public List<string> Consumables = new List<string>();
-        }
-
-        // js: scenes/meta/departure.js:64
-        /// <summary>draftIdOf(lifeStart): `lineageSeed|generation|lifeSeed`, or null without a life.</summary>
-        private static string DraftIdOf(LifeStart lifeStart)
-        {
-            if (lifeStart == null || lifeStart.Life == null) return null;
-            string lineageSeed = lifeStart.Lineage != null ? lifeStart.Lineage.Seed : "";
-            return string.Join("|", lineageSeed ?? "", lifeStart.Life.Generation.ToString(CultureInfo.InvariantCulture),
-                lifeStart.Seed.ToString(CultureInfo.InvariantCulture));
-        }
-
-        // js: scenes/meta/departure.js:69
-        /// <summary>storedDraft(storage, id): the stored draft of this life, or null (storage missing, broken, another life).</summary>
-        private static Draft StoredDraft(IKeyValueStore storage, string id)
-        {
-            try
-            {
-                string text = storage.Read(DraftKey);
-                object d = string.IsNullOrEmpty(text) ? null : global::InheritanceCore.Json.Parse(text);
-                if (d is JsonObject o && o["id"] is string did && did == id && o["deck"] is string deck)
-                {
-                    var draft = new Draft { Id = did, Deck = deck };
-                    if (o["tools"] is List<object> tools) foreach (object t in tools) if (t is string s) draft.Tools.Add(s);
-                    if (o["consumables"] is List<object> cons) foreach (object c in cons) if (c is string s) draft.Consumables.Add(s);
-                    return draft;
-                }
-            }
-            catch (Exception)
-            {
-                // storage unavailable
-            }
-            return null;
-        }
-
         // js: scenes/meta/departure.js:77
         /// <summary>readDraft(id): memory first, then the store (the browser's older sessionStorage copy has no counterpart here).</summary>
-        private static Draft ReadDraft(string id)
+        internal static DepartureDraft ReadDraft(string id)
         {
+            if (id == null) return null;
             if (_draftInMemory != null && _draftInMemory.Id == id) return _draftInMemory;
-            return StoredDraft(Store, id);
+            return DepartureDraft.Read(Store, id);
         }
 
         // js: scenes/meta/departure.js:81
-        private static void WriteDraft(Draft d)
+        private static void WriteDraft(DepartureDraft d)
         {
+            if (d == null) return;
             _draftInMemory = d;
-            try
-            {
-                var o = new JsonObject();
-                o.Set("id", d.Id);
-                o.Set("deck", d.Deck);
-                o.Set("tools", d.Tools.Cast<object>().ToList());
-                o.Set("consumables", d.Consumables.Cast<object>().ToList());
-                Store.Write(DraftKey, global::InheritanceCore.Json.Stringify(o));
-            }
-            catch (Exception)
-            {
-                // storage unavailable
-            }
+            d.Write(Store);
         }
 
         // js: scenes/meta/departure.js:85
-        private static void ClearDraft()
+        /// <summary>The draft goes (the life sets out with its deck: the router keeps it from here).</summary>
+        internal static void ClearDraft()
         {
             _draftInMemory = null;
-            try { Store.Remove(DraftKey); }
-            catch (Exception) { /* storage unavailable */ }
+            DepartureDraft.Clear(Store);
         }
+
+        /// <summary>
+        /// The pack the table opens with for ctx, as the base's way down shows it and sets out with it (#1052): this life's
+        /// draft, else ctx.SavedDeck, else the starter deck (Trial.Bridge.DeparturePack.Open).
+        /// </summary>
+        internal static DeparturePack PackOf(DepartureCtx ctx) =>
+            DeparturePack.Open(ctx.LifeStart, ctx.Owned, ctx.OwnsCatalogue, ctx.SavedDeck, ReadDraft(DepartureDraft.IdOf(ctx.LifeStart)));
 
         /// <summary>The draft kept in PlayerPrefs (the default store): one string per key, every access guarded.</summary>
         private sealed class PrefsStore : IKeyValueStore
@@ -312,11 +264,11 @@ namespace Trial.Meta
             _lifeStart = ctx.LifeStart;
             // js: scenes/meta/departure.js:109 — the kinds the heir may build from: the router's (or the starter's eleven), plus
             // the preset deck's (Expedition.BeginLife owns its start deck's kinds anyway), so the preset opens whole. The preset
-            // is the starter deck since #1038, where the JS's is the prototype deck.
-            _owned = ctx.OwnsCatalogue ? null
-                : DeckBuilder.WithStarterKinds(ctx.Owned != null && ctx.Owned.Count > 0 ? ctx.Owned : Expedition.InitialKinds);
-            // The life's limits (DeckLimits.From reads the four numbers; a missing one is the C#'s).
-            _limits = LimitsOf(_lifeStart);
+            // is the starter deck since #1038, where the JS's is the prototype deck. The life's limits, the deck and the
+            // supplies are the pack the base's way down shows (DeparturePack.Open, #1052).
+            DeparturePack pack = PackOf(ctx);
+            _owned = pack.Owned;
+            _limits = pack.Limits;
             _deckMin = _limits.DeckMin;
             _deckCap = _limits.DeckMax;
             _root = MetaUtil.SceneRoot(host, "departure");
@@ -325,28 +277,13 @@ namespace Trial.Meta
             _scope = Focus.PushScope("departure");
 
             // ---- state (the bridge's builders) ----
-            _draftId = DraftIdOf(_lifeStart);
-            Draft draft = _draftId != null ? ReadDraft(_draftId) : null;
             // A saved deck (or a draft) past the life's cap — a survivor's 45 after the bonus ended — opens with every card
             // and the reason (DeckBuilder.ReadOverCap); any other broken string, as the C# reads it.
-            string saved = draft != null ? draft.Deck : ctx.SavedDeck;
-            if (draft != null || ctx.SavedDeck != null)
-            {
-                DeckBuilder read = DeckBuilder.ReadOverCap(saved, out string value, _limits);
-                _deck = Adopt(read);
-                _notice = value ?? "";
-                _noticeOverCap = _deck.Total > _limits.DeckMax;
-            }
-            else
-            {
-                _deck = Adopt(DeckBuilder.Starter(_limits));
-            }
-            _supplies = DepartureCarry.NewBuilder(_limits);
-            if (draft != null)
-            {
-                foreach (string id in draft.Tools) _supplies.AddTool(id);
-                foreach (string id in draft.Consumables) _supplies.AddConsumable(id);
-            }
+            _draftId = pack.DraftId;
+            _deck = pack.Deck;
+            _notice = pack.Notice;
+            _noticeOverCap = pack.OverCap;
+            _supplies = pack.Supplies;
             // js: scenes/meta/departure.js:157 — (Seed & 0x3fffffff) || 1
             ulong seed = _lifeStart != null ? _lifeStart.Seed : (ctx.Seed ?? 1UL);
             _randomSeed = (int)(seed & 0x3fffffffUL);
@@ -387,18 +324,6 @@ namespace Trial.Meta
         /// </summary>
         public static IScene Mount(RectTransform host, DepartureCtx ctx) => new DepartureScene(host, ctx);
 
-        /// <summary>DeckLimits.From(lifeStart): the life's four numbers (a missing one, or no life, is the C#'s).</summary>
-        private static BattleCore.DeckLimits LimitsOf(LifeStart lifeStart)
-        {
-            if (lifeStart == null) return BattleCore.DeckLimits.Default;
-            int? min = lifeStart.DeckMin > 0 ? lifeStart.DeckMin : (int?)null;
-            int? max = lifeStart.DeckMax > 0 && lifeStart.DeckMax >= (min ?? 1) ? lifeStart.DeckMax : (int?)null;
-            int? tools = lifeStart.ToolSlots >= 0 ? lifeStart.ToolSlots : (int?)null;
-            int? cons = lifeStart.ConsumableSlots >= 0 ? lifeStart.ConsumableSlots : (int?)null;
-            try { return new BattleCore.DeckLimits(min, max, tools, cons); }
-            catch (ArgumentOutOfRangeException) { return BattleCore.DeckLimits.Default; }
-        }
-
         // ---- what the supplies view reads ------------------------------------------------------------------------------
 
         internal DepartureCtx Ctx => _ctx;
@@ -417,7 +342,7 @@ namespace Trial.Meta
         internal void KeepDraft()
         {
             if (_draftId == null || _settingOut) return;
-            WriteDraft(new Draft
+            WriteDraft(new DepartureDraft
             {
                 Id = _draftId,
                 Deck = _deck.Save(),

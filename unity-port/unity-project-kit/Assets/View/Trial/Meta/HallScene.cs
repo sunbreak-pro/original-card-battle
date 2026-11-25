@@ -12,6 +12,9 @@
 // Stylers behave as the JS's: every Styler.Of is a fresh proxy and TrialClock replaces keys per proxy (stage.js
 // tween), so two stylers of one element do not cut each other's tweens; hall.js never runs two on one element at once.
 //
+// Under the carry-over (#1025) the base is no longer this room: Mount hands it to GateScene, 「降り口の前」 (#1052), so the
+// 襲名 seal and the past lives here are the generations' only.
+//
 // Deviations, all of look-alike kind (meta-a.md §8):
 // - The lists show no scrollbar (the reference shots are headless Chrome's, which shows none), so the cards keep 434.
 using System;
@@ -204,9 +207,10 @@ namespace Trial.Meta
                 bool untaken = traceIndex >= 0;
                 // the mark's hover line says whose life it was, how it ended and where its trace stands (the three looks)
                 PastLifeView past = _view.PastLives.FirstOrDefault(p => p.Generation == life.Generation);
+                // Every closed life has its view; the fallback words the life as HallView's Line does (#1031).
                 string tip = past != null
                     ? MetaText.MarkTitle(past.Line, past.EndingLabel, MetaLines.PastTraceLine(_lineage, past))
-                    : InheritanceText.HeirLine(life.Generation, life.Name);
+                    : _view.CarriesOver ? InheritanceText.DescentLine(life.Generation, life.Name) : InheritanceText.HeirLine(life.Generation, life.Name);
                 HallMark mark = HallParts.Mark(s, life.Generation, lived, untaken, life.CollectedBy != null, tip);
                 mark.TraceIndex = traceIndex;
                 mark.Area.Click += _ => MarkClick(mark);
@@ -370,8 +374,12 @@ namespace Trial.Meta
         }
 
         // js: scenes/meta/hall.js:77
-        /// <summary>mountHall(host, ctx) → { destroy() }.</summary>
-        public static IScene Mount(RectTransform host, HallCtx ctx) => new HallScene(host, ctx);
+        /// <summary>
+        /// mountHall(host, ctx) → { destroy() }. Under the carry-over the base is the way down's scene (GateScene, #1052);
+        /// the generations keep this 継承の間.
+        /// </summary>
+        public static IScene Mount(RectTransform host, HallCtx ctx) =>
+            ctx?.Lineage != null && ctx.Lineage.CarriesOver ? GateScene.Mount(host, ctx) : new HallScene(host, ctx);
 
         // js: scenes/meta/hall.js:124
         /// <summary>traceLineOf(life): the card's trace line (pastTraceLine).</summary>

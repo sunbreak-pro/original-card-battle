@@ -477,7 +477,11 @@ namespace Trial.Boot
                 OnDepart = lifeStart => ToDeparture(lifeStart != null && lifeStart.Lineage != null ? lifeStart : Inheritance.StartLife(Save.Lineage)),
                 // 設定・セーブ here offers 「保存してタイトルへ」: the lineage is already saved, so it reads as going back to the title.
                 OnSettings = () => OpenOverlay(ExploreOverlayKind.Settings, OverlayExtra.LineageSave),
+                // The past lives and the rules of traces are read in the journal (#1053), so the base opens it (#1052).
+                OnJournal = () => OpenOverlay(ExploreOverlayKind.Journal),
                 OnTitle = ToTitle,
+                // The carry-over's base shows 出立's pack and sets out with it when 「降りる」 is held (#1052).
+                Departure = DepartureCtxOf,
             })), "ocbg-hall");
         }
 
@@ -486,7 +490,16 @@ namespace Trial.Boot
         {
             if (Stale) return;
             _screen = "departure";
-            Show(host => DepartureScene.Mount(host, Base(new DepartureCtx
+            Show(host => DepartureScene.Mount(host, DepartureCtxOf(lifeStart)), "ocbg-departure");
+        }
+
+        /// <summary>
+        /// 出立's ctx for <paramref name="lifeStart"/>: the table mounts with it, and the carry-over's base reads the pack it
+        /// opens with and sets out through its OnSetOut (#1052), so both set out the same way.
+        /// </summary>
+        private DepartureCtx DepartureCtxOf(LifeStart lifeStart)
+        {
+            return Base(new DepartureCtx
             {
                 LifeStart = lifeStart,
                 // The starter's eleven plus the starter deck's kinds (Expedition owns its start deck's kinds too, #1038),
@@ -500,6 +513,7 @@ namespace Trial.Boot
                 // 設定・セーブ opens here too: the gear at the top right, and Esc (CAMP_FACILITIES_DESIGN.md §3.5). The lineage is
                 // saved and the half-built deck is kept as 出立's draft, so 「保存してタイトルへ」 leaves nothing behind.
                 OnSettings = () => OpenOverlay(ExploreOverlayKind.Settings, OverlayExtra.LineageSave),
+                OnJournal = () => OpenOverlay(ExploreOverlayKind.Journal),
                 OnSetOut = choice =>
                 {
                     if (!InSync()) return;              // another instance moved the lineage on: this hall was out of date
@@ -513,7 +527,7 @@ namespace Trial.Boot
                     // carry-over (#1025) the explorer picks up their own sheet again (LifeStart.Memo).
                     BeginLife(start, new LifeLog(), lifeStart.Memo, null);
                 },
-            })), "ocbg-departure");
+            });
         }
 
         // js: app/main.js:305
