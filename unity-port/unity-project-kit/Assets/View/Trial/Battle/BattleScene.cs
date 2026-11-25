@@ -42,8 +42,8 @@ namespace Trial.Battle
         public int Layer = 1;
         /// <summary>ctx.layerTitle.</summary>
         public string LayerTitle = "";
-        /// <summary>ctx.miasmaPercent: the exploration's miasma % (null: the frame's, which the writer leaves 0).</summary>
-        public float? MiasmaPercent;
+        /// <summary>Unity addition (#1029): the layer's backdrop slot (LayerProfile.BackdropLayer, 1..7), the map's; 0 = Layer.</summary>
+        public int BackdropLayer;
         /// <summary>ctx.nodeKind ('Battle' | 'Elite' | 'Boss').</summary>
         public BattleNodeKind NodeKind = BattleNodeKind.Battle;
         /// <summary>ctx.chain: { index, total } — the 1-based fight under way and how many the chain holds (null: { 1, 1 }).</summary>
@@ -183,7 +183,7 @@ namespace Trial.Battle
             // js: scenes/battle/BattleScene.js:144
             FieldModule = FieldView.Create(env, new FieldOpts
             {
-                Layer = env.LayerNo,
+                Layer = env.BackdropNo,
                 NodeKind = env.NodeKind,
                 // 俊敏's choice on the floor (battle_ui_ux_v2 §3.8): a click on a mark, the pointer over one.
                 OnFreeStepPick = dir => { if (PlayerCore != null) PlayerCore.PickFreeStep(dir); },
@@ -325,7 +325,7 @@ namespace Trial.Battle
                 else if (error != null) Debug.LogException(error);
                 else if (message != null) Debug.LogError(message);
             });
-            var env = new BattleViewEnv(settings, battleAudio, ctx.Layer, ctx.NodeKind, ctx.MiasmaPercent, log, ctx.Stage);
+            var env = new BattleViewEnv(settings, battleAudio, ctx.Layer, ctx.NodeKind, ctx.BackdropLayer, log, ctx.Stage);
             env.BuildRoot(host);
             return env;
         }
@@ -361,7 +361,6 @@ namespace Trial.Battle
                 Layer = ctx.Layer,
                 LayerTitle = ctx.LayerTitle ?? "",
                 NodeKind = ctx.NodeKind,
-                MiasmaPercent = ctx.MiasmaPercent,
                 Chain = ctx.Chain,
                 DisclosureOf = ctx.DisclosureOf,
                 OpenJournal = ctx.OpenJournal == null ? null : (Func<object, BattleJournalOpts, IDisposable>)((host, o) =>

@@ -725,9 +725,10 @@ namespace Trial.Boot
                 Settings = _settings,
                 Source = fight.Source,
                 Layer = raw.Session.State.Profile.Layer,
+                // The map draws the layer's backdrop slot, and a region's layer borrows a named place's (#888): the fight
+                // takes the same slot, so its backdrop matches the map and the ambience ResumeFight picks (#1029).
+                BackdropLayer = raw.Session.State.Profile.BackdropLayer,
                 LayerTitle = raw.Session.Screen().LayerTitle,
-                // the miasma left exploration (#888); the battle HUD's corner keeps its slot and reads its own 0
-                MiasmaPercent = null,
                 NodeKind = BattleSceneCtx.NodeKindOf(battle.HandIn.Kind.ToString()),
                 Chain = new BattleChain(battle.Index + 1, battle.Count),
                 DisclosureOf = id => raw.DisclosureOf(id),

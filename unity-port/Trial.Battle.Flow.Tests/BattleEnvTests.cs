@@ -36,7 +36,7 @@ namespace Trial.Battle.Flow.Tests
             Assert.That(env.Settings.ShortFx, Is.False);
             Assert.That(env.LayerNo, Is.EqualTo(1));
             Assert.That(env.NodeKind, Is.EqualTo(BattleNodeKind.Battle));
-            Assert.That(env.MiasmaPercent, Is.Null);
+            Assert.That(env.BackdropNo, Is.EqualTo(1), "no slot handed: the layer's own");
             Assert.That(env.Log, Is.SameAs(BattleLog.Console));
             Assert.That(env.Real, Is.SameAs(env.Clock.Real));
             Assert.That(env.Clock.Alive, Is.True);
@@ -48,11 +48,11 @@ namespace Trial.Battle.Flow.Tests
         {
             var settings = new BattleSettings { Speed = 1.5f, ShortFx = true };
             var log = BattleLog.Of((m, e) => { });
-            var env = new BattleEnv(settings, null, 5, BattleNodeKind.Boss, 42.5f, log);
+            var env = new BattleEnv(settings, null, 5, BattleNodeKind.Boss, log, backdrop: 2);
             Assert.That(env.Settings, Is.SameAs(settings));
             Assert.That(env.LayerNo, Is.EqualTo(5));
+            Assert.That(env.BackdropNo, Is.EqualTo(2));
             Assert.That(env.NodeKind, Is.EqualTo(BattleNodeKind.Boss));
-            Assert.That(env.MiasmaPercent, Is.EqualTo(42.5f));
             Assert.That(env.Log, Is.SameAs(log));
             env.Clock.Step(10f);
             Assert.That(env.Clock.Scale, Is.EqualTo(1.2f * L.ShortScale).Within(1e-2), "the clock reads the env's settings");
@@ -95,6 +95,19 @@ namespace Trial.Battle.Flow.Tests
         {
             Assert.That(BattleEnv.LayerNoOf(layer), Is.EqualTo(no));
             Assert.That(new BattleEnv(layer: layer).LayerNo, Is.EqualTo(no));
+        }
+
+        // #1029: a region's layer borrows a named place's backdrop (#888), so the fight draws the map's slot, not the depth;
+        // the corner's 階層 still reads the depth.
+        [TestCase(4, 0, 4)]
+        [TestCase(4, 6, 6)]
+        [TestCase(2, 9, 7)]
+        [TestCase(3, -1, 1)]
+        public void BackdropNo_IsTheMapsSlot_ElseTheLayer(int layer, int backdrop, int no)
+        {
+            var env = new BattleEnv(layer: layer, backdrop: backdrop);
+            Assert.That(env.BackdropNo, Is.EqualTo(no));
+            Assert.That(env.LayerNo, Is.EqualTo(layer));
         }
 
         [Test]
