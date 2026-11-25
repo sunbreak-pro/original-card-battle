@@ -7,25 +7,22 @@ namespace DungeonCore
     /// <summary>Where a run currently stands. Only one of these is ever true at a time.</summary>
     public enum RunPhase
     {
-        /// <summary>Inside a layer with 刻限 left.</summary>
+        /// <summary>Inside a layer, with days left on the calendar.</summary>
         Exploring,
 
-        /// <summary>The layer boss is down. The way on is the interlude.</summary>
+        /// <summary>
+        /// The layer boss is down. The way on is the interlude. On the king layer there is no way on: the life ends
+        /// with EndLife (seven_layers_v4.md §10).
+        /// </summary>
         LayerCleared,
 
-        /// <summary>刻限 ran out. The layer's actions are over, boss or not (§4.3).</summary>
-        PushedOut,
-
-        /// <summary>階層間の休憩. No 刻限, no 瘴気 (concept-v3.md §7).</summary>
+        /// <summary>階層間の休憩. It costs no day (seven_layers_v4.md §2.1).</summary>
         Interlude,
-
-        /// <summary>The gauge hit 100%.</summary>
-        MiasmaDeath,
 
         /// <summary>HP reached 0 in a battle. The battle core reports this in.</summary>
         Fallen,
 
-        /// <summary>The last layer's boss is down.</summary>
+        /// <summary>A king fell while the other two were still down: the clear (seven_layers_v4.md §2.2).</summary>
         Completed,
 
         /// <summary>
@@ -33,10 +30,13 @@ namespace DungeonCore
         /// life receives from it is #108's; the run only records that it ended this way.
         /// </summary>
         Survived,
+
+        /// <summary>The calendar ran out: the dragon god wakes and the world ends (seven_layers_v4.md §2.1).</summary>
+        Expired,
     }
 
     /// <summary>
-    /// A 休息 node offers one of two things for its single 刻限, never both
+    /// A 休息 node offers one of two things for its single day, never both
     /// (dungeon_exploration_v4.md §3.2).
     /// </summary>
     public enum RestChoice
@@ -59,8 +59,7 @@ namespace DungeonCore
             LayerMap map,
             int currentNodeId,
             IReadOnlyCollection<int> resolved,
-            int timeLeft,
-            int miasmaPercent,
+            CalendarState calendar,
             int hp,
             int maxHp,
             int stamina,
@@ -68,15 +67,15 @@ namespace DungeonCore
             int trainingMarks,
             RunLoadout loadout,
             RunPhase phase,
-            bool trial = false)
+            bool trial = false,
+            bool nextStepFree = false)
         {
             Profile = profile ?? throw new ArgumentNullException(nameof(profile));
             Map = map ?? throw new ArgumentNullException(nameof(map));
             Resolved = resolved ?? throw new ArgumentNullException(nameof(resolved));
+            Calendar = calendar ?? throw new ArgumentNullException(nameof(calendar));
             Loadout = loadout ?? throw new ArgumentNullException(nameof(loadout));
             CurrentNodeId = currentNodeId;
-            TimeLeft = timeLeft;
-            MiasmaPercent = miasmaPercent;
             Hp = hp;
             MaxHp = maxHp;
             Stamina = stamina;
@@ -84,6 +83,7 @@ namespace DungeonCore
             TrainingMarks = trainingMarks;
             Phase = phase;
             Trial = trial;
+            NextStepFree = nextStepFree;
         }
 
         public LayerProfile Profile { get; }
@@ -92,12 +92,20 @@ namespace DungeonCore
 
         public int CurrentNodeId { get; }
 
-        /// <summary>Nodes already spent a 刻限 on. Walking back over them is free (§4.2).</summary>
+        /// <summary>Nodes already spent a day on. Walking back over them is free (§4.2).</summary>
         public IReadOnlyCollection<int> Resolved { get; }
 
-        public int TimeLeft { get; }
+        /// <summary>崩壊の暦, shared by every life (seven_layers_v4.md §2).</summary>
+        public CalendarState Calendar { get; }
 
-        public int MiasmaPercent { get; }
+        /// <summary>Days until the world ends.</summary>
+        public int DaysLeft => Calendar.DaysLeft;
+
+        /// <summary>早駆けの丸薬 was taken: the next new node costs no day (tools_and_consumables_v4.md §3).</summary>
+        public bool NextStepFree { get; }
+
+        /// <summary>The region of the layer the life stands in: Common on layers 1 and 2.</summary>
+        public Region Region => Profile.Region;
 
         public int Hp { get; }
 
@@ -126,32 +134,18 @@ namespace DungeonCore
         public bool Trial { get; }
 
         /// <summary>
-        /// Trial extension: the layer's 刻限 with 刻限の砂 counted — 「どの層でも刻限 +1」
-        /// (tools_and_consumables_v4.md §2). Outside trial this is the profile's.
+        /// The max stamina the next battle starts from. A battle's own swings of the maximum are applied on top of
+        /// this inside the battle and never written back (battle_core_v4.md §6.2).
         /// </summary>
-        // js: core/dungeon/ExplorationState.js:89
-        public int TimeLimit => Profile.TimeLimit + TimeBonus;
-
-        /// <summary>Trial extension: 刻限 刻限の砂 adds to every layer (0 outside trial).</summary>
-        // js: core/dungeon/ExplorationState.js:92
-        public int TimeBonus => Trial ? Loadout.TimeBonus : 0;
-
-        /// <summary>What one 刻限 in this layer costs after the run's tools are counted.</summary>
-        public int EffectiveDensity => Miasma.EffectiveDensity(Profile.Density, Loadout.DensityRelief);
-
-        /// <summary>
-        /// The max stamina the next battle starts from. The battle's own 瘴気纏い is applied on
-        /// top of this inside the battle and never written back (battle_core_v4.md §6.2).
-        /// </summary>
-        public int MaxStamina => Miasma.MaxStamina(TempMaxStaminaMod, MiasmaPercent);
+        public int MaxStamina => StaminaRules.MaxStamina(TempMaxStaminaMod);
 
         public bool IsOver =>
-            Phase == RunPhase.MiasmaDeath || Phase == RunPhase.Fallen || Phase == RunPhase.Completed ||
-            Phase == RunPhase.Survived;
+            Phase == RunPhase.Fallen || Phase == RunPhase.Completed || Phase == RunPhase.Survived ||
+            Phase == RunPhase.Expired;
 
         public bool HasResolved(int nodeId) => Resolved.Contains(nodeId);
 
-        /// <summary>Nodes the player could still spend a 刻限 on from where they stand.</summary>
+        /// <summary>Nodes the player could still spend a day on from where they stand.</summary>
         public IReadOnlyList<int> ReachableUnresolved() =>
             Map.Neighbours(CurrentNodeId).Where(id => !HasResolved(id)).ToList();
 
@@ -160,8 +154,7 @@ namespace DungeonCore
             LayerMap? map = null,
             int? currentNodeId = null,
             IReadOnlyCollection<int>? resolved = null,
-            int? timeLeft = null,
-            int? miasmaPercent = null,
+            CalendarState? calendar = null,
             int? hp = null,
             int? maxHp = null,
             int? stamina = null,
@@ -169,14 +162,14 @@ namespace DungeonCore
             int? trainingMarks = null,
             RunLoadout? loadout = null,
             RunPhase? phase = null,
-            bool? trial = null) =>
+            bool? trial = null,
+            bool? nextStepFree = null) =>
             new ExplorationState(
                 profile ?? Profile,
                 map ?? Map,
                 currentNodeId ?? CurrentNodeId,
                 resolved ?? Resolved,
-                timeLeft ?? TimeLeft,
-                miasmaPercent ?? MiasmaPercent,
+                calendar ?? Calendar,
                 hp ?? Hp,
                 maxHp ?? MaxHp,
                 stamina ?? Stamina,
@@ -184,6 +177,7 @@ namespace DungeonCore
                 trainingMarks ?? TrainingMarks,
                 loadout ?? Loadout,
                 phase ?? Phase,
-                trial ?? Trial);
+                trial ?? Trial,
+                nextStepFree ?? NextStepFree);
     }
 }

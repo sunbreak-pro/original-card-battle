@@ -34,7 +34,7 @@ namespace Exploration.Bridge.Tests
         [Test]
         public void ASpring_Heals_AndItsRowTurnsFromUnknownIntoWhatHappened()
         {
-            var expedition = OnWith(EventKind.Spring, hp: 20);
+            var expedition = OnWith(EventKind.Spring, hp: 20, nextToEntry: true);
             ExplorationSession session = expedition.Session;
             int node = EventNode(session, EventKind.Spring);
             Assert.That(DungeonRow(session, "泉"), Is.EqualTo(JournalRow.Hidden));
@@ -198,18 +198,24 @@ namespace Exploration.Bridge.Tests
         // ---- helpers ----
 
         private static RunLoadout Full() =>
-            new RunLoadout(null, Enumerable.Repeat(RunStart.Consumable("joka_no_ko"), RunLoadout.ConsumableSlots).ToList());
+            new RunLoadout(null, Enumerable.Repeat(RunStart.Consumable("hayagake_no_gan"), RunLoadout.ConsumableSlots).ToList());
 
-        private static Expedition OnWith(EventKind kind, RunLoadout loadout = null, int hp = RunStart.DefaultMaxHp) =>
-            new Expedition(new RunStart { Seed = SeedWithEvent(kind), ResolvesEvents = true, Loadout = loadout ?? RunLoadout.Empty, Hp = hp });
+        private static Expedition OnWith(EventKind kind, RunLoadout loadout = null, int hp = RunStart.DefaultMaxHp, bool nextToEntry = false) =>
+            new Expedition(new RunStart { Seed = SeedWithEvent(kind, nextToEntry), ResolvesEvents = true, Loadout = loadout ?? RunLoadout.Empty, Hp = hp });
 
-        /// <summary>The first seed whose first layer holds this event. The kind depends on the seed alone.</summary>
-        private static ulong SeedWithEvent(EventKind kind)
+        /// <summary>
+        /// The first seed whose first layer holds this event. The kind depends on the seed alone. With
+        /// <paramref name="nextToEntry"/>, the first such event (<see cref="EventNode"/>) also lies right after the entry, so a
+        /// walk to it meets no other event (#1049's layers hold 4〜6).
+        /// </summary>
+        private static ulong SeedWithEvent(EventKind kind, bool nextToEntry = false)
         {
             for (ulong seed = 1; seed < 200; seed++)
             {
                 var session = new ExplorationSession(new RunStart { Seed = seed, ResolvesEvents = true });
-                if (session.State.Map.Nodes.Any(n => session.EventAt(n.Id) == kind)) return seed;
+                LayerMap map = session.State.Map;
+                MapNode first = map.Nodes.OrderBy(n => n.Id).FirstOrDefault(n => session.EventAt(n.Id) == kind);
+                if (first != null && (!nextToEntry || map.Predecessors(first.Id).Contains(map.EntryId))) return seed;
             }
             Assert.Fail($"no seed in 1〜199 puts a {kind} on layer 1");
             return 0;

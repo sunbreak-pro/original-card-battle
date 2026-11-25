@@ -8,6 +8,10 @@
 //   - what a trace gives (cards with their 段, pages, enemy 開示度) goes into the Expedition through Expedition.Inherit,
 //     a call the recorder logs like any other (Recorded.cs).
 //
+// The collapse calendar (seven_layers_v4.md §2, #888) is the lineage's: a life starts on the lineage's calendar
+// (LifeSetup), and its end moves the lineage's calendar on by the days the life spent and the hand-over (CloseLife). A
+// calendar that runs out ends the world, not only the life: the game starts over on a brand-new lineage.
+//
 // The JS wraps two of the Expedition's methods from here (life.js:205-213); C# cannot, so the Expedition does both
 // itself: the pages the heir sets out with are ExpeditionOptions.StartPages (BeginLife counts them), and 「this life
 // took its trace」, which the map hook reads, is Expedition.InheritedTraceId (set by Inherit, kept across a new life of
@@ -30,9 +34,9 @@ namespace Trial.Bridge
 {
     /// <summary>
     /// The departure's choice as 出立 hands it (js: departure.js onSetOut's <c>{ deck, battleToolIds, consumableIds,
-    /// loadout, talent }</c>, the shape life.js choiceToData reads): the deck by instance, the tools that act in battle,
-    /// the exploration loadout — the DungeonContent Loadout of DepartureCarry.Carry (catalogue ItemDefs), or a RunLoadout
-    /// kept as it is — the talent, and the ids 出立 picked.
+    /// loadout }</c>, the shape life.js choiceToData reads; the JS's talent is gone since #1045): the deck by instance,
+    /// the tools that act in battle, the exploration loadout — the DungeonContent Loadout of DepartureCarry.Carry
+    /// (catalogue ItemDefs), or a RunLoadout kept as it is — and the ids 出立 picked.
     /// </summary>
     public sealed class DepartureChoice
     {
@@ -45,9 +49,6 @@ namespace Trial.Bridge
         /// <summary>An exploration RunLoadout kept as it is (js: <c>choice.loadout instanceof RunLoadout</c>); null: from <see cref="Loadout"/>.</summary>
         public RunLoadout RunLoadout { get; set; }
 
-        /// <summary>才能: a card id, or null.</summary>
-        public string Talent { get; set; }
-
         /// <summary>Always empty today (the departure passes the consumables only).</summary>
         public IReadOnlyList<string> ToolIds { get; set; } = Array.Empty<string>();
 
@@ -58,7 +59,7 @@ namespace Trial.Bridge
 
         /// <summary>
         /// The choice a built Departure and its carry make (js: departure.js:712 — deck, battleToolIds, consumableIds,
-        /// loadout, talent). <paramref name="deckSave"/> is the deck builder's Save().
+        /// loadout). <paramref name="deckSave"/> is the deck builder's Save().
         /// </summary>
         public static DepartureChoice Of(Departure departure, CarriedSupplies carry, string deckSave = null)
         {
@@ -70,7 +71,6 @@ namespace Trial.Bridge
                 BattleToolIds = carry.BattleToolIds,
                 ConsumableIds = carry.ConsumableIds,
                 Loadout = carry.Loadout,
-                Talent = departure.TalentCardId,
                 DeckSave = deckSave,
             };
         }
@@ -106,6 +106,32 @@ namespace Trial.Bridge
         public Expedition Expedition { get; }
         public TrialLife Life { get; }
         public JournalIntel Intel { get; }
+    }
+
+    /// <summary>What the end of a life leaves the game with (<see cref="Life.CloseLife"/>).</summary>
+    public sealed class LifeClose
+    {
+        public LifeClose(Lineage recorded, Lineage next, LifeEnding ending)
+        {
+            Recorded = recorded;
+            Next = next;
+            Ending = ending;
+        }
+
+        /// <summary>The lineage with the life's end on it, as Inheritance.RecordEnd wrote it: what the ending scene reads.</summary>
+        public Lineage Recorded { get; }
+
+        /// <summary>
+        /// The lineage the game goes on with: <see cref="Recorded"/> with its calendar moved on by the life's days and the
+        /// hand-over, or, once the calendar ran out, a brand-new lineage on a fresh calendar.
+        /// </summary>
+        public Lineage Next { get; }
+
+        /// <summary>How the life ended (LifeEnding.Expired when the calendar ran out).</summary>
+        public LifeEnding Ending { get; }
+
+        /// <summary>The calendar ran out: the world ended and <see cref="Next"/> is a new lineage (dungeon_exploration_v4.md §6.9).</summary>
+        public bool WorldEnded => Ending == LifeEnding.Expired;
     }
 
     /// <summary>addScribbles' result (js: life.js:159 <c>{ list, rows }</c>).</summary>
@@ -171,8 +197,8 @@ namespace Trial.Bridge
 
         /// <summary>
         /// The departure's choice as plain data: the deck by instance id and kind (instance ids and order are what the
-        /// battles shuffle, so they are kept exactly), the tools that act in battle, the exploration loadout as relief
-        /// items, and the talent. The departure hands a DungeonContent Loadout (catalogue ItemDefs, no relief Kind); the
+        /// battles shuffle, so they are kept exactly), the tools that act in battle, and the exploration loadout as
+        /// relief items. The departure hands a DungeonContent Loadout (catalogue ItemDefs, no relief Kind); the
         /// exploration reads it as the RunLoadout Loadouts.ToRunLoadout makes of it, with the life's tool slots
         /// (<paramref name="toolSlots"/>: 4 with the survivor's bonus). A RunLoadout is kept as it is.
         /// </summary>
@@ -187,7 +213,6 @@ namespace Trial.Bridge
                 Deck = (choice.Deck ?? Array.Empty<CardInstance>()).Select(c => new DeckRow(c.InstanceId, c.Def.Id)).ToList(),
                 BattleToolIds = (choice.BattleToolIds ?? Array.Empty<string>()).ToList(),
                 Loadout = Loadouts.RunLoadoutToData(lo),
-                Talent = choice.Talent,
                 ToolIds = (choice.ToolIds ?? Array.Empty<string>()).ToList(),
                 ConsumableIds = (choice.ConsumableIds ?? Array.Empty<string>()).ToList(),
             };
@@ -234,6 +259,10 @@ namespace Trial.Bridge
                 // that survivor's 走り書き so the heir starts on a sheet of their own (Inheritance.HeirJournal).
                 Journal = Inheritance.HeirJournal(lifeStart.Journal, lifeStart.JournalFrom).ToJson(),
                 Choice = ChoiceToData(choice, lifeStart.ToolSlots),
+                // The carry-over (#1025): the 段 and the kinds the explorer brings back down. The journal is above (the
+                // record's, less the memo, which the router hands the live life as its memo sheet: LifeStart.Memo).
+                Mastery = lifeStart.Carryover?.Cards.ToList(),
+                Owned = lifeStart.Carryover?.Owned.ToList(),
             };
         }
 
@@ -305,15 +334,17 @@ namespace Trial.Bridge
         // ------------------------------------------------------------------ the life
 
         /// <summary>
-        /// Builds the Expedition of a life from its saved start: the deck by instance, the tools, the talent, the
-        /// loadout, the journal's 開示度, the rare pages the heir set out with, the trial rules, the life's deck limits (a
-        /// survivor's heir may hold 45 cards; a life without the bonus: none, the C#'s), a JournalIntel bound to it, and
+        /// Builds the Expedition of a life from its saved start: the deck by instance, the tools, the loadout, the
+        /// journal's 開示度, the rare pages the heir set out with, the trial rules, the life's deck limits (a survivor's
+        /// heir may hold 45 cards; a life without the bonus: none, the C#'s), a JournalIntel bound to it, and
         /// the map hook: the carving dropped once known, the trace node on the lineage's trace layers until this life has
         /// taken its trace (so a trace taken on layer 2 keeps the trace node off layers 3〜7 of the same life, R-09).
+        /// The life walks on <paramref name="calendar"/>, the lineage's collapse calendar (null: a fresh one). The
+        /// lineage's calendar only moves when a life ends (CloseLife), so a replay of the same life reads the same one.
         /// Throws <see cref="SaveFormatException"/> (or the cores' own exceptions) on a start that does not build.
         /// </summary>
         // js: app/life.js:178
-        public static LifeSetupResult LifeSetup(LifeStartData start)
+        public static LifeSetupResult LifeSetup(LifeStartData start, CalendarState calendar = null)
         {
             if (start == null) throw new ArgumentNullException(nameof(start));
             ChoiceData c = start.Choice ?? throw new SaveFormatException("bad save: the start has no choice");
@@ -327,7 +358,13 @@ namespace Trial.Bridge
                 if (!life.TraceTaken && traceLayers.Contains(profile.Layer)) spec = spec.With(NodeKind.Trace, 1);
                 return MapGenerator.Generate(spec, seed);
             }
-            var runStart = new RunStart { Seed = start.SeedValue, Loadout = LoadoutFromData(c.Loadout), MapFor = MapFor };
+            var runStart = new RunStart
+            {
+                Seed = start.SeedValue,
+                Loadout = LoadoutFromData(c.Loadout),
+                MapFor = MapFor,
+                Calendar = calendar ?? CalendarState.Fresh,
+            };
             // The journal the heir set out with (INHERITANCE.md R-13: a survivor's whole journal): its 開示度 go to the
             // Expedition's journal, its rare pages to the Expedition's page count (ExpeditionOptions.StartPages).
             Dictionary<string, int> journal = DisclosureOf(start.Journal);
@@ -344,8 +381,11 @@ namespace Trial.Bridge
                 // The pages the heir set out with count among the life's pages from the start, also when the Expedition
                 // begins its life again; they are inherited, not found (InheritedPages, INHERITANCE.md R-27).
                 StartPages = StartPages(start),
+                // The carry-over (#1025): the 段 and the kinds earlier lives grew; none for a life of the generations.
+                StartMastery = start.Mastery,
+                StartOwned = start.Owned,
             };
-            var expedition = new Expedition(runStart, DeckFromData(c.Deck), c.BattleToolIds, c.Talent, intel, journal, options);
+            var expedition = new Expedition(runStart, DeckFromData(c.Deck), c.BattleToolIds, intel, journal, options);
             intel.Bind(expedition);
             life.Expedition = expedition;
             return new LifeSetupResult(expedition, life, intel);
@@ -357,7 +397,7 @@ namespace Trial.Bridge
         /// only a fight whose calls no longer replay (a save from another build) starts over, with a warning (Save.Warn).
         /// A log that fails before its last fight throws as it is (the router's 「生を再開できません」). The live life
         /// records every later call into the replayed log; <paramref name="onCall"/> runs after each (the router's
-        /// PersistSoon).
+        /// PersistSoon). The life walks on <paramref name="lineage"/>'s calendar (none: a fresh one).
         /// </summary>
         // js: app/main.js:306
         public static LiveLife BeginLife(LifeStartData start, IReadOnlyList<LogEntry> log, string memo = "", object scribbles = null,
@@ -365,7 +405,8 @@ namespace Trial.Bridge
         {
             if (start == null) throw new ArgumentNullException(nameof(start));
             log = log ?? new LifeLog();
-            LifeSetupResult setup = LifeSetup(start);
+            CalendarState calendar = lineage?.Calendar;
+            LifeSetupResult setup = LifeSetup(start, calendar);
             ReplayResult res;
             try
             {
@@ -376,13 +417,45 @@ namespace Trial.Bridge
                 LifeLog trimmed = LifeLog.TrimUnfinished(log);
                 if (trimmed.Count == log.Count) throw;
                 Save.Warn?.Invoke("the fight in progress did not replay; it starts over", e);
-                setup = LifeSetup(start);
+                setup = LifeSetup(start, calendar);
                 res = Recorder.ReplayLife(setup.Expedition, trimmed, table);
             }
             RecordedExpedition rec = Recorder.RecordExpedition(setup.Expedition, res.Kept, onCall);
             var live = new LiveLife(rec, setup.Life, start, memo ?? "", LifeScribbles(start, scribbles, lineage));
             if (res.Open != null) live.OpenSource = rec.WrapSource(res.Open.Source);
             return live;
+        }
+
+        // ------------------------------------------------------------------ the end of a life and the calendar
+
+        /// <summary>
+        /// The lineage's calendar once a life ended in <paramref name="final"/>: the days the life spent, then the
+        /// hand-over to the next heir (seven_layers_v4.md §2.1: 3 days after a survival, 1 with 帰り道の糸, 10 after a death
+        /// or the way down; while a king is down the hand-over lowers the kings' counters instead).
+        /// </summary>
+        public static CalendarState HandoverCalendar(ExplorationState final)
+        {
+            if (final == null) throw new ArgumentNullException(nameof(final));
+            return final.Calendar.Handover(final.Phase, final.Loadout.ShortHandover);
+        }
+
+        /// <summary>
+        /// The data half of the router's endLife after Inheritance.RecordEnd wrote <paramref name="recorded"/>: the
+        /// lineage moves on with <see cref="HandoverCalendar"/>. A calendar that ran out (RunPhase.Expired) is no death
+        /// to hand on: the world ended, and the game goes on with <paramref name="freshLineage"/>'s brand-new lineage on a
+        /// fresh calendar (the title's はじめから), while the ending scene still reads <paramref name="recorded"/>
+        /// (dungeon_exploration_v4.md §6.9).
+        /// </summary>
+        public static LifeClose CloseLife(Lineage recorded, ExplorationState final, Func<Lineage> freshLineage)
+        {
+            if (recorded == null) throw new ArgumentNullException(nameof(recorded));
+            if (final == null) throw new ArgumentNullException(nameof(final));
+            LifeEnding ending = Inheritance.EndingOf(final.Phase)
+                ?? throw new ArgumentException("the life has not ended: " + final.Phase, nameof(final));
+            if (final.Phase != RunPhase.Expired) return new LifeClose(recorded, recorded.WithCalendar(HandoverCalendar(final)), ending);
+            if (freshLineage == null) throw new ArgumentNullException(nameof(freshLineage));
+            Lineage fresh = freshLineage() ?? throw new InvalidOperationException("no new lineage to start over on");
+            return new LifeClose(recorded, fresh.WithCalendar(CalendarState.Fresh), ending);
         }
 
         // ------------------------------------------------------------------ 走り書き as the save holds them

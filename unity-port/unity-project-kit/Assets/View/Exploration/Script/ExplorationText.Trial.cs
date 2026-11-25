@@ -66,8 +66,8 @@ namespace Exploration
         public static string MealLine(int gain, int cost, int percent) =>
             $"特殊な食事: 最大スタミナ +{gain}（一時的な変化）・HP −{cost}（最大の {percent}%）";
 
-        /// <summary>§5: 「どちらを選んでも刻限は 1 減ります」.</summary>
-        public const string EventChoiceNote = "受ける / 受けない を選べる。どちらでも刻限は 1 減る";
+        /// <summary>§5: either answer, the node has taken its day.</summary>
+        public const string EventChoiceNote = "受ける / 受けない を選べる。どちらでも暦は 1 日進む";
 
         /// <summary>miasma_and_battle_v4.md §5: the temporary changes share ±4.</summary>
         public const string TempClampNote = "一時的な変化は、休息の +2 と合わせて ±4 まで";
@@ -79,15 +79,15 @@ namespace Exploration
 
         public const string DeclineLabel = "受けない";
 
-        /// <summary>The event card's lead, after the step paid its 刻限.</summary>
+        /// <summary>The event card's lead, after the step paid its day.</summary>
         // js: bridge/explorationScript/ExplorationText.js:165
         public static string EventLead(string name) => $"{name}がある。受けるか、受けずに通り過ぎるかを選ぶ。";
 
         /// <summary>The result line of a declined event.</summary>
         public const string EventDeclined = "受けずに通り過ぎた";
 
-        /// <summary>Under the 受けない button: the 刻限 was paid on the way in.</summary>
-        public const string DeclineNote = "何も変わらない（刻限はもう払った）";
+        /// <summary>Under the 受けない button: the day was paid on the way in.</summary>
+        public const string DeclineNote = "何も変わらない（1 日はもう払った）";
 
         /// <summary>A chest's card on the journal's dungeon page.</summary>
         // js: bridge/explorationScript/ExplorationText.js:176
@@ -102,9 +102,6 @@ namespace Exploration
 
         // js: bridge/explorationScript/ExplorationText.js:183
         public static string StaminaChange(int before, int after) => $"スタミナ {before} → {after}";
-
-        // js: bridge/explorationScript/ExplorationText.js:185
-        public static string MiasmaChange(int before, int after) => $"瘴気 {before}% → {after}%";
 
         /// <summary>A chest's finds on the result card.</summary>
         // js: bridge/explorationScript/ExplorationText.js:188
@@ -139,14 +136,14 @@ namespace Exploration
         /// <summary>A slot whose item would change nothing now.</summary>
         public const string NoEffectNow = "いま使っても何も変わらない";
 
-        /// <summary>標の石 with nowhere to land, or no 刻限 to pay.</summary>
-        public const string NoJumpNow = "跳べるのは、刻限が残る探索中だけ";
+        /// <summary>標の石 with nowhere to land.</summary>
+        public const string NoJumpNow = "跳べるのは、まだ踏んでいないノードが残る探索中だけ";
 
         /// <summary>The hint while a 標の石 is aimed.</summary>
-        public const string AimHint = "標の石: 跳ぶ先の、まだ踏んでいないノードを選ぶ（刻限 1 を使う。Esc でやめる）";
+        public const string AimHint = "標の石: 跳ぶ先の、まだ踏んでいないノードを選ぶ（暦が 1 日進む。Esc でやめる）";
 
         /// <summary>A node 標の石 can land on.</summary>
-        public const string JumpNote = "標の石で跳べる。入ると刻限を 1 使う";
+        public const string JumpNote = "標の石で跳べる。入ると暦が 1 日進む";
 
         public const string JumpLabel = "跳ぶ";
 
@@ -172,26 +169,21 @@ namespace Exploration
 
         public const string SideBattle = "戦闘";
 
-        /// <summary>刻限の砂 in the band: 「刻限の砂 +1」.</summary>
-        // js: bridge/explorationScript/ExplorationText.js:250
-        public static string TimeBonus(string name, int amount) => $"{name} +{amount}";
+        // The three items that act on the collapse calendar (tools_and_consumables_v4.md §2.4), each in one line.
 
-        /// <summary>防瘴の面 beside the gauge: 「防瘴の面 濃さ 2 → 1」, or 「防瘴の面 濃さは下限 1 のまま」 (seven_layers_v4.md §3.2).</summary>
-        // js: bridge/explorationScript/ExplorationText.js:253
-        public static string Relief(string names, int density, int effective) =>
-            effective < density ? $"{names} 濃さ {density} → {effective}" : $"{names} 濃さは下限 {effective} のまま";
+        /// <summary>日読みの砂 (tool): a layer's entry node takes no day.</summary>
+        public const string EntryDayEffect = "層の入口で日が進まない";
 
-        /// <summary>
-        /// The journal's density row when the tools would take the density below its floor (seven_layers_v4.md §3.2
-        /// 「濃度は 1 より下がりません」): 「層の濃さ 2 − ツール 2、下限 1」.
-        /// </summary>
-        // js: bridge/explorationScript/ExplorationText.js:261
-        public static string ReliefFloor(int density, int relief, int floor) =>
-            $"層の濃さ {density} − ツール {relief}、下限 {floor}";
+        /// <summary>帰り道の糸 (tool): surviving hands over to the next life in 1 day instead of 3.</summary>
+        public const string ReturnEffect = "生還後、次の代の出立まで 1 日";
+
+        /// <summary>早駆けの丸薬 (consumable): the next new node takes no day.</summary>
+        public const string HasteEffect = "次の新しいノード 1 つで日が進まない";
 
         /// <summary>
         /// The journal's page of the layer-two carving (seven_layers_v4.md §5 「拾うと起きる … 手記に頁が 1 つ増える」;
-        /// what it shows: world-v1.md §5, 「二層の柱の彫りが竜の形をしている」; no battle effect, §5.2).
+        /// what it shows: world-v1.md §5, the pillars of layer two carved in the shape of 龍神; no battle effect, §5.2;
+        /// the name reads 龍神, not 竜神: seven_layers_v4.md §8).
         /// </summary>
         public const string CarvingPageTitle = "秘跡の彫り";
 
@@ -201,8 +193,8 @@ namespace Exploration
         /// </summary>
         public static readonly IReadOnlyList<(string Label, string Text)> CarvingPageRows = Array.AsReadOnly(new[]
         {
-            ("", "第 2 層の柱に、竜の形をした彫りがあった。"),
-            ("層の名", "■■の秘跡 は、竜神の秘跡 と読めた"),
+            ("", "第 2 層の柱に、龍神の形をした彫りがあった。"),
+            ("層の名", "■■の秘跡 は、龍神の秘跡 と読めた"),
             ("戦闘", "効かない"),
         });
 
@@ -223,8 +215,8 @@ namespace Exploration
         /// </summary>
         public static string ToolEffect(ReliefKind kind, int amount) => kind switch
         {
-            ReliefKind.Density => $"濃さ −{amount}",
-            ReliefKind.Time => $"刻限 +{amount}",
+            ReliefKind.EntryDay => EntryDayEffect,
+            ReliefKind.Return => ReturnEffect,
             ReliefKind.Survey => "相手を選ぶ",
             ReliefKind.Interlude => $"休憩 +{amount}%",
             _ => "",

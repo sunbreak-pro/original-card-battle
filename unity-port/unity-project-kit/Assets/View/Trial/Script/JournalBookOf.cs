@@ -2,7 +2,8 @@
 // reads (a book handed in, a list of pages, or the running life's, read through ExplorationScreenBuilder like the
 // map's drawer), a page per enemy of the fight on screen at the 開示度 the battle reads, the 用語 page with
 // 「スタンス」 under 「構え」 (X-17), the ダンジョン tab's 希少な頁 page (R-27), and the tabs in the order 敵ごと /
-// ダンジョン / メモ / 用語 (battle_ui_ux_v2.md §2.4, dungeon_exploration_v4.md §6.7). The drawer (Trial.Meta) lays
+// ダンジョン / メモ / 用語 (battle_ui_ux_v2.md §2.4, dungeon_exploration_v4.md §6.7). Outside battle the ダンジョン tab
+// also holds the saved lineage's past lives and the rules of traces (a Unity addition, #1053). The drawer (Trial.Meta) lays
 // the result out; every word comes from here, Journal.Script, or the enemy pages.
 //
 // The enemies' journal pages (EnemyPages.Has / Page, Trial.Bridge) are not in C# yet: they come in through
@@ -56,6 +57,12 @@ namespace Trial.Script
 
         /// <summary>The running life: its book when none is handed in, its 開示度 and its rare pages.</summary>
         public Expedition Expedition;
+
+        /// <summary>
+        /// The saved lineage (main.js journalCtx's): its past lives and the rules of traces make a page of their own
+        /// outside battle (<see cref="JournalBookOf.PastLivesPage"/>). Null: no such page.
+        /// </summary>
+        public InheritanceCore.Lineage Lineage;
 
         /// <summary>The fight's enemies with their names (and rows).</summary>
         public IReadOnlyList<JournalFoe> Enemies;
@@ -224,6 +231,16 @@ namespace Trial.Script
             if (!pages.Any(p => p.Tab == JournalTab.Terms)) pages.Add(JournalTerms.Page());
             pages = pages.Select(WithStanceTerm).ToList();
             pages = WithRarePage(pages, RarePagesPage(ctx.Expedition));
+            // In battle only the enemies and the terms are read (#1053), so the past lives stay out of the book.
+            if (context == JournalContext.Battle)
+            {
+                pages = pages.Where(p => p.Id != PastLivesPageId).ToList();
+            }
+            else
+            {
+                JournalPage past = PastLivesPage(ctx.Lineage);
+                if (past != null && !pages.Any(p => p.Id == past.Id)) pages.Add(past);
+            }
             List<JournalPage> ordered = TabOrder.SelectMany(tab => pages.Where(p => p.Tab == tab)).ToList();
             return new JournalBook(ordered, context);
         }
@@ -311,6 +328,62 @@ namespace Trial.Script
             rows.Add(new JournalRow("", MetaText.RarePagesPending));
             rows.Add(new JournalRow("", MetaText.RarePagesFate));
             return new JournalPage("rare-pages", JournalTab.Dungeon, MetaText.RarePagesTitle, rows);
+        }
+
+        /// <summary>The id of <see cref="PastLivesPage"/>.</summary>
+        public const string PastLivesPageId = "past-lives";
+
+        /// <summary>
+        /// Unity addition (#1053): the hall's list of past lives and its four rules of traces as a page of the ダンジョン
+        /// tab, after the layer's pages and the 希少な頁, so they can still be read once the hall drops them (#1052). The
+        /// title is HallView.PastLivesHeading (「これまでの踏破者」, or 「これまでの探索」 under the carry-over); a row per
+        /// life, newest first, as the hall's card prints it (<see cref="PastLifeLabel"/> over
+        /// <see cref="PastLifeLines"/>), or the hall's first-visit line when no life has closed; then
+        /// InheritanceText.TraceRules, a paragraph each. Null without a lineage or when its view cannot be read.
+        /// </summary>
+        public static JournalPage PastLivesPage(InheritanceCore.Lineage lineage)
+        {
+            if (lineage == null) return null;
+            InheritanceCore.HallView view;
+            try
+            {
+                view = InheritanceCore.Inheritance.HallView(lineage);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+            var rows = new List<JournalRow>();
+            // HallScene's own fallback for an empty first-visit line
+            if (view.PastLives.Count == 0)
+                rows.Add(new JournalRow("", string.IsNullOrEmpty(view.Empty) ? InheritanceCore.InheritanceText.HallEmpty : view.Empty));
+            foreach (InheritanceCore.PastLifeView life in view.PastLives)
+                rows.Add(new JournalRow(PastLifeLabel(life), string.Join("\n", PastLifeLines(lineage, life))));
+            foreach (string rule in view.TraceRules) rows.Add(new JournalRow("", rule));
+            return new JournalPage(PastLivesPageId, JournalTab.Dungeon, view.PastLivesHeading, rows);
+        }
+
+        /// <summary>A past life's row label: the hall card's header (第 n 代 or n 回目, the name, how it ended).</summary>
+        public static string PastLifeLabel(InheritanceCore.PastLifeView life) =>
+            string.Join("　", new[] { life.GenerationLabel, life.Name, life.EndingLabel }.Where(s => !string.IsNullOrEmpty(s)));
+
+        /// <summary>
+        /// A past life's lines under its label, as the hall card prints them: the end sentence, the place, 「装束　＜段＞」
+        /// and the trace line (MetaLines.PastTraceLine). Under the carry-over a life that left no trace has no trace line:
+        /// the carry-over leaves none (Inheritance.CloseCarried), so the view's 「痕跡なし（生きて閉じた）」 would also be
+        /// said of a fall.
+        /// </summary>
+        public static IReadOnlyList<string> PastLifeLines(InheritanceCore.Lineage lineage, InheritanceCore.PastLifeView life)
+        {
+            var lines = new List<string>
+            {
+                life.EndingLine,
+                life.PlaceLine,
+                InheritanceCore.InheritanceText.AttireHeading + "　" + life.TierName,
+            };
+            if (!(lineage.CarriesOver && life.TraceLine == InheritanceCore.InheritanceText.TraceStatus.None))
+                lines.Add(MetaLines.PastTraceLine(lineage, life));
+            return lines;
         }
 
         /// <summary>In battle every enemy being fought is a tab of its own (battle_ui_ux_v2.md §2.4, §4.7).</summary>

@@ -60,7 +60,7 @@ namespace DungeonCore.Tests
         {
             // roster §0 「大きさ」: these four use two cells, every other enemy one.
             var sizeTwo = new HashSet<string> { "armored_warden", "miasma_priest", "abyss_angler", "distortion_root" };
-            for (int layer = 1; layer <= SevenLayers.Count; layer++)
+            for (int layer = 1; layer <= Lair.LayerCount; layer++)
             {
                 foreach (var kind in new[] { NodeKind.Battle, NodeKind.Elite, NodeKind.Boss })
                 {

@@ -62,7 +62,8 @@ namespace Trial.Bridge.Tests
 
                 var parsed = (JsonObject)Json.Parse(good);
                 var lin = (JsonObject)parsed["lineage"];
-                lin["Version"] = (Json.IsNumber(lin["Version"]) ? (int)Json.ToDouble(lin["Version"]) : 1) + 1;
+                // A lineage is written at the oldest version that holds it (#1025): the future is past this build's newest.
+                lin["Version"] = Inheritance.SaveVersion + 1;
                 string future = Json.Stringify(parsed);
                 var variants = new Dictionary<string, string>
                 {
@@ -213,7 +214,7 @@ namespace Trial.Bridge.Tests
             "\"journal\":{\"Disclosure\":{\"polearm_warped\":1},\"Pages\":[{\"Id\":\"page-1\",\"Title\":\"一\"}],\"Memo\":\"\",\"Scribbles\":[{\"Generation\":2,\"Name\":\"二\",\"Text\":\"右へ\"}]}," +
             "\"choice\":{\"deck\":[[\"side_sweep-1\",\"side_sweep\"],[\"side_sweep-2\",\"side_sweep\"]],\"battleToolIds\":[\"ikitsugi_no_fue\"]," +
             "\"loadout\":{\"tools\":[[\"bosho_no_men\",\"Density\",1]],\"consumables\":[[\"yakuso\",\"Heal\",20]],\"slots\":3,\"trial\":true}," +
-            "\"talent\":null,\"toolIds\":[],\"consumableIds\":[\"yakuso\"]}}";
+            "\"toolIds\":[],\"consumableIds\":[\"yakuso\"]}}";
 
         [Test]
         public void LifeStart_ReadsAndWritesTheJsShape_ByteForByte()
@@ -233,10 +234,30 @@ namespace Trial.Bridge.Tests
                 Assert.That(s.Choice.Deck[1].DefId, Is.EqualTo("side_sweep"));
                 Assert.That(s.Choice.BattleToolIds, Is.EqualTo(new[] { "ikitsugi_no_fue" }));
                 Assert.That(s.Choice.ConsumableIds, Is.EqualTo(new[] { "yakuso" }));
-                Assert.That(s.Choice.Talent, Is.Null);
                 Assert.That(s.Journal, Is.InstanceOf<JsonObject>());
             });
             Assert.That(Json.Stringify(s.ToJson()), Is.EqualTo(StartText));
+        }
+
+        [Test]
+        public void LifeStart_SavedWithATalent_StillReads_AndIsWrittenBackWithoutIt()
+        {
+            // #1045: a start saved before (and the JS's) names the card whose ticks counted twice, or null. Any of them
+            // reads as the same start, and the talent is not written back.
+            const string choiceTail = "\"toolIds\":[],\"consumableIds\":[\"yakuso\"]}}";
+            Assert.That(StartText, Does.EndWith(choiceTail));
+            foreach (string talent in new[] { "\"side_sweep\"", "null", "7" })
+            {
+                string older = StartText.Replace(choiceTail, "\"talent\":" + talent + "," + choiceTail);
+                LifeStartData s = LifeStartData.FromJson(Json.Parse(older));
+                Assert.Multiple(() =>
+                {
+                    Assert.That(s.Choice.Deck.Count, Is.EqualTo(2), talent);
+                    Assert.That(s.Choice.BattleToolIds, Is.EqualTo(new[] { "ikitsugi_no_fue" }), talent);
+                    Assert.That(s.Choice.ConsumableIds, Is.EqualTo(new[] { "yakuso" }), talent);
+                    Assert.That(Json.Stringify(s.ToJson()), Is.EqualTo(StartText), talent);
+                });
+            }
         }
 
         [Test]
@@ -257,7 +278,7 @@ namespace Trial.Bridge.Tests
             Assert.That(bare.Choice.BattleToolIds, Is.Empty);
             Assert.That(Json.Stringify(bare.ToJson()), Is.EqualTo(
                 "{\"v\":1,\"name\":\"\",\"seed\":\"42\",\"survivorBonus\":false,\"traceLayers\":[],\"carvingKnown\":false,\"journal\":null," +
-                "\"choice\":{\"deck\":[],\"battleToolIds\":[],\"loadout\":null,\"talent\":null,\"toolIds\":[],\"consumableIds\":[]}}"),
+                "\"choice\":{\"deck\":[],\"battleToolIds\":[],\"loadout\":null,\"toolIds\":[],\"consumableIds\":[]}}"),
                 "what the JS leaves out stays out");
         }
 

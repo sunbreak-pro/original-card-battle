@@ -7,10 +7,11 @@ namespace DungeonCore.Tests
         /// <summary>
         /// The whole minimal layer for one seed, written out. Pinning it catches a refactor that
         /// reorders the draws: the map would still be valid and still be deterministic, but every
-        /// seed would name a different map than it did before.
+        /// seed would name a different map than it did before. #1049 changed how rows are linked on
+        /// purpose (the kinds drew the same; the survey's way out now forks), so the pin was taken again.
         /// </summary>
         private const string MinimalLayerSeedOne =
-            "L1|0:0,0,battle->1.2;1:1,0,battle->3;2:1,1,survey->4;3:2,0,rest->5;4:2,1,elite->5;5:3,0,boss->;";
+            "L1|0:0,0,battle->1.2;1:1,0,battle->3;2:1,1,survey->3.4;3:2,0,rest->5;4:2,1,elite->5;5:3,0,boss->;";
 
         [Test]
         public void TheMinimalLayerAtSeedOneIsPinned()

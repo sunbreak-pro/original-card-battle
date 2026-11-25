@@ -12,7 +12,7 @@ namespace Exploration.Bridge.Tests
         /// <summary>A book after <c>n</c> training marks on each card id given (js: last-round.test.mjs:20).</summary>
         private static MasteryBook Trained(params (string Id, int Marks)[] marks)
         {
-            MasteryBook book = MasteryBook.Begin(null);
+            MasteryBook book = MasteryBook.Begin();
             foreach (var (id, n) in marks)
             {
                 for (int i = 0; i < n; i++) book = book.Train(id).Book;
@@ -24,7 +24,7 @@ namespace Exploration.Bridge.Tests
         public void X15_NameAtRank_TheCataloguesNameAtZero_TheProfilesNameAtEachDan()
         {
             // js: test/ext/last-round.test.mjs:26
-            MasteryBook book = MasteryBook.Begin(null);
+            MasteryBook book = MasteryBook.Begin();
             Assert.That(MasteryView.NameAtRank(book, "side_sweep", 0), Is.EqualTo(CardCatalog.ById("side_sweep").Name));
             Assert.That(MasteryView.NameAtRank(book, "side_sweep", 1), Is.EqualTo("大横薙ぎ"));
             Assert.That(MasteryView.NameAtRank(book, "side_sweep", 2), Is.EqualTo("渦薙ぎ"));
@@ -35,7 +35,7 @@ namespace Exploration.Bridge.Tests
         public void X15_NameAtRank_ACardThatNeverGrows_KeepsItsName()
         {
             // js: bridge/exploration/MasteryView.js:13 (no profile: the catalogue's name at every 段)
-            MasteryBook book = MasteryBook.Begin(null);
+            MasteryBook book = MasteryBook.Begin();
             string still = null;
             foreach (CardDef def in CardCatalog.All)
             {
@@ -57,7 +57,7 @@ namespace Exploration.Bridge.Tests
             IReadOnlyList<int> thresholds = Constants.MasteryThresholds;
             int t1 = thresholds[0];
             int t2 = thresholds[1];
-            MasteryProgressInfo fresh = MasteryView.MasteryProgress(MasteryBook.Begin(null), "side_sweep");
+            MasteryProgressInfo fresh = MasteryView.MasteryProgress(MasteryBook.Begin(), "side_sweep");
             Assert.That(new object[] { fresh.Rank, fresh.Ticks, fresh.Need, fresh.Grows, fresh.Top, fresh.Capped },
                 Is.EqualTo(new object[] { 0, 0, t1, true, false, false }));
             Assert.That(fresh.Name, Is.EqualTo(fresh.BaseName));
@@ -93,7 +93,7 @@ namespace Exploration.Bridge.Tests
         public void X15_MasteryProgress_ACardWithNoProfile_DoesNotGrow()
         {
             // js: bridge/exploration/MasteryView.js:31-37 (Grows false, Need null)
-            MasteryBook book = MasteryBook.Begin(null);
+            MasteryBook book = MasteryBook.Begin();
             foreach (CardDef def in CardCatalog.All)
             {
                 if (book.ProfileOf(def.Id) != null) continue;

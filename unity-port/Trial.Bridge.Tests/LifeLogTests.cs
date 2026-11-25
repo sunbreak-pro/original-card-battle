@@ -440,8 +440,9 @@ namespace Trial.Bridge.Tests
 
         // test/app/settle.test.mjs walkSettled with today's actions: a whole life walked the way the app does it (every
         // fight finished at its decision, the explore calls on the session), replayed from its log to the same state.
+        // Seed 5 took 4's place in #1038: with the starter deck, life 4 falls in its first fight.
         [TestCase(2UL)]
-        [TestCase(4UL)]
+        [TestCase(5UL)]
         [TestCase(6UL)]
         public void AWholeLife_ReplaysFromItsLog_ToTheSameState(ulong seed)
         {
@@ -470,8 +471,16 @@ namespace Trial.Bridge.Tests
                 if (s.HasPendingStep) { rec.Act(ScreenAction.ConfirmStep); continue; }
                 if (s.ConfirmingDescend) { rec.Act(ScreenAction.ConfirmDescend); continue; }
                 if (st.IsOver) break;
+                if (LifeTestKit.NeedsRegion(s)) { rec.Act(ScreenAction.ChooseRegion, LifeTestKit.RegionArg(Region.Dragon)); continue; }
                 if (st.Phase == RunPhase.Interlude) { rec.Act(ScreenAction.Descend); continue; }
                 if (ExplorationReducer.CanInterlude(st)) { rec.Act(ScreenAction.GoToInterlude); continue; }
+                // A king down with the other two standing: the king's room has no way down, so the life ends alive.
+                if (st.Phase == RunPhase.LayerCleared && st.Profile.IsKingLayer)
+                {
+                    rec.Act(ScreenAction.AskEndLife);
+                    rec.Act(ScreenAction.ConfirmEndLife);
+                    continue;
+                }
                 var open = st.Map.Nodes.Where(n => ExplorationReducer.CanStep(st, n.Id)).ToList();
                 var fresh = open.Where(n => !st.HasResolved(n.Id)).ToList();
                 var pick = fresh.Count > 0 ? fresh : open;
@@ -592,6 +601,13 @@ namespace Trial.Bridge.Tests
             {
                 bool r = Expedition.Session.Act(action);
                 Log.Push("S", "Act", action);
+                return r;
+            }
+
+            public bool Act(ScreenAction action, string arg)
+            {
+                bool r = Expedition.Session.Act(action, arg);
+                Log.Push("S", "Act", action, arg);
                 return r;
             }
 

@@ -78,7 +78,7 @@ namespace InheritanceCore
                 if (!Js.IsMember(endingValue, out LifeEnding parsed))
                     throw new InheritanceRuleException($"bad save: ending {Js.Display(endingValue)}");
                 ending = parsed;
-                layer = Js.RequireInt(Js.Get(l, "Layer"), "layer", 1, SevenLayers.Count);
+                layer = Js.RequireInt(Js.Get(l, "Layer"), "layer", 1, Lair.LayerCount);
             }
             var rawSeed = Js.Get(l, "Seed");
             return new LifeRecord(
@@ -107,8 +107,14 @@ namespace InheritanceCore
         public static Lineage FromJson(object? data)
         {
             if (!Js.IsObject(data)) throw new InheritanceRuleException("bad save: not an object");
-            // An older save is converted first, a newer one refused (LineageMigrations, #109).
-            if (data is JsonObject saved) data = LineageMigrations.Upgrade(saved);
+            // An older save is converted first, a newer one refused (LineageMigrations, #109). The lineage keeps the
+            // version it was saved at, so a lineage read and written again is the same text (the JS's, at version 1).
+            int savedVersion = SaveVersion;
+            if (data is JsonObject saved)
+            {
+                data = LineageMigrations.Upgrade(saved);
+                if (Json.IsInteger(Js.Get(saved, "Version"))) savedVersion = (int)Json.ToDouble(Js.Get(saved, "Version"));
+            }
             var version = Js.Get(data, "Version");
             if (!(Json.IsNumber(version) && Json.ToDouble(version) == SaveVersion))
                 throw new InheritanceRuleException($"bad save: version {Js.Display(version)}");
@@ -126,7 +132,7 @@ namespace InheritanceCore
             var traces = rawTraces.Select(t =>
             {
                 if (!Js.IsObject(t) || !(Js.Get(t, "Id") is string id)) throw new InheritanceRuleException("bad save: a trace");
-                int layer = Js.RequireInt(Js.Get(t, "Layer"), "trace layer", 1, SevenLayers.Count);
+                int layer = Js.RequireInt(Js.Get(t, "Layer"), "trace layer", 1, Lair.LayerCount);
                 int generation = Js.RequireInt(Js.Get(t, "Generation"), "trace generation", 1);
                 var endingValue = Js.Get(t, "Ending");
                 if (!Js.IsMember(endingValue, out LifeEnding ending))
@@ -160,13 +166,61 @@ namespace InheritanceCore
             }
             var player = Js.Get(data, "Player");
             return new Lineage(
-                SaveVersion,
+                savedVersion,
                 Ulong(Js.SeedOf(Js.Get(data, "Seed"))),
                 lives,
                 current,
                 traces,
                 survivor,
-                new PlayerKnowledge(Js.Truthy(Js.Get(player, "CarvingTaken")), Js.Truthy(Js.Get(player, "RootDefeated"))));
+                new PlayerKnowledge(Js.Truthy(Js.Get(player, "CarvingTaken")), Js.Truthy(Js.Get(player, "RootDefeated"))),
+                CheckCalendar(Js.Get(data, "Calendar")),
+                CheckCarryover(Js.Get(data, "Carryover")));
+        }
+
+        /// <summary>
+        /// The saved carry-over (#1025): { Cards: [{ CardId, Rank, Ticks }], Owned: [ids], Journal }. Absent or null: the
+        /// lineage plays the generations. A version-1 save never holds one (LineageMigrations' first step drops the key).
+        /// </summary>
+        private static Carryover? CheckCarryover(object? c)
+        {
+            if (Js.IsNullish(c)) return null;
+            if (!(c is JsonObject)) throw new InheritanceRuleException("bad save: the carry-over");
+            var cards = Js.List(Js.Get(c, "Cards"), "carried cards").Select(card =>
+            {
+                if (!(Js.Get(card, "CardId") is string id) || id.Length == 0) throw new InheritanceRuleException("bad save: a carried card");
+                return new BattleCore.CardMastery(
+                    id,
+                    Js.RequireInt(Js.Get(card, "Ticks"), $"carried ticks of {id}", 0),
+                    Js.RequireInt(Js.Get(card, "Rank"), $"carried rank of {id}", 0, 3));
+            }).ToList();
+            var owned = Js.List(Js.Get(c, "Owned"), "carried kinds").Select(id =>
+                id is string s && s.Length > 0 ? s : throw new InheritanceRuleException("bad save: a carried kind")).ToList();
+            var journal = Js.Get(c, "Journal");
+            return new Carryover(cards, owned, Js.IsNullish(journal) ? null : CheckJournalShape(journal, "carried"));
+        }
+
+        /// <summary>
+        /// The saved 崩壊の暦 (#888). A lineage saved without it (the JS's, and every one from before #888) is on a fresh
+        /// calendar; the key is written only once the calendar has moved (Lineage.ToJson), so this adds no save version.
+        /// </summary>
+        private static CalendarState CheckCalendar(object? c)
+        {
+            if (Js.IsNullish(c)) return CalendarState.Fresh;
+            if (!(c is JsonObject)) throw new InheritanceRuleException("bad save: the calendar");
+            int daysLeft = Js.RequireInt(Js.Get(c, "DaysLeft"), "calendar days", 0, DungeonCore.Calendar.TotalDays);
+            var kings = new Dictionary<Region, int>();
+            var rawKings = Js.Get(c, "KingReturns");
+            if (!Js.IsNullish(rawKings))
+            {
+                if (!(rawKings is JsonObject)) throw new InheritanceRuleException("bad save: the kings of the calendar");
+                foreach (var pair in Js.Entries(rawKings))
+                {
+                    if (!RegionExtensions.TryParseToken(pair.Key, out Region region) || !region.HasKing())
+                        throw new InheritanceRuleException($"bad save: no king of {pair.Key}");
+                    kings[region] = Js.RequireInt(pair.Value, $"return of the {pair.Key} king", 1, DungeonCore.Calendar.KingReturnDays);
+                }
+            }
+            return new CalendarState(daysLeft, kings);
         }
 
         /// <summary>JSON text of the lineage (localStorage's / the save file's).</summary>

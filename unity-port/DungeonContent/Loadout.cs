@@ -53,9 +53,8 @@ namespace DungeonContent
 
         /// <summary>
         /// Builds a loadout from catalogue ids. **The same tool may be taken twice**: the slot
-        /// count is the constraint, and no canon rule forbids a second copy. That is what makes
-        /// the survivor's fourth slot able to hold a second 防瘴の面 and reach the density
-        /// relief of 2 that seven_layers_v4.md §3.3 counts on (Issue #100 decision).
+        /// count is the constraint, and no canon rule forbids a second copy (Issue #100 decision).
+        /// A second copy of a calendar tool adds nothing, so it only spends a slot.
         /// </summary>
         public static Loadout Of(IReadOnlyList<string> toolIds, IReadOnlyList<string>? consumableIds = null, int toolSlots = ToolSlots)
         {
@@ -74,15 +73,13 @@ namespace DungeonContent
                 toolSlots);
         }
 
-        /// <summary>How much every layer's 瘴気 density drops. Tools stack.</summary>
-        public int MiasmaDensityRelief =>
-            _tools.Where(t => t.Effect == ItemEffect.MiasmaDensity).Sum(t => t.Amount);
-
-        /// <summary>How much 刻限 every layer gains.</summary>
-        public int TimeLimitBonus =>
-            _tools.Where(t => t.Effect == ItemEffect.TimeLimit).Sum(t => t.Amount);
-
         public bool Has(ItemEffect effect) => _tools.Any(t => t.Effect == effect);
+
+        /// <summary>日読みの砂 is carried: every layer's entry node costs no day. A second copy adds nothing.</summary>
+        public bool EntryDayFree => Has(ItemEffect.EntryDayFree);
+
+        /// <summary>帰り道の糸 is carried: a life that comes back alive hands over in 1 day.</summary>
+        public bool ShortHandover => Has(ItemEffect.ShortHandover);
 
         /// <summary>
         /// Picks something up. With a free slot it goes in; with none, the player swaps it for

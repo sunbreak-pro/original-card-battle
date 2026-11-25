@@ -223,7 +223,7 @@ namespace Exploration.Bridge
         public static string PromptOf(DeathTrace trace)
         {
             if (trace == null) throw new ArgumentNullException(nameof(trace));
-            string how = trace.Cause == DeathCause.Miasma ? "瘴気に呑まれた" : "倒れた";
+            string how = trace.Cause == DeathCause.Expired ? "暦が尽きるのを見た" : "倒れた";
             string where = $"第 {trace.Place.Layer} 層の{ExplorationText.KindLabel(trace.Place.Kind)}で";
             string what = trace.Candidates.Count == 0
                 ? "継げるものは残っていません。"

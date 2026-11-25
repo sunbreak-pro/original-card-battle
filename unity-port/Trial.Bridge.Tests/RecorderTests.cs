@@ -128,6 +128,7 @@ namespace Trial.Bridge.Tests
                 "S.CanUseConsumable", // #651: the C# slot's read (trial screens read CanUseSlot)
                 "S.HasSurveyed",      // #107: LifeJournal's read of the session (trial screens read Surveyed)
                 "E.RankUpsByFight", "E.RankUpsOfLastFight", // #910: the win result card reads the 段 before Return writes them
+                "S.NextLayer",        // #888: the layer below on the life's route (TryDescend's read)
             };
             var internalCalls = new HashSet<string>(StringComparer.Ordinal)
             {
@@ -207,7 +208,9 @@ namespace Trial.Bridge.Tests
             Assert.That(s.PendingEncounter, Is.SameAs(raw.Session.PendingEncounter));
             Assert.That(s.Keeper, Is.SameAs(raw));
             Assert.That(s.CanUseConsumables, Is.EqualTo(raw.Session.CanUseConsumables));
-            Assert.That(s.MapOf(SevenLayers.Of(2), 5).Fingerprint(), Is.EqualTo(raw.Session.MapOf(SevenLayers.Of(2), 5).Fingerprint()));
+            Assert.That(s.MapOf(Lair.Of(2), 5).Fingerprint(), Is.EqualTo(raw.Session.MapOf(Lair.Of(2), 5).Fingerprint()));
+            Assert.That(s.Calendar, Is.SameAs(raw.Session.Calendar));
+            Assert.That(s.Region, Is.EqualTo(raw.Session.Region));
             Assert.That(s.CarvingKnownAt(raw.Session.RunSeed), Is.EqualTo(raw.Session.CarvingKnownAt(raw.Session.RunSeed)));
             Assert.That(ex.EnemyName("shadow_hound"), Is.EqualTo("瘴牙の走竜"));
             Assert.That(ex.Log, Is.Empty, "reads are not logged");
@@ -344,6 +347,44 @@ namespace Trial.Bridge.Tests
             var bad = new LifeLog();
             bad.Add(new LogEntry("S", "Act", new object[] { "NoSuchAction" }));
             Assert.Throws<ReplayException>(() => Life.BeginLife(start, bad));
+        }
+
+        // seven_layers_v4.md §3.1 (#888): the layer-two interlude's way down is a region, chosen through Act with the
+        // region as its argument; the recorder logs it like any Act, and a replay goes down the same way.
+        [Test]
+        public void TheRegionChoice_IsLoggedThroughAct_AndAReplayGoesDownTheSameWay()
+        {
+            var log = new LifeLog();
+            var raw = new Expedition(new RunStart { Seed = 11 });
+            RecordedSession s = Recorder.RecordExpedition(raw, log).Session;
+            for (int guard = 0; !NeedsRegion(s); guard++)
+            {
+                ExplorationState st = s.State;
+                Assert.That(guard < 200 && !st.IsOver, Is.True, "the walk reaches the layer-two interlude");
+                if (s.HasPendingBattle) { s.Act(ScreenAction.WinBattle); continue; }
+                if (s.HasPendingStep) { s.Act(ScreenAction.ConfirmStep); continue; }
+                if (s.ConfirmingDescend) { s.Act(ScreenAction.ConfirmDescend); continue; }
+                if (st.Phase == RunPhase.Interlude) { Assert.That(s.Act(ScreenAction.Descend), Is.True); continue; }
+                if (ExplorationReducer.CanInterlude(st)) { s.Act(ScreenAction.GoToInterlude); continue; }
+                LayerMap map = st.Map;
+                int row = map.Node(st.CurrentNodeId).Row;
+                int next = map.Successors(st.CurrentNodeId).First(id => map.Node(id).Row == row + 1);
+                Assert.That(s.Step(next), Is.True);
+            }
+            Assert.That(raw.Session.Act(ScreenAction.Descend), Is.False, "no way down before a region is chosen");
+            Assert.That(s.Act(ScreenAction.ChooseRegion, RegionArg(Region.Ghost)), Is.True);
+            Assert.That(log.Last.ToString(), Is.EqualTo("S.Act"));
+            Assert.That(Json.Stringify(log.Last.Args[1]), Is.EqualTo("\"" + RegionArg(Region.Ghost) + "\""), "logged with its region");
+            Assert.That(s.Region, Is.EqualTo(Region.Ghost));
+            Assert.That(s.Act(ScreenAction.Descend), Is.True);
+            Assert.That(s.State.Profile.Layer, Is.EqualTo(3));
+            Assert.That(s.State.Profile.Region, Is.EqualTo(Region.Ghost));
+
+            var again = new Expedition(new RunStart { Seed = 11 });
+            Recorder.Replay(again, Saved(log));
+            Assert.That(again.Session.Region, Is.EqualTo(Region.Ghost));
+            Assert.That(again.Session.State.Profile.Region, Is.EqualTo(Region.Ghost));
+            Assert.That(Snap(again), Is.EqualTo(Snap(raw)), "the replay stands where the life stood");
         }
     }
 }

@@ -12,6 +12,11 @@ namespace Depiction.Bridge.Tests
     {
         private static readonly IRng NoShuffle = new FixedRng(0.9999999);
 
+        // #1038 took the traits off the starter cards (swordsman_cards_v4 §2.1). The tests that print or play a trait of
+        // one of them use a copy that keeps the one the card table lists.
+        private static CardDef Listed(CardDef def) =>
+            CardCatalog.StarterTableTraits.TryGetValue(def.Id, out BattleCore.Trait trait) ? def with { Trait = trait } : def;
+
         // ---- the new events, written ----
 
         [Test]
@@ -187,7 +192,8 @@ namespace Depiction.Bridge.Tests
                     new BattleCore.Trait(BattleCore.TraitCondition.GapAtLeast, BattleCore.TraitEffect.PowerBonus, 5, Threshold: 2),
                     ExtraTrait: new BattleCore.Trait(BattleCore.TraitCondition.Desperate, BattleCore.TraitEffect.PowerBonus, 3));
                 Assert.That(CoreText.TraitLines(twoTraits), Is.EqualTo("間合い2以上 +5 ／ 死力 +3"));
-                Assert.That(CoreText.TraitLines(CardCatalog.WaterStance), Is.EqualTo("移動後 コスト-1"));
+                Assert.That(CoreText.TraitLines(Listed(CardCatalog.WaterStance)), Is.EqualTo("移動後 コスト-1"));
+                Assert.That(CoreText.TraitLines(CardCatalog.WaterStance), Is.EqualTo(""), "a starter card has no trait (#1038)");
                 Assert.That(CoreText.TraitLines(CardCatalog.SpiritRoar), Is.EqualTo("相手出血 脆化+2"));
                 Assert.That(CoreText.TraitLines(CardCatalog.Resolve), Is.EqualTo("死力 自分再生+1"));
                 Assert.That(CoreText.TraitLines(CardCatalog.PurgeFlash), Is.EqualTo("予兆攻撃 追撃"));
@@ -266,15 +272,16 @@ namespace Depiction.Bridge.Tests
         public void AHandCard_PrintsTheCostTheCoreWouldTake()
         {
             // 水の構え (cost 2, 連動(M): コスト −1) after a move card: the card prints 1.
+            CardDef moved = Listed(CardCatalog.WaterStance);
             var deck = new List<CardInstance>
             {
                 new CardInstance("footwork-0", CardCatalog.Footwork),
-                new CardInstance("water_stance-0", CardCatalog.WaterStance),
+                new CardInstance("water_stance-0", moved),
             };
             for (int i = 0; i < 18; i++) deck.Add(new CardInstance("filler-" + i, CardCatalog.Brace));
             BattleState state = TurnLoop.Start(new BattleSetup(Enemies.PolearmWarped, deck, BattleSetup.SliceFieldCells), NoShuffle).State;
             state = TurnLoop.BeginPlayerTurn(state, NoShuffle).State;
-            CardInstance water = state.Hand.First(c => c.Def == CardCatalog.WaterStance);
+            CardInstance water = state.Hand.First(c => c.Def == moved);
 
             Assert.That(CoreText.Face(water, TurnLoop.Preview(state, water.InstanceId)).Cost, Is.EqualTo(2));
             state = TurnLoop.PlayCard(state, "footwork-0", NoShuffle).State;

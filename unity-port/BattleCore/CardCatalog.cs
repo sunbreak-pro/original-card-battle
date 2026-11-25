@@ -52,6 +52,26 @@ namespace BattleCore
                 Backwater, Awakening,
             };
             Initial = All.Take(InitialCount).ToList();
+            Starter = new[]
+            {
+                WristCut, KesaCut, SideSweep,
+                Observe, Brace, IronBlock,
+                Footwork, LeapBack, DashIn,
+                WaterStance, IronWall,
+            };
+            StarterStances = new[] { WaterStance, IronWall };
+            StarterTableTraits = new Dictionary<string, Trait>(StringComparer.Ordinal)
+            {
+                [WristCut.Id] = AtMost(0, TraitEffect.StaminaGain, 1),
+                [KesaCut.Id] = AtMost(0, TraitEffect.PowerBonus, 5),
+                [Observe.Id] = When(TraitCondition.Thin, TraitEffect.Draw, 1),
+                [Brace.Id] = Reserve(6, TraitEffect.NextTurnRecovery, 1),
+                [Footwork.Id] = When(TraitCondition.FirstPlay, TraitEffect.StaminaGain, 1),
+                [LeapBack.Id] = Combo(BattleAttribute.Attack, TraitEffect.StaminaGain, 1),
+                [DashIn.Id] = AtLeast(2, TraitEffect.Draw, 1),
+                [WaterStance.Id] = When(TraitCondition.Moved, TraitEffect.CostDown, 1),
+                [IronWall.Id] = SelfHas(StatusKind.Parry, TraitEffect.GuardBonus, 3),
+            };
 
             var numbers = new List<int>();
             for (int n = 1; n <= LastNumber; n++)
@@ -108,6 +128,35 @@ namespace BattleCore
 
         /// <summary>§2's count of the initial kinds (v4.10, #824).</summary>
         public const int InitialCount = 35;
+
+        /// <summary>
+        /// §2.1 (v4.15, #1035): the eleven kinds the first expedition owns, in the order of §2.1's table — three
+        /// attacks, three guards and three skills (costs 1, 2, 3 each), then the two stances a deck takes one of
+        /// (<see cref="StarterStances"/>). #60 跳び退り and #63 駆け込み come from §3. None of the eleven carries a
+        /// trait (§2.1, 2026-11-23).
+        /// </summary>
+        public static readonly IReadOnlyList<CardDef> Starter;
+
+        /// <summary>§2.1: the starter's two stances (#16 水の構え, #39 鉄壁の構え). A deck holds one of them (<see cref="DeckRules"/>).</summary>
+        public static readonly IReadOnlyList<CardDef> StarterStances;
+
+        /// <summary>
+        /// §2.1 (#1038): the trait the §2 / §3 tables still list for each starter card that had one, by card id. The
+        /// core plays none of them. They stay for the 型替え steps that loosen them (<see cref="MasteryProfiles"/>)
+        /// until #1022 redraws those, and so a test can still play one on a copy of its card.
+        /// </summary>
+        public static readonly IReadOnlyDictionary<string, Trait> StarterTableTraits;
+
+        /// <summary>
+        /// swordsman_cards_v4 §1 素直な札: a card with no trait whose table values carry the +2. The starter cards that
+        /// lost their trait in #1038 carry no +2 (§2.1), so having no trait is not enough. The card face, the deck
+        /// detail and the sim's plain deck all ask here, so none of them calls those nine 素直.
+        /// </summary>
+        public static bool IsPlain(CardDef def)
+        {
+            if (def == null) throw new ArgumentNullException(nameof(def));
+            return def.AllTraits.Count == 0 && !StarterTableTraits.ContainsKey(def.Id);
+        }
 
         public static CardDef ById(string id)
         {
@@ -195,6 +244,37 @@ namespace BattleCore
             CardCatalog.StepInGuard,
             CardCatalog.StepOutGuard,
             CardCatalog.ShieldBash,
+        };
+
+        /// <summary>Laid out in the order above and not shuffled; the turn loop shuffles with its own RNG.</summary>
+        public static List<CardInstance> Build() => Cards.BuildDeck(Kinds, Copies);
+    }
+
+    /// <summary>
+    /// The deck the first expedition sets out with when nothing else is chosen (#1038): the nine kinds of
+    /// <see cref="CardCatalog.Starter"/> that are no stance and one of its two stances, two copies each — 20
+    /// cards, the floor of §8. The slice's <see cref="PrototypeDeck"/> stays for the battle scenes.
+    /// </summary>
+    public static class StarterDeck
+    {
+        public const int Copies = 2;
+
+        /// <summary>
+        /// 水の構え is the stance the default deck takes; which of the two is not the canon's to say, and
+        /// it pays off at the opening gap of 3 (§1.4 of the card table).
+        /// </summary>
+        public static IReadOnlyList<CardDef> Kinds { get; } = new[]
+        {
+            CardCatalog.WristCut,
+            CardCatalog.KesaCut,
+            CardCatalog.SideSweep,
+            CardCatalog.Observe,
+            CardCatalog.Brace,
+            CardCatalog.IronBlock,
+            CardCatalog.Footwork,
+            CardCatalog.LeapBack,
+            CardCatalog.DashIn,
+            CardCatalog.WaterStance,
         };
 
         /// <summary>Laid out in the order above and not shuffled; the turn loop shuffles with its own RNG.</summary>

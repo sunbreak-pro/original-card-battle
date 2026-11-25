@@ -60,6 +60,7 @@ namespace InheritanceCore
             LifeEnding.Fallen => "倒れた",
             LifeEnding.Completed => "踏破",
             LifeEnding.Survived => "生存ルート",
+            LifeEnding.Expired => "期限切れ",
             _ => throw new InheritanceRuleException($"unknown ending {ending}"),
         };
 
@@ -114,12 +115,16 @@ namespace InheritanceCore
 
         public static string TierCleared(int generation, string name) => Invariant($"前の生（第 {generation} 代 {name}）が歪みの根を倒したため");
 
-        /// <summary>The four end sentences, the same words as ExplorationScreenBuilder's end cards.</summary>
+        /// <summary>
+        /// The end sentences, the same words as ExplorationScreenBuilder's end cards. 瘴気死 keeps its sentence for the
+        /// lives of lineages saved before the gauge left the exploration (#888).
+        /// </summary>
         public static string EndingSentence(LifeEnding ending, int? layer)
         {
             string l = JsNullable(layer);
             switch (ending)
             {
+                case LifeEnding.Expired: return $"第 {l} 層で暦が尽きた。龍神が目覚め、世界が終わる。";
                 case LifeEnding.MiasmaDeath: return $"瘴気が 100% に達し、第 {l} 層でこの生が終わった。";
                 case LifeEnding.Fallen: return $"第 {l} 層の戦いで倒れた。";
                 case LifeEnding.Completed: return "歪みの根を倒した。";
@@ -135,6 +140,9 @@ namespace InheritanceCore
         public static string WithheldLine(IEnumerable<string> names) => $"浅い層の死では残らない札：{string.Join("、", names)}";
 
         public const string NothingLeft = "遺産になるものは残らなかった";
+
+        /// <summary>The ending card's line after 期限切れ: the world ends, and the game starts over (seven_layers_v4.md §2.1).</summary>
+        public const string WorldEndsLine = "龍神が目覚め、世界が終わる。最初からやり直す。";
         public const string JournalPasses = "手記は丸ごと次の生へ渡る";
 
         public static string ClearedTraceLeft(string layerTitle) => $"{layerTitle}に札の痕跡が残った（歪みの根の札を含む）";
@@ -165,6 +173,54 @@ namespace InheritanceCore
 
         public static string SurvivorSpentLimits(int tools, int deck) => Invariant($"ツール枠 {tools} ／ デッキ上限 {deck} に戻った");
 
+        /// <summary>The hall's title under the carry-over (#1025): one explorer comes back to the same base.</summary>
+        public const string BaseTitle = "拠点";
+
+        /// <summary>The way back to the hall under the carry-over (the ending card, 出立's back button).</summary>
+        public const string ToBaseButton = "拠点へ";
+
+        /// <summary>The ending card after a fall under the carry-over: what the next descent starts with.</summary>
+        public const string CarriedAfterFall = "届いた段・覚えた札・手記は次の探索へ持ち越す。次の段に届かなかった習熟は失われた";
+
+        /// <summary>The ending card after a life that came back under the carry-over.</summary>
+        public const string CarriedAfterReturn = "段も習熟の刻みも、覚えた札・手記も、すべて次の探索へ持ち越す";
+
+        /// <summary>
+        /// The ending card when the calendar ran out under the carry-over. The trial starts a new lineage when the world
+        /// ends (Trial Main.EndLife), so the record does not go on and the card must not promise that it does.
+        /// </summary>
+        public const string WorldEndedUncarried = "世界とともに、届いた段・覚えた札・手記も失われた。次の探索は新しい世界で一から始まる";
+
+        // Under the carry-over the same explorer goes down again, so the base and the ending card count the descents
+        // where the generations' screens count the 代 and name the 踏破者 (#1031). A descent's number is its life's
+        // Generation: the lineage's lives in order, those before the switch included.
+
+        /// <summary>The base's lead under the carry-over.</summary>
+        public const string BaseLead = "これまでの探索を振り返り、次の探索へ出る部屋。";
+
+        /// <summary>The base's first visit under the carry-over.</summary>
+        public const string BaseEmpty = "最初の探索。持ち越すものはまだ無い。";
+
+        public const string PastDescentsHeading = "これまでの探索";
+        public const string NextDescentHeading = "次の探索";
+
+        /// <summary>The 装束's reason before the first descent under the carry-over.</summary>
+        public const string FirstDescentTier = "最初の探索。支給品は縁なし";
+
+        /// <summary>The 装束's reason after a descent that reached <paramref name="layer"/> under the carry-over.</summary>
+        public static string DescentTierReason(int? layer) => Invariant($"前の探索で第 {JsNullable(layer)} 層まで届いたため");
+
+        public const string DescentTierCleared = "前の探索で歪みの根を倒したため";
+
+        /// <summary>Where the generations print 「第 n 代」 (a past life's card, the next explorer's block).</summary>
+        public static string DescentLabel(int descent) => Invariant($"{descent} 回目");
+
+        /// <summary>Where the generations print 「第 n 代 踏破者 name」.</summary>
+        public static string DescentLine(int descent, string? name) => Invariant($"{descent} 回目の探索 {name}");
+
+        /// <summary>The ending card's footer under the carry-over, where the generations print 「次の踏破者：第 n 代 name」.</summary>
+        public static string NextDescentLine(int descent, string name) => Invariant($"次の探索：{descent} 回目 {name}");
+
         /// <summary>The past life's trace line in the hall.</summary>
         public static class TraceStatus
         {
@@ -172,6 +228,9 @@ namespace InheritanceCore
             public const string Untaken = "痕跡：未回収";
 
             public static string Taken(int generation, string name) => Invariant($"痕跡：第 {generation} 代 {name}が受け取った");
+
+            /// <summary>A trace left before the switch to the carry-over, taken on a later descent.</summary>
+            public static string TakenOnDescent(int descent) => Invariant($"痕跡：{descent} 回目の探索で受け取った");
         }
 
         // A JS template prints a null number as "null".

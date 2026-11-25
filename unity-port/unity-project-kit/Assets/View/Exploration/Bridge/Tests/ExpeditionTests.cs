@@ -1,4 +1,4 @@
-// #99: the exploration hands a combat node's battle in — the floor, the max stamina 瘴気 leaves, HP,
+// #99: the exploration hands a combat node's battle in — the floor, the max stamina the temporary changes leave, HP,
 // stamina, the journal's 開示度, the deck, the tools and the enemy line — and takes its result back:
 // HP, stamina, mastery ticks, what the journal learned, the unique cards and death. Runs under
 // `dotnet test` (Exploration.Bridge.Tests.csproj) and in Unity's EditMode runner.
@@ -34,7 +34,7 @@ namespace Exploration.Bridge.Tests
                 Assert.That(handIn.Encounter, Is.EqualTo(session.PendingEncounter));
                 Assert.That(handIn.Hp, Is.EqualTo(41));
                 Assert.That(handIn.MaxHp, Is.EqualTo(Constants.PlayerMaxHp));
-                Assert.That(handIn.Stamina, Is.EqualTo(session.State.Stamina), "the entry node's 刻限 has already given stamina back");
+                Assert.That(handIn.Stamina, Is.EqualTo(session.State.Stamina), "the entry node has already given stamina back");
                 Assert.That(handIn.MaxStamina, Is.EqualTo(session.State.MaxStamina));
                 Assert.That(handIn.Deck.Count, Is.EqualTo(PrototypeDeck.Kinds.Count * PrototypeDeck.Copies));
                 Assert.That(handIn.FieldCells, Is.EqualTo(new[] { BattleField.Cells(1, NodeKind.Battle) }));
@@ -62,16 +62,6 @@ namespace Exploration.Bridge.Tests
         }
 
         [Test]
-        public void Miasma_LowersTheMaxStamina_TheBattleStartsFrom()
-        {
-            // concept-v3 §6: one point per full 20%. 45% is two points down from 10.
-            var expedition = new Expedition(new RunStart { Seed = 3, MiasmaPercent = 45 });
-            BattleLaunch launch = expedition.StartEncounter().NextLaunch();
-            Assert.That(launch.MaxStamina, Is.EqualTo(8));
-            Assert.That(launch.CreateSource().State.Player.MaxStamina, Is.EqualTo(8));
-        }
-
-        [Test]
         public void TheInBattleTools_ReachTheBattle_AsAmounts()
         {
             var tools = new[] { "maai_no_kutsu", "ikitsugi_no_fue", "ryurin_no_kakera" };
@@ -91,7 +81,7 @@ namespace Exploration.Bridge.Tests
         [Test]
         public void AToolThatActsOnTheExploration_IsNotABattleTool()
         {
-            Assert.Throws<ArgumentException>(() => new Expedition(battleToolIds: new[] { "bosho_no_men" }));
+            Assert.Throws<ArgumentException>(() => new Expedition(battleToolIds: new[] { "kaerimichi_no_ito" }));
         }
 
         [Test]
@@ -148,14 +138,16 @@ namespace Exploration.Bridge.Tests
         }
 
         [Test]
-        public void TheMasteryTicks_GoToTheBook_WhenTheBattleEnds()
+        public void TheMasteryTicks_GoToTheBook_WhenTheBattleEnds_AtOnePaceForEveryKind()
         {
-            var expedition = new Expedition(new RunStart { Seed = 3 }, talent: "side_sweep");
+            // #1045: two kinds that meet the same contexts gather the same ticks; none counts twice.
+            var expedition = new Expedition(new RunStart { Seed = 3 });
             EncounterBattle battle = expedition.StartEncounter();
             var plays = new[]
             {
                 new MasteryPlay("side_sweep", MasteryContext.Gap | MasteryContext.Omen),
-                new MasteryPlay("brace", MasteryContext.Trait),
+                new MasteryPlay("brace", MasteryContext.Gap | MasteryContext.Omen),
+                new MasteryPlay("kesa_cut", MasteryContext.Trait),
             };
 
             EndEveryFight(battle, GameResult.Won, plays: plays);
@@ -164,9 +156,10 @@ namespace Exploration.Bridge.Tests
             Assert.Multiple(() =>
             {
                 Assert.That(back.Ticks.TicksOf("side_sweep"), Is.EqualTo(2));
-                Assert.That(back.Ticks.TicksOf("brace"), Is.EqualTo(1));
-                Assert.That(expedition.Mastery.TicksOf("side_sweep"), Is.EqualTo(2 * Constants.TalentTickMultiplier), "才能 doubles the talent card");
-                Assert.That(expedition.Mastery.TicksOf("brace"), Is.EqualTo(1));
+                Assert.That(back.Ticks.TicksOf("brace"), Is.EqualTo(2));
+                Assert.That(expedition.Mastery.TicksOf("side_sweep"), Is.EqualTo(2));
+                Assert.That(expedition.Mastery.TicksOf("brace"), Is.EqualTo(expedition.Mastery.TicksOf("side_sweep")), "the same contexts, the same ticks");
+                Assert.That(expedition.Mastery.TicksOf("kesa_cut"), Is.EqualTo(1));
             });
         }
 
@@ -174,12 +167,12 @@ namespace Exploration.Bridge.Tests
         public void EachFightsRankUps_AreReadBeforeReturn_AndAreWhatReturnWrites()
         {
             // #910: the win result card names the 段 its fight raised while the encounter is still out.
-            var expedition = new Expedition(new RunStart { Seed = 3 }, talent: "side_sweep");
+            var expedition = new Expedition(new RunStart { Seed = 3 });
             Assert.That(expedition.RankUpsOfLastFight(), Is.Empty, "no encounter yet");
             EncounterBattle battle = expedition.StartEncounter();
             Assert.That(expedition.RankUpsOfLastFight(), Is.Empty, "no fight has ended");
-            // 2 contexts, doubled by 才能: 4 刻み passes the first threshold (3).
-            EndEveryFight(battle, GameResult.Won, plays: new[] { new MasteryPlay("side_sweep", MasteryContext.Gap | MasteryContext.Omen) });
+            // 3 contexts: 3 刻み reach the first threshold (3).
+            EndEveryFight(battle, GameResult.Won, plays: new[] { new MasteryPlay("side_sweep", MasteryContext.Gap | MasteryContext.Omen | MasteryContext.Trait) });
 
             IReadOnlyList<IReadOnlyList<RankUp>> byFight = expedition.RankUpsByFight();
             IReadOnlyList<RankUp> last = expedition.RankUpsOfLastFight();
@@ -560,17 +553,26 @@ namespace Exploration.Bridge.Tests
         [Test]
         public void ATurnedPage_WaitsBehindTheElitesPick_AndIsDealtAfterIt()
         {
-            // Seed 1, taking each layer's elite before its boss: layer 5's elite is 統牙の長竜, whose card
-            // is not owned, and its 40% page lands on a layer with nothing to tell.
-            var expedition = new Expedition(new RunStart { Seed = 1 });
-            for (int layer = 1; layer <= 4; layer++)
+            // The first seed that, taking each layer's elite before its boss, meets 統牙の長竜 as layer 5's elite with its
+            // card not owned, and whose 40% page lands on a layer with nothing to tell. It was seed 1 until #1049 drew
+            // longer maps.
+            Expedition expedition = null;
+            BattleReturn elite = null;
+            for (ulong seed = 1; seed <= 40 && elite == null; seed++)
             {
-                WalkToAndWin(expedition, NodeKind.Elite);
-                WalkToBossAndWin(expedition, out _);
-                Assert.That(expedition.Session.Act(ScreenAction.GoToInterlude), Is.True);
-                Assert.That(expedition.Session.Act(ScreenAction.Descend), Is.True);
+                expedition = new Expedition(new RunStart { Seed = seed });
+                for (int layer = 1; layer <= 4; layer++)
+                {
+                    WalkToAndWin(expedition, NodeKind.Elite);
+                    WalkToBossAndWin(expedition, out _);
+                    Assert.That(expedition.Session.Act(ScreenAction.GoToInterlude), Is.True);
+                    if (expedition.Session.NeedsRegion) Assert.That(expedition.Session.Act(ScreenAction.ChooseRegion, (int)Region.Dragon), Is.True);
+                    Assert.That(expedition.Session.Act(ScreenAction.Descend), Is.True);
+                }
+                BattleReturn met = WalkToAndWin(expedition, NodeKind.Elite);
+                if (met.Offered.SequenceEqual(UniqueCards.OfElite("pack_alpha")) && met.PagesTurned == 1) elite = met;
             }
-            BattleReturn elite = WalkToAndWin(expedition, NodeKind.Elite);
+            Assert.That(elite, Is.Not.Null, "some seed in 1〜40 plays this story");
 
             Assert.That(elite.Offered, Is.EqualTo(UniqueCards.OfElite("pack_alpha")), "統牙の長竜 offers its one card since v4.10 (#824)");
             Assert.That(elite.PagesTurned, Is.EqualTo(1));
@@ -598,7 +600,7 @@ namespace Exploration.Bridge.Tests
             var deck = PrototypeDeck.Build();
             return new BattleHandIn(
                 2, kind, encounter, encounter.Fights.Select(_ => cells).ToList(),
-                Constants.PlayerMaxHp, Constants.PlayerMaxHp, Constants.BaseMaxStamina, Constants.BaseMaxStamina, 0,
+                Constants.PlayerMaxHp, Constants.PlayerMaxHp, Constants.BaseMaxStamina, Constants.BaseMaxStamina,
                 levels ?? encounter.EnemyIds.Distinct().ToDictionary(id => id, _ => 0),
                 deck, Departure.Plain(deck), 11);
         }
@@ -675,6 +677,7 @@ namespace Exploration.Bridge.Tests
             Assert.That(atBoss, Is.Not.Null, "the walk reached the boss");
         }
 
+        /// <summary>Clears layers to the boss and descends, into the dragon's region after layer 2.</summary>
         private static void WalkToLayer(Expedition expedition, int layer)
         {
             ExplorationSession session = expedition.Session;
@@ -682,8 +685,9 @@ namespace Exploration.Bridge.Tests
             {
                 WalkToBossAndWin(expedition, out _);
                 Assert.That(session.Act(ScreenAction.GoToInterlude), Is.True);
+                if (session.NeedsRegion) Assert.That(session.Act(ScreenAction.ChooseRegion, (int)Region.Dragon), Is.True);
                 Assert.That(session.Act(ScreenAction.Descend), Is.True);
-                Assert.That(session.ConfirmingDescend, Is.False, "the descent does not end the life");
+                Assert.That(session.ConfirmingDescend, Is.False, "the descent does not run the calendar out");
             }
         }
 

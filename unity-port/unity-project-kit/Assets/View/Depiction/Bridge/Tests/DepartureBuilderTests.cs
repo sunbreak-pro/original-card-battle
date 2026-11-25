@@ -1,5 +1,5 @@
-// The departure screen of the demo (#58): the slots, the start a tool moves back, the talent, and
-// the run that sets out with them — single battles and the chain alike. The options here stand in
+// The departure screen of the demo (#58): the slots, the start a tool moves back, and the run that
+// sets out with them — single battles and the chain alike. The options here stand in
 // for the dungeon side's catalogue, which this assembly does not reference; the real catalogue's
 // mapping is held by DepartureSuppliesTests (dotnet test only).
 using System;
@@ -34,14 +34,6 @@ namespace Depiction.Bridge.Tests
         }
 
         private static DeckBuilder Deck() => DeckBuilder.Prototype();
-
-        /// <summary>A builder over the prototype deck with its first kind as the talent: ready to set out.</summary>
-        private static DepartureBuilder Ready(DeckBuilder deck)
-        {
-            DepartureBuilder builder = Builder();
-            Assert.That(builder.ChooseTalent(deck, PrototypeDeck.Kinds[0].Id), Is.True);
-            return builder;
-        }
 
         // ---- the slots ----
 
@@ -96,7 +88,7 @@ namespace Depiction.Bridge.Tests
         public void TheStartReachesTheBattle_InASingleBattleAndInTheChain(bool shoes, int cell, int gap)
         {
             DeckBuilder deck = Deck();
-            DepartureBuilder builder = Ready(deck);
+            DepartureBuilder builder = Builder();
             if (shoes) builder.AddTool(Shoes);
             Departure departure = builder.Build(deck);
 
@@ -113,8 +105,8 @@ namespace Depiction.Bridge.Tests
         public void TheEnemyKeepsItsCell_AndTheLineItsWidth_WhenTheStartMovesBack()
         {
             DeckBuilder deck = Deck();
-            DepartureBuilder plain = Ready(deck);
-            DepartureBuilder shod = Ready(deck);
+            DepartureBuilder plain = Builder();
+            DepartureBuilder shod = Builder();
             shod.AddTool(Shoes);
             foreach (EnemyDef enemy in Enemies.All)
             {
@@ -132,9 +124,7 @@ namespace Depiction.Bridge.Tests
         public void TheDrawPileIsTheChosenDeck()
         {
             DeckBuilder deck = DeckBuilder.Random(17, 33);
-            DepartureBuilder builder = Builder();
-            builder.ChooseTalent(deck, DepartureBuilder.TalentChoices(deck)[0].Id);
-            Departure departure = builder.Build(deck);
+            Departure departure = Builder().Build(deck);
 
             foreach (DemoSession session in new[] { DemoSession.Single(departure, "shadow_hound", 4), DemoSession.Chain(departure, 4) })
             {
@@ -146,67 +136,29 @@ namespace Depiction.Bridge.Tests
             }
         }
 
-        // ---- the talent ----
-
-        [Test]
-        public void TheTalentIsRecorded_AndReachesTheRun()
-        {
-            DeckBuilder deck = Deck();
-            DepartureBuilder builder = Builder();
-            string id = PrototypeDeck.Kinds[3].Id;
-
-            Assert.That(builder.ChooseTalent(deck, id), Is.True);
-            Departure departure = builder.Build(deck);
-
-            Assert.That(departure.TalentCardId, Is.EqualTo(id));
-            Assert.That(DemoSession.Single(departure, "polearm_warped", 1).Departure.TalentCardId, Is.EqualTo(id));
-            Assert.That(DemoSession.Chain(departure, 1).Departure.TalentCardId, Is.EqualTo(id));
-            Assert.That(builder.TalentLine(deck), Is.EqualTo("才能: " + PrototypeDeck.Kinds[3].Name));
-        }
-
-        [Test]
-        public void OnlyAKindOfTheDeckCanBeTheTalent_AndOneThatLeavesIsDropped()
-        {
-            DeckBuilder deck = Deck();
-            DepartureBuilder builder = Builder();
-            string outside = CardCatalog.All.First(d => deck.CountOf(d.Id) == 0).Id;
-            Assert.That(builder.ChooseTalent(deck, outside), Is.False);
-            Assert.That(builder.TalentLine(deck), Is.EqualTo("才能: まだ選んでいません"));
-
-            string id = PrototypeDeck.Kinds[0].Id;
-            builder.ChooseTalent(deck, id);
-            deck.Remove(id);
-            deck.Remove(id);
-            Assert.That(builder.TalentIn(deck), Is.Null, "the talent left with its last copy");
-            Assert.That(builder.Build(deck).TalentCardId, Is.Null);
-        }
-
-        [Test]
-        public void TheTalentChoices_AreTheDecksKindsInCanonOrder_PagedAndClamped()
-        {
-            DeckBuilder deck = Deck();
-            Assert.That(DepartureBuilder.TalentChoices(deck).Select(d => d.Id),
-                Is.EqualTo(CardCatalog.All.Where(d => deck.CountOf(d.Id) > 0).Select(d => d.Id)));
-
-            int kinds = DepartureBuilder.TalentChoices(deck).Count;
-            DeckPage last = DepartureBuilder.TalentPage(deck, 99, 4);
-            Assert.That(last.Index, Is.EqualTo((kinds - 1) / 4));
-            Assert.That(last.Cards.Count, Is.EqualTo(kinds - last.Index * 4));
-        }
-
         // ---- setting out ----
 
         [Test]
-        public void ItSetsOutOnlyWithALegalDeckAndATalent()
+        public void ALegalDeckSetsOut_WithNothingPickedFirst()
+        {
+            // #1045: no card is picked as a talent any more, so a fresh builder is ready at once.
+            DeckBuilder deck = Deck();
+            DepartureBuilder builder = Builder();
+            Assert.That(builder.Validate(deck).Errors, Is.Empty);
+            Assert.That(builder.CanSetOut(deck), Is.True);
+            Assert.That(builder.StatusText(deck), Is.EqualTo("出立できます"));
+
+            Departure departure = builder.Build(deck);
+            Assert.That(DemoSession.Single(departure, "polearm_warped", 1).Departure.Deck.Count, Is.EqualTo(deck.Total));
+            Assert.That(DemoSession.Chain(departure, 1).Departure.Deck.Count, Is.EqualTo(deck.Total));
+        }
+
+        [Test]
+        public void ItSetsOutOnlyWithALegalDeck()
         {
             DeckBuilder deck = Deck();
             DepartureBuilder builder = Builder();
-            Assert.That(builder.CanSetOut(deck), Is.False);
-            Assert.That(builder.StatusText(deck), Is.EqualTo("才能にする札を 1 枚選ぶと出立できます"));
-
-            builder.ChooseTalent(deck, PrototypeDeck.Kinds[0].Id);
             Assert.That(builder.CanSetOut(deck), Is.True);
-            Assert.That(builder.StatusText(deck), Is.EqualTo("出立できます"));
 
             // Nineteen cards: the deck screen would not have let it through, and neither does this one.
             deck.Remove(PrototypeDeck.Kinds[5].Id);
@@ -233,7 +185,7 @@ namespace Depiction.Bridge.Tests
         {
             Assert.That(DeckRules.ToolSlots, Is.EqualTo(3));
             Assert.That(DeckRules.ConsumableSlots, Is.EqualTo(3));
-            Assert.That(DepartureBuilder.Title, Is.EqualTo("出立の支度（ツール 3 枠・消耗品 3 枠・才能 1 枚）"));
+            Assert.That(DepartureBuilder.Title, Is.EqualTo("出立の支度（ツール 3 枠・消耗品 3 枠）"));
         }
 
         [Test]
@@ -254,7 +206,6 @@ namespace Depiction.Bridge.Tests
             Assert.That(DepartureBuilder.LineOf(builder.ToolOptions[4]), Is.EqualTo("竜語の符　" + RyugoNote));
 
             DeckBuilder deck = Deck();
-            Assert.That(builder.ChooseTalent(deck, PrototypeDeck.Kinds[0].Id), Is.True);
             builder.AddTool("ikitsugi_no_fue");
             builder.AddTool("ryurin_no_kakera");
             builder.AddTool("ryugo_no_fu");

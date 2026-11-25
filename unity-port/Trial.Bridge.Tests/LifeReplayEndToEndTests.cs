@@ -154,14 +154,17 @@ namespace Trial.Bridge.Tests
             app.Persist("出立");
         }
 
-        /// <summary>main.js endLife: the end is recorded on the lineage and the life dropped, in one write.</summary>
+        /// <summary>main.js endLife: the end is recorded on the lineage, its calendar moved on (Life.CloseLife), and the life dropped, in one write.</summary>
         private static Lineage EndLife(App app)
         {
             Expedition raw = app.Live.Raw;
             ExplorationState state = raw.Session.State;
             Assert.That(state.IsOver && state.Phase != RunPhase.Exploring, Is.True);
             LifePlace place = Inheritance.PlaceFromState(state);
-            app.Lineage = Inheritance.RecordEnd(app.Lineage, null, place, raw.Mastery, Names.LifeJournal(raw, app.Live), Names.EndOptions(raw, state));
+            Lineage recorded = Inheritance.RecordEnd(app.Lineage, null, place, raw.Mastery, Names.LifeJournal(raw, app.Live), Names.EndOptions(raw, state));
+            LifeClose close = Life.CloseLife(recorded, state, () => throw new AssertionException("the calendar did not run out in three lives"));
+            Assert.That(close.Next.Calendar.DaysLeft, Is.EqualTo(Life.HandoverCalendar(state).DaysLeft));
+            app.Lineage = close.Next;
             app.Keeper.Save.Life = null;
             app.Live = null;
             app.Keeper.Live = null;
@@ -293,13 +296,22 @@ namespace Trial.Bridge.Tests
                         s.Act(ScreenAction.ConfirmEndLife);
                         continue;
                     }
+                    if (NeedsRegion(s)) { s.Act(ScreenAction.ChooseRegion, RegionArg(Region.Dragon)); continue; }
                     s.Act(ScreenAction.Descend);
                     continue;
                 }
                 if (ExplorationReducer.CanInterlude(st)) { s.Act(ScreenAction.GoToInterlude); continue; }
+                // a king down with the others standing: no way down from the king's room, the life ends alive (#888)
+                if (st.Phase == RunPhase.LayerCleared && st.Profile.IsKingLayer)
+                {
+                    s.Act(ScreenAction.AskEndLife);
+                    s.Act(ScreenAction.ConfirmEndLife);
+                    continue;
+                }
                 List<MapNode> open = st.Map.Nodes.Where(n => ExplorationReducer.CanStep(st, n.Id)).ToList();
                 List<MapNode> fresh = open.Where(n => !st.HasResolved(n.Id)).ToList();
-                List<MapNode> pick = fresh.Count > 0 ? fresh : open;
+                // nothing new next to it: back over resolved nodes toward the nearest new one (#1049's longer maps)
+                List<MapNode> pick = fresh.Count > 0 ? fresh : new List<MapNode> { TowardFresh(st) ?? open[0] };
                 // toward the trace node while this life has not taken its trace
                 MapNode trace = app.Live.Raw.InheritedTraceId == null
                     ? st.Map.Nodes.FirstOrDefault(n => n.Kind == NodeKind.Trace && !st.HasResolved(n.Id))
@@ -311,8 +323,10 @@ namespace Trial.Bridge.Tests
                     node = open.FirstOrDefault(n => n.Id == first);
                 }
                 node = node ?? pick[0];
+                bool freshTrace = node.Kind == NodeKind.Trace && !st.HasResolved(node.Id);
                 Assert.That(s.Step(node.Id), Is.True, "step refused");
-                if (node.Kind == NodeKind.Trace && !s.State.IsOver) TakeTrace(app, st.Profile.Layer);
+                // a trace node walked over again offers nothing more
+                if (freshTrace && !s.State.IsOver) TakeTrace(app, st.Profile.Layer);
             }
             throw new AssertionException("the life did not end");
         }
@@ -335,10 +349,12 @@ namespace Trial.Bridge.Tests
             return got;
         }
 
-        // Lineage 5: the survivor's heir dies on layer 3 (636 saved points). Lineage 1: it reaches layer 6 (1031 saved points;
-        // descents, events, found consumables, the survey's pick, consumables and a 標の石 jump on the way). Lineages 6 and 8
-        // lose life 2 on layer 1, so they do not play this story.
-        [TestCase(5UL)]
+        // On the 7〜9-row maps of #1049, with the starter cards' traits off (#1038): lineage 3: the survivor's heir dies on
+        // layer 1 (387 saved points). Lineage 1: it dies on layer 3 (1714 saved points; descents, the region's choice, events,
+        // found consumables and consumables on the way; about a minute). Lineages 2, 5〜9 and 11〜13 do not play this story: life 2 falls before it reaches the
+        // trace or before it can end alive. In lineages 10 and 16 the heir lives on until the calendar runs out, which this
+        // story does not reach.
+        [TestCase(3UL)]
         [TestCase(1UL)]
         public void ThreeLives_ADeath_ATraceTaken_ASurvivor_ReplayFromEverySavedPoint_ToTheStateTheyWereSavedIn(ulong lineageSeed)
         {
@@ -368,7 +384,7 @@ namespace Trial.Bridge.Tests
             LifeStart ls3 = Inheritance.StartLife(app.Lineage);
             Assert.That(ls3.SurvivorBonus && ls3.ToolSlots == 4 && ls3.DeckMax == 45, Is.True);
             DepartureChoice choice3 = Departure(ls3, 1);
-            choice3.Loadout = Loadout.Of(new[] { "bosho_no_men", "kokugen_no_suna", "ikitsugi_no_fue", "maai_no_kutsu" },
+            choice3.Loadout = Loadout.Of(new[] { "kaerimichi_no_ito", "hiyomi_no_suna", "ikitsugi_no_fue", "maai_no_kutsu" },
                 new[] { "shirube_no_ishi", "yakuso", "koi_hoshiniku" }, 4);
             choice3.BattleToolIds = new[] { "ikitsugi_no_fue", "maai_no_kutsu" };
             SetOut(app, ls3, choice3);

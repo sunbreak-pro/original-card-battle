@@ -1,14 +1,18 @@
 // One node of the exploration map (ExploreScene.js:481-502 buildMap's node, :506-521 updateMap's classes;
-// explore.css:84-102, :205): the 88 × 88 box (.ocbg-explore-node), its lift wrapper (face + label: the hover lift,
-// the resolved fade), the face with its icon and the standing styles (border, shadow, background, the boss outline,
-// the beckon of a node the player can walk to or jump to), the label under it, and the arrival ripple (the face's
-// ::after). Owned by EX-MAP.
+// explore.css:84-102, :205): the node's box (.ocbg-explore-node: 88 × 88 in the JS, smaller on a long map by its
+// MapLayout), its lift wrapper (face + label: the hover lift, the resolved fade), the face with its icon and the
+// standing styles (border, shadow, background, the boss outline, the beckon of a node the player can walk to or jump
+// to), the label under it, and the arrival ripple (the face's ::after). Owned by EX-MAP.
 //
 // The JS keeps { el, face, label, kind, standing } per node and restyles it through class names; here the classes are
 // the states of two CssStates (the face's and the lift's, registered in the stylesheet's cascade order) and two CSS
 // animations (beckon, ripple). updateMap records its class changes (SetStanding / SetLive / SetPinned / SetJump) and
 // Commit applies them at once, as the browser computes the style once after the task: the first commit after the
 // node is built is instant (the JS sets the classes in the task that built the node, so nothing transitions).
+//
+// On a map drawn as the rock's cross-section (#1050, MapLook.Strata: layer 1) the node is a chamber instead
+// (MakeChamber): the same states and the same driving, with the chamber's outline, light and frame from Exploration's
+// StrataLayout / StrataPalette, and the label beside the chamber rather than under it.
 using System;
 using DungeonCore;
 using Exploration;
@@ -83,8 +87,11 @@ namespace Trial.Explore
 
         // ------------------------------------------------------------------ the record buildMap keeps ({ el, face, label, kind, standing })
 
-        /// <summary>.ocbg-explore-node (role=button, data-node): the 88 × 88 pointer target.</summary>
+        /// <summary>.ocbg-explore-node (role=button, data-node): the Layout.Node square pointer target.</summary>
         public RectTransform El;
+
+        /// <summary>The map's sizes the node was built with (#1049).</summary>
+        public MapLayout Layout;
 
         /// <summary>.ocbg-explore-node-lift (hover: translateY(−6px) scale(1.04); resolved: opacity .6).</summary>
         public RectTransform Lift;
@@ -112,7 +119,7 @@ namespace Trial.Explore
         /// <summary>The face's box (its border, background, shadows and the boss outline).</summary>
         public BoxGraphic FaceBox;
 
-        /// <summary>ico(n.Kind, 44, nodeIconColor(n)) in the face (redrawn when the standing changes).</summary>
+        /// <summary>ico(n.Kind, Layout.Icon, nodeIconColor(n)) in the face (redrawn when the standing changes).</summary>
         public PathGraphic Icon;
 
         /// <summary>The face's ::after (the arrival ripple's ring, inset −3).</summary>
@@ -133,19 +140,29 @@ namespace Trial.Explore
         private CssAnimator _ripple;
         private bool _faceDirty, _liftDirty, _styled;
 
+        /// <summary>The face's box and the icon's side: Layout.Node square on the plain map, the chamber's on a strata map.</summary>
+        private float _w, _h, _icon;
+
+        /// <summary>The chambers' colours on a strata map (#1050); null on the plain map.</summary>
+        private StrataPalette _palette;
+
+        /// <summary>The node is drawn as a chamber in the rock (#1050).</summary>
+        public bool IsChamber => _palette != null;
+
         /// <summary>The node is still on screen (the map was not rebuilt since).</summary>
         public bool Alive => El;
 
         // js: scenes/explore/ExploreScene.js:481
         /// <summary>
-        /// The node of buildMap at (x, y) (its box's top-left: the centre minus NODE / 2) under the nodes layer: the box,
-        /// the lift, the face (empty until the first SetStanding draws its icon), the ripple ring, the label.
+        /// The node of buildMap at (x, y) (its box's top-left: the centre minus Layout.Node / 2) under the nodes layer: the
+        /// box, the lift, the face (empty until the first SetStanding draws its icon), the ripple ring, the label.
         /// </summary>
-        public static ExploreNodeView Make(RectTransform parent, NodePanel n, float x, float y)
+        public static ExploreNodeView Make(RectTransform parent, NodePanel n, MapLayout layout, float x, float y)
         {
             if (n == null) throw new ArgumentNullException(nameof(n));
-            const float node = ExploreStyle.Node;
-            var v = new ExploreNodeView { Id = n.Id, Row = n.Row, Kind = n.Kind };
+            layout = layout ?? MapLayout.Full;
+            float node = layout.Node;
+            var v = new ExploreNodeView { Id = n.Id, Row = n.Row, Kind = n.Kind, Layout = layout, _w = node, _h = node, _icon = layout.Icon };
 
             // .ocbg-explore-node kind-…: position absolute at the node's box, pointer-events: auto (under the map's none)
             v.El = Ui.Div(parent, "ocbg-explore-node kind-" + ExploreStyle.KindClass(n.Kind), x, y, node, node);
@@ -177,11 +194,13 @@ namespace Trial.Explore
             UiNode.Of(v.After).Opacity = 0f;
             v.PlaceAfter();
 
-            // .ocbg-explore-node-label: left 50%, top 96, translateX(−50%); the label is part of the node (it takes the hover)
+            // .ocbg-explore-node-label: left 50%, top Layout.LabelTop (96 in the JS), translateX(−50%); the label is part of
+            // the node (it takes the hover)
             TextStyle ls = TextStyle.FromCss(LabelCss);
-            TMP_Text label = global::Trial.Kit.Label.Make(v.Lift, n.KindLabel ?? "", ls, 0f, 96f, null, null, "ocbg-explore-node-label");
+            float labelTop = layout.LabelTop;
+            TMP_Text label = global::Trial.Kit.Label.Make(v.Lift, n.KindLabel ?? "", ls, 0f, labelTop, null, null, "ocbg-explore-node-label");
             float w = label.rectTransform.sizeDelta.x;
-            Ui.Place(label.rectTransform, node / 2f - w / 2f, 96f);
+            Ui.Place(label.rectTransform, node / 2f - w / 2f, labelTop);
             TextGlow.For(label);
             label.raycastTarget = true;
             v.Label = label;
@@ -190,6 +209,98 @@ namespace Trial.Explore
             v.Hit.HoverChanged += on => v.SetHover(on);
             return v;
         }
+
+        // ------------------------------------------------------------------ the chamber (#1050, battle-visual-v1 §2.5)
+
+        /// <summary>
+        /// The chamber's face: a hollow in the rock with its own lopsided oval outline, the layer's light inside it. The
+        /// states below lay the fill, the border and the glow over it (the plain map's cascade order).
+        /// </summary>
+        private static string ChamberFaceCss(ChamberCorners corners, ChamberPaint far) =>
+            "position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; border-radius: " + corners.Css + "; "
+            + ChamberPaintCss(far) + " box-shadow: none; transition: border-color 300ms, box-shadow 300ms, background-color 300ms;";
+
+        /// <summary>A standing's fill and border (every fill a gradient, so a state change swaps one image for another).</summary>
+        private static string ChamberPaintCss(ChamberPaint p) =>
+            "background: linear-gradient(180deg, " + p.Top + ", " + p.Bottom + "); border: " + Num(p.BorderWidth) + "px "
+            + (p.Dashed ? "dashed" : "solid") + " " + p.Border + ";";
+
+        /// <summary>The chamber the player stands in: the amber frame and its light.</summary>
+        private static string ChamberCurrentCss(ChamberPaint p) => ChamberPaintCss(p) + " box-shadow: 0 0 26px " + StrataPalette.CurrentGlow + ";";
+
+        /// <summary>The ripple's ring follows the chamber's outline.</summary>
+        private static string ChamberAfterCss(ChamberCorners corners) =>
+            "content: \"\"; position: absolute; inset: -3px; border-radius: " + corners.Css + "; border: 2px solid var(--amber); opacity: 0; pointer-events: none;";
+
+        /// <summary>The label beside the chamber: 本文, 16〜18 px, on the veil (its glow keeps it off the tunnels' light).</summary>
+        private static string ChamberLabelCss(StrataLayout s) =>
+            "font: 700 " + Num(s.LabelSize) + "px/" + Num(s.LabelLine) + "px var(--font-body); color: var(--ink); white-space: nowrap; text-shadow: 0 0 6px var(--ground), 0 1px 2px var(--ground);";
+
+        /// <summary>
+        /// The chamber of node n centred on (cx, cy) under the nodes layer: the box, the lift, the face (empty until the
+        /// first SetStanding paints it and draws its icon), the ripple ring, and the label's lines beside its right side.
+        /// The states are the plain node's (SetStanding / SetLive / SetPinned / SetJump / Commit read the same), so the
+        /// scene drives a chamber as it drives a node.
+        /// </summary>
+        public static ExploreNodeView MakeChamber(RectTransform parent, NodePanel n, StrataLayout s, StrataPalette palette, float cx, float cy)
+        {
+            if (n == null) throw new ArgumentNullException(nameof(n));
+            if (s == null) throw new ArgumentNullException(nameof(s));
+            if (palette == null) throw new ArgumentNullException(nameof(palette));
+            float w = s.Width(n.Kind), h = s.Height(n.Kind);
+            var v = new ExploreNodeView
+            {
+                Id = n.Id, Row = n.Row, Kind = n.Kind, Layout = MapLayout.Full, _w = w, _h = h, _icon = s.Icon(n.Kind), _palette = palette,
+            };
+            ChamberCorners corners = StrataLayout.Corners(n.Id);
+
+            v.El = Ui.Div(parent, "ocbg-explore-node ocbg-explore-chamber kind-" + ExploreStyle.KindClass(n.Kind), cx - w / 2f, cy - h / 2f, w, h);
+            UiNode.Of(v.El).PointerEvents = PointerEvents.Auto;
+            v.Hit = ClickArea.On(v.El);
+
+            // a walked chamber shows by its dimmer light, so the lift keeps the label at full ink (no .is-resolved fade)
+            v.Lift = Ui.Div(v.El, "ocbg-explore-node-lift", 0f, 0f, w, h);
+            v._lift = CssStates.Of(v.Lift).Base(LiftCss).State(SHover, LiftHoverCss).State(SResolved, "");
+            v._lift.Apply(instant: true);
+
+            ChamberPaint far = palette.Chamber(NodeStanding.Far, n.Kind);
+            string faceCss = ChamberFaceCss(corners, far);
+            v.FaceBox = BoxGraphic.Make(v.Lift, faceCss, 0f, 0f, w, h, "ocbg-explore-node-face");
+            v.FaceBox.raycastTarget = true;
+            v.Face = v.FaceBox.rectTransform;
+            v._face = CssStates.Of(v.FaceBox).Base(faceCss)
+                .State(SCurrent, ChamberCurrentCss(palette.Chamber(NodeStanding.Current, n.Kind)))
+                .State(SReachable, ChamberPaintCss(palette.Chamber(NodeStanding.Reachable, n.Kind)) + " animation: ocbg-explore-beckon 2.4s ease-in-out infinite;")
+                .State(SRevisit, ChamberPaintCss(palette.Chamber(NodeStanding.Revisit, n.Kind)))
+                .State(SResolved, ChamberPaintCss(palette.Chamber(NodeStanding.Resolved, n.Kind)))
+                .State(SFar, ChamberPaintCss(far))
+                .State(SBoss, BossCss, n.Kind == NodeKind.Boss)
+                .State(SJump, JumpCss)
+                .State(SBossFar, BossFarCss);
+            v._face.Apply(instant: true);
+
+            string afterCss = ChamberAfterCss(corners);
+            v.After = BoxGraphic.Make(v.Face, afterCss, -3f, -3f, w + 6f, h + 6f, "after");
+            UiNode.Of(v.After).Opacity = 0f;
+            v.PlaceAfter();
+
+            // the label's lines beside the chamber, centred on its middle; part of the node (they take the hover)
+            TextStyle ls = TextStyle.FromCss(ChamberLabelCss(s));
+            var lines = StrataLayout.LabelLines(n.KindLabel ?? "");
+            float top = h / 2f - lines.Count * s.LabelLine / 2f;
+            for (int i = 0; i < lines.Count; i++)
+            {
+                TMP_Text label = global::Trial.Kit.Label.Make(v.Lift, lines[i], ls, w + s.LabelGap, top + i * s.LabelLine, null, s.LabelLine, "ocbg-explore-node-label");
+                TextGlow.For(label);
+                label.raycastTarget = true;
+                if (i == 0) v.Label = label;
+            }
+
+            v.Hit.HoverChanged += on => v.SetHover(on);
+            return v;
+        }
+
+        private static string Num(float v) => v.ToString("R", System.Globalization.CultureInfo.InvariantCulture);
 
         // js: scenes/explore/ExploreScene.js:510
         /// <summary>
@@ -211,10 +322,13 @@ namespace Trial.Explore
             _faceDirty |= _face.SetState(SBossFar, Kind == NodeKind.Boss && s == NodeStanding.Far, false);
             _liftDirty |= _lift.SetState(SResolved, s == NodeStanding.Resolved, false);
 
-            // rec.face.textContent = ''; rec.face.appendChild(ico(n.Kind, 44, nodeIconColor(n))): centred in the face
+            // rec.face.textContent = ''; rec.face.appendChild(ico(n.Kind, 44, nodeIconColor(n))): centred in the face (a
+            // chamber's icon takes the ink that reads on its own light)
             if (Icon) Ui.Remove(Icon);
-            Icon = ExploreIcons.Ico(Face, n.Kind, 44f, iconColor);
-            Ui.Place(Icon.rectTransform, (ExploreStyle.Node - 44f) / 2f, (ExploreStyle.Node - 44f) / 2f);
+            if (_palette != null) iconColor = CssColor.Parse(_palette.Chamber(s, Kind).Icon);
+            float icon = _icon;
+            Icon = ExploreIcons.Ico(Face, n.Kind, icon, iconColor);
+            Ui.Place(Icon.rectTransform, (_w - icon) / 2f, (_h - icon) / 2f);
             Icon.transform.SetAsFirstSibling(); // ::after stays above the content
         }
 
@@ -270,8 +384,8 @@ namespace Trial.Explore
 
         /// <summary>
         /// The face's ::after box. The face (position: absolute) is its containing block, so `inset: -3px` is measured from
-        /// the face's padding box: the ring follows the face's border width in force (2px: 90 × 90 at −1; is-current's
-        /// 3px: 88 × 88 at 0, the node's own edge; is-resolved's 1px: 92 × 92 at −2).
+        /// the face's padding box: the ring follows the face's border width in force (on an 88 px node, 2px: 90 × 90 at −1;
+        /// is-current's 3px: 88 × 88 at 0, the node's own edge; is-resolved's 1px: 92 × 92 at −2).
         /// </summary>
         private void PlaceAfter()
         {
@@ -279,8 +393,7 @@ namespace Trial.Explore
             const float inset = 3f;
             float bw = FaceBox.Style.Top.Used;
             float at = bw - inset;
-            float size = ExploreStyle.Node - 2f * bw + 2f * inset;
-            Ui.Place(After.rectTransform, at, at, size, size);
+            Ui.Place(After.rectTransform, at, at, _w - 2f * bw + 2f * inset, _h - 2f * bw + 2f * inset);
         }
 
         /// <summary>A running animation's value for now written again (after something else wrote the same property).</summary>

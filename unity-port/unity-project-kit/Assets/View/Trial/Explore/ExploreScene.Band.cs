@@ -1,9 +1,19 @@
-// ExploreScene — the band (ExploreScene.js:285-323 its DOM, :422 paintGauge, :751-791 drawBand, :889-906 canTrainNow /
-// syncMarks / syncEndLife, :2270-2278 its buttons' listeners; explore.css:25-65; explore.md §5.3). Owned by EX-PANELS.
+// ExploreScene — the band (ExploreScene.js:285-323 its DOM, :751-791 drawBand, :889-906 canTrainNow / syncMarks /
+// syncEndLife, :2270-2278 its buttons' listeners; explore.css:25-65; explore.md §5.3). Owned by EX-PANELS.
 //
 // The band is built once (BuildBand) and restyled on every render (DrawBand), as the JS keeps its elements. Its flex
 // row (gap 24, padding 0 24, items centred in the 95 px content box) is laid out here in stage px: the layer 24…384,
-// 刻限 408…618, 瘴気 642…1022, the body 1046…1506, the three buttons right-aligned to 1896.
+// the collapse calendar 408…1022 (where the JS had 刻限 and the 瘴気 gauge), the body 1046…1506, the three buttons
+// right-aligned to 1896.
+//
+// The calendar (dungeon_exploration_v4.md §6.2 / §6.4, #888) is a Unity design of its own, provisional until design
+// draws it: 「残り N 日」 in the centre, and under it the coming month as pips, the day the next new node takes drawn
+// faint. While a king is down the calendar stands still: the label dims, and the bridge's note (「竜王が戻るまで 41 日。
+// 暦は止まっている」) takes the pips' row. Every number and word is the bridge's (ExplorationScreen).
+//
+// A layer drawn as the rock's cross-section (#1050, layer 1) shows the calendar as one bar instead (Exploration's
+// CalendarBar: a tick every ten days, the next step's share dashed) and the body as the battle shows it (a heart and a
+// bar, a pip per point of stamina, Exploration's BodyMarks). Both sets are built once; the screen's Look picks one.
 //
 // This file also holds the helpers the three panel files share (the band, the node detail, the carried items):
 // ExPanelButton (a <button> that is not an .ocbg-btn), the text-style cache, icons and the flex-wrap rows.
@@ -16,11 +26,6 @@ using TMPro;
 using Trial.Geometry;
 using Trial.Kit;
 using UnityEngine;
-using BackdropSpec = global::Backdrop.BackdropSpec;
-using BdRgba = global::Backdrop.Rgba;
-using GaugeTick = global::Backdrop.GaugeTick;
-using MiasmaLook = global::Backdrop.MiasmaLook;
-using MiasmaWarning = global::Backdrop.MiasmaWarning;
 
 namespace Trial.Explore
 {
@@ -40,38 +45,29 @@ namespace Trial.Explore
         /// <summary>explore.css:29 .ocbg-explore-layer-title (its digits: explore.css:30, Rich(numsInFace)).</summary>
         private const string LayerTitleCss = "font: 700 28px/36px var(--font-display); letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;";
 
-        /// <summary>explore.css:31 .ocbg-explore-band-time.</summary>
-        private const string BandTimeCss = "width: 210px; flex: none;";
+        /// <summary>The calendar's block: the JS's 刻限 (210) and 瘴気 (380) blocks and the gap between them.</summary>
+        private const string BandCalendarCss = "width: 614px; flex: none;";
 
         /// <summary>explore.css:32 .ocbg-explore-band-label.</summary>
         private const string BandLabelCss = "font: 700 22px/28px var(--font-body); white-space: nowrap;";
 
-        /// <summary>explore.css:35 .ocbg-explore-pips.</summary>
-        private const string PipsCss = "display: flex; gap: 6px; margin-top: 12px; height: 14px;";
-
         /// <summary>explore.css:36 .ocbg-explore-pips i.</summary>
         private const string PipCss = "width: 14px; height: 14px; border-radius: 3px; border: 2px solid var(--steel); transition: background-color 420ms ease-out, border-color 420ms ease-out, box-shadow 420ms ease-out;";
 
-        /// <summary>explore.css:37 .ocbg-explore-pips i.is-left.</summary>
+        /// <summary>explore.css:37 .ocbg-explore-pips i.is-left: a day still to come.</summary>
         private const string PipLeftCss = "background: var(--amber); border-color: var(--amber); box-shadow: 0 0 8px color-mix(in srgb, var(--amber) 45%, transparent);";
 
-        /// <summary>explore.css:38 .ocbg-explore-band-miasma.</summary>
-        private const string BandMiasmaCss = "width: 380px; flex: none;";
+        /// <summary>explore.css:64 .ocbg-explore-pips.is-long i (the calendar's pips are always the long row's).</summary>
+        private const string PipLongCss = "width: 12px; height: 12px;";
 
-        /// <summary>explore.css:40 .ocbg-explore-forecast.</summary>
-        private const string ForecastCss = "margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font: 400 18px/24px var(--font-body); white-space: nowrap;";
+        /// <summary>The day the next new node takes (§6.4: drawn faint ahead of time). Unity's own rule.</summary>
+        private const string PipNextCss = "background: color-mix(in srgb, var(--amber) 30%, transparent); border-color: color-mix(in srgb, var(--amber) 60%, transparent); box-shadow: none;";
 
-        /// <summary>explore.css:41 .ocbg-explore-gauge (its colours are inline: ExploreScene.js:300).</summary>
-        private const string GaugeCss = "position: relative; width: 380px; height: 18px; margin-top: 10px; border: 1px solid; border-radius: 4px; overflow: hidden;";
+        /// <summary>A day left while a king is down and the calendar stands still. Unity's own rule.</summary>
+        private const string PipFrozenCss = "background: var(--steel); border-color: var(--steel); box-shadow: none;";
 
-        /// <summary>explore.css:42 .ocbg-explore-gauge-ahead, .ocbg-explore-gauge-fill (a white box, coloured by its Tint: the inline background).</summary>
-        private const string GaugeBarCss = "position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: #fff;";
-
-        /// <summary>explore.css:43 .ocbg-explore-gauge.is-warn .ocbg-explore-gauge-ahead.</summary>
-        private const string GaugeWarnAnim = "ocbg-explore-pulse 1.6s ease-in-out infinite";
-
-        /// <summary>explore.css:45 .ocbg-explore-gauge-ticks i.</summary>
-        private const string GaugeTickCss = "position: absolute; bottom: 0; width: 2px; transform: translateX(-1px);";
+        /// <summary>The note of a calendar that stands still (the JS forecast's face, explore.css:40).</summary>
+        private const string CalendarNoteCss = "font: 400 18px/24px var(--font-body); white-space: nowrap;";
 
         /// <summary>explore.css:47 .ocbg-explore-band-body.</summary>
         private const string BandBodyCss = "width: 460px; flex: none; display: grid; grid-template-columns: 186px 1fr; grid-template-rows: 30px 26px; column-gap: 16px; row-gap: 6px; align-items: center;";
@@ -103,18 +99,6 @@ namespace Trial.Explore
         /// <summary>explore.css:57 .ocbg-explore-bandbtn / -slot / -marks :focus-visible.</summary>
         private const string PanelFocusCss = "outline: 2px solid var(--wick); outline-offset: 2px;";
 
-        /// <summary>explore.css:62 .ocbg-explore-bonus.</summary>
-        private const string BonusCss = "position: absolute; left: 0; top: calc(100% + 3px); padding: 0 8px; font: 700 16px/18px var(--font-body); color: var(--ink); border: 1px solid var(--amber); border-radius: var(--radius-chip-self); background: color-mix(in srgb, var(--amber) 16%, transparent); white-space: nowrap;";
-
-        /// <summary>explore.css:63 .ocbg-explore-pips.is-long.</summary>
-        private const string PipsLongCss = "gap: 4px;";
-
-        /// <summary>explore.css:64 .ocbg-explore-pips.is-long i.</summary>
-        private const string PipLongCss = "width: 12px; height: 12px;";
-
-        /// <summary>explore.css:65 .ocbg-explore-relief.</summary>
-        private const string ReliefCss = "position: absolute; left: 0; top: calc(100% + 1px); font: 400 17px/18px var(--font-body); color: var(--ink); white-space: nowrap;";
-
         // ------------------------------------------------------------------ the band's layout (from the CSS above)
 
         /// <summary>The band's content box: 96 − the 1 px bottom border (border-box); items are centred in it.</summary>
@@ -122,35 +106,34 @@ namespace Trial.Explore
 
         private const float BandPadX = 24f, BandGap = 24f;
         private const float BandLayerX = BandPadX, BandLayerW = 360f;
-        private const float BandTimeX = BandLayerX + BandLayerW + BandGap, BandTimeW = 210f;
-        private const float BandMiasmaX = BandTimeX + BandTimeW + BandGap, BandMiasmaW = 380f;
-        private const float BandBodyX = BandMiasmaX + BandMiasmaW + BandGap, BandBodyW = 460f;
+        private const float BandCalX = BandLayerX + BandLayerW + BandGap, BandCalW = 614f;
+        private const float BandBodyX = BandCalX + BandCalW + BandGap, BandBodyW = 460f;
+
+        /// <summary>The coming days the calendar's pips show: a month.</summary>
+        private const int CalendarPips = 30;
+
+        private const float CalPipSize = 12f, CalPipGap = 4f;
+
+        /// <summary>The second row (the pips, or the note of a calendar that stands still): its top under the row and its height.</summary>
+        private const float BandCalRow2Gap = 10f, BandCalRow2H = 24f;
 
         /// <summary>
-        /// The 刻限 row's height: the label's line box (22px/28px with its numbers in the mono face: 30, PanelLineOf), over
-        /// the 22 px hourglass. Set by BuildBand.
+        /// The calendar row's height: the label's line box (22px/28px with its numbers in the mono face: 30, PanelLineOf),
+        /// over the 22 px hourglass. Set by BuildBand.
         /// </summary>
-        private float BandTimeRowH = 28f;
+        private float BandCalRowH = 28f;
 
-        /// <summary>The 瘴気 row's height: the label's line box (30), the forecast's (26), the 24 px icon. Set by BuildBand.</summary>
-        private float BandMiasmaRowH = 28f;
-
-        /// <summary>The time block: the row + pips' margin 12 + pips 14.</summary>
-        private float BandTimeH => BandTimeRowH + 12f + 14f;
-
-        /// <summary>The miasma block: the row + the gauge's margin 10 + gauge 18.</summary>
-        private float BandMiasmaH => BandMiasmaRowH + 10f + 18f;
+        /// <summary>The calendar block: the row + the gap + the second row.</summary>
+        private float BandCalH => BandCalRowH + BandCalRow2Gap + BandCalRow2H;
 
         /// <summary>The body grid: rows 30 / 26, row-gap 6; column 2 starts at 186 + 16.</summary>
         private const float BandBodyH = 30f + 6f + 26f, BandBodyCol2 = 186f + 16f, BandBodyRow2 = 30f + 6f;
-
-        private const float GaugeW = 380f, GaugeH = 18f, GaugeInnerW = GaugeW - 2f, GaugeInnerH = GaugeH - 2f;
 
         // ------------------------------------------------------------------ the band's elements (ExploreScene.js:286-323)
 
         private TMP_Text LayerTitle;
         private string ShownLayerTitle;
-        private RollLabel TimeRoll, MiasmaRoll, HpRoll, StRoll, MaxRoll, MarksRoll;
+        private RollLabel DaysRoll, HpRoll, StRoll, MaxRoll, MarksRoll;
 
         /// <summary>.ocbg-explore-marks: 訓練の刻み (MarksLabel), enabled while a mark can be spent now.</summary>
         private ExPanelButton MarksBtn;
@@ -158,21 +141,50 @@ namespace Trial.Explore
         /// <summary>手記（J） / 所持カード（C） / 設定（Esc）.</summary>
         private ExPanelButton JournalBtn, CardsBtn, SettingsBtn;
 
-        private TMP_Text BandTimeText, BandMiasmaText, BandHpText, BandStText, BandMaxText, BandMarksText;
-        private RectTransform BandTimePips, BandForecast;
-        private BoxGraphic BandBonus;
-        private TMP_Text BandBonusText, BandRelief;
-        private BoxGraphic BandGaugeAhead, BandGaugeFill;
-        private string BandPipsKey, BandForecastKey, BandMarksShown;
-        private bool BandGaugeWarn;
-        private CssAnimator BandAheadPulse;
-        private float BandFillW = -1f, BandAheadW = -1f;
-        private Rgba BandFillTint = new Rgba(-1f, -1f, -1f, -1f);
+        private TMP_Text BandDaysText, BandHpText, BandStText, BandMaxText, BandMarksText;
+        private RectTransform BandDayPips, BandCalNote;
+        private string BandPipsKey, BandNoteKey, BandMarksShown;
+
+        /// <summary>The label's own colour, and whether it is dimmed now (the calendar stands still).</summary>
+        private Rgba BandDaysInk;
+        private bool BandDaysDimmed;
+
+        // ------------------------------------------------------------------ the band on a strata map (#1050, battle-visual-v1 §2.5)
+
+        /// <summary>The calendar's bar: its trough, what is left, the day the next step takes (dashed), the ticks.</summary>
+        private const string CalBarCss = "background: #06090c; border: 1px solid rgba(157,166,186,.5); border-radius: 3px;";
+
+        private const string CalBarFillCss = "background: #a9adbd;";
+        private const string CalBarFrozenCss = "background: var(--steel);";
+        private const string CalBarNextCss = "background: repeating-linear-gradient(180deg, #a9adbd 0 3px, #06090c 3px 6px);";
+        private const string CalBarTickCss = "background: rgba(6,9,12,.9);";
+
+        /// <summary>The heading over the bar (崩壊まで, or the note of a calendar that stands still).</summary>
+        private const string CalHeadingCss = "font: 700 16px/20px var(--font-body); white-space: nowrap;";
+
+        /// <summary>The HP bar (the battle's heart and bar) and a stamina pip, lit or spent.</summary>
+        private const string HpBarCss = "background: #06090c; border: 1px solid var(--rule); border-radius: 3px;";
+
+        private const string HpBarFillCss = "background: var(--crimson); border-radius: 2px;";
+        private const string StPipLitCss = "border-radius: 50%; background: var(--amber);";
+        private const string StPipSpentCss = "border-radius: 50%; border: 2px solid var(--steel);";
+
+        private const float CalIcon = 30f, CalGap = 12f, CalHeadingH = 20f, CalBarGap = 4f;
+        private const float BodyIcon = 22f, BodyGap = 8f, BodyCol1W = 186f;
+
+        /// <summary>The plain band's calendar and first body row, and the strata band's (one of each pair shows).</summary>
+        private RectTransform BandCalPlain, BandCalStrata, BandBodyPlainRow, BandBodyStrataRow;
+
+        private RollLabel StrataDaysRoll, StrataHpRoll, StrataStRoll;
+        private TMP_Text StrataDaysText, StrataHpText, StrataStText, StrataCalHeading;
+        private RectTransform StrataCalBar, StrataHpBar, StrataPips;
+        private string StrataBarKey, StrataBodyKey, StrataHeadingKey;
+        private bool? BandStrataShown;
 
         /// <summary>
-        /// Builds the band into Band (ExploreScene.js:285-323): the layer, 刻限 with its pips and 刻限の砂, 瘴気 with its
-        /// gauge and 防瘴の面, the body block with the marks button, the three buttons; adds the six RollLabels to Rollers
-        /// and wires the buttons (ExploreScene.js:2270-2278: OpenOverlay, the marks' Proceed). Called once from Mount.
+        /// Builds the band into Band (ExploreScene.js:285-323): the layer, the calendar with its pips and its note, the
+        /// body block with the marks button, the three buttons; adds the five RollLabels to Rollers and wires the buttons
+        /// (ExploreScene.js:2270-2278: OpenOverlay, the marks' Proceed). Called once from Mount.
         /// </summary>
         // js: scenes/explore/ExploreScene.js:285
         private void BuildBand()
@@ -182,8 +194,7 @@ namespace Trial.Explore
             bandBox.raycastTarget = true; // a div takes the pointer: what lies under the band is not reached through it
 
             // ---- the layer: stairs 28 + the layer title (redrawn only when it changes) ----
-            // Every label of the band sits on its line box's Blink baseline (PanelBaseShift): the reference shots put the
-            // baselines of 刻限 / 瘴気 / HP at 44 / 43 / 41.
+            // Every label of the band sits on its line box's Blink baseline (PanelBaseShift).
             RectTransform layer = Ui.Div(Band, "ocbg-explore-band-layer", BandLayerX, (BandInnerH - 36f) / 2f, BandLayerW, 36f);
             PanelIcon(layer, "stairs", 28f, ExploreStyle.Ink, 0f, 4f);
             // the title shrinks to what is left of the 360 px (overflow: hidden; text-overflow: ellipsis); its digits stay
@@ -191,59 +202,52 @@ namespace Trial.Explore
             TextStyle titleTs = PanelText(LayerTitleCss, true);
             LayerTitle = Label.Make(layer, "", titleTs, 28f + 12f, PanelBaseShift(titleTs, PanelLineOf(titleTs, false)), BandLayerW - 28f - 12f, 36f, "ocbg-explore-layer-title");
 
-            // ---- 刻限: hourglass 22 + the label, the pips, 刻限の砂 under the block ----
-            // The row is as tall as the label's line box: the band's labels always carry their numbers (刻限 7 / 10,
-            // 瘴気 3%), whose mono face makes a 22px/28px line 30 tall (the pips sit at 62 in the reference shots).
+            // ---- the calendar: hourglass 22 + 「残り N 日」, then the pips or the note ----
+            // The row is as tall as the label's line box: the label always carries its number, whose mono face makes a
+            // 22px/28px line 30 tall.
             TextStyle labelTs = PanelText(BandLabelCss, true);
             PanelLine labelLine = PanelLineOf(labelTs, true);
             float labelH = labelLine.H, labelShift = PanelBaseShift(labelTs, labelLine);
-            BandTimeRowH = Math.Max(22f, labelH);
-            BandMiasmaRowH = Math.Max(24f, Math.Max(labelH, PanelLineOf(PanelText(ForecastCss, true), true).H));
-            RectTransform time = Ui.Div(Band, "ocbg-explore-band-time", BandTimeX, (BandInnerH - BandTimeH) / 2f, BandTimeW, BandTimeH);
-            PanelIcon(time, "hourglass", 22f, ExploreStyle.Ink, 0f, (BandTimeRowH - 22f) / 2f);
-            BandTimeText = Label.Make(time, "", labelTs, 22f + 8f, (BandTimeRowH - labelH) / 2f + labelShift, null, labelH, "ocbg-explore-band-label");
-            BandTimePips = Ui.Div(time, "ocbg-explore-pips", 0f, BandTimeRowH + 12f, BandTimeW, 14f);
-            BandBonus = BoxGraphic.Make(time, BonusCss, 0f, BandTimeH + 3f, 0f, 20f, "ocbg-explore-bonus");
-            TextStyle bonusTs = PanelText(BonusCss);
-            BandBonusText = Label.Make(BandBonus.rectTransform, "", bonusTs, 9f, 1f + PanelBaseShift(bonusTs, PanelLineOf(bonusTs, false)), null, 18f, "label");
-            UiNode.Of(BandBonus.rectTransform).Visible = false;
+            BandCalRowH = Math.Max(22f, labelH);
+            RectTransform cal = Ui.Div(Band, "ocbg-explore-band-calendar", BandCalX, (BandInnerH - BandCalH) / 2f, BandCalW, BandCalH);
+            PanelIcon(cal, "hourglass", 22f, ExploreStyle.Ink, 0f, (BandCalRowH - 22f) / 2f);
+            BandDaysText = Label.Make(cal, "", labelTs, 22f + 8f, (BandCalRowH - labelH) / 2f + labelShift, null, labelH, "ocbg-explore-band-label");
+            BandDaysInk = Label.StyleOf(BandDaysText)?.Color ?? ExploreStyle.Ink;
+            float row2Y = BandCalRowH + BandCalRow2Gap;
+            BandDayPips = Ui.Div(cal, "ocbg-explore-pips", 0f, row2Y + (BandCalRow2H - CalPipSize) / 2f, BandCalW, CalPipSize);
+            BandCalNote = Ui.Div(cal, "ocbg-explore-calendar-note", 0f, row2Y, BandCalW, BandCalRow2H);
+            BandCalPlain = cal;
 
-            // ---- 瘴気: miasma 24 + the label + the forecast (right), the gauge, 防瘴の面 under the block ----
-            RectTransform miasma = Ui.Div(Band, "ocbg-explore-band-miasma", BandMiasmaX, (BandInnerH - BandMiasmaH) / 2f, BandMiasmaW, BandMiasmaH);
-            PanelIcon(miasma, "miasma", 24f, ExploreStyle.Phosphor, 0f, (BandMiasmaRowH - 24f) / 2f);
-            BandMiasmaText = Label.Make(miasma, "", labelTs, 24f + 8f, (BandMiasmaRowH - labelH) / 2f + labelShift, null, labelH, "ocbg-explore-band-label");
-            BandForecast = Ui.Div(miasma, "ocbg-explore-forecast", BandMiasmaW, 0f, 0f, BandMiasmaRowH);
-
-            // js: scenes/explore/ExploreScene.js:300 (the gauge's colours are inline: MiasmaLook.Track / Frame)
-            BoxGraphic gauge = BoxGraphic.Make(miasma, GaugeCss + " background: " + BandRgbaCss(MiasmaLook.Track) + "; border-color: " + BandRgbaCss(MiasmaLook.Frame) + ";",
-                0f, BandMiasmaRowH + 10f, GaugeW, GaugeH, "ocbg-explore-gauge");
-            // overflow: hidden with the 4 px radius: the bars are clipped to the gauge's padding box
-            List<Vec2> clip = gauge.ClipPolygon(paddingBox: true).ConvertAll(p => new Vec2(p.X - 1f, p.Y - 1f));
-            BandGaugeAhead = BoxGraphic.Make(gauge.rectTransform, GaugeBarCss, 1f, 1f, 0f, GaugeInnerH, "ocbg-explore-gauge-ahead");
-            BandGaugeAhead.ClipConvex = clip;
-            BandGaugeFill = BoxGraphic.Make(gauge.rectTransform, GaugeBarCss, 1f, 1f, 0f, GaugeInnerH, "ocbg-explore-gauge-fill");
-            BandGaugeFill.ClipConvex = clip;
-            RectTransform ticks = Ui.Div(gauge.rectTransform, "ocbg-explore-gauge-ticks", 1f, 1f, GaugeInnerW, GaugeInnerH);
-            // js: scenes/explore/ExploreScene.js:297
-            foreach (GaugeTick tick in MiasmaLook.Ticks())
-            {
-                float th = tick.Height * GaugeInnerH;
-                BoxGraphic.Make(ticks, GaugeTickCss + " background: " + BandRgbaCss(MiasmaLook.Tick) + ";",
-                    tick.Percent / 100f * GaugeInnerW - 1f, GaugeInnerH - th, 2f, th, tick.IsStepLine ? "is-line" : "i");
-            }
-            // 防瘴の面: top 100% + 1; its line's baseline (16 below its top at 17px/18px)
-            TextStyle reliefTs = PanelText(ReliefCss, true);
-            BandRelief = Label.Make(miasma, "", reliefTs, 0f, BandMiasmaH + 1f + PanelBaseShift(reliefTs, PanelLineOf(reliefTs, false)), null, 18f, "ocbg-explore-relief");
-            BandRelief.gameObject.SetActive(false);
+            // ---- a strata map's calendar (#1050): hourglass 30, the heading over the bar, 「残り N 日」 beside it ----
+            float calStrataH = CalHeadingH + CalBarGap + CalendarBar.Height;
+            BandCalStrata = Ui.Div(Band, "ocbg-explore-band-calendar is-strata", BandCalX, (BandInnerH - calStrataH) / 2f, BandCalW, calStrataH);
+            PanelIcon(BandCalStrata, "hourglass", CalIcon, ExploreStyle.Ink, 0f, (calStrataH - CalIcon) / 2f);
+            float barX = CalIcon + CalGap;
+            TextStyle headTs = PanelText(CalHeadingCss, true);
+            StrataCalHeading = Label.Make(BandCalStrata, "", headTs, barX, 0f, null, CalHeadingH, "heading");
+            StrataCalBar = Ui.Div(BandCalStrata, "ocbg-explore-calbar", barX, CalHeadingH + CalBarGap, CalendarBar.Width, CalendarBar.Height);
+            float barMid = CalHeadingH + CalBarGap + CalendarBar.Height / 2f;
+            StrataDaysText = Label.Make(BandCalStrata, "", labelTs, barX + CalendarBar.Width + 16f, barMid - labelH / 2f + labelShift, null, labelH, "ocbg-explore-band-label");
+            UiNode.Of(BandCalStrata).Visible = false;
 
             // ---- the body: HP, stamina / 訓練の刻み, max stamina (grid 186px 1fr, rows 30 / 26) ----
             // each row (flex, align-items: center) is the label's line box (30), centred in the 30 px grid row
             RectTransform body = Ui.Div(Band, "ocbg-explore-band-body", BandBodyX, (BandInnerH - BandBodyH) / 2f, BandBodyW, BandBodyH);
             float hpRowH = Math.Max(22f, labelH), hpRowY = (30f - hpRowH) / 2f;
-            PanelIcon(body, "heart", 22f, ExploreStyle.Crimson, 0f, hpRowY + (hpRowH - 22f) / 2f);
-            BandHpText = Label.Make(body, "", labelTs, 22f + 8f, hpRowY + (hpRowH - labelH) / 2f + labelShift, null, labelH, "ocbg-explore-band-label");
-            PanelIcon(body, "pip", 20f, ExploreStyle.Amber, BandBodyCol2, hpRowY + (hpRowH - 20f) / 2f);
-            BandStText = Label.Make(body, "", labelTs, BandBodyCol2 + 20f + 8f, hpRowY + (hpRowH - labelH) / 2f + labelShift, null, labelH, "ocbg-explore-band-label");
+            BandBodyPlainRow = Ui.Div(body, "row", 0f, 0f, BandBodyW, 30f);
+            PanelIcon(BandBodyPlainRow, "heart", 22f, ExploreStyle.Crimson, 0f, hpRowY + (hpRowH - 22f) / 2f);
+            BandHpText = Label.Make(BandBodyPlainRow, "", labelTs, 22f + 8f, hpRowY + (hpRowH - labelH) / 2f + labelShift, null, labelH, "ocbg-explore-band-label");
+            PanelIcon(BandBodyPlainRow, "pip", 20f, ExploreStyle.Amber, BandBodyCol2, hpRowY + (hpRowH - 20f) / 2f);
+            BandStText = Label.Make(BandBodyPlainRow, "", labelTs, BandBodyCol2 + 20f + 8f, hpRowY + (hpRowH - labelH) / 2f + labelShift, null, labelH, "ocbg-explore-band-label");
+
+            // ---- a strata map's first body row (#1050): the heart, 「38 / 50」 and the bar; the pips and 「8 / 10」 ----
+            BandBodyStrataRow = Ui.Div(body, "row is-strata", 0f, 0f, BandBodyW, 30f);
+            PanelIcon(BandBodyStrataRow, "heart", BodyIcon, ExploreStyle.Crimson, 0f, (30f - BodyIcon) / 2f);
+            StrataHpText = Label.Make(BandBodyStrataRow, "", labelTs, BodyIcon + BodyGap, hpRowY + (hpRowH - labelH) / 2f + labelShift, null, labelH, "ocbg-explore-band-label");
+            StrataHpBar = Ui.Div(BandBodyStrataRow, "ocbg-explore-hpbar", 0f, (30f - BodyMarks.HpBarH) / 2f, BodyMarks.HpBarMinW, BodyMarks.HpBarH);
+            StrataPips = Ui.Div(BandBodyStrataRow, "ocbg-explore-stpips", BandBodyCol2, 0f, BandBodyW - BandBodyCol2, 30f);
+            StrataStText = Label.Make(BandBodyStrataRow, "", labelTs, BandBodyCol2, hpRowY + (hpRowH - labelH) / 2f + labelShift, null, labelH, "ocbg-explore-band-label");
+            UiNode.Of(BandBodyStrataRow).Visible = false;
 
             // js: scenes/explore/ExploreScene.js:304 (justify-self: start; margin-left: −10px; its line box + the 1 px border,
             // centred in its 26 px row: 「訓練の刻み 0」 carries a number, so the 16px/22px line is 23 and the button 25)
@@ -261,7 +265,7 @@ namespace Trial.Explore
             BandMarksText = Label.Make(MarksBtn.Root, "", marksTs, 1f + 10f, 1f + PanelBaseShift(marksTs, marksLine), null, marksLineH, "label");
             MarksBtn.Disabled = true;
             MarksBtn.Restate(instant: true);
-            // 最大 10 = 10 − 瘴気 0: its line box (23 with its numbers) centred in the 26 px row
+            // 最大 12 = 10 + 一時 2: its line box (23 with its numbers) centred in the 26 px row
             TextStyle maxTs = PanelText(BandSmallCss, true);
             PanelLine maxLine = PanelLineOf(maxTs, true);
             BandMaxText = Label.Make(body, "", maxTs, BandBodyCol2, BandBodyRow2 + (26f - maxLine.H) / 2f + PanelBaseShift(maxTs, maxLine), null, maxLine.H, "ocbg-explore-small");
@@ -281,13 +285,15 @@ namespace Trial.Explore
             }
 
             // js: scenes/explore/ExploreScene.js:317
-            TimeRoll = new RollLabel(BandTimeText);
-            MiasmaRoll = new RollLabel(BandMiasmaText);
+            DaysRoll = new RollLabel(BandDaysText);
             HpRoll = new RollLabel(BandHpText);
             StRoll = new RollLabel(BandStText);
             MaxRoll = new RollLabel(BandMaxText);
             MarksRoll = new RollLabel(BandMarksText);
-            Rollers.AddRange(new[] { TimeRoll, MiasmaRoll, HpRoll, StRoll, MaxRoll, MarksRoll });
+            StrataDaysRoll = new RollLabel(StrataDaysText);
+            StrataHpRoll = new RollLabel(StrataHpText);
+            StrataStRoll = new RollLabel(StrataStText);
+            Rollers.AddRange(new[] { DaysRoll, HpRoll, StRoll, MaxRoll, MarksRoll, StrataDaysRoll, StrataHpRoll, StrataStRoll });
 
             // ---- the buttons' listeners (ExploreScene.js:2270-2278) and the Tab order (DOM order) ----
             JournalBtn.Click += () => OpenOverlay(ExploreOverlayKind.Journal).Forget();
@@ -359,33 +365,6 @@ namespace Trial.Explore
             return t.Substring(i, j - i);
         }
 
-        // js: scenes/explore/ExploreScene.js:422
-        /// <summary>paintGauge(now): the fill rises (MiasmaLook.Rise) and breathes by <paramref name="breath"/>; the ahead bar shows the next step.</summary>
-        private void PaintGauge(float now, float breath)
-        {
-            if (!BandGaugeFill || !BandGaugeAhead) return;
-            float shown = GaugeRise(GaugeFrom, GaugeTo, now - GaugeAt);
-            float fw = Math.Max(0f, Math.Min(100f, shown)) / 100f * GaugeInnerW;
-            if (Math.Abs(fw - BandFillW) > 1e-4f)
-            {
-                BandFillW = fw;
-                Ui.Size(BandGaugeFill.rectTransform, fw, GaugeInnerH);
-            }
-            Rgba tint = BandRgba(GaugeFillAt(shown), MiasmaLook.FillAlphaOf(breath));
-            if (!tint.Equals(BandFillTint))
-            {
-                BandFillTint = tint;
-                BandGaugeFill.Tint = tint;
-            }
-            float aw = Math.Max(0f, Math.Min(100f, GaugeNext)) / 100f * GaugeInnerW;
-            if (Math.Abs(aw - BandAheadW) > 1e-4f)
-            {
-                BandAheadW = aw;
-                Ui.Size(BandGaugeAhead.rectTransform, aw, GaugeInnerH);
-            }
-            FollowRolledBoxes();
-        }
-
         // js: scenes/explore/ExploreScene.js:752
         /// <summary>drawBand(now, animate): the band from Screen (numbers roll when animate).</summary>
         private void DrawBand(float now, bool animate)
@@ -396,26 +375,17 @@ namespace Trial.Explore
                 ShownLayerTitle = Screen.LayerTitle;
                 Label.SetText(LayerTitle, Rich(Screen.LayerTitle, Label.StyleOf(LayerTitle), numsInFace: true));
             }
-            TimeRoll.Set(Screen.TimeLabel, now, animate);
-            DrawBandBonus(Screen.TimeBonusLabel ?? "");
-            string relief = Screen.ReliefLabel ?? "";
-            BandRelief.gameObject.SetActive(relief.Length > 0); // shown first: TMP lays text out only while active
-            Label.SetText(BandRelief, relief.Length > 0 ? Rich(relief, Label.StyleOf(BandRelief)) : "");
-            DrawPips(Screen.TimeLimit, Screen.TimeLeft);
-
-            MiasmaGauge g = Screen.Miasma;
-            MiasmaRoll.Set(g.Label, now, animate);
-            DrawForecast(g);
-            if (g.Percent != GaugeTo || FirstRender)
+            bool strata = Screen.Look == MapLook.Strata && Screen.Calendar != null;
+            if (BandStrataShown != strata)
             {
-                GaugeFrom = FirstRender || !animate ? g.Percent : GaugeRise(GaugeFrom, GaugeTo, now - GaugeAt);
-                GaugeTo = g.Percent;
-                GaugeAt = now;
+                BandStrataShown = strata;
+                UiNode.Of(BandCalPlain).Visible = !strata;
+                UiNode.Of(BandCalStrata).Visible = strata;
+                UiNode.Of(BandBodyPlainRow).Visible = !strata;
+                UiNode.Of(BandBodyStrataRow).Visible = strata;
             }
-            GaugeNext = g.NextPercent;
-            BandGaugeAhead.Tint = BandRgba(MiasmaLook.AheadColor(g.Percent, g.NextPercent));
-            SetGaugeWarn(MiasmaLook.Warning(g.Percent, g.NextPercent) != MiasmaWarning.None);
-            Backdrop?.SetMiasma(g.Percent, now, FirstRender || !animate);
+            DrawCalendar(now, animate);
+            if (strata) DrawStrataBand(now, animate);
 
             HpRoll.Set(Screen.HpLabel, now, animate);
             StRoll.Set(Screen.StaminaLabel, now, animate);
@@ -427,77 +397,135 @@ namespace Trial.Explore
             SettingsBtn.Disabled = !Screen.CanOpenSettings;
         }
 
-        /// <summary>timeBonus.textContent / style.display (ExploreScene.js:759): 「刻限の砂 +1」 in its chip, hidden when empty.</summary>
-        private void DrawBandBonus(string label)
+        /// <summary>
+        /// The calendar (§6.2): 「残り N 日」 rolls like the other numbers; a calendar that stands still dims its label and
+        /// shows the bridge's note in place of the pips.
+        /// </summary>
+        private void DrawCalendar(float now, bool animate)
         {
-            UiNode node = UiNode.Of(BandBonus.rectTransform);
-            node.Visible = label.Length > 0;
-            if (label.Length == 0 || Label.StateOf(BandBonusText).Text == label) return;
-            // textContent: the label's own face (no number spans)
-            Label.SetText(BandBonusText, label);
-            float w = TextMeasure.Width(label, Label.StyleOf(BandBonusText));
-            Ui.Size(BandBonusText.rectTransform, w, 18f);
-            node.W = w + 8f + 8f + 2f;
+            DaysRoll.Set(Screen.DaysLabel ?? "", now, animate);
+            bool frozen = Screen.CalendarFrozen;
+            if (frozen != BandDaysDimmed)
+            {
+                BandDaysDimmed = frozen;
+                Label.SetColor(BandDaysText, frozen ? ExploreStyle.Steel : BandDaysInk);
+            }
+            string note = frozen ? Screen.CalendarNote ?? "" : "";
+            DrawCalendarNote(note);
+            DrawDayPips(note.Length > 0 ? 0 : Screen.DaysLeft, frozen, note.Length > 0);
         }
 
-        /// <summary>The pips (ExploreScene.js:764-766): rebuilt only when what they show changed (new pips never transition).</summary>
-        private void DrawPips(int limit, int left)
+        /// <summary>
+        /// The coming month as pips (§6.4): one lit pip per day left, up to a month; the last lit one, the day the next new
+        /// node takes, faint; all steel while the calendar stands still. Rebuilt only when what they show changed (new
+        /// pips never transition). Hidden while the note takes their row.
+        /// </summary>
+        private void DrawDayPips(int daysLeft, bool frozen, bool hidden)
         {
-            string key = limit.ToString(CultureInfo.InvariantCulture) + "/" + left.ToString(CultureInfo.InvariantCulture);
+            int lit = Math.Max(0, Math.Min(CalendarPips, daysLeft));
+            string key = hidden ? "-" : lit.ToString(CultureInfo.InvariantCulture) + (frozen ? "/f" : "/r");
             if (key == BandPipsKey) return;
             BandPipsKey = key;
-            Ui.Clear(BandTimePips);
-            bool isLong = limit > 10;
-            float size = isLong ? 12f : 14f, gap = isLong ? 4f : 6f;
-            for (int i = 0; i < limit; i++)
+            Ui.Clear(BandDayPips);
+            if (hidden) return;
+            for (int i = 0; i < CalendarPips; i++)
             {
-                string css = PipCss + (i < left ? PipLeftCss : "") + (isLong ? PipLongCss : "");
-                BoxGraphic.Make(BandTimePips, css, i * (size + gap), 0f, size, size, i < left ? "is-left" : "i");
+                bool on = i < lit;
+                bool next = on && !frozen && i == lit - 1;
+                string css = PipCss + PipLongCss + (!on ? "" : frozen ? PipFrozenCss : next ? PipNextCss : PipLeftCss);
+                BoxGraphic.Make(BandDayPips, css, i * (CalPipSize + CalPipGap), 0f, CalPipSize, CalPipSize, next ? "is-next" : on ? "is-left" : "i");
             }
         }
 
-        /// <summary>The 瘴気 forecast (ExploreScene.js:769-774): △ caution 18 when MiasmaLook warns, then the label; right-aligned.</summary>
-        private void DrawForecast(MiasmaGauge g)
+        /// <summary>The note of a calendar that stands still, on the pips' row; "" clears it.</summary>
+        private void DrawCalendarNote(string note)
         {
-            string label = g.ForecastLabel ?? "";
-            string mark = label.Length > 0 ? MiasmaLook.ForecastMark(g.Percent, g.NextPercent) : "";
-            string key = mark + "\u0001" + label;
-            if (key == BandForecastKey) return;
-            BandForecastKey = key;
-            Ui.Clear(BandForecast);
-            float w = 0f, h = 0f;
-            if (label.Length > 0)
-            {
-                // inline-flex, align-items: center: the △ (18) and the text's line box (26 with its numbers), each centred
-                TextStyle ts = PanelText(ForecastCss, true);
-                PanelLine line = PanelLineOf(ts, HasDigits(label));
-                float lh = line.H;
-                h = Math.Max(lh, mark.Length > 0 ? 18f : 0f);
-                if (mark.Length > 0)
-                {
-                    PanelIcon(BandForecast, "caution", 18f, ExploreStyle.Caution, 0f, (h - 18f) / 2f);
-                    w = 18f + 6f;
-                }
-                string text = Rich(label, ts);
-                float lw = TextMeasure.Width(text, ts);
-                Label.Make(BandForecast, text, ts, w, (h - lh) / 2f + PanelBaseShift(ts, line), lw, lh, "label");
-                w += lw;
-            }
-            // margin-left: auto (right-aligned in the 380 px row), centred in the row
-            Ui.Place(BandForecast, BandMiasmaW - w, (BandMiasmaRowH - h) / 2f, w, h);
+            if (note == BandNoteKey) return;
+            BandNoteKey = note;
+            Ui.Clear(BandCalNote);
+            if (note.Length == 0) return;
+            TextStyle ts = PanelText(CalendarNoteCss, true);
+            PanelLine line = PanelLineOf(ts, HasDigits(note));
+            string text = Rich(note, ts);
+            float w = Math.Min(BandCalW, TextMeasure.Width(text, ts));
+            Label.Make(BandCalNote, text, ts, 0f, (BandCalRow2H - line.H) / 2f + PanelBaseShift(ts, line), w, line.H, "label");
         }
 
-        /// <summary>gauge.classList.toggle('is-warn', …): the ahead bar pulses while the next step warns.</summary>
-        private void SetGaugeWarn(bool warn)
+        /// <summary>
+        /// The band of a strata map (#1050): the calendar as one bar under 「崩壊まで」 (the note of a calendar that stands
+        /// still takes the heading's place), 「残り N 日」 beside it; HP as the heart, its numbers and a bar; stamina as a
+        /// pip per point and its numbers. The numbers roll like the plain band's; the bar and the pips are rebuilt only
+        /// when what they show changed.
+        /// </summary>
+        private void DrawStrataBand(float now, bool animate)
         {
-            if (warn == BandGaugeWarn) return;
-            BandGaugeWarn = warn;
-            if (warn) BandAheadPulse = CssAnimator.Play(BandGaugeAhead, GaugeWarnAnim);
-            else
+            bool frozen = Screen.CalendarFrozen;
+            string heading = frozen && Screen.CalendarNote.Length > 0 ? Screen.CalendarNote : ExplorationText.CalendarHeading;
+            if (heading != StrataHeadingKey)
             {
-                BandAheadPulse?.Stop();
-                BandAheadPulse = null;
+                StrataHeadingKey = heading;
+                TextStyle ts = Label.StyleOf(StrataCalHeading) ?? PanelText(CalHeadingCss, true);
+                string markup = Rich(heading, ts);
+                Label.SetText(StrataCalHeading, markup);
+                Ui.Size(StrataCalHeading.rectTransform, Math.Min(BandCalW, TextMeasure.Width(markup, ts)), CalHeadingH);
             }
+            StrataDaysRoll.Set(Screen.DaysLabel ?? "", now, animate);
+            Label.SetColor(StrataDaysText, frozen ? ExploreStyle.Steel : BandDaysInk);
+            DrawCalendarBar(Screen.Calendar);
+
+            StrataHpRoll.Set(Screen.HpValueLabel ?? "", now, animate);
+            StrataStRoll.Set(Screen.StaminaValueLabel ?? "", now, animate);
+            DrawBodyMarks();
+        }
+
+        /// <summary>The calendar's bar: the trough, what is left, the next step's share dashed, a tick every ten days.</summary>
+        private void DrawCalendarBar(CalendarBar bar)
+        {
+            string key = bar.Left.ToString("R", CultureInfo.InvariantCulture) + "|" + bar.Next.ToString("R", CultureInfo.InvariantCulture) + "|" + bar.Frozen;
+            if (key == StrataBarKey) return;
+            StrataBarKey = key;
+            Ui.Clear(StrataCalBar);
+            const float w = CalendarBar.Width, h = CalendarBar.Height;
+            BoxGraphic.Make(StrataCalBar, CalBarCss, 0f, 0f, w, h, "trough");
+            // inside the trough's 1 px border
+            float iw = w - 2f, ih = h - 2f, left = iw * bar.Left, next = iw * bar.Next;
+            if (next > 0f) BoxGraphic.Make(StrataCalBar, bar.Frozen ? CalBarFrozenCss : CalBarFillCss, 1f, 1f, next, ih, "left");
+            if (left - next > 0.5f) BoxGraphic.Make(StrataCalBar, CalBarNextCss, 1f + next, 1f, left - next, ih, "next");
+            foreach (float t in bar.Ticks)
+                BoxGraphic.Make(StrataCalBar, CalBarTickCss, 1f + iw * t - CalendarBar.TickWidth / 2f, 1f, CalendarBar.TickWidth, ih, "tick");
+        }
+
+        /// <summary>The HP bar after its numbers, the stamina pips before theirs (their widths follow the numbers' text).</summary>
+        private void DrawBodyMarks()
+        {
+            string hpLabel = Screen.HpValueLabel ?? "", stLabel = Screen.StaminaValueLabel ?? "";
+            string key = hpLabel + "|" + Screen.Hp + "/" + Screen.MaxHp + "|" + stLabel + "|" + Screen.Stamina + "/" + Screen.MaxStamina;
+            if (key == StrataBodyKey) return;
+            StrataBodyKey = key;
+            TextStyle ts = Label.StyleOf(StrataHpText) ?? PanelText(BandLabelCss, true);
+
+            // HP: the bar from after the numbers to the column's end
+            float hpX = BodyIcon + BodyGap + TextMeasure.Width(Rich(hpLabel, ts), ts) + 10f;
+            float hpW = Math.Max(BodyMarks.HpBarMinW, BodyCol1W - BodyGap - hpX);
+            Ui.Clear(StrataHpBar);
+            Ui.Place(StrataHpBar, hpX, (30f - BodyMarks.HpBarH) / 2f, hpW, BodyMarks.HpBarH);
+            BoxGraphic.Make(StrataHpBar, HpBarCss, 0f, 0f, hpW, BodyMarks.HpBarH, "trough");
+            float fill = (hpW - 2f) * BodyMarks.HpFill(Screen.Hp, Screen.MaxHp);
+            if (fill > 0f) BoxGraphic.Make(StrataHpBar, HpBarFillCss, 1f, 1f, fill, BodyMarks.HpBarH - 2f, "fill");
+
+            // stamina: a pip per point of the maximum, lit up to what is left, then the numbers
+            float colW = BandBodyW - BandBodyCol2;
+            float stW = TextMeasure.Width(Rich(stLabel, ts), ts);
+            int count = Math.Max(0, Screen.MaxStamina);
+            var (size, pitch) = BodyMarks.Pips(count, Math.Max(0f, colW - stW - 10f));
+            Ui.Clear(StrataPips);
+            for (int i = 0; i < count; i++)
+            {
+                bool lit = i < Screen.Stamina;
+                BoxGraphic.Make(StrataPips, lit ? StPipLitCss : StPipSpentCss, i * pitch, (30f - size) / 2f, size, size, lit ? "is-lit" : "i");
+            }
+            float stX = BandBodyCol2 + (count > 0 ? pitch * (count - 1) + size + 10f : 0f);
+            UiNode.Of(StrataStText.rectTransform).X = stX;
         }
 
         /// <summary>The marks button sized to its label (max-content + padding 0 10 + border 1).</summary>
@@ -512,8 +540,8 @@ namespace Trial.Explore
         }
 
         /// <summary>
-        /// The clock ticks the rollers just before paintGauge: the box around a rolled label (the marks button) follows its
-        /// width as the DOM reflows around RollLabel's spans.
+        /// The clock ticks the rollers, then this: the box around a rolled label (the marks button) follows its width as
+        /// the DOM reflows around RollLabel's spans.
         /// </summary>
         private void FollowRolledBoxes()
         {
@@ -551,53 +579,6 @@ namespace Trial.Explore
             if (Screen == null || EndLifeBtn == null) return;
             SetDisabled(EndLifeBtn, !Screen.CanEndLife || Busy || ConfirmOpen || (Plate != null && Plate.Kind != ExploreStyle.PlateScreen));
         }
-
-        // ------------------------------------------------------------------ the gauge's numbers (MiasmaLook on a float reading)
-
-        /// <summary>
-        /// MiasmaLook.Rise(from, to, elapsedMs) as the JS evaluates it on the gauge's float `from` (a rise interrupted
-        /// mid-way starts from where it stood): from + ((to − from) | 0) × smoothstep, and `to` once RiseMs has passed.
-        /// The C# MiasmaLook.Rise takes whole readings.
-        /// </summary>
-        // js: bridge/backdrop/MiasmaLook.js:184
-        private static float GaugeRise(float from, float to, double elapsedMs)
-        {
-            if (elapsedMs <= 0) return from;
-            if (elapsedMs >= MiasmaLook.RiseMs) return to;
-            double t = elapsedMs / MiasmaLook.RiseMs;
-            int span = (int)(to - from);
-            return (float)(from + span * (float)(t * t * (3.0 - 2.0 * t)));
-        }
-
-        /// <summary>MiasmaLook.FillAt on the shown (float) reading, as the JS calls it (the C# takes whole readings).</summary>
-        // js: bridge/backdrop/MiasmaLook.js:138
-        private static BdRgba GaugeFillAt(float percent)
-        {
-            float t = percent / MiasmaLook.DeathAt;
-            return BackdropSpec.Mix(MiasmaLook.FillThin, MiasmaLook.FillThick, t < 0f ? 0f : t > 1f ? 1f : t);
-        }
-
-        /// <summary>
-        /// rgbaCss(c, mul) (backdrop.js:23) as a colour: channels rounded to bytes, alpha × mul clamped to 0…1. The
-        /// backdrop module (EX-LEAF) keeps its own; this is the band's copy for the gauge's inline colours.
-        /// </summary>
-        // js: scenes/explore/backdrop.js:23
-        private static Rgba BandRgba(BdRgba c, float mul = 1f)
-        {
-            float a = Math.Max(0f, Math.Min(1f, c.A * mul));
-            return Rgba.Bytes(Byte255(c.R), Byte255(c.G), Byte255(c.B), a);
-        }
-
-        /// <summary>rgbaCss(c) as the CSS string the JS writes inline (the gauge's track, frame and ticks).</summary>
-        private static string BandRgbaCss(BdRgba c, float mul = 1f)
-        {
-            float a = Math.Max(0f, Math.Min(1f, c.A * mul));
-            return "rgba(" + Byte255(c.R).ToString(CultureInfo.InvariantCulture) + "," + Byte255(c.G).ToString(CultureInfo.InvariantCulture) + "," +
-                   Byte255(c.B).ToString(CultureInfo.InvariantCulture) + "," + a.ToString("0.0000", CultureInfo.InvariantCulture) + ")";
-        }
-
-        /// <summary>Math.round(v × 255).</summary>
-        private static int Byte255(float v) => (int)Math.Floor(v * 255.0 + 0.5);
 
         // ------------------------------------------------------------------ helpers shared by the band, the detail and the carried items
 

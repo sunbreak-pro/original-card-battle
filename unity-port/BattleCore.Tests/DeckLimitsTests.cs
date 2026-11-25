@@ -72,7 +72,7 @@ namespace BattleCore.Tests
                 Assert.That(DeckRules.CanAdd(deck, "side_sweep", AllKinds, null), Is.EqualTo(DeckRules.CanAdd(deck, "side_sweep", AllKinds)));
                 foreach (string[] tools in new[] { new string[0], new[] { "a", "b", "c" }, new[] { "a", "b", "c", "d" } })
                 {
-                    var departure = new Departure(deck, tools, new[] { "x", "y", "z", "w" }.Take(tools.Length).ToArray(), 0, "side_sweep");
+                    var departure = new Departure(deck, tools, new[] { "x", "y", "z", "w" }.Take(tools.Length).ToArray(), 0);
                     DeckValidation explicitDefault = DeckRules.Validate(departure, AllKinds, DeckLimits.Default);
                     DeckValidation left = DeckRules.Validate(departure, AllKinds);
                     Assert.That(explicitDefault.Ok, Is.EqualTo(left.Ok));
@@ -142,11 +142,11 @@ namespace BattleCore.Tests
         public void L5_Validate_AFourthToolFitsOnlyWithTheBonus_TheConsumablesStayThree()
         {
             List<CardInstance> deck = DeckOf(45);
-            var four = new Departure(deck, new[] { "a", "b", "c", "d" }, new[] { "x", "y", "z" }, 0, "side_sweep");
+            var four = new Departure(deck, new[] { "a", "b", "c", "d" }, new[] { "x", "y", "z" }, 0);
             Assert.That(DeckRules.Validate(four, AllKinds, Survivor).Errors, Is.Empty);
             Assert.That(DeckRules.Validate(four, AllKinds).Errors,
                 Is.EqualTo(new[] { "Deck has 45 cards; the maximum is 40.", "4 tools do not fit 3 slots." }));
-            var five = new Departure(deck, new[] { "a", "b", "c", "d", "e" }, new[] { "x", "y", "z", "w" }, 0, "side_sweep");
+            var five = new Departure(deck, new[] { "a", "b", "c", "d", "e" }, new[] { "x", "y", "z", "w" }, 0);
             Assert.That(DeckRules.Validate(five, AllKinds, Survivor).Errors,
                 Is.EqualTo(new[] { "5 tools do not fit 4 slots.", "4 consumables do not fit 3 slots." }));
         }

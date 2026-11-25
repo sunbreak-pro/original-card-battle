@@ -126,7 +126,8 @@ namespace DungeonCore.Tests
             // both sides of both forks taken in six.
             var spec = LayerMapSpec.Minimal();
             Assert.That(spec.NodeCount, Is.EqualTo(6));
-            Assert.That(spec.RowCount, Is.EqualTo(4));
+            Assert.That(spec.MinRowCount, Is.EqualTo(4));
+            Assert.That(spec.MaxRowCount, Is.EqualTo(4));
             Assert.That(spec.ShortestPathCost, Is.EqualTo(4));
             Assert.That(spec.FullSweepCost, Is.EqualTo(6));
 

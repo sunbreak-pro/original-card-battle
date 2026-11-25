@@ -29,7 +29,7 @@ namespace DungeonCore
 
     public static class LayerEvents
     {
-        /// <summary>§5 重い宝箱: max stamina −2, a temporary change (miasma_and_battle_v4.md §5).</summary>
+        /// <summary>§5 重い宝箱: max stamina −2, a temporary change.</summary>
         public const int ChestStaminaCost = 2;
 
         /// <summary>§5 特殊な食事: max stamina +1, a temporary change.</summary>
@@ -75,8 +75,8 @@ namespace DungeonCore
         // js: core/dungeon/LayerEvents.js:52
         private static void Check(int layer)
         {
-            if (layer < 1 || layer > SevenLayers.Count)
-                throw new ArgumentOutOfRangeException(nameof(layer), layer, $"the lair has {SevenLayers.Count} layers");
+            if (layer < 1 || layer > Lair.LayerCount)
+                throw new ArgumentOutOfRangeException(nameof(layer), layer, $"the lair has {Lair.LayerCount} layers");
         }
 
         /// <summary>§5's weights on a layer, in EventKind order.</summary>

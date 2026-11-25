@@ -100,8 +100,8 @@ namespace DungeonCore.Tests
         [Test]
         public void ThereIsOneTablePerLayer()
         {
-            Assert.That(LayerEncounters.All.Count, Is.EqualTo(SevenLayers.Count));
-            for (int layer = 1; layer <= SevenLayers.Count; layer++)
+            Assert.That(LayerEncounters.All.Count, Is.EqualTo(Lair.LayerCount));
+            for (int layer = 1; layer <= Lair.LayerCount; layer++)
             {
                 Assert.That(LayerEncounters.Of(layer).Layer, Is.EqualTo(layer));
             }
@@ -138,7 +138,7 @@ namespace DungeonCore.Tests
                 ("twin_blade_warped", "pack_alpha", "distortion_root"),
             };
 
-            for (int layer = 1; layer <= SevenLayers.Count; layer++)
+            for (int layer = 1; layer <= Lair.LayerCount; layer++)
             {
                 var table = LayerEncounters.Of(layer);
                 var (normal, elite, boss) = expected[layer - 1];
@@ -318,7 +318,7 @@ namespace DungeonCore.Tests
             var rng = new SeededRng(5);
             foreach (var kind in new[] { NodeKind.Rest, NodeKind.Survey, NodeKind.Event, NodeKind.Carving, NodeKind.Trace })
             {
-                for (int layer = 1; layer <= SevenLayers.Count; layer++)
+                for (int layer = 1; layer <= Lair.LayerCount; layer++)
                 {
                     Assert.That(LayerEncounters.Pick(kind, layer, rng), Is.Null, $"layer {layer} {kind}");
                 }
@@ -329,7 +329,7 @@ namespace DungeonCore.Tests
         public void PickDrawsFromTheNodesPool()
         {
             var rng = new SeededRng(11);
-            for (int layer = 1; layer <= SevenLayers.Count; layer++)
+            for (int layer = 1; layer <= Lair.LayerCount; layer++)
             {
                 var table = LayerEncounters.Of(layer);
                 foreach (var kind in CombatKinds)
@@ -381,7 +381,7 @@ namespace DungeonCore.Tests
         public void PickDrawsOnceForAFightAndNeverForTheRest()
         {
             // Map generation may share this rng: an extra or missing draw would shift every later one.
-            for (int layer = 1; layer <= SevenLayers.Count; layer++)
+            for (int layer = 1; layer <= Lair.LayerCount; layer++)
             {
                 foreach (var kind in CombatKinds)
                 {
@@ -494,7 +494,7 @@ namespace DungeonCore.Tests
             var picks = new List<string>();
             for (int i = 0; i < 120; i++)
             {
-                int layer = 1 + i % SevenLayers.Count;
+                int layer = 1 + i % Lair.LayerCount;
                 var kind = CombatKinds[i % CombatKinds.Length];
                 picks.Add(LayerEncounters.Pick(kind, layer, rng)!.ToString());
             }

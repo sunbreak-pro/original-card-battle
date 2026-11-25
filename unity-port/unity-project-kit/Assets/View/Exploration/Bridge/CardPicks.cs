@@ -103,7 +103,7 @@ namespace Exploration.Bridge
 
         /// <summary>The pile's cards (#58〜#80), to tell a pile offer from an elite's.</summary>
         private static readonly HashSet<string> PileCards =
-            new HashSet<string>(Enumerable.Range(1, SevenLayers.Count).SelectMany(CardPile.Of), StringComparer.Ordinal);
+            new HashSet<string>(Enumerable.Range(1, Lair.LayerCount).SelectMany(CardPile.Of), StringComparer.Ordinal);
 
         /// <summary>
         /// What the pick screen shows now. An offer waiting on <see cref="Expedition.Learn"/> comes

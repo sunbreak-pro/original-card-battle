@@ -170,7 +170,8 @@ namespace Exploration.Bridge.Tests
             WalkTo(full, n => n.Kind == NodeKind.Boss);
             Win(full);
             Assert.That(full.PendingResult.PileSpent, Is.False);
-            Assert.That(full.Offer.Count, Is.EqualTo(3));
+            // Layer 1's pile less #60 跳び退り, a starter card since #1038.
+            Assert.That(full.Offer.Count, Is.EqualTo(2));
         }
 
         [Test]
@@ -183,7 +184,7 @@ namespace Exploration.Bridge.Tests
             WalkTo(ex, n => n.Kind == NodeKind.Boss);
             Win(ex);
             Assert.That(ex.DeckMax, Is.EqualTo(20));
-            Assert.That(ex.OfferFits, Is.EqualTo(new[] { false, false, false }));
+            Assert.That(ex.OfferFits, Is.EqualTo(new[] { false, false }), "layer 1's pile less #60 跳び退り, a starter card since #1038");
             Assert.That(ex.Learn(ex.Offer[0]), Is.True);
             Assert.That(ex.Deck.Count, Is.EqualTo(20));
 
@@ -252,7 +253,10 @@ namespace Exploration.Bridge.Tests
         public void TheTrialOption_CopiesTheRunStart_LeavingTheCallersAsItWas()
         {
             // js: Expedition.js:60 / :63 (`new RunStart({ ...start, Trial: true })`)
-            var start = new RunStart { Seed = 7, Hp = 31, MiasmaPercent = 12, Loadout = RunStart.TrialLoadout() };
+            var start = new RunStart
+            {
+                Seed = 7, Hp = 31, Calendar = new CalendarState(80), Region = Region.Ghost, Loadout = RunStart.TrialLoadout(),
+            };
             var ex = new Expedition(start, options: new ExpeditionOptions { Trial = true, CarvingKnown = true });
             Assert.That(start.Trial, Is.False);
             Assert.That(start.CarvingKnown, Is.Null);
@@ -261,6 +265,8 @@ namespace Exploration.Bridge.Tests
             Assert.That(ex.Session.RunSeed, Is.EqualTo(7UL));
             Assert.That(ex.Session.State.Hp, Is.EqualTo(31));
             Assert.That(ex.Session.State.Loadout, Is.SameAs(start.Loadout));
+            Assert.That(ex.Session.Calendar.DaysLeft, Is.EqualTo(79), "the copy carries the calendar (the entry took a day)");
+            Assert.That(ex.Session.Region, Is.EqualTo(Region.Ghost), "and the region");
         }
 
         [Test]
@@ -273,12 +279,12 @@ namespace Exploration.Bridge.Tests
             Assert.That(ex.Session.Trial, Is.False);
             Assert.That(ex.Session.Keeper, Is.Null);
             Assert.That(ex.Session.State.Trial, Is.False);
-            Assert.That(ex.Session.State.TimeLimit, Is.EqualTo(SevenLayers.Of(1).TimeLimit));
+            Assert.That(ex.Session.State.DaysLeft, Is.EqualTo(Calendar.TotalDays - 1));
             Assert.That(ex.DeckMax, Is.EqualTo(Constants.DeckMax));
             Assert.That(ex.HandIn().Limits, Is.Null);
             BattleReturn back = Win(ex);
             // the battle's consumables stay in Expedition.Consumables, the slots are the C#'s
-            Assert.That(ex.Session.State.Loadout.Consumables.Select(c => c.Id), Is.EqualTo(new[] { "joka_no_ko", "joka_no_ko" }));
+            Assert.That(ex.Session.State.Loadout.Consumables.Select(c => c.Id), Is.EqualTo(new[] { "hayagake_no_gan", "hayagake_no_gan" }));
             Assert.That(ex.Consumables, Is.EqualTo(back.Reward.Consumables));
             Assert.That(ex.Session.HasPendingFound, Is.False);
             Assert.That(ex.PendingResult, Is.Null);
@@ -349,7 +355,7 @@ namespace Exploration.Bridge.Tests
             Assert.That(runLoadout.Tools.Select(t => t.Id), Is.EqualTo(new[] { Mask, Mask, "maai_no_kutsu", Flute }));
             var battleToolIds = new[] { "maai_no_kutsu", Flute };
             Expedition Begin(ExpeditionOptions options) =>
-                new Expedition(new RunStart { Seed = 20261020, Loadout = runLoadout }, deck, battleToolIds, deck[0].Def.Id, null, null, options);
+                new Expedition(new RunStart { Seed = 20261020, Loadout = runLoadout }, deck, battleToolIds, null, null, options);
 
             // without the limits the C#'s Expedition refuses the 45 cards: the router must forward them
             var refused = Assert.Throws<ArgumentException>(() => Begin(null));
@@ -371,7 +377,7 @@ namespace Exploration.Bridge.Tests
             // js: test/ext/limits.test.mjs:466
             var limits = new DeckLimits(deckMax: 45, toolSlots: 4);
             List<CardInstance> deck = DeckOf(45);
-            var ex = new Expedition(new RunStart { Seed = 20261020 }, deck, new[] { "maai_no_kutsu" }, null, null, null,
+            var ex = new Expedition(new RunStart { Seed = 20261020 }, deck, new[] { "maai_no_kutsu" }, null, null,
                 new ExpeditionOptions { Limits = limits });
             EncounterBattle battle = ex.StartEncounter();
             Assert.DoesNotThrow(() => battle.StartNext(true));
@@ -381,18 +387,35 @@ namespace Exploration.Bridge.Tests
         public void ToRunLoadout_CarriesEveryToolAndConsumable_AsTheKindTheCoreReads()
         {
             // js: test/ext/world.test.mjs:154 (the save's round trip is in TraceGainTests, which reads InheritanceCore's JSON)
-            Loadout lo = Loadout.Of(new[] { Mask, Sand, Book, Wick }, new[] { "joka_no_ko", "yakuso", "shirube_no_ishi" }, 4);
+            Loadout lo = Loadout.Of(new[] { Mask, Sand, Book, Wick }, new[] { "hayagake_no_gan", "yakuso", "shirube_no_ishi" }, 4);
             RunLoadout run = Loadouts.ToRunLoadout(lo, 4);
-            Assert.That(run.Tools.Select(t => (t.Id, t.Kind, t.Amount)),
-                Is.EqualTo(new[] { (Mask, ReliefKind.Density, 1), (Sand, ReliefKind.Time, 1), (Book, ReliefKind.Survey, 1), (Wick, ReliefKind.Interlude, 15) }));
-            Assert.That(run.Consumables.Select(t => (t.Id, t.Kind, t.Amount)),
-                Is.EqualTo(new[] { ("joka_no_ko", ReliefKind.Gauge, 10), ("yakuso", ReliefKind.HealHp, 20), ("shirube_no_ishi", ReliefKind.Teleport, 1) }));
+            Assert.That(run.Tools.Select(t => (t.Id, t.Kind)),
+                Is.EqualTo(new[] { (Mask, ReliefKind.Return), (Sand, ReliefKind.EntryDay), (Book, ReliefKind.Survey), (Wick, ReliefKind.Interlude) }));
+            Assert.That(run.Consumables.Select(t => (t.Id, t.Kind)),
+                Is.EqualTo(new[] { ("hayagake_no_gan", ReliefKind.Haste), ("yakuso", ReliefKind.HealHp), ("shirube_no_ishi", ReliefKind.Teleport) }));
             Assert.That(run.ToolSlotCount, Is.EqualTo(4));
             Assert.That(run.Trial, Is.True);
+            Assert.That(run.EntryDayFree && run.ShortHandover, Is.True);
             RunLoadout battle = Loadouts.ToRunLoadout(Loadout.Of(new[] { "maai_no_kutsu", Flute, "ryurin_no_kakera", "ryugo_no_fu" }, null, 4), 4);
             Assert.That(battle.Tools.All(t => t.Kind == ReliefKind.Battle), Is.True);
-            Assert.That(battle.DensityRelief, Is.EqualTo(0));
+            Assert.That(battle.EntryDayFree || battle.ShortHandover, Is.False);
         }
+
+        // dotnet only, like TraceGainTests: the save's JSON is InheritanceCore's, which Unity's test assembly does not reference.
+#if !UNITY_5_3_OR_NEWER
+        [Test]
+        public void ASaveFromBeforeTheCalendar_ReadsItsRetiredItems_AsTheirReplacements()
+        {
+            // tools_and_consumables_v4.md §2.4: 防瘴の面 → 帰り道の糸, 刻限の砂 → 日読みの砂, 浄化の香 → 早駆けの丸薬.
+            string old = "{\"tools\":[[\"bosho_no_men\",\"Density\",1],[\"kokugen_no_suna\",\"Time\",1],[\"utsushi_no_tobari\",\"Survey\",1]]," +
+                "\"consumables\":[[\"joka_no_ko\",\"Gauge\",10],[\"yakuso\",\"Heal\",20]],\"slots\":3,\"trial\":true}";
+            RunLoadout run = Loadouts.RunLoadoutFromData(InheritanceCore.Json.Parse(old));
+            Assert.That(run.Tools.Select(t => (t.Id, t.Kind)),
+                Is.EqualTo(new[] { (Mask, ReliefKind.Return), (Sand, ReliefKind.EntryDay), (Book, ReliefKind.Survey) }));
+            Assert.That(run.Consumables.Select(t => (t.Id, t.Kind)),
+                Is.EqualTo(new[] { ("hayagake_no_gan", ReliefKind.Haste), ("yakuso", ReliefKind.HealHp) }));
+        }
+#endif
 
         [Test]
         public void ToRunLoadout_ReadsTheSlotsFromTheLoadoutWhenNoneAreGiven_AndANullLoadoutIsEmpty()
@@ -478,8 +501,8 @@ namespace Exploration.Bridge.Tests
             Assert.That(s.State.TempMaxStaminaMod, Is.EqualTo(before.TempMaxStaminaMod - 2));
             Assert.That(s.State.MaxStamina, Is.EqualTo(before.MaxStamina - 2));
             Assert.That(s.State.Stamina, Is.LessThanOrEqualTo(s.State.MaxStamina), "current stamina follows the lower maximum");
-            Assert.That(s.State.TimeLeft, Is.EqualTo(before.TimeLeft), "the 刻限 was paid by the step");
-            Assert.That(ex.Offer.Count, Is.EqualTo(3), "the card pile lays out three");
+            Assert.That(s.State.DaysLeft, Is.EqualTo(before.DaysLeft), "the day was paid by the step");
+            Assert.That(ex.Offer.Count, Is.EqualTo(2), "the card pile lays out layer 1's two (#60 跳び退り is a starter card since #1038)");
             Assert.That(ex.Pages, Is.EqualTo(pages));
             EventOutcome last = s.Events[s.Events.Count - 1];
             Assert.That(last.Cards, Is.EqualTo(ex.Offer));
@@ -499,7 +522,7 @@ namespace Exploration.Bridge.Tests
             ulong seed = 1;
             for (; seed <= 200; seed++)
             {
-                LayerMap map = SevenLayers.Of(2).Map(ExplorationSession.LayerSeed(seed, 2));
+                LayerMap map = Lair.Of(2).Map(ExplorationSession.LayerSeed(seed, 2));
                 ulong run = seed;
                 if (LayerEvents.Draw(map, 2, id => ExplorationSession.EventSeed(run, 2, id)).Values.Contains(EventKind.HeavyChest)) break;
             }
@@ -535,7 +558,7 @@ namespace Exploration.Bridge.Tests
 
             var fresh = Trial(1);
             ChestFind dealt = fresh.TakeChest(1, 5, contents);
-            Assert.That(dealt.Cards.Count, Is.EqualTo(CardPile.Choices));
+            Assert.That(dealt.Cards.Count, Is.EqualTo(CardPile.Choices - 1), "layer 1's pile less #60 跳び退り, a starter card since #1038");
             Assert.That(dealt.PileSpent, Is.False);
             Assert.That(fresh.Offer, Is.EqualTo(dealt.Cards));
             Assert.That(Trial(1).TakeChest(1, 5, contents).Cards, Is.EqualTo(dealt.Cards), "seeded from the node");
@@ -573,7 +596,7 @@ namespace Exploration.Bridge.Tests
         public void WithoutTheBook_TheIntelsLayerTarget_IsRaisedInTheJournal_InTrialOnly()
         {
             // js: test/ext/world.test.mjs:254
-            Expedition Make(bool trial) => new Expedition(new RunStart { Seed = 3 }, null, null, null, new SurveyIntel(), null,
+            Expedition Make(bool trial) => new Expedition(new RunStart { Seed = 3 }, null, null, new SurveyIntel(), null,
                 trial ? new ExpeditionOptions { Trial = true } : null);
             Expedition ex = Make(true);
             WalkTo(ex, n => n.Kind == NodeKind.Survey);
@@ -786,15 +809,14 @@ namespace Exploration.Bridge.Tests
             // the loadout keeps the 3 tools, the battle tools also go to the battles; the save's round trip is in
             // TraceGainTests, which reads InheritanceCore's JSON)
             IReadOnlyList<CardInstance> deck = PrototypeDeck.Build();
-            Assert.That(deck.Any(c => c.Def.Id == "side_sweep"), Is.True, "the talent is a card of the deck");
             int slots = DeckLimits.Default.ToolSlots;
             foreach (ItemDef tool in ItemCatalogue.Tools)
             {
-                RunLoadout runLoadout = Loadouts.ToRunLoadout(Loadout.Of(new[] { tool.Id, tool.Id, Mask }, new[] { "joka_no_ko" }, slots), slots);
+                RunLoadout runLoadout = Loadouts.ToRunLoadout(Loadout.Of(new[] { tool.Id, tool.Id, Mask }, new[] { "hayagake_no_gan" }, slots), slots);
                 Assert.That(runLoadout.ToolSlotCount, Is.EqualTo(3), tool.Id);
                 Assert.That(runLoadout.Tools.Count, Is.EqualTo(3), tool.Id);
                 string[] battleToolIds = tool.Side == EffectSide.Battle ? new[] { tool.Id, tool.Id } : new string[0];
-                var ex = new Expedition(new RunStart { Seed = 7, Loadout = runLoadout }, deck, battleToolIds, "side_sweep");
+                var ex = new Expedition(new RunStart { Seed = 7, Loadout = runLoadout }, deck, battleToolIds);
                 Assert.That(ex.Deck.Count, Is.EqualTo(20), tool.Id);
             }
         }

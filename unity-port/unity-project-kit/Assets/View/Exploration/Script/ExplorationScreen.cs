@@ -14,7 +14,7 @@ namespace Exploration
         /// <summary>The player stands here.</summary>
         Current,
 
-        /// <summary>Next door and not yet resolved, with 刻限 left: entering costs one.</summary>
+        /// <summary>Next door and not yet resolved: entering costs a day of the calendar.</summary>
         Reachable,
 
         /// <summary>Next door and already resolved: walking back is free.</summary>
@@ -44,10 +44,10 @@ namespace Exploration
 
         ConfirmEndLife,
 
-        /// <summary>Takes the step that was waiting on a confirmation (瘴気死 ahead).</summary>
+        /// <summary>Takes the step that was waiting on a confirmation (the calendar runs out ahead).</summary>
         ConfirmStep,
 
-        /// <summary>Descends although the next layer's entry ends the life by 瘴気.</summary>
+        /// <summary>Descends although the next layer's entry runs the calendar out.</summary>
         ConfirmDescend,
 
         /// <summary>Closes a confirmation without doing anything.</summary>
@@ -74,6 +74,12 @@ namespace Exploration
 
         /// <summary>写しの帳: the enemy id the argument names is the 情報収集 target (tools_and_consumables_v4.md §2.2).</summary>
         ChooseSurvey,
+
+        /// <summary>
+        /// The layer-two interlude's way down (dungeon_exploration_v4.md §6.5, seven_layers_v4.md §3.1): the argument is
+        /// (int)Region.Dragon / Parasite / Ghost as an invariant-culture integer. Appended last so the values before it stay.
+        /// </summary>
+        ChooseRegion,
     }
 
     /// <summary>Which card sits over the map, if any.</summary>
@@ -85,9 +91,11 @@ namespace Exploration
         ConfirmDescend,
         ConfirmEndLife,
         LayerCleared,
-        PushedOut,
         Interlude,
-        MiasmaDeath,
+
+        /// <summary>The calendar ran out: the world ends and the game starts over (§6.9).</summary>
+        Expired,
+
         Fallen,
         Completed,
         Survived,
@@ -127,10 +135,8 @@ namespace Exploration
     {
         public StepForecast(ExplorationState before, ExplorationState after, IReadOnlyList<string> lines, IReadOnlyList<string> warnings)
         {
-            TimeBefore = before.TimeLeft;
-            TimeAfter = after.TimeLeft;
-            MiasmaBefore = before.MiasmaPercent;
-            MiasmaAfter = after.MiasmaPercent;
+            DaysBefore = before.DaysLeft;
+            DaysAfter = after.DaysLeft;
             MaxStaminaBefore = before.MaxStamina;
             MaxStaminaAfter = after.MaxStamina;
             StaminaBefore = before.Stamina;
@@ -142,10 +148,12 @@ namespace Exploration
             Warnings = warnings;
         }
 
-        public int TimeBefore { get; }
-        public int TimeAfter { get; }
-        public int MiasmaBefore { get; }
-        public int MiasmaAfter { get; }
+        /// <summary>Days left on the collapse calendar before the step.</summary>
+        public int DaysBefore { get; }
+
+        /// <summary>Days left after it: the same while a king is down or the node costs no day.</summary>
+        public int DaysAfter { get; }
+
         public int MaxStaminaBefore { get; }
         public int MaxStaminaAfter { get; }
         public int StaminaBefore { get; }
@@ -154,13 +162,14 @@ namespace Exploration
         public int HpAfter { get; }
         public RunPhase PhaseAfter { get; }
 
-        /// <summary>「刻限 7 → 6」 and the like, one per value that changes.</summary>
+        /// <summary>「暦 残り 312 → 311 日」 first, then one line per other value that changes.</summary>
         public IReadOnlyList<string> Lines { get; }
 
-        /// <summary>A 20% line crossed, 瘴気死, or being pushed out (§6.4).</summary>
+        /// <summary>The calendar running out here (§6.4), or nothing.</summary>
         public IReadOnlyList<string> Warnings { get; }
 
-        public bool IsLethal => PhaseAfter == RunPhase.MiasmaDeath;
+        /// <summary>Entering here runs the calendar out: the world ends.</summary>
+        public bool IsExpiry => PhaseAfter == RunPhase.Expired;
     }
 
     /// <summary>One way into a node: 「進む」, 「休む」, 「訓練する」 or 「移る」.</summary>
@@ -187,8 +196,8 @@ namespace Exploration
         /// </summary>
         public bool Jump { get; }
 
-        /// <summary>Stepping here ends the life, so the button asks first.</summary>
-        public bool NeedsConfirm => Forecast != null && Forecast.IsLethal;
+        /// <summary>Stepping here runs the calendar out, so the button asks first.</summary>
+        public bool NeedsConfirm => Forecast != null && Forecast.IsExpiry;
     }
 
     /// <summary>
@@ -230,7 +239,7 @@ namespace Exploration
         /// <summary>The buttons the detail panel offers. Empty unless the node can be walked to now.</summary>
         public IReadOnlyList<StepOption> Options { get; init; }
 
-        /// <summary>A short line on where the node stands (「入ると刻限を 1 使う」 and the like).</summary>
+        /// <summary>A short line on where the node stands (「入ると暦が 1 日進む」 and the like).</summary>
         public string Note { get; init; }
 
         /// <summary>The detail panel's heading: the glyph and the kind.</summary>
@@ -238,9 +247,17 @@ namespace Exploration
 
         /// <summary>
         /// The detail panel's text, line by line: the note, what is inside, then one line per way in
-        /// with its forecast (「【休む】刻限 9 → 8　瘴気 1% → 2%」) and its warnings.
+        /// with its forecast (「【休む】暦 残り 312 → 311 日　HP 30 → 38」) and its warnings.
         /// </summary>
         public IReadOnlyList<string> Detail { get; init; }
+
+        /// <summary>
+        /// Who stands in the detail panel's window on a map drawn as chambers (#1050): one entry per enemy of a combat
+        /// node, known when the journal names it, unknown (「？」) otherwise. Empty for the other kinds.
+        /// </summary>
+        public IReadOnlyList<WindowFigure> Figures { get => _figures; init => _figures = value ?? new WindowFigure[0]; }
+
+        private readonly IReadOnlyList<WindowFigure> _figures = new WindowFigure[0];
     }
 
     /// <summary>A link between two nodes. Lit when it leads from where the player stands to somewhere they can go.</summary>
@@ -256,49 +273,6 @@ namespace Exploration
         public int From { get; }
         public int To { get; }
         public bool Lit { get; }
-    }
-
-    /// <summary>The 瘴気 gauge and what the next new node adds to it.</summary>
-    public sealed class MiasmaGauge
-    {
-        public MiasmaGauge(int percent, int nextPercent, string label, string forecastLabel, IReadOnlyList<int> stepLines)
-        {
-            Percent = percent;
-            NextPercent = nextPercent;
-            Label = label;
-            ForecastLabel = forecastLabel;
-            StepLines = stepLines;
-            Fill = FillOf(percent);
-            NextFill = FillOf(nextPercent);
-            var fills = new float[stepLines.Count];
-            for (int i = 0; i < fills.Length; i++) fills[i] = FillOf(stepLines[i]);
-            StepLineFills = fills;
-        }
-
-        /// <summary>A reading as a fraction of the whole gauge, which ends at 瘴気死 (Miasma.DeathAt).</summary>
-        private static float FillOf(int percent) => (float)percent / Miasma.DeathAt;
-
-        public int Percent { get; }
-
-        /// <summary>The reading after one more new node. Equal to Percent when no step is possible.</summary>
-        public int NextPercent { get; }
-
-        /// <summary>Percent as 0..1 of the gauge.</summary>
-        public float Fill { get; }
-
-        /// <summary>NextPercent as 0..1 of the gauge.</summary>
-        public float NextFill { get; }
-
-        public string Label { get; }
-
-        /// <summary>「次の 1 歩で +3%」, or "" when no new node can be entered.</summary>
-        public string ForecastLabel { get; }
-
-        /// <summary>The readings where max stamina drops by one (20, 40, 60, 80).</summary>
-        public IReadOnlyList<int> StepLines { get; }
-
-        /// <summary>Each of StepLines as 0..1 of the gauge, in the same order.</summary>
-        public IReadOnlyList<float> StepLineFills { get; }
     }
 
     /// <summary>One consumable slot. A panel, not a card, for the same reason as NodePanel (#598).</summary>
@@ -414,7 +388,7 @@ namespace Exploration
         /// <summary>「探索」 or 「戦闘」.</summary>
         public string Side { get; }
 
-        /// <summary>What it does on this layer, in numbers (「刻限 +1」), or "" for a battle tool.</summary>
+        /// <summary>What it does, in one line (「層の入口で日が進まない」), or "" for a battle tool.</summary>
         public string Effect { get; }
     }
 
@@ -495,31 +469,50 @@ namespace Exploration
     public sealed class ExplorationScreen
     {
         private readonly IReadOnlyList<ToolCard> _toolCards = new ToolCard[0];
-        private readonly string _timeBonusLabel = "";
-        private readonly string _reliefLabel = "";
+        private readonly string _calendarNote = "";
+        private readonly string _daysForecastLabel = "";
         private readonly IReadOnlyList<EventOutcome> _events = new EventOutcome[0];
+        private readonly MapLayout _layout = MapLayout.Full;
+        private readonly IReadOnlyList<DepthCell> _depths = new DepthCell[0];
 
-        /// <summary>「第 2 層　■■の秘跡」.</summary>
+        /// <summary>「第 2 層　■■の秘跡」, 「第 3 層　大黒蛇の住処（竜の領域）」 or 「竜の領域 第 4 層」 (§6.2).</summary>
         public string LayerTitle { get; init; }
 
-        /// <summary>The layer the map is on (1〜7): the view lays that layer's backdrop behind the map (battle-visual-v1 §2.5).</summary>
+        /// <summary>The depth the map is on (1〜7).</summary>
         public int Layer { get; init; }
 
-        /// <summary>「刻限 7 / 10」.</summary>
-        public string TimeLabel { get; init; }
+        /// <summary>
+        /// Which of the seven backdrops lies behind the map (LayerProfile.BackdropLayer, 1〜7). The regions share depths,
+        /// so the backdrop is looked up by this slot, not by the depth (seven_layers_v4.md §3.2 / §3.4).
+        /// </summary>
+        public int BackdropLayer { get; init; }
 
-        /// <summary>How many of the TimeLimit pips are still lit.</summary>
-        public int TimeLeft { get; init; }
+        /// <summary>Days left on the collapse calendar (seven_layers_v4.md §2).</summary>
+        public int DaysLeft { get; init; }
 
-        public int TimeLimit { get; init; }
+        /// <summary>「残り 312 日」.</summary>
+        public string DaysLabel { get; init; }
 
-        public MiasmaGauge Miasma { get; init; }
+        /// <summary>A king is down, so no day passes (seven_layers_v4.md §2.2).</summary>
+        public bool CalendarFrozen { get; init; }
+
+        /// <summary>"" while the calendar runs; 「竜王が戻るまで 41 日。暦は止まっている」 while a king is down.</summary>
+        public string CalendarNote { get => _calendarNote; init => _calendarNote = value ?? ""; }
+
+        /// <summary>
+        /// Days left after the next new node, or after the descent at the interlude, tried on the core (§6.4: the band
+        /// draws the day the next node takes ahead of time). DaysLeft when no day is ahead.
+        /// </summary>
+        public int NextDaysLeft { get; init; }
+
+        /// <summary>「次の 1 歩で 1 日進む」, 「降りると 1 日進む」, 「次の 1 日は進まない」, or "".</summary>
+        public string DaysForecastLabel { get => _daysForecastLabel; init => _daysForecastLabel = value ?? ""; }
 
         public string HpLabel { get; init; }
 
         public string StaminaLabel { get; init; }
 
-        /// <summary>「最大 9 = 10 − 瘴気 1」, with a temporary modifier added when there is one.</summary>
+        /// <summary>「最大 12 = 10 + 一時 2」, or the maximum alone when no temporary change moves it.</summary>
         public string MaxStaminaLabel { get; init; }
 
         public string MarksLabel { get; init; }
@@ -528,12 +521,41 @@ namespace Exploration
 
         public IReadOnlyList<EdgeLine> Edges { get; init; }
 
+        /// <summary>How big the map draws its nodes: smaller on a map of more than five rows, so the rows fit one screen (#1049).</summary>
+        public MapLayout Layout { get => _layout; init => _layout = value ?? MapLayout.Full; }
+
+        /// <summary>How this layer's map is drawn: the JS's squares and lines, or chambers and tunnels (#1050).</summary>
+        public MapLook Look { get; init; }
+
+        /// <summary>The chambers' sizes when Look is Strata (null otherwise).</summary>
+        public StrataLayout Strata { get; init; }
+
+        /// <summary>The chambers' colours when Look is Strata (null otherwise).</summary>
+        public StrataPalette Palette { get; init; }
+
+        /// <summary>The depth column on the map's left (Strata): one cell per layer, top down.</summary>
+        public IReadOnlyList<DepthCell> Depths { get => _depths; init => _depths = value ?? new DepthCell[0]; }
+
+        /// <summary>The calendar drawn as one bar (Strata).</summary>
+        public CalendarBar Calendar { get; init; }
+
+        public int Hp { get; init; }
+        public int MaxHp { get; init; }
+        public int Stamina { get; init; }
+        public int MaxStamina { get; init; }
+
+        /// <summary>「38 / 50」: HP beside its heart and bar (Strata).</summary>
+        public string HpValueLabel { get; init; }
+
+        /// <summary>「8 / 10」: stamina beside its pips (Strata).</summary>
+        public string StaminaValueLabel { get; init; }
+
         public int CurrentNodeId { get; init; }
 
         /// <summary>One line under the map on how to read it.</summary>
         public string Hint { get; init; }
 
-        /// <summary>「ツール: 防瘴の面（1 / 3）」.</summary>
+        /// <summary>「ツール: 帰り道の糸（1 / 3）」.</summary>
         public string ToolsLabel { get; init; }
 
         public IReadOnlyList<SlotPanel> Consumables { get; init; }
@@ -567,12 +589,6 @@ namespace Exploration
 
         /// <summary>Trial extension (js: ExplorationScreen.js:455): every carried tool with its note. Empty outside trial.</summary>
         public IReadOnlyList<ToolCard> ToolCards { get => _toolCards; init => _toolCards = value ?? new ToolCard[0]; }
-
-        /// <summary>Trial extension: 「刻限の砂 +1」 beside the 刻限 in the band, or "".</summary>
-        public string TimeBonusLabel { get => _timeBonusLabel; init => _timeBonusLabel = value ?? ""; }
-
-        /// <summary>Trial extension: 「防瘴の面 濃さ 2 → 1」 beside the gauge, or "".</summary>
-        public string ReliefLabel { get => _reliefLabel; init => _reliefLabel = value ?? ""; }
 
         /// <summary>Trial extension: a 標の石 is being aimed; the nodes it can land on carry jump options.</summary>
         public bool Aiming { get; init; }

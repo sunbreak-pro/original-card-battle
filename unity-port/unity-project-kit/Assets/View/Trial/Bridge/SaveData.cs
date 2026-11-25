@@ -146,8 +146,9 @@ namespace Trial.Bridge
 
     /// <summary>
     /// The departure's choice as plain data (life.js choiceToData): the deck by instance, the tools that act in battle,
-    /// the exploration loadout (JSON: { tools: [[id, kind, amount]], consumables: […], slots, trial }), the talent, and
-    /// the ids 出立 picked.
+    /// the exploration loadout (JSON: { tools: [[id, kind, amount]], consumables: […], slots, trial }), and the ids 出立
+    /// picked. A save written before #1045 (and the JS's) also holds `talent`, the card whose ticks counted twice: it is
+    /// read past and not written back, so those saves still load and every card gathers at one pace.
     /// </summary>
     public sealed class ChoiceData
     {
@@ -157,14 +158,11 @@ namespace Trial.Bridge
         /// <summary>runLoadoutToData's object, as JSON (null when none).</summary>
         public object Loadout { get; set; }
 
-        /// <summary>才能: a card id, or null.</summary>
-        public string Talent { get; set; }
-
         public List<string> ToolIds { get; set; } = new List<string>();
         public List<string> ConsumableIds { get; set; } = new List<string>();
 
         // js: app/life.js:30 (the shape)
-        /// <summary>{ deck, battleToolIds, loadout, talent, toolIds, consumableIds } in the JS order.</summary>
+        /// <summary>{ deck, battleToolIds, loadout, toolIds, consumableIds } in the JS order, less the JS's talent.</summary>
         public JsonObject ToJson()
         {
             var deck = new List<object>(Deck.Count);
@@ -173,7 +171,6 @@ namespace Trial.Bridge
             o["deck"] = deck;
             o["battleToolIds"] = new List<object>(BattleToolIds ?? new List<string>());
             o["loadout"] = Loadout;
-            o["talent"] = Talent;
             o["toolIds"] = new List<object>(ToolIds ?? new List<string>());
             o["consumableIds"] = new List<object>(ConsumableIds ?? new List<string>());
             return o;
@@ -193,9 +190,6 @@ namespace Trial.Bridge
             }
             c.BattleToolIds = Strings(o["battleToolIds"], "battleToolIds");
             c.Loadout = o["loadout"];
-            object talent = o["talent"];
-            if (talent != null && !(talent is string)) throw new SaveFormatException("bad save: the talent");
-            c.Talent = (string)talent;
             c.ToolIds = Strings(o["toolIds"], "toolIds");
             c.ConsumableIds = Strings(o["consumableIds"], "consumableIds");
             return c;
@@ -247,6 +241,15 @@ namespace Trial.Bridge
 
         public ChoiceData Choice { get; set; } = new ChoiceData();
 
+        /// <summary>
+        /// The mastery the explorer carries in under the carry-over (#1025), or null: none. Written only when set, so a
+        /// start without it reads and writes as before.
+        /// </summary>
+        public List<BattleCore.CardMastery> Mastery { get; set; }
+
+        /// <summary>The card kinds the explorer carries in under the carry-over (#1025), or null: none.</summary>
+        public List<string> Owned { get; set; }
+
         /// <summary>The seed as the number the cores take (JS BigInt(start.seed)). Throws <see cref="SaveFormatException"/> when it is not a decimal u64.</summary>
         public ulong SeedValue
         {
@@ -275,6 +278,15 @@ namespace Trial.Bridge
             o["carvingKnown"] = CarvingKnown;
             o["journal"] = Journal;
             o["choice"] = (Choice ?? new ChoiceData()).ToJson();
+            // The carry-over's (#1025), after the JS's keys and only when set.
+            if (Mastery != null)
+            {
+                var rows = new List<object>(Mastery.Count);
+                foreach (BattleCore.CardMastery m in Mastery)
+                    rows.Add(new JsonObject { ["cardId"] = m.CardId, ["ticks"] = m.Ticks, ["rank"] = m.Rank });
+                o["mastery"] = rows;
+            }
+            if (Owned != null) o["owned"] = new List<object>(Owned);
             return o;
         }
 
@@ -310,6 +322,20 @@ namespace Trial.Bridge
             s.CarvingKnown = JsonNumber.Truthy(o["carvingKnown"]);
             s.Journal = o["journal"];
             s.Choice = ChoiceData.FromJson(o["choice"]);
+            object mastery = o["mastery"];
+            if (mastery != null)
+            {
+                if (!(mastery is IList rows) || mastery is string) throw new SaveFormatException("bad save: mastery");
+                s.Mastery = new List<BattleCore.CardMastery>();
+                foreach (object row in rows)
+                {
+                    if (!(row is JsonObject m) || !(m["cardId"] is string id) || !JsonNumber.TryInt(m["ticks"], out int ticks)
+                        || !JsonNumber.TryInt(m["rank"], out int rank) || ticks < 0 || rank < 0 || rank > 3)
+                        throw new SaveFormatException("bad save: mastery");
+                    s.Mastery.Add(new BattleCore.CardMastery(id, ticks, rank));
+                }
+            }
+            if (o["owned"] != null) s.Owned = ChoiceData.Strings(o["owned"], "owned");
             return s;
         }
 

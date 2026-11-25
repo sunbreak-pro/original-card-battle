@@ -1,6 +1,6 @@
 // Trial extension (port of the browser trial's src/bridge/explorationScript/TrialItems.js; docs/EXTENSIONS.md
 // 「探索の持ち物とイベント」): the catalogue's items as the exploration core carries them. The C# RunLoadout holds
-// density tools only (防瘴の面 as Density) and the consumables RunStart.Consumable maps (#651); trial mode carries
+// the calendar tools and the consumables RunStart.Consumable maps (#651, #888); trial mode carries
 // every tool and consumable of tools_and_consumables_v4.md §2 / §3, each as the ReliefKind that says what the core
 // does with it. The amounts are the catalogue's.
 using DungeonContent;
@@ -16,9 +16,9 @@ namespace Exploration
         {
             switch (effect)
             {
-                case ItemEffect.MiasmaDensity: return ReliefKind.Density;
-                case ItemEffect.MiasmaGauge: return ReliefKind.Gauge;
-                case ItemEffect.TimeLimit: return ReliefKind.Time;
+                case ItemEffect.EntryDayFree: return ReliefKind.EntryDay;
+                case ItemEffect.ShortHandover: return ReliefKind.Return;
+                case ItemEffect.NextStepFree: return ReliefKind.Haste;
                 case ItemEffect.ChooseSurveyTarget: return ReliefKind.Survey;
                 case ItemEffect.InterludeHeal: return ReliefKind.Interlude;
                 case ItemEffect.HealHp: return ReliefKind.HealHp;

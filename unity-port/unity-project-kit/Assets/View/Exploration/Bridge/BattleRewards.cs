@@ -114,7 +114,7 @@ namespace Exploration.Bridge
         public const int StandInBossPagePercent = 50;
 
         /// <summary>§4.3: the consumables a fight can drop, in the weight table's column order.</summary>
-        public static readonly IReadOnlyList<string> ConsumableIds = new[] { "joka_no_ko", "yakuso", "koi_hoshiniku", "wasuremizu", "shirube_no_ishi" };
+        public static readonly IReadOnlyList<string> ConsumableIds = new[] { "hayagake_no_gan", "yakuso", "koi_hoshiniku", "wasuremizu", "shirube_no_ishi" };
 
         // §4.3 消耗品の重み, in ConsumableIds' order, layer 1 first. Each row adds to 100.
         private static readonly int[][] ConsumableWeights =
@@ -132,7 +132,7 @@ namespace Exploration.Bridge
         public static (int Card, int Consumable, int Page) NormalChances(int layer)
         {
             CheckLayer(layer);
-            if (layer == SevenLayers.Count) throw new ArgumentOutOfRangeException(nameof(layer), layer, "Layer 7 drops a page and draws a card apart from it.");
+            if (layer == Lair.LayerCount) throw new ArgumentOutOfRangeException(nameof(layer), layer, "Layer 7 drops a page and draws a card apart from it.");
             int[] row = NormalPercent[layer - 1];
             return (row[0], row[1], row[2]);
         }
@@ -208,7 +208,7 @@ namespace Exploration.Bridge
             var draw = new Draw(layer, owned, rng);
             switch (kind)
             {
-                case NodeKind.Battle when layer == SevenLayers.Count:
+                case NodeKind.Battle when layer == Lair.LayerCount:
                     draw.Page(Percent);
                     if (Chance(rng, LastLayerCardPercent)) draw.Card();
                     break;
@@ -244,7 +244,7 @@ namespace Exploration.Bridge
 
         internal static void CheckLayer(int layer)
         {
-            if (layer < 1 || layer > SevenLayers.Count) throw new ArgumentOutOfRangeException(nameof(layer), layer, "Layers run 1〜7.");
+            if (layer < 1 || layer > Lair.LayerCount) throw new ArgumentOutOfRangeException(nameof(layer), layer, "Layers run 1〜7.");
         }
 
         /// <summary>A stand-in boss borrowed from a §9 elite (layers 4〜5), whose cards it teaches.</summary>

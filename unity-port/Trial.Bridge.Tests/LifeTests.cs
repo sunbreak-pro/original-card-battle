@@ -101,11 +101,42 @@ namespace Trial.Bridge.Tests
             Assert.That(Recorder.Replay(Life.LifeSetup(start).Expedition, log).Count, Is.EqualTo(log.Count), "replay keeps every call");
         }
 
-        // js: test/app/life.test.mjs:157
+        [Test]
+        public void ALifeSavedWithATalent_Resumes_AndThatCardGathersNoMoreThanItWouldWithout()
+        {
+            // #1045: a start saved before names a talent card. It still resumes, and its replay counts that card's
+            // ticks once, as every card's.
+            Lineage lineage = Inheritance.NewLineage(11);
+            LifeStart ls = Inheritance.StartLife(lineage);
+            LifeStartData start = Life.MakeStart(ls, Departure(ls));
+            RecordedExpedition ex = Recorder.RecordExpedition(Life.LifeSetup(start).Expedition);
+            Walk(ex, (open, st) => open[0]);
+            LifeLog log = Saved(ex.Log);
+            List<string> kinds = start.Choice.Deck.Select(r => r.DefId).Distinct().ToList();
+            string talent = kinds.OrderByDescending(id => ex.Raw.Mastery.TicksOf(id)).First();
+            if (ex.Raw.Mastery.TicksOf(talent) == 0) Assert.Inconclusive("the walk gathered no ticks");
+
+            JsonObject older = (JsonObject)Json.Parse(Json.Stringify(start.ToJson()));
+            ((JsonObject)older["choice"])["talent"] = talent;
+            LiveLife resumed = Life.BeginLife(LifeStartData.FromJson(older), log);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(resumed.Log.Count, Is.EqualTo(log.Count), "every call replays");
+                foreach (string id in kinds)
+                {
+                    Assert.That(resumed.Raw.Mastery.TicksOf(id), Is.EqualTo(ex.Raw.Mastery.TicksOf(id)), id);
+                }
+                Assert.That(((JsonObject)resumed.Start.ToJson()["choice"]).ContainsKey("talent"), Is.False, "the talent is not written back");
+            });
+        }
+
+        // js: test/app/life.test.mjs:157. Lineage 4, not the JS's 3: since the starter cards lost their traits (#1038),
+        // life 3 falls on layer 1 and the test would end inconclusive.
         [Test]
         public void ASurvivor_PassesTheBonus_FourToolSlotsAndDeckCap45_ForTheNextLife()
         {
-            Lineage lineage = Inheritance.NewLineage(3);
+            Lineage lineage = Inheritance.NewLineage(4);
             LifeStart ls = Inheritance.StartLife(lineage);
             lineage = ls.Lineage;
             Expedition raw = Life.LifeSetup(Life.MakeStart(ls, Departure(ls))).Expedition;
@@ -134,17 +165,16 @@ namespace Trial.Bridge.Tests
             // js: app/life.js:30
             LifeStart ls = Inheritance.StartLife(Inheritance.NewLineage(5));
             DepartureChoice choice = Departure(ls, 1);
-            choice.Talent = "side_sweep";
             ChoiceData data = Life.ChoiceToData(choice, ls.ToolSlots);
             Assert.That(data.Deck.Select(r => r.InstanceId), Is.EqualTo(choice.Deck.Select(c => c.InstanceId)), "instance ids and order kept exactly");
             Assert.That(data.Deck.Select(r => r.DefId), Is.EqualTo(choice.Deck.Select(c => c.Def.Id)));
             Assert.That(data.BattleToolIds, Is.EqualTo(new[] { "ikitsugi_no_fue" }));
-            Assert.That(data.Talent, Is.EqualTo("side_sweep"));
+            Assert.That(data.ToJson().ContainsKey("talent"), Is.False, "no talent since #1045");
             Assert.That(data.ToolIds, Is.Empty);
             Assert.That(Json.Stringify(data.Loadout), Is.EqualTo(Json.Stringify(Loadouts.RunLoadoutToData(Loadouts.ToRunLoadout(choice.Loadout, ls.ToolSlots)))));
             RunLoadout back = Loadouts.RunLoadoutFromData(Json.Parse(Json.Stringify(data.Loadout)));
             Assert.That(back.Trial, Is.True, "the trial flag rides along");
-            Assert.That(back.Tools.Select(t => t.Id), Is.EqualTo(new[] { "bosho_no_men", "kokugen_no_suna", "ikitsugi_no_fue" }));
+            Assert.That(back.Tools.Select(t => t.Id), Is.EqualTo(new[] { "kaerimichi_no_ito", "hiyomi_no_suna", "ikitsugi_no_fue" }));
 
             // no loadout: the empty RunLoadout; a RunLoadout: kept as it is
             ChoiceData none = Life.ChoiceToData(new DepartureChoice { Deck = PrototypeDeck.Build() });
@@ -214,7 +244,7 @@ namespace Trial.Bridge.Tests
             LifeSetupResult setup = Life.LifeSetup(start);
             ExplorationSession s = setup.Expedition.Session;
             Assert.That(s.State.Map.CountOf(NodeKind.Trace), Is.EqualTo(1), "layer 1 holds the trace node");
-            LayerProfile two = SevenLayers.Of(2);
+            LayerProfile two = Lair.Of(2);
             Assert.That(s.MapOf(two, 1).CountOf(NodeKind.Trace), Is.EqualTo(1));
             Assert.That(s.MapOf(two, 1).CountOf(NodeKind.Carving), Is.EqualTo(0), "the known carving is gone");
             Assert.That(s.CarvingTaken, Is.True, "the session reads the carving as known");
@@ -227,6 +257,136 @@ namespace Trial.Bridge.Tests
             ExplorationSession p = Life.LifeSetup(plain).Expedition.Session;
             Assert.That(p.State.Map.CountOf(NodeKind.Trace), Is.EqualTo(0));
             Assert.That(p.MapOf(two, 1).CountOf(NodeKind.Carving), Is.EqualTo(two.MapSpec.Quotas.TryGetValue(NodeKind.Carving, out int q) ? q : 0));
+        }
+
+        // ================================================================== the collapse calendar (#888)
+
+        /// <summary>A refusal for the fresh lineage a life that did not run the calendar out never asks for.</summary>
+        private static Lineage NoNewLineage() => throw new AssertionException("only an expired calendar starts a new lineage");
+
+        // seven_layers_v4.md §2.1: the hand-over to the next heir is 3 days after a survival (1 with 帰り道の糸) and 10
+        // after a death; the lineage's calendar carries the life's own days and the hand-over into the next life.
+        [Test]
+        public void TheEndOfALife_MovesTheLineagesCalendar_ASurvivalThreeDays_OneWithTheThread_ADeathTen()
+        {
+            LifeStart ls = Inheritance.StartLife(Inheritance.NewLineage(13));
+            Expedition raw = Life.LifeSetup(Life.MakeStart(ls, Departure(ls, 2))).Expedition;
+            ExplorationState plain = raw.Session.State;
+            ExplorationState thread = Life.LifeSetup(Life.MakeStart(ls, Departure(ls, 1))).Expedition.Session.State;
+            Assert.That(plain.Loadout.ShortHandover, Is.False);
+            Assert.That(thread.Loadout.ShortHandover, Is.True, "帰り道の糸 is carried");
+
+            int DaysAfter(ExplorationState final)
+            {
+                LifeClose close = Life.CloseLife(ls.Lineage, final, NoNewLineage);
+                Assert.That(close.WorldEnded, Is.False);
+                Assert.That(close.Recorded, Is.SameAs(ls.Lineage), "the ending reads the lineage as RecordEnd wrote it");
+                return close.Next.Calendar.DaysLeft;
+            }
+            Assert.That(DaysAfter(plain.With(phase: RunPhase.Survived)), Is.EqualTo(plain.DaysLeft - Calendar.HandoverSurvivedDays));
+            Assert.That(DaysAfter(thread.With(phase: RunPhase.Survived)), Is.EqualTo(thread.DaysLeft - Calendar.HandoverShortDays));
+            Assert.That(DaysAfter(plain.With(phase: RunPhase.Fallen)), Is.EqualTo(plain.DaysLeft - Calendar.HandoverFallenDays));
+            Assert.That(DaysAfter(thread.With(phase: RunPhase.Fallen)), Is.EqualTo(thread.DaysLeft - Calendar.HandoverFallenDays), "the thread only shortens a survival");
+
+            // a real death: the end on the lineage, the calendar moved on, and the next heir walks on it
+            ExplorationState fallen = plain.With(phase: RunPhase.Fallen);
+            Lineage recorded = Inheritance.RecordEnd(ls.Lineage, null, Inheritance.PlaceFromState(fallen), raw.Mastery, Names.LifeJournal(raw), Names.EndOptions(raw, fallen));
+            LifeClose died = Life.CloseLife(recorded, fallen, NoNewLineage);
+            Assert.That(died.Ending, Is.EqualTo(LifeEnding.Fallen));
+            Assert.That(died.Next.Lives.Count, Is.EqualTo(recorded.Lives.Count), "only the calendar changes");
+            Assert.That(died.Next.Traces.Count, Is.EqualTo(recorded.Traces.Count));
+            Assert.That(died.Next.Calendar.DaysLeft, Is.EqualTo(fallen.DaysLeft - Calendar.HandoverFallenDays));
+            Assert.That(Inheritance.FromJson(Json.Parse(Json.Stringify(Inheritance.ToJson(died.Next)))).Calendar.DaysLeft,
+                Is.EqualTo(died.Next.Calendar.DaysLeft), "the save keeps the calendar");
+
+            LifeStart next = Inheritance.StartLife(died.Next);
+            Assert.That(next.Lineage.Calendar.DaysLeft, Is.EqualTo(died.Next.Calendar.DaysLeft), "setting out moves no day");
+            LifeStartData nextStart = Life.MakeStart(next, Departure(next, 2));
+            int onFresh = Life.LifeSetup(Clone(nextStart)).Expedition.Session.State.DaysLeft;
+            LiveLife live = Life.BeginLife(Clone(nextStart), new LifeLog(), "", null, next.Lineage);
+            Assert.That(died.Next.Calendar.DaysLeft - live.Raw.Session.State.DaysLeft, Is.EqualTo(Calendar.TotalDays - onFresh),
+                "the heir starts on the lineage's calendar, not a fresh one");
+        }
+
+        [Test]
+        public void WhileAKingIsDown_TheHandOverLowersTheKingsCounter_NotTheDays()
+        {
+            LifeStart ls = Inheritance.StartLife(Inheritance.NewLineage(13));
+            ExplorationState st = Life.LifeSetup(Life.MakeStart(ls, Departure(ls, 2))).Expedition.Session.State;
+            var frozen = new CalendarState(80, new Dictionary<Region, int> { [Region.Dragon] = 41 });
+            LifeClose close = Life.CloseLife(ls.Lineage, st.With(phase: RunPhase.Survived, calendar: frozen), NoNewLineage);
+            Assert.That(close.Next.Calendar.DaysLeft, Is.EqualTo(80));
+            Assert.That(close.Next.Calendar.KingReturns[Region.Dragon], Is.EqualTo(41 - Calendar.HandoverSurvivedDays));
+        }
+
+        // A death in the king fight is no king brought down: the lineage's calendar keeps counting for the next heir.
+        [Test]
+        public void ADeathInTheKingFight_LeavesTheLineagesCalendarRunning()
+        {
+            LifeStart ls = Inheritance.StartLife(Inheritance.NewLineage(13));
+            LayerProfile kingRoom = Lair.Of(Lair.KingLayer, Region.Dragon);
+            ExplorationState at = ExplorationReducer.Enter(kingRoom, kingRoom.Map(5UL), RunLoadout.Empty, 50, 50, 10, new CalendarState(80));
+            while (at.Phase == RunPhase.Exploring)
+            {
+                int row = at.Map.Node(at.CurrentNodeId).Row;
+                at = ExplorationReducer.Step(at, at.Map.Successors(at.CurrentNodeId).First(id => at.Map.Node(id).Row == row + 1), RestChoice.Train);
+            }
+            Assert.That(at.CurrentNodeId, Is.EqualTo(at.Map.BossId));
+
+            ExplorationState fallen = ExplorationReducer.ReportBattle(at, 0, at.Stamina);
+            LifeClose close = Life.CloseLife(ls.Lineage, fallen, NoNewLineage);
+            Assert.That(close.Ending, Is.EqualTo(LifeEnding.Fallen));
+            Assert.That(close.Next.Calendar.IsFrozen, Is.False);
+            Assert.That(close.Next.Calendar.DaysLeft, Is.EqualTo(fallen.DaysLeft - Calendar.HandoverFallenDays));
+        }
+
+        // dungeon_exploration_v4.md §6.9: the calendar run out ends the world; the game starts over on a new lineage.
+        [Test]
+        public void ACalendarThatRanOut_StartsABrandNewLineage_AndTheEndingStillReadsTheOldOne()
+        {
+            LifeStart ls = Inheritance.StartLife(Inheritance.NewLineage(13));
+            Expedition raw = Life.LifeSetup(Life.MakeStart(ls, Departure(ls, 2))).Expedition;
+            ExplorationState expired = raw.Session.State.With(phase: RunPhase.Expired, calendar: new CalendarState(0));
+            Lineage recorded = Inheritance.RecordEnd(ls.Lineage, null, Inheritance.PlaceFromState(expired), raw.Mastery, Names.LifeJournal(raw), Names.EndOptions(raw, expired));
+            Lineage fresh = Inheritance.NewLineage(99);
+            LifeClose close = Life.CloseLife(recorded, expired, () => fresh);
+            Assert.That(close.WorldEnded, Is.True);
+            Assert.That(close.Ending, Is.EqualTo(LifeEnding.Expired));
+            Assert.That(close.Recorded, Is.SameAs(recorded));
+            Assert.That(close.Next.Seed, Is.EqualTo(fresh.Seed), "the new lineage, not the old one");
+            Assert.That(close.Next.Lives, Is.Empty);
+            Assert.That(close.Next.Traces, Is.Empty);
+            Assert.That(close.Next.Calendar.DaysLeft, Is.EqualTo(Calendar.TotalDays));
+            Assert.That(close.Next.Calendar.IsFrozen, Is.False);
+            EndingView view = Inheritance.EndingView(close.Recorded);
+            Assert.That(view.Ending, Is.EqualTo(LifeEnding.Expired), "the ending scene shows the world's end");
+
+            Assert.Throws<ArgumentNullException>(() => Life.CloseLife(recorded, expired, null));
+            Assert.Throws<ArgumentException>(() => Life.CloseLife(recorded, raw.Session.State, NoNewLineage), "a life still exploring has not ended");
+        }
+
+        // A walked life whose calendar runs out: its end card must lead off the map. The explore scene hands the card's
+        // ScreenAction.NewLife to ctx.onLifeEnd, and main.js endLife closes the life there; a card with no button would
+        // leave the player on the world's end for good.
+        [Test]
+        public void TheExpiredEndCard_OffersTheButtonThatEndsTheLife_AndTheLifeEndStartsANewLineageOnTheFirstDay()
+        {
+            LifeStart ls = Inheritance.StartLife(Inheritance.NewLineage(13));
+            Expedition raw = Life.LifeSetup(Life.MakeStart(ls, Plain(ls)), new CalendarState(3)).Expedition;
+            ExplorationState end = Walk(Recorder.RecordExpedition(raw), (open, st) => open[0]);
+            Assert.That(end.Phase, Is.EqualTo(RunPhase.Expired), "three days run out on layer one");
+
+            ScreenCard card = raw.Session.Screen().Card;
+            Assert.That(card.Kind, Is.EqualTo(CardKind.Expired));
+            Assert.That(card.Buttons.Select(b => b.Action), Is.EqualTo(new[] { ScreenAction.NewLife }),
+                "the one button, and the one the Enter key presses");
+
+            // main.js endLife, as Trial's Main.EndLife runs it from ctx.onLifeEnd
+            Lineage recorded = Inheritance.RecordEnd(ls.Lineage, null, Inheritance.PlaceFromState(end), raw.Mastery, Names.LifeJournal(raw), Names.EndOptions(raw, end));
+            LifeClose close = Life.CloseLife(recorded, end, () => Inheritance.NewLineage(99));
+            Assert.That(close.WorldEnded, Is.True);
+            Assert.That(close.Next.Lives, Is.Empty);
+            Assert.That(close.Next.Calendar.DaysLeft, Is.EqualTo(Calendar.TotalDays));
         }
 
         // ================================================================== survivor.test.mjs
@@ -509,7 +669,7 @@ namespace Trial.Bridge.Tests
         public void LifeJournal_HoldsTheKnownEnemiesInOrder_ThePagesAsACount_TheMemo_TheScribbles_TheCarving()
         {
             // js: app/names.js:10
-            Expedition ex = new Expedition(new RunStart { Seed = 3 }, null, null, null, null,
+            Expedition ex = new Expedition(new RunStart { Seed = 3 }, null, null, null,
                 new Dictionary<string, int> { ["shadow_hound"] = 2, ["polearm_warped"] = 0, ["abyss_angler"] = 1 });
             LifeJournalData j = Names.LifeJournal(ex, "m", new[] { Old });
             Assert.That(j.Disclosure.Select(p => p.Key), Is.EqualTo(new[] { "shadow_hound", "abyss_angler" }), "levels above 0, in the life's order");

@@ -523,10 +523,10 @@ namespace BattleCore.Tests
                 CardCatalog.BodyCheck, CardCatalog.StepInGuard, CardCatalog.StepOutGuard).State;
             var s = TurnLoop.BeginPlayerTurn(state, NoRng).State;
 
-            // Gap 0: kesa_cut is 15 + 5 against Guard 0.
+            // Gap 0: kesa_cut is a bare 15 against Guard 0 (a starter card has no trait since #1038).
             var kesa = TurnLoop.PlayCard(s, InHand(s, "kesa_cut"), NoRng);
             Assert.That(kesa.Events.OfType<DamageDealt>().Single(),
-                Is.EqualTo(new DamageDealt(Actor.Player, Actor.Enemy, 20, 0, 20, 0, 40)));
+                Is.EqualTo(new DamageDealt(Actor.Player, Actor.Enemy, 15, 0, 15, 0, 45)));
 
             // Gap 0: the sweep gets its plain 23; the reach thrust cannot be released at all.
             var sweep = TurnLoop.PlayCard(s, InHand(s, "side_sweep"), NoRng);
@@ -928,6 +928,7 @@ namespace BattleCore.Tests
             "T3 P 50/0/3/c2 E 45/8/3/c4/— gap 1 omen 攻撃・1〜2",
         };
 
-        private static readonly int[] PinnedEventCounts = { 45, 30, 36 };
+        // T2 is 29 since #1038: brace lost its trait (a starter card), so its play no longer reports one judged.
+        private static readonly int[] PinnedEventCounts = { 45, 29, 36 };
     }
 }

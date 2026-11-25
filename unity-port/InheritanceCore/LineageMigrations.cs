@@ -44,8 +44,18 @@ namespace InheritanceCore
     /// <summary>The steps that bring an older lineage save up to <see cref="Inheritance.SaveVersion"/>.</summary>
     public static class LineageMigrations
     {
-        /// <summary>The steps this build knows, one per version below Inheritance.SaveVersion. None while it is 1.</summary>
-        public static IReadOnlyList<LineageMigration> Steps { get; } = Array.Empty<LineageMigration>();
+        /// <summary>The steps this build knows, one per version below Inheritance.SaveVersion.</summary>
+        public static IReadOnlyList<LineageMigration> Steps { get; } = new[]
+        {
+            // 1 → 2 (#1025): version 2 adds the carry-over. A version-1 save plays the generations, which is a version-2
+            // save without one; a key of that name was never written at version 1, so one found there is not read.
+            new LineageMigration(1, save =>
+            {
+                save.Remove("Carryover");
+                save["Version"] = 2;
+                return save;
+            }),
+        };
 
         /// <summary>
         /// The saved lineage <paramref name="data"/> as a save of version <paramref name="target"/>: the same object when

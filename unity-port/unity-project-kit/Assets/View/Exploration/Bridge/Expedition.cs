@@ -25,8 +25,11 @@ namespace Exploration.Bridge
 {
     public sealed partial class Expedition : IExplorationKeeper
     {
-        /// <summary>concept-v3 §14 / swordsman_cards_v4 §2: the kinds every character owns from the start (#1〜#40).</summary>
-        public static readonly IReadOnlyList<string> InitialKinds = CardCatalog.Initial.Select(d => d.Id).ToList();
+        /// <summary>
+        /// concept-v3 §14.7 / swordsman_cards_v4 §2.1: the kinds the first expedition owns, the starter's eleven
+        /// (<see cref="CardCatalog.Starter"/>, #1038). The rest of §2's initial cards are learned on the way.
+        /// </summary>
+        public static readonly IReadOnlyList<string> InitialKinds = CardCatalog.Starter.Select(d => d.Id).ToList();
 
         /// <summary>
         /// The 開示度 a battle leaves the journal at for every enemy fought, and for one a 観察 was played
@@ -39,7 +42,6 @@ namespace Exploration.Bridge
 
         private readonly IReadOnlyList<CardInstance> _startDeck;
         private readonly IReadOnlyDictionary<string, int> _startJournal;
-        private readonly string _talent;
         private readonly Dictionary<string, int> _journal = new Dictionary<string, int>(StringComparer.Ordinal);
         private readonly HashSet<string> _owned = new HashSet<string>(StringComparer.Ordinal);
         private List<CardInstance> _deck;
@@ -55,13 +57,12 @@ namespace Exploration.Bridge
         private DungeonCore.IRng _pileRng;
 
         /// <param name="start">How the exploration starts (seed, HP, stamina, gauge, exploration tools).</param>
-        /// <param name="deck">The deck the life sets out with; null for the slice's prototype deck.</param>
+        /// <param name="deck">The deck the life sets out with; null for the starter's default deck (<see cref="StarterDeck"/>, #1038).</param>
         /// <param name="battleToolIds">
         /// The tools in the slots that act inside a battle (間合いの履, 息継ぎの笛, 竜鱗の欠片, 竜語の符;
         /// tools_and_consumables_v4.md §2), as catalogue ids. The tools that act on the exploration go in
         /// <see cref="RunStart.Loadout"/>; turning one chosen loadout into both is 出立's (#104).
         /// </param>
-        /// <param name="talent">才能: the card whose battle ticks count twice (§17.8), or null.</param>
         /// <param name="intel">
         /// What the exploration screen says about the enemy behind a node. Null: this expedition's own
         /// <see cref="Journal"/>, which reads the 開示度 the battles leave here (#107).
@@ -76,7 +77,6 @@ namespace Exploration.Bridge
             RunStart start = null,
             IReadOnlyList<CardInstance> deck = null,
             IReadOnlyList<string> battleToolIds = null,
-            string talent = null,
             IEnemyIntel intel = null,
             IReadOnlyDictionary<string, int> journal = null,
             ExpeditionOptions options = null)
@@ -85,12 +85,11 @@ namespace Exploration.Bridge
             _limits = options?.Limits;
             Trial = options?.Trial == true || start?.Trial == true;
             start = TrialStart(start, options);
-            _startDeck = (deck ?? PrototypeDeck.Build()).ToList();
+            _startDeck = (deck ?? StarterDeck.Build()).ToList();
             DeckValidation validation = Cards.Validate(_startDeck, _limits);
             if (!validation.Ok) throw new ArgumentException("Expedition: the deck breaks §8 — " + string.Join(" / ", validation.Errors), nameof(deck));
             _startJournal = journal ?? new Dictionary<string, int>();
-            _talent = talent;
-            Tools = BattleTools(_startDeck, battleToolIds ?? Array.Empty<string>(), talent);
+            Tools = BattleTools(_startDeck, battleToolIds ?? Array.Empty<string>());
             Journal = new LifeJournal(Learned);
             // Trial extension (js: Expedition.js:105): the session reads the intel it is given, as in the browser trial.
             Session = new ExplorationSession(start, Trial ? intel : intel ?? Journal);
@@ -105,6 +104,9 @@ namespace Exploration.Bridge
             // under 0 (js: app/life.js:74 startPages reads anything but a positive count as 0).
             _startPages = Math.Max(0, options?.StartPages ?? 0);
             InheritedPages = _startPages;
+            // Trial extension (#1025): what the explorer carries in from earlier lives.
+            _startMastery = options?.StartMastery?.Where(c => c != null).ToList() ?? new List<CardMastery>();
+            _startOwned = options?.StartOwned?.Where(id => !string.IsNullOrEmpty(id)).ToList() ?? new List<string>();
             BeginLife();
         }
 
@@ -183,7 +185,7 @@ namespace Exploration.Bridge
         /// </summary>
         public MasteryBook Mastery { get; internal set; }
 
-        /// <summary>The in-battle tools (§9.1, #452) as amounts, with the deck and the talent the battles read.</summary>
+        /// <summary>The in-battle tools (§9.1, #452) as amounts, with the deck the battles read.</summary>
         public Departure Tools { get; }
 
         /// <summary>
@@ -285,7 +287,7 @@ namespace Exploration.Bridge
 
             return new BattleHandIn(
                 layer, kind, encounter, cells,
-                state.Hp, state.MaxHp, state.Stamina, state.MaxStamina, state.MiasmaPercent,
+                state.Hp, state.MaxHp, state.Stamina, state.MaxStamina,
                 disclosure, Mastery.MasteredDeck(_deck), Tools, seed, _limits); // Trial extension: the life's limits
         }
 
@@ -585,8 +587,8 @@ namespace Exploration.Bridge
             _pileRng = null;
             _learnedCopies = 0;
             Battle = null;
-            Mastery = MasteryBook.Begin(_talent);
-            BeginLifeTrial(); // Trial extension: nothing pending, and the pages the heir set out with
+            Mastery = MasteryBook.Begin();
+            BeginLifeTrial(); // Trial extension: nothing pending, the pages the heir set out with, what is carried in
         }
 
         /// <summary>
@@ -594,7 +596,7 @@ namespace Exploration.Bridge
         /// core reads. Each tool's four numbers come from DungeonContent.BattleToolAmounts, the one
         /// mapping the departure screen reads too (#648).
         /// </summary>
-        private static Departure BattleTools(IReadOnlyList<CardInstance> deck, IReadOnlyList<string> toolIds, string talent)
+        private static Departure BattleTools(IReadOnlyList<CardInstance> deck, IReadOnlyList<string> toolIds)
         {
             BattleToolAmounts sum = BattleToolAmounts.None;
             foreach (string id in toolIds)
@@ -606,7 +608,7 @@ namespace Exploration.Bridge
                 sum = sum.Plus(BattleToolAmounts.Of(tool));
             }
             return new Departure(deck, toolIds.ToList(), Array.Empty<string>(),
-                StartCellsBack: sum.StartCellsBack, TalentCardId: talent,
+                StartCellsBack: sum.StartCellsBack,
                 StartStaminaBonus: sum.StartStaminaBonus, FirstHitGuard: sum.FirstHitGuard, BossWordWard: sum.BossWordWard);
         }
     }

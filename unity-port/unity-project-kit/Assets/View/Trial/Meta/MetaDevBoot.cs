@@ -34,7 +34,7 @@ namespace Trial.Meta
     [AddComponentMenu("Trial/Dev/Meta Dev Boot")]
     public sealed class MetaDevBoot : MonoBehaviour
     {
-        [Tooltip("The screen shown first (a name of Screens: title, title-first, hall, hall-many, hall-first, departure, departure-app, hall-app, ending-death, ending-alive, ending-cleared, ending-miasma, settings, owned, journal-explore, …, parts, backdrops).")]
+        [Tooltip("The screen shown first (a name of Screens: title, title-first, hall, hall-many, hall-first, departure, departure-app, hall-app, ending-death, ending-alive, ending-cleared, ending-miasma, ending-expired, settings, owned, journal-explore, …, parts, backdrops).")]
         public string Screen = "title";
 
         [Tooltip("Draw through the gamma target (kit.md §4.12).")]
@@ -108,14 +108,15 @@ namespace Trial.Meta
         private static Lineage CrowdedLineage()
         {
             Lineage L = Inheritance.NewLineage(99UL);
-            void Die(int layer, NodeKind kind, RunPhase ending, List<CardEntry> deck, LifeJournal journal)
+            // a null ending is the legacy 瘴気死 (RunPhase has none since #888): a lineage saved before still shows it
+            void Die(int layer, NodeKind kind, RunPhase? ending, List<CardEntry> deck, LifeJournal journal)
             {
                 LifeStart s = Inheritance.StartLife(L);
                 L = Inheritance.RecordDeath(s.Lineage, null, new LifePlace(layer, null, kind, ending), deck, journal, NameOpts());
             }
             Die(2, NodeKind.Battle, RunPhase.Fallen, new List<CardEntry> { new CardEntry("side_sweep", 1), new CardEntry("brace", 2) }, Book(0, "", ("polearm_warped", 1)));
             Die(2, NodeKind.Event, RunPhase.Fallen, new List<CardEntry> { new CardEntry("observe", 1) }, Book(0, ""));
-            Die(5, NodeKind.Elite, RunPhase.MiasmaDeath, new List<CardEntry> { new CardEntry("kesa_cut", 2), new CardEntry("feint", 1), new CardEntry("focus", 1) },
+            Die(5, NodeKind.Elite, null, new List<CardEntry> { new CardEntry("kesa_cut", 2), new CardEntry("feint", 1), new CardEntry("focus", 1) },
                 Book(2, "門竜は 3 ターン目に必ず構える。", ("armored_warden", 2)));
             return L;
         }
@@ -162,7 +163,7 @@ namespace Trial.Meta
             if (_expedition != null) return _expedition;
             try
             {
-                _expedition = new Expedition(new RunStart { Seed = 20261020UL }, null, null, "side_sweep", null,
+                _expedition = new Expedition(new RunStart { Seed = 20261020UL }, null, null, null,
                     new Dictionary<string, int>(StringComparer.Ordinal) { ["armored_warden"] = 1, ["polearm_warped"] = 2 });
             }
             catch (Exception e)
@@ -187,7 +188,7 @@ namespace Trial.Meta
                 new BattleCore.CardMastery("side_sweep", 11, 2), new BattleCore.CardMastery("kesa_cut", 5, 1), new BattleCore.CardMastery("water_stance", 4, 1),
                 new BattleCore.CardMastery("observe", 12, 3), new BattleCore.CardMastery("footwork", 2, 0), new BattleCore.CardMastery("brace", 3, 1),
             });
-            _book = new BattleCore.MasteryBook("side_sweep", records, null);
+            _book = new BattleCore.MasteryBook(records, null);
             _deckIds = new List<string> { "side_sweep", "kesa_cut", "water_stance", "observe", "brace", "footwork", "reach_thrust", "iron_wall", "feint", "back_leap" };
         }
 
@@ -337,7 +338,7 @@ namespace Trial.Meta
             Def("departure", () => ScreenOf(host => DepartureScene.Mount(host, Common(new DepartureCtx
             {
                 LifeStart = _lifeStart, Owned = _owned,
-                OnSetOut = c => { Log("set out " + c.Deck.Count + " cards, tools " + string.Join(",", c.BattleToolIds) + ", talent " + c.Talent); Show("ending-death"); },
+                OnSetOut = c => { Log("set out " + c.Deck.Count + " cards, tools " + string.Join(",", c.BattleToolIds)); Show("ending-death"); },
                 OnBack = () => Show("hall"),
             }))));
             Def("departure-app", () => ScreenOf(host => DepartureScene.Mount(host, Common(new DepartureCtx
@@ -378,6 +379,15 @@ namespace Trial.Meta
             Def("ending-miasma", () =>
             {
                 Lineage L = CrowdedLineage();
+                ScreenOf(host => EndingScene.Mount(host, Common(new EndingCtx { Ending = Inheritance.EndingView(L), Lineage = L, OnHall = () => Show("hall") })));
+            });
+            Def("ending-expired", () =>
+            {
+                // the calendar ran out on layer 3: the world ends (dungeon_exploration_v4.md §6.9, #888)
+                Lineage L = Inheritance.NewLineage(77UL);
+                LifeStart s = Inheritance.StartLife(L);
+                L = Inheritance.RecordEnd(s.Lineage, null, new LifePlace(3, 4, NodeKind.Battle, RunPhase.Expired),
+                    new List<CardEntry> { new CardEntry("kesa_cut", 1) }, Book(0, ""), NameOpts());
                 ScreenOf(host => EndingScene.Mount(host, Common(new EndingCtx { Ending = Inheritance.EndingView(L), Lineage = L, OnHall = () => Show("hall") })));
             });
             Def("settings", () =>

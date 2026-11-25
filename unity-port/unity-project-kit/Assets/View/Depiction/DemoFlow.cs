@@ -57,7 +57,7 @@ namespace Depiction.View
             _canvas = BuildCanvas();
             DeckBuilder saved = LoadDeck(out string notice);
             _deckScreen = new DeckSelectScreen(_canvas, saved, notice, OnDeckChosen, player.cardPrefab);
-            // Kept across visits: the slots and the talent stay as picked while the deck is reworked.
+            // Kept across visits: the slots stay as picked while the deck is reworked.
             _supplies = DepartureSupplies.NewBuilder();
             _departureScreen = new DepartureScreen(_canvas, _supplies, OnSetOut, ShowDeckScreen);
             _modeScreen = new ModeSelectScreen(_canvas, StartSingle, StartRandom, StartChain, ShowDeckScreen);
@@ -92,12 +92,12 @@ namespace Depiction.View
             _departureScreen.Show(deck);
         }
 
-        /// <summary>「出立する」: what the run sets out with — the deck, the slots, the start and the talent (#58).</summary>
+        /// <summary>「出立する」: what the run sets out with — the deck, the slots and the start (#58).</summary>
         private void OnSetOut(Departure departure)
         {
             _departure = departure;
             Debug.Log("[DemoFlow] set out: " + departure.Deck.Count + " cards / start cell " + departure.PlayerStartCell
-                + " gap " + departure.StartGap + " / talent " + departure.TalentCardId);
+                + " gap " + departure.StartGap);
             ShowModeScreen();
         }
 

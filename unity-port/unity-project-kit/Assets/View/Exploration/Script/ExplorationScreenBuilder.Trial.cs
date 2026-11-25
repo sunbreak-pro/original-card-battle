@@ -34,7 +34,7 @@ namespace Exploration
 
         /// <summary>
         /// The 階層間の休憩 card on its own, or null outside the interlude. Build's Card puts a confirmation (この生を終える,
-        /// a descent into 瘴気死) in its place; the scene draws the rest under that confirmation from this
+        /// a descent that runs the calendar out) in its place; the scene draws the rest under that confirmation from this
         /// (docs/EXTENSIONS.md X-8: the interlude's own card stays under its confirmation, also after a reload).
         /// </summary>
         // js: bridge/explorationScript/ExplorationScreenBuilder.js:760
@@ -42,8 +42,8 @@ namespace Exploration
             session.State.Phase == RunPhase.Interlude ? InterludeCardOf(session) : null;
 
         /// <summary>
-        /// 「HP 30 → 40」 and the like for every value that differs between two states — the gauge, max stamina, stamina
-        /// and HP, the values the screen shows. It is also the one definition of 「changes something now」:
+        /// 「HP 30 → 40」 and the like for every value that differs between two states — the next step made free (早駆けの
+        /// 丸薬), max stamina, stamina and HP, the values the screen shows. It is also the one definition of 「changes something now」:
         /// ExplorationSession.CanUseSlot offers a consumable only when this is not empty, so a slot is lit exactly when it
         /// has a forecast (a hidden temporary change the floor of 3 swallows counts as nothing).
         /// </summary>
@@ -51,7 +51,7 @@ namespace Exploration
         public static IReadOnlyList<string> ChangeLines(ExplorationState before, ExplorationState after)
         {
             var lines = new List<string>();
-            if (after.MiasmaPercent != before.MiasmaPercent) lines.Add(ExplorationText.MiasmaChange(before.MiasmaPercent, after.MiasmaPercent));
+            if (after.NextStepFree && !before.NextStepFree) lines.Add(ExplorationText.HasteEffect);
             if (after.MaxStamina != before.MaxStamina) lines.Add(ExplorationText.MaxStaminaChange(before.MaxStamina, after.MaxStamina));
             if (after.Stamina != before.Stamina) lines.Add(ExplorationText.StaminaChange(before.Stamina, after.Stamina));
             if (after.Hp != before.Hp) lines.Add(ExplorationText.HpChange(before.Hp, after.Hp));
@@ -126,24 +126,6 @@ namespace Exploration
         }
 
         /// <summary>
-        /// 防瘴の面's note under the gauge, for the layer the gauge's forecast speaks of — the layer being walked
-        /// (「次の 1 歩で +N%」), or, once the layer is left, the layer below (「降りると +N%」, X-6), so the note and the
-        /// figure beside it are the same layer's (dungeon_exploration_v4.md §6.5 「次の層の予告」).
-        /// </summary>
-        // js: bridge/explorationScript/ExplorationScreenBuilder.js:287
-        private static string ReliefLabel(ExplorationSession session)
-        {
-            var state = session.State;
-            string names = ToolNames(state.Loadout, ReliefKind.Density);
-            if (!(state.Phase == RunPhase.Exploring && state.TimeLeft > 0))
-            {
-                var below = session.TryDescend();
-                if (below != null) return ExplorationText.Relief(names, below.Profile.Density, below.EffectiveDensity);
-            }
-            return ExplorationText.Relief(names, state.Profile.Density, state.EffectiveDensity);
-        }
-
-        /// <summary>
         /// Every slot says whether it can be used now, what using it would change (tried on the state, the way a step's
         /// forecast is), or why it cannot.
         /// </summary>
@@ -200,7 +182,7 @@ namespace Exploration
             }).ToList();
         }
 
-        /// <summary>The names of the carried tools of one kind, joined (「刻限の砂・刻限の砂」 → one name).</summary>
+        /// <summary>The names of the carried tools of one kind, joined (「灯芯の欠片・灯芯の欠片」 → one name).</summary>
         // js: bridge/explorationScript/ExplorationScreenBuilder.js:396
         private static string ToolNames(RunLoadout loadout, ReliefKind kind)
         {

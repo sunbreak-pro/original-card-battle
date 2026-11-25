@@ -29,16 +29,16 @@ namespace Exploration.Tests
             Assert.That(s.CarvingTaken, Is.True);
             WalkToLayer(s, 2);
             var screen = s.Screen();
-            Assert.That(screen.LayerTitle, Is.EqualTo($"第 2 層　{SevenLayers.Of(2).TrueName}"));
+            Assert.That(screen.LayerTitle, Is.EqualTo($"第 2 層　{Lair.Of(2).TrueName}"));
             Assert.That(s.State.Map.CountOf(NodeKind.Carving), Is.EqualTo(0));
-            Assert.That(screen.Journal.Find("dungeon-2").Title, Does.Contain(SevenLayers.Of(2).TrueName));
+            Assert.That(screen.Journal.Find("dungeon-2").Title, Does.Contain(Lair.Of(2).TrueName));
         }
 
         [Test]
         public void TheInterludeBeforeLayerTwo_NamesItAsTheLifeKnowsIt()
         {
             // js: test/ext/explore-results.test.mjs:262
-            foreach (var (known, name) in new[] { (true, SevenLayers.Of(2).TrueName), (false, SevenLayers.Of(2).Name) })
+            foreach (var (known, name) in new[] { (true, Lair.Of(2).TrueName), (false, Lair.Of(2).Name) })
             {
                 var s = known ? Trial(5, mapFor: MapForKnown) : Trial(5);
                 WalkTo(s, n => n.Kind == NodeKind.Boss);
@@ -84,34 +84,26 @@ namespace Exploration.Tests
         }
 
         [Test]
-        public void TheInterludeBand_SaysWhatAStepBelowAdds_NotTheGapToTheCap()
+        public void TheInterludeBand_SaysWhatTheDescentCosts()
         {
-            // js: test/ext/explore-results.test.mjs:301
+            // js: test/ext/explore-results.test.mjs:301 spoke of the gauge; the band now says the day the entry takes.
             var s = Trial(2);
             WalkTo(s, n => n.Kind == NodeKind.Boss);
             Win(s);
             ClearChoices(s);
             s.Act(ScreenAction.GoToInterlude);
             var below = s.TryDescend();
-            Assert.That(s.Screen().Miasma.ForecastLabel, Is.EqualTo($"降りると +{below.EffectiveDensity}%"));
+            Assert.That(below.DaysLeft, Is.EqualTo(s.State.DaysLeft - 1));
+            Assert.That(s.Screen().NextDaysLeft, Is.EqualTo(below.DaysLeft));
+            Assert.That(s.Screen().DaysForecastLabel, Is.EqualTo("降りると 1 日進む"));
         }
 
         [Test]
-        public void TheJournalsDensityRow_StopsAtTheFloor()
+        public void TheJournalsDaysRow_SaysTheStraightRun()
         {
-            // js: test/ext/explore-results.test.mjs:313 (X-7)
-            string RowOf(ExplorationSession s) =>
-                s.Screen().Journal.Pages.First(p => p.Id.StartsWith("dungeon-", System.StringComparison.Ordinal)).Rows.First(r => r.Label == "瘴気の濃さ").Text;
-            Assert.That(RowOf(Trial(1, new[] { Mask, Mask })), Is.EqualTo("1 刻限ごとに +1%（層の濃さ 1 − ツール 2、下限 1）"));
-            var plain = new ExplorationSession(new RunStart { Seed = 1, Loadout = RunStart.TrialLoadout() });
-            Assert.That(RowOf(plain), Is.EqualTo("1 刻限ごとに +1%（層の濃さ 1 − ツール 1）"));
-        }
-
-        [Test]
-        public void TheJournalsTimeRow_CountsTheSand()
-        {
-            // W-3: 「the journal's 刻限 row counts it」.
-            Assert.That(Row(Trial(1, new[] { Sand }), "dungeon-1", "刻限"), Does.StartWith("11（"));
+            var s = Trial(1);
+            Assert.That(Row(s, "dungeon-1", "日数"), Is.EqualTo($"寄り道なしで抜けると {s.State.Map.ShortestPathCost} 日"));
+            Assert.That(Row(s, "dungeon-1", "領域"), Is.EqualTo("共通"));
         }
 
         [Test]
@@ -134,27 +126,11 @@ namespace Exploration.Tests
         }
 
         [Test]
-        public void X6_TheMasksNote_AtTheInterlude_IsTheNextLayers()
-        {
-            // js: test/ext/explore-results.test.mjs:569
-            var s = Trial(2, new[] { Mask });
-            string names = ExplorationText.ItemName(Mask);
-            Assert.That(s.Screen().ReliefLabel, Is.EqualTo(ExplorationText.Relief(names, s.State.Profile.Density, s.State.EffectiveDensity)));
-            WalkTo(s, n => n.Kind == NodeKind.Boss);
-            Win(s);
-            ClearChoices(s);
-            s.Act(ScreenAction.GoToInterlude);
-            var below = s.TryDescend();
-            Assert.That(s.Screen().ReliefLabel, Is.EqualTo(ExplorationText.Relief(names, below.Profile.Density, below.EffectiveDensity)));
-            Assert.That(s.Screen().Miasma.ForecastLabel, Is.EqualTo($"降りると +{below.EffectiveDensity}%"));
-        }
-
-        [Test]
         public void PlayerNote_DropsTheDesignStatusRemark_WhereThePlayerReadsIt()
         {
             // js: test/ext/explore-results.test.mjs:584 (X-14)
             Assert.That(ExplorationText.PlayerNote("ryurin_no_kakera"), Is.EqualTo("1 戦につき最初の 1 回だけ Guard 5"));
-            Assert.That(ExplorationText.PlayerNote(Mask), Is.EqualTo(ExplorationText.ItemNote(Mask)));
+            Assert.That(ExplorationText.PlayerNote(Thread), Is.EqualTo(ExplorationText.ItemNote(Thread)));
             var s = Trial(1, new[] { "ryurin_no_kakera" });
             Assert.That(s.Screen().ToolCards.First(t => t.Id == "ryurin_no_kakera").Note, Is.EqualTo("1 戦につき最初の 1 回だけ Guard 5"));
         }
@@ -168,11 +144,11 @@ namespace Exploration.Tests
             Win(s, 45);
             ClearChoices(s);
             string line = s.Screen().Card.Lines.First(l => l.StartsWith("階層間の休憩", System.StringComparison.Ordinal));
-            Assert.That(line, Is.EqualTo($"階層間の休憩: HP +5（最大の 30%{ExplorationText.CappedMark}）・スタミナ全回復・瘴気はたまらない"));
+            Assert.That(line, Is.EqualTo($"階層間の休憩: HP +5（最大の 30%{ExplorationText.CappedMark}）・スタミナ全回復・日数を使わない"));
             s.Act(ScreenAction.GoToInterlude);
             Assert.That(s.Screen().Card.Lines[0], Is.EqualTo($"HP +5（最大の 30%{ExplorationText.CappedMark}）で HP 50 / 50"));
             // a rest node at full HP reads the same way (the first seed whose rest is in sight from the entry)
-            string restLine = Enumerable.Range(1, 8)
+            string restLine = Enumerable.Range(1, 60)
                 .Select(seed => Trial((ulong)seed).Screen().Nodes.FirstOrDefault(n => n.Kind == NodeKind.Rest && n.Lines.Count > 0))
                 .First(n => n != null).Lines[0];
             Assert.That(restLine, Does.Match(@"^休む: HP \+0（最大の 15%・上限まで）・"));
@@ -181,7 +157,7 @@ namespace Exploration.Tests
             WalkTo(plain, n => n.Kind == NodeKind.Boss);
             plain.ReportBattle(45, 5);
             Assert.That(plain.Screen().Card.Lines.First(l => l.StartsWith("階層間の休憩", System.StringComparison.Ordinal)),
-                Is.EqualTo("階層間の休憩: HP +5（最大の 30%）・スタミナ全回復・瘴気はたまらない"));
+                Is.EqualTo("階層間の休憩: HP +5（最大の 30%）・スタミナ全回復・日数を使わない"));
         }
 
         [Test]

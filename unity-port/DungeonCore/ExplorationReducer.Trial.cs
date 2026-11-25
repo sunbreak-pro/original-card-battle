@@ -11,8 +11,9 @@ namespace DungeonCore
     {
         /// <summary>
         /// Trial extension: 標の石 — 「同じ層の未踏ノードへ 1 度だけ跳ぶ」, and 「跳んだ先のノードは新しいノードなので、
-        /// 普通に刻限 1 と瘴気がかかります」 (tools_and_consumables_v4.md §3). The item in <paramref name="index"/> is spent
-        /// and <paramref name="nodeId"/> is resolved exactly as a step into it would be (a rest takes <paramref name="choice"/>).
+        /// 普通に 1 日進みます」 (tools_and_consumables_v4.md §3; 早駆けの丸薬 taken first makes it free). The item in
+        /// <paramref name="index"/> is spent and <paramref name="nodeId"/> is resolved exactly as a step into it would be
+        /// (a rest takes <paramref name="choice"/>).
         /// </summary>
         // js: core/dungeon/ExplorationReducer.js:132
         public static ExplorationState Teleport(ExplorationState state, int index, int nodeId, RestChoice choice = RestChoice.Rest)
@@ -29,8 +30,8 @@ namespace DungeonCore
         }
 
         /// <summary>
-        /// Trial extension: whether 標の石 can land on this node — the layer is being explored, a 刻限 is left to
-        /// pay, and the node is an unresolved node of this layer (any of them, the boss included: §3 names no
+        /// Trial extension: whether 標の石 can land on this node — the layer is being explored, the calendar has a
+        /// day left, and the node is an unresolved node of this layer (any of them, the boss included: §3 names no
         /// exception — 試作で決めたこと).
         /// </summary>
         // js: core/dungeon/ExplorationReducer.js:149
@@ -39,7 +40,7 @@ namespace DungeonCore
             if (state == null) throw new ArgumentNullException(nameof(state));
             return state.Trial
                 && state.Phase == RunPhase.Exploring
-                && state.TimeLeft > 0
+                && !state.Calendar.IsExpired
                 && state.Map.Nodes.Any(n => n.Id == nodeId)
                 && !state.HasResolved(nodeId);
         }
@@ -56,8 +57,8 @@ namespace DungeonCore
         }
 
         /// <summary>
-        /// An イベント node's effect on the run (encounters_and_rewards_v4.md §5). The node's 刻限
-        /// and 瘴気 were paid by the step; this applies what the event does once the player has answered
+        /// An イベント node's effect on the run (encounters_and_rewards_v4.md §5). The node's day
+        /// was paid by the step; this applies what the event does once the player has answered
         /// (泉 always 「受ける」):
         /// 泉: HP back by the layer's share of the maximum.
         /// 重い宝箱 受ける: max stamina −2 as a temporary change (inside ±4); current stamina follows the lower
@@ -78,7 +79,7 @@ namespace DungeonCore
                 case EventKind.HeavyChest:
                 {
                     int temp = Clamp(state.TempMaxStaminaMod - LayerEvents.ChestStaminaCost);
-                    int max = Miasma.MaxStamina(temp, state.MiasmaPercent);
+                    int max = StaminaRules.MaxStamina(temp);
                     return state.With(tempMaxStaminaMod: temp, stamina: Math.Min(state.Stamina, max));
                 }
                 case EventKind.StrangeMeal:

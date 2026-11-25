@@ -26,6 +26,12 @@ namespace Depiction.Bridge
 
         public const string PlainBottom = "特性なし（+2 込み）";
 
+        /// <summary>
+        /// The trait box of a card with no trait that is no 素直な札 (the starter cards #1038 took the trait off, which
+        /// carry no +2). The top row is never empty: a View that finds both rows empty prints the plain card's words.
+        /// </summary>
+        public const string NoTrait = "特性なし";
+
         /// <summary>Fills the battle-visual-v1 fields of <paramref name="face"/> from the card's data.</summary>
         public static void Fill(CardFace face, CardDef def)
         {
@@ -35,7 +41,7 @@ namespace Depiction.Bridge
             face.Values = Values(def.Face, def.Attributes);
             face.Lasting = def.Face.Stance != null && def.Attribute.HasFlag(BattleAttribute.Stance);
             face.TextLines = face.Lasting ? LastingLines(def.Face) : TextLines(def.Face, def.Attributes);
-            face.Plain = def.AllTraits.Count == 0;
+            face.Plain = CardCatalog.IsPlain(def);
             string[] rows = TraitRows(def);
             face.TraitTop = rows[0];
             face.TraitBottom = rows[1];
@@ -211,12 +217,13 @@ namespace Depiction.Bridge
         /// <summary>
         /// The two rows of the trait box. One trait: the condition in §6.1's short words, then
         /// "→ effect". Two traits (the v4.9 背水の陣, #213): one trait per row, condition and effect run together
-        /// ("間合い2以上→威力+5"). No trait: the plain card's two rows.
+        /// ("間合い2以上→威力+5"). No trait: the plain card's two rows, or <see cref="NoTrait"/> on a card that is no
+        /// 素直な札.
         /// </summary>
         public static string[] TraitRows(CardDef def)
         {
             IReadOnlyList<Trait> traits = def.AllTraits;
-            if (traits.Count == 0) return new[] { PlainTop, PlainBottom };
+            if (traits.Count == 0) return CardCatalog.IsPlain(def) ? new[] { PlainTop, PlainBottom } : new[] { NoTrait, "" };
             if (traits.Count == 1) return new[] { Condition(traits[0], def), "→ " + Effect(traits[0], def) };
             return new[] { Compact(traits[0], def), Compact(traits[1], def) };
         }
@@ -259,12 +266,12 @@ namespace Depiction.Bridge
         /// <summary>
         /// §7.2 / §9: the one line above a hovered card, the condition as a clause and the effect with
         /// the card's printed values ("間合い 2 以上なら、この札の威力 13 → 18"). Two traits are two
-        /// sentences. A plain card says what its +2 went into.
+        /// sentences. A plain card says what its +2 went into; a card with no trait that is no 素直な札 says only that.
         /// </summary>
         public static string HoverLine(CardDef def)
         {
             IReadOnlyList<Trait> traits = def.AllTraits;
-            if (traits.Count == 0) return PlainLine(def);
+            if (traits.Count == 0) return CardCatalog.IsPlain(def) ? PlainLine(def) : NoTrait;
             var parts = new List<string>();
             foreach (Trait trait in traits) parts.Add(ConditionClause(trait, def) + "、" + EffectClause(trait, def));
             return string.Join("。", parts);
@@ -360,9 +367,13 @@ namespace Depiction.Bridge
             }
             if (described.Length > 0) sentences.Add(described);
             IReadOnlyList<Trait> traits = def.AllTraits;
-            if (traits.Count == 0)
+            if (CardCatalog.IsPlain(def))
             {
                 sentences.Add("特性を持たないかわりに、値が " + Constants.PlainCardBonus + " 高い札（表の値に込み）。");
+            }
+            else if (traits.Count == 0)
+            {
+                sentences.Add(NoTrait + "。");
             }
             foreach (Trait trait in traits)
             {
@@ -382,7 +393,7 @@ namespace Depiction.Bridge
             if (def.Face.Break > 0) Add(words, "崩し n");
             if (def.Face.Stance != null && def.Attribute.HasFlag(BattleAttribute.Stance)) Add(words, "永続");
             IReadOnlyList<Trait> traits = def.AllTraits;
-            if (traits.Count == 0) Add(words, "素直な札");
+            if (CardCatalog.IsPlain(def)) Add(words, "素直な札");
             foreach (Trait trait in traits)
             {
                 string condition = TermOfCondition(trait.Condition);

@@ -2,6 +2,7 @@
 // count src/app/life.js lifeSetup hands the Expedition; docs/EXTENSIONS.md, docs/INHERITANCE.md R-27): what the
 // trial turns on in an Expedition. Left out (null), or with every member at its default, the Expedition is the C#
 // as it was.
+using System.Collections.Generic;
 using BattleCore;
 
 namespace Exploration.Bridge
@@ -38,5 +39,18 @@ namespace Exploration.Bridge
         /// js: app/life.js:205-211. 0 (or less, as js: app/life.js:74 startPages reads it): none.
         /// </summary>
         public int StartPages { get; set; }
+
+        /// <summary>
+        /// The mastery the explorer carries in from earlier lives (InheritanceCore's carry-over, #1025): every new life of
+        /// the expedition starts its book with these 段 and ticks (Inheritance.MergeMastery keeps the one-card rule on
+        /// 段 3). Null or empty: a book of its own, as the C# begins it.
+        /// </summary>
+        public IReadOnlyList<CardMastery> StartMastery { get; set; }
+
+        /// <summary>
+        /// The card kinds the explorer learned in earlier lives (#1025): every new life owns them from its start, besides
+        /// the initial kinds and the deck's. Null or empty: none.
+        /// </summary>
+        public IReadOnlyList<string> StartOwned { get; set; }
     }
 }

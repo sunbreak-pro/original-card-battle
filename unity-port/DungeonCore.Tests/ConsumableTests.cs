@@ -3,7 +3,7 @@ using DungeonCore;
 namespace DungeonCore.Tests
 {
     /// <summary>
-    /// #651: the consumables beyond 浄化の香 (tools_and_consumables_v4.md §3) — 薬草, 濃い干し肉 and
+    /// #651: the consumables beyond 早駆けの丸薬 (tools_and_consumables_v4.md §3) — 薬草, 濃い干し肉 and
     /// 忘れ水 act on the run, 標の石 rides in a slot but waits for a screen that picks where to jump —
     /// and picking one up: into a free slot, or swapped for a named one when every slot is full.
     /// </summary>
@@ -16,7 +16,7 @@ namespace DungeonCore.Tests
         private static readonly ReliefItem Jerky = ReliefItem.MaxStamina("koi_hoshiniku", 1);
         private static readonly ReliefItem Water = ReliefItem.RefillStamina("wasuremizu");
         private static readonly ReliefItem Stone = ReliefItem.Teleport("shirube_no_ishi");
-        private static readonly ReliefItem Incense = ReliefItem.Gauge("joka_no_ko", 10);
+        private static readonly ReliefItem Pill = ReliefItem.Haste("hayagake_no_gan");
 
         // ---- using them ----
 
@@ -27,7 +27,7 @@ namespace DungeonCore.Tests
             var used = ExplorationReducer.UseConsumable(state, 0);
             Assert.That(used.Hp, Is.EqualTo(30), "20% of 50 is 10");
             Assert.That(used.Loadout.Consumables, Is.Empty);
-            Assert.That(used.TimeLeft, Is.EqualTo(state.TimeLeft), "a consumable costs no 刻限");
+            Assert.That(used.Calendar, Is.EqualTo(state.Calendar), "a consumable costs no day");
         }
 
         [Test]
@@ -50,9 +50,9 @@ namespace DungeonCore.Tests
         [Test]
         public void Jerky_StaysInsideThePlusMinusFourClamp()
         {
-            var state = Enter(new[] { Jerky }, tempMaxStaminaMod: Miasma.TempModClamp);
+            var state = Enter(new[] { Jerky }, tempMaxStaminaMod: StaminaRules.TempModClamp);
             var used = ExplorationReducer.UseConsumable(state, 0);
-            Assert.That(used.TempMaxStaminaMod, Is.EqualTo(Miasma.TempModClamp));
+            Assert.That(used.TempMaxStaminaMod, Is.EqualTo(StaminaRules.TempModClamp));
             Assert.That(used.MaxStamina, Is.EqualTo(state.MaxStamina));
         }
 
@@ -60,7 +60,7 @@ namespace DungeonCore.Tests
         public void ForgottenWater_FillsStaminaToTheMaximum()
         {
             var state = Enter(new[] { Water }, stamina: 1);
-            Assert.That(state.Stamina, Is.LessThan(state.MaxStamina), "the entry node's 刻限 gives back 3, not all");
+            Assert.That(state.Stamina, Is.LessThan(state.MaxStamina), "the entry node's day gives back 3, not all");
             var used = ExplorationReducer.UseConsumable(state, 0);
             Assert.That(used.Stamina, Is.EqualTo(state.MaxStamina));
         }
@@ -88,32 +88,32 @@ namespace DungeonCore.Tests
         [Test]
         public void AConsumablePickedUp_GoesIntoAFreeSlot()
         {
-            var state = Enter(new[] { Incense });
+            var state = Enter(new[] { Pill });
             var taken = ExplorationReducer.TakeConsumable(state, Herb);
-            Assert.That(taken.Loadout.Consumables, Is.EqualTo(new[] { Incense, Herb }));
-            Assert.That(taken.TimeLeft, Is.EqualTo(state.TimeLeft));
+            Assert.That(taken.Loadout.Consumables, Is.EqualTo(new[] { Pill, Herb }));
+            Assert.That(taken.Calendar, Is.EqualTo(state.Calendar));
         }
 
         [Test]
         public void AFreeSlot_TakesTheItem_WhateverSlotIsNamed()
         {
-            var taken = ExplorationReducer.TakeConsumable(Enter(new[] { Incense }), Herb, replaceSlot: 0);
-            Assert.That(taken.Loadout.Consumables, Is.EqualTo(new[] { Incense, Herb }), "nothing is swapped while a slot is free");
+            var taken = ExplorationReducer.TakeConsumable(Enter(new[] { Pill }), Herb, replaceSlot: 0);
+            Assert.That(taken.Loadout.Consumables, Is.EqualTo(new[] { Pill, Herb }), "nothing is swapped while a slot is free");
         }
 
         [Test]
         public void FullSlots_SwapOnlyTheSlotNamed()
         {
-            var state = Enter(new[] { Incense, Incense, Incense });
+            var state = Enter(new[] { Pill, Pill, Pill });
             Assert.That(state.Loadout.ConsumableSlotsFull, Is.True);
             var swapped = ExplorationReducer.TakeConsumable(state, Herb, replaceSlot: 1);
-            Assert.That(swapped.Loadout.Consumables, Is.EqualTo(new[] { Incense, Herb, Incense }));
+            Assert.That(swapped.Loadout.Consumables, Is.EqualTo(new[] { Pill, Herb, Pill }));
         }
 
         [Test]
         public void FullSlots_RefuseASwapThatNamesNoSlot()
         {
-            var state = Enter(new[] { Incense, Incense, Incense });
+            var state = Enter(new[] { Pill, Pill, Pill });
             Assert.Throws<ExplorationRuleException>(() => ExplorationReducer.TakeConsumable(state, Herb));
             Assert.Throws<ExplorationRuleException>(() => ExplorationReducer.TakeConsumable(state, Herb, replaceSlot: 3));
         }
@@ -121,15 +121,15 @@ namespace DungeonCore.Tests
         [Test]
         public void NothingIsPickedUp_OnceTheLifeIsOver()
         {
-            var over = ExplorationReducer.EndLife(Enter(new[] { Incense }));
+            var over = ExplorationReducer.EndLife(Enter(new[] { Pill }));
             Assert.Throws<ExplorationRuleException>(() => ExplorationReducer.TakeConsumable(over, Herb));
         }
 
         private static ExplorationState Enter(ReliefItem[] consumables, int hp = PlayerMaxHp, int stamina = 10, int tempMaxStaminaMod = 0)
         {
-            var profile = SevenLayers.Of(1);
+            var profile = Lair.Of(1);
             return ExplorationReducer.Enter(
-                profile, profile.Map(11UL), new RunLoadout(null, consumables), hp, PlayerMaxHp, stamina, tempMaxStaminaMod: tempMaxStaminaMod);
+                profile, profile.Map(11UL), new RunLoadout(null, consumables), hp, PlayerMaxHp, stamina, CalendarState.Fresh, tempMaxStaminaMod);
         }
     }
 }

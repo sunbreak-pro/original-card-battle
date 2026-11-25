@@ -93,7 +93,7 @@ namespace BattleCore.Tests
         [Test]
         public void Flute_ReachesTheBattleThroughTheDeparture()
         {
-            var departure = new Departure(Deck(), new[] { "ikitsugi_no_fue" }, new string[0], 0, "filler", StartStaminaBonus: 3);
+            var departure = new Departure(Deck(), new[] { "ikitsugi_no_fue" }, new string[0], 0, StartStaminaBonus: 3);
             var setup = departure.SetupFor(Striker, Cells);
             Assert.That(TurnLoop.Start(setup, NoShuffle).State.Player.Stamina, Is.EqualTo(13));
             Assert.That(DeckRules.Validate(departure with { StartStaminaBonus = -1 }, new[] { "filler" }).Errors,

@@ -79,6 +79,13 @@ namespace Trial.Boot
 
         /// <summary>はじめから's lineage seed: 0 = the JS's (Date.now() ^ random) >>> 0, else this one.</summary>
         public ulong LineageSeed;
+
+        /// <summary>
+        /// The carry-over (#1025, InheritanceCore's opt-in rule): one explorer goes down again and again, a fall keeps the
+        /// 段 reached and a return keeps the ticks too, with the kinds learned and the journal; no trace, no survivor's
+        /// bonus. On for the trial scene (Koudai-san, 2026-11-22); off plays the generations of the browser trial.
+        /// </summary>
+        public bool CarryOver = true;
     }
 
     public sealed class Main
@@ -92,6 +99,7 @@ namespace Trial.Boot
         private readonly SaveKeeper _keeper;
         private readonly bool _autobattle;
         private readonly ulong _lineageSeed;
+        private readonly bool _carryOver;
         private readonly System.Random _random = new System.Random();
 
         // Stage-level layers (not .ocbg-scene: Show leaves them): notices (z 880) and confirm cards (z 900).
@@ -130,6 +138,7 @@ namespace Trial.Boot
             _keeper = o.Keeper ?? SaveKeeper.Open(_store);
             _autobattle = o.Autobattle;
             _lineageSeed = o.LineageSeed;
+            _carryOver = o.CarryOver;
             _noticeLayer = _stage.Layer("ocbg-notices", 880, raycasts: false);
             _confirmLayer = _stage.Layer("ocbg-confirms", 900, raycasts: true);
             _keeper.BecameStale += OnBecameStale;
@@ -426,7 +435,7 @@ namespace Trial.Boot
             void Fresh()
             {
                 Unreadable = null;
-                Save = new TrialSave(Inheritance.NewLineage(NewSeed()));
+                Save = new TrialSave(Inheritance.NewLineage(NewSeed(), _carryOver));
                 Persist(true);
                 ToHall();
             }
@@ -452,7 +461,13 @@ namespace Trial.Boot
             if (Save == null || Save.Lineage == null)
             {
                 Unreadable = null;
-                Save = new TrialSave(Inheritance.NewLineage(_lineageSeed != 0 ? _lineageSeed : SaveKeeper.HallLineageSeed(NowMs())));
+                Save = new TrialSave(Inheritance.NewLineage(_lineageSeed != 0 ? _lineageSeed : SaveKeeper.HallLineageSeed(NowMs()), _carryOver));
+                Persist();
+            }
+            else if (_carryOver && !Save.Lineage.CarriesOver && Save.Lineage.Current == null && InSync())
+            {
+                // A lineage saved before the carry-over (#1025) takes it up from its next life on; its lives stay.
+                Save.Lineage = Inheritance.CarryingOver(Save.Lineage);
                 Persist();
             }
             _audio?.SetAmbience("hall", 1500);
@@ -462,7 +477,11 @@ namespace Trial.Boot
                 OnDepart = lifeStart => ToDeparture(lifeStart != null && lifeStart.Lineage != null ? lifeStart : Inheritance.StartLife(Save.Lineage)),
                 // 設定・セーブ here offers 「保存してタイトルへ」: the lineage is already saved, so it reads as going back to the title.
                 OnSettings = () => OpenOverlay(ExploreOverlayKind.Settings, OverlayExtra.LineageSave),
+                // The past lives and the rules of traces are read in the journal (#1053), so the base opens it (#1052).
+                OnJournal = () => OpenOverlay(ExploreOverlayKind.Journal),
                 OnTitle = ToTitle,
+                // The carry-over's base shows 出立's pack and sets out with it when 「降りる」 is held (#1052).
+                Departure = DepartureCtxOf,
             })), "ocbg-hall");
         }
 
@@ -471,16 +490,30 @@ namespace Trial.Boot
         {
             if (Stale) return;
             _screen = "departure";
-            Show(host => DepartureScene.Mount(host, Base(new DepartureCtx
+            Show(host => DepartureScene.Mount(host, DepartureCtxOf(lifeStart)), "ocbg-departure");
+        }
+
+        /// <summary>
+        /// 出立's ctx for <paramref name="lifeStart"/>: the table mounts with it, and the carry-over's base reads the pack it
+        /// opens with and sets out through its OnSetOut (#1052), so both set out the same way.
+        /// </summary>
+        private DepartureCtx DepartureCtxOf(LifeStart lifeStart)
+        {
+            return Base(new DepartureCtx
             {
                 LifeStart = lifeStart,
-                // The forty every character owns plus the prototype deck's kinds (Expedition owns its start deck's kinds too).
-                Owned = DeckBuilder.WithPrototypeKinds(Expedition.InitialKinds),
+                // The starter's eleven plus the starter deck's kinds (Expedition owns its start deck's kinds too, #1038),
+                // and under the carry-over the kinds the explorer learned in earlier lives (#1025).
+                Owned = DeckBuilder.WithStarterKinds(Expedition.InitialKinds
+                    .Concat(lifeStart?.Carryover?.Owned ?? (IEnumerable<string>)Array.Empty<string>())
+                    .Distinct(StringComparer.Ordinal)
+                    .ToList()),
                 SavedDeck = string.IsNullOrEmpty(Save.DeckSave) ? null : Save.DeckSave,
                 OnBack = ToHall,
                 // 設定・セーブ opens here too: the gear at the top right, and Esc (CAMP_FACILITIES_DESIGN.md §3.5). The lineage is
                 // saved and the half-built deck is kept as 出立's draft, so 「保存してタイトルへ」 leaves nothing behind.
                 OnSettings = () => OpenOverlay(ExploreOverlayKind.Settings, OverlayExtra.LineageSave),
+                OnJournal = () => OpenOverlay(ExploreOverlayKind.Journal),
                 OnSetOut = choice =>
                 {
                     if (!InSync()) return;              // another instance moved the lineage on: this hall was out of date
@@ -490,10 +523,11 @@ namespace Trial.Boot
                     if (choice != null && !string.IsNullOrEmpty(choice.DeckSave)) Save.DeckSave = choice.DeckSave;
                     LifeStartData start = Trial.Bridge.Life.MakeStart(lifeStart, choice);
                     // the heir's own memo sheet starts empty; a survivor's journal comes in through start.journal
-                    // (its pages, 開示度 and 走り書き, the survivor's memo among them: Inheritance.HeirJournal)
-                    BeginLife(start, new LifeLog(), "", null);
+                    // (its pages, 開示度 and 走り書き, the survivor's memo among them: Inheritance.HeirJournal). Under the
+                    // carry-over (#1025) the explorer picks up their own sheet again (LifeStart.Memo).
+                    BeginLife(start, new LifeLog(), lifeStart.Memo, null);
                 },
-            })), "ocbg-departure");
+            });
         }
 
         // js: app/main.js:305
@@ -517,7 +551,8 @@ namespace Trial.Boot
         private void ResumeFight(RecordedSource source)
         {
             _screen = "battle";
-            _audio?.SetAmbience(Live.Raw.Session.State.Profile.Layer, 1200);
+            // the place's sound: a region's layer borrows a named place's backdrop and its ambience (#888)
+            _audio?.SetAmbience(Live.Raw.Session.State.Profile.BackdropLayer, 1200);
             RunEncounter(source).Then(() =>
             {
                 if (Stale || Live == null) return;
@@ -613,8 +648,9 @@ namespace Trial.Boot
         private ExploreTaken Take(Expedition raw, IReadOnlyList<string> picks)
         {
             if (!InSync()) return null;       // another instance collected or moved on: nothing is taken here
-            // A life that is over takes nothing (the 瘴気死 on the trace's own step): the trace stays for a living heir
-            // (INHERITANCE R-09 / R-10, EXTENSIONS X-3). The scene never offers it then; this is the second guard.
+            // A life that is over takes nothing (the calendar running out on the trace's own step ends it like a death):
+            // the trace stays (INHERITANCE R-09 / R-10, EXTENSIONS X-3). The scene never offers it then; this is the
+            // second guard.
             if (Live == null || raw.Session.State.IsOver) return null;
             int layer = raw.Session.State.Profile.Layer;
             TraceNodeView view = Inheritance.TraceNodeView(Save.Lineage, layer);
@@ -703,8 +739,10 @@ namespace Trial.Boot
                 Settings = _settings,
                 Source = fight.Source,
                 Layer = raw.Session.State.Profile.Layer,
+                // The map draws the layer's backdrop slot, and a region's layer borrows a named place's (#888): the fight
+                // takes the same slot, so its backdrop matches the map and the ambience ResumeFight picks (#1029).
+                BackdropLayer = raw.Session.State.Profile.BackdropLayer,
                 LayerTitle = raw.Session.Screen().LayerTitle,
-                MiasmaPercent = battle.HandIn.MiasmaPercent,
                 NodeKind = BattleSceneCtx.NodeKindOf(battle.HandIn.Kind.ToString()),
                 Chain = new BattleChain(battle.Index + 1, battle.Count),
                 DisclosureOf = id => raw.DisclosureOf(id),
@@ -759,7 +797,11 @@ namespace Trial.Boot
         }
 
         // js: app/main.js:485
-        /// <summary>endLife(): the life's end goes on the lineage (recordEnd) and is saved before the ending mounts.</summary>
+        /// <summary>
+        /// endLife(): the life's end goes on the lineage (recordEnd), the lineage's calendar moves on by the life's days
+        /// and the hand-over (Life.CloseLife), and it is saved before the ending mounts. A calendar that ran out ends the
+        /// world: the save starts over on a brand-new lineage as はじめから does, and the ending shows the world's end.
+        /// </summary>
         private void EndLife()
         {
             if (Live == null || !InSync()) return;         // another instance holds a newer save: this death or survival is not recorded here
@@ -769,7 +811,12 @@ namespace Trial.Boot
             LifePlace place = Inheritance.PlaceFromState(state);
             var journal = Names.LifeJournal(raw, Live);
             EndOptions opts = Names.EndOptions(raw, state);
-            Save.Lineage = Inheritance.RecordEnd(Save.Lineage, null, place, raw.Mastery, journal, opts);
+            // A life set out before the carry-over was taken up (#1025) closes under it all the same.
+            Lineage lineage = _carryOver ? Inheritance.CarryingOver(Save.Lineage) : Save.Lineage;
+            Lineage recorded = Inheritance.RecordEnd(lineage, null, place, raw.Mastery, journal, opts);
+            LifeClose close = Trial.Bridge.Life.CloseLife(recorded, state, () => Inheritance.NewLineage(NewSeed(), _carryOver));
+            if (close.WorldEnded) Save = new TrialSave(close.Next);
+            else Save.Lineage = close.Next;
             Save.Life = null;
             Live = null;
             Persist();
@@ -777,8 +824,8 @@ namespace Trial.Boot
             _screen = "ending";
             Show(host => EndingScene.Mount(host, Base(new EndingCtx
             {
-                Ending = Inheritance.EndingView(Save.Lineage),
-                Lineage = Save.Lineage,
+                Ending = Inheritance.EndingView(close.Recorded),
+                Lineage = close.Recorded,
                 OnHall = ToHall,
             })), "ocbg-ending");
         }

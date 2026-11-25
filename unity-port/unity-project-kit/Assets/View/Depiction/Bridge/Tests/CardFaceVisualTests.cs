@@ -14,9 +14,16 @@ namespace Depiction.Bridge.Tests
     {
         private static readonly IRng NoShuffle = new FixedRng(0.9999999);
 
+        // #1038 took the traits off the starter cards (swordsman_cards_v4 §2.1). These tests read a trait's words and
+        // lamp on a copy that keeps the one the card table lists.
+        private static CardDef Listed(CardDef def) =>
+            CardCatalog.StarterTableTraits.TryGetValue(def.Id, out Trait trait) ? def with { Trait = trait } : def;
+
+        private static readonly CardDef Kesa = Listed(CardCatalog.KesaCut);
+
         private static readonly CardDef[] Hand =
         {
-            CardCatalog.KesaCut, CardCatalog.ReachThrust, CardCatalog.Brace, CardCatalog.BackLeap, CardCatalog.PurgeFlash,
+            Kesa, CardCatalog.ReachThrust, Listed(CardCatalog.Brace), CardCatalog.BackLeap, CardCatalog.PurgeFlash,
         };
 
         /// <summary>Two 瘴牙の走竜 side by side past turn 1's start, the first one <paramref name="gap"/> away.</summary>
@@ -55,7 +62,7 @@ namespace Depiction.Bridge.Tests
             Assert.That(new[] { state.GapTo(0), state.GapTo(1) }, Is.EqualTo(new[] { 0, 1 }));
 
             // 袈裟斬り (0〜1, 間合い 0 → +5): both hounds are in reach, only the first stands adjacent.
-            bool lit = Lit(state, CardCatalog.KesaCut, out List<bool> perEnemy);
+            bool lit = Lit(state, Kesa, out List<bool> perEnemy);
 
             Assert.That(lit, Is.True);
             Assert.That(perEnemy, Is.EqualTo(new[] { true, false }));
@@ -144,6 +151,45 @@ namespace Depiction.Bridge.Tests
             Assert.That(face.Values.Select(v => v.Word + " " + v.Number), Is.EqualTo(new[] { "威力 23" }));
         }
 
+        [Test]
+        public void AStarterCardWithItsTraitOff_IsNoPlainCard_AndSaysNothingOfTheTwo(
+            [Values("wrist_cut", "kesa_cut", "observe", "brace", "footwork", "leap_back", "dash_in", "water_stance", "iron_wall")] string id)
+        {
+            // swordsman_cards_v4 §2.1: #1038 took the trait off without the 素直 +2.
+            CardFace face = CoreText.FaceOf(CardCatalog.ById(id));
+            string[] words =
+            {
+                face.TraitTop, face.TraitBottom, face.HoverLine, face.Detail.Body,
+                string.Join(" ", face.Detail.Terms.Select(t => t.Word)), string.Join(" ", face.Terms.Select(t => t.Word)),
+            };
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(face.Plain, Is.False);
+                Assert.That(new[] { face.TraitTop, face.TraitBottom }, Is.EqualTo(new[] { "特性なし", "" }));
+                Assert.That(face.HoverLine, Is.EqualTo("特性なし"));
+                foreach (string text in words)
+                {
+                    // 水の構え's own 回復 +2 is a value, so the +2 looked for is the plain card's words.
+                    Assert.That(text, Does.Not.Contain("素直"));
+                    Assert.That(text, Does.Not.Contain("+2 込み"));
+                    Assert.That(text, Does.Not.Contain("2 高い"));
+                }
+            });
+        }
+
+        [Test]
+        public void ThePlainCards_StayPlain()
+        {
+            foreach (CardDef def in new[] { CardCatalog.SideSweep, CardCatalog.IronBlock })
+            {
+                CardFace face = CoreText.FaceOf(def);
+                Assert.That(face.Plain, Is.True, def.Id);
+                Assert.That(face.TraitTop, Is.EqualTo("素直な札"), def.Id);
+                Assert.That(face.Detail.Terms.Select(t => t.Word), Does.Contain("素直な札"), def.Id);
+            }
+        }
+
         [TestCase("kesa_cut", "間合い 0", "→ 威力 +5", "隣り合っていれば、この札の威力 15 → 20")]
         [TestCase("reach_thrust", "間合い 2 以上", "→ 威力 +5", "間合い 2 以上なら、この札の威力 15 → 20")]
         [TestCase("brace", "温存 残り 6 以上", "→ 次ターン回復 +1", "出した後スタミナが 6 以上残れば、次ターンの回復 3 → 4")]
@@ -155,7 +201,7 @@ namespace Depiction.Bridge.Tests
         [TestCase("observe", "手薄", "→ ドロー +1", "出した直後の手札が 2 枚以下なら、さらに 1 枚引く")]
         public void TheSampleCards_ReadAsSection9Writes(string id, string top, string bottom, string hover)
         {
-            CardFace face = CoreText.FaceOf(CardCatalog.ById(id));
+            CardFace face = CoreText.FaceOf(Listed(CardCatalog.ById(id)));
 
             Assert.That(face.TraitTop, Is.EqualTo(top));
             Assert.That(face.TraitBottom, Is.EqualTo(bottom));
@@ -218,7 +264,9 @@ namespace Depiction.Bridge.Tests
                 if (face.Values.Count > CardFaceText.MaxValues) misfits.Add(def.Name + ": " + face.Values.Count + " values");
                 int rows = face.Lasting ? CardFaceText.MaxLastingLines : CardFaceText.MaxTextLines;
                 if (face.TextLines.Count > rows) misfits.Add(def.Name + ": " + face.TextLines.Count + " rows");
-                if (face.TraitTop.Length == 0 || face.TraitBottom.Length == 0) misfits.Add(def.Name + ": an empty trait row");
+                // A card with no trait that is no 素直な札 has one row to say so (#1038).
+                bool oneRow = face.TraitTop == CardFaceText.NoTrait;
+                if (face.TraitTop.Length == 0 || (face.TraitBottom.Length == 0 && !oneRow)) misfits.Add(def.Name + ": an empty trait row");
                 if (face.HoverLine.Length == 0) misfits.Add(def.Name + ": no hover line");
                 if (face.PrintedCost != def.Cost) misfits.Add(def.Name + ": printed cost " + face.PrintedCost);
                 if (face.Detail == null || face.Detail.Body.Length == 0) misfits.Add(def.Name + ": no detail");
@@ -270,8 +318,8 @@ namespace Depiction.Bridge.Tests
         [Test]
         public void TheDetail_NamesOneAttribute_TheTargetAndTheReach()
         {
-            CardDetail kesa = CoreText.FaceOf(CardCatalog.KesaCut).Detail;
-            CardDetail brace = CoreText.FaceOf(CardCatalog.Brace).Detail;
+            CardDetail kesa = CoreText.FaceOf(Kesa).Detail;
+            CardDetail brace = CoreText.FaceOf(Listed(CardCatalog.Brace)).Detail;
 
             Assert.That(kesa.Name, Is.EqualTo("袈裟斬り"));
             Assert.That(kesa.KindLine, Is.EqualTo("攻撃 ・ 敵 1 体 ・ 間合い 0〜1"));

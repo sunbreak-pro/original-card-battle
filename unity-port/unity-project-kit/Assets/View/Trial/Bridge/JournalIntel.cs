@@ -55,7 +55,7 @@ namespace Trial.Bridge
 
         /// <summary>
         /// Binds the intel to the Expedition whose session it serves. The session must be the one built with this intel
-        /// (new Expedition(start, deck, tools, talent, intel, journal)): it tells the intel of every node it resolves
+        /// (new Expedition(start, deck, tools, intel, journal)): it tells the intel of every node it resolves
         /// (IArrivalIntel), where the JS's bind hooks the session's Arrived. Binding again starts the survey record over.
         /// </summary>
         // js: app/intel.js:60
@@ -110,8 +110,8 @@ namespace Trial.Bridge
 
         /// <summary>
         /// What a node the session just resolved means for the journal, on top of what the session did (called at the end
-        /// of the session's Arrived, so inside the logged Step / Act; nothing happens on the node that ended the life by
-        /// 瘴気, as with a fight):
+        /// of the session's Arrived, so inside the logged Step / Act; nothing happens on the node where the calendar ran
+        /// out and the world ended, as it did on the JS's 瘴気死):
         ///  - 七層: 歪みの根's page is held at 開示度 2 (KnownOnLastLayer).
         ///  - 情報収集 with the trial rules off: the layer's target (SurveyTarget) goes to 開示度 2 in the Expedition's
         ///    journal (dungeon_exploration_v4.md §2.1 「手記の開示度を 2 段目へ上げる…戦闘の予兆の精度に直結する」). With them
@@ -123,7 +123,7 @@ namespace Trial.Bridge
             if (_ex == null) return;
             ExplorationSession session = _ex.Session;
             ExplorationState state = session.State;
-            if (state == null || state.Phase == RunPhase.MiasmaDeath) return;
+            if (state == null || state.Phase == RunPhase.Expired) return;
             int layer = state.Profile.Layer;
             if (state.Profile.IsLast)
             {

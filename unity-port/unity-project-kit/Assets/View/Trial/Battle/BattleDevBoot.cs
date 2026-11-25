@@ -44,8 +44,6 @@ namespace Trial.Battle
         [Tooltip("ctx.chain.index (1-based) and total; total 1 = a fight on its own.")]
         public int chainIndex = 1;
         public int chainTotal = 1;
-        [Tooltip("ctx.miasmaPercent; negative = none (the frame's).")]
-        public float miasmaPercent = -1f;
         [Tooltip("ctx.settingsInBattle: the gear and Esc's release (logged here: the dev boot has no settings screen).")]
         public bool settingsInBattle;
 
@@ -138,7 +136,6 @@ namespace Trial.Battle
                 Settings = _settings,
                 Layer = layer,
                 LayerTitle = "",
-                MiasmaPercent = miasmaPercent >= 0f ? miasmaPercent : (float?)null,
                 NodeKind = nodeKind,
                 Chain = chainTotal > 1 ? new BattleChain(Math.Max(1, chainIndex), chainTotal) : null,
                 DisclosureOf = _ => disclosure,

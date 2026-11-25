@@ -1,8 +1,9 @@
 // Goes once around the demo (#187) in Assets/Scenes/Battle.unity with nobody at the mouse: the deck
-// screen, opened on a saved deck that no longer reads (#211); the departure screen (#58), where the
-// talent is picked and 間合いの履 moves the start back; the mode screen; one battle to its end
-// screen; back to the enemies from there for another, given up at once (#211); back to the deck
-// screen and through the departure screen again, the talent still picked; then the chain up to its end screen (and its second battle, should the first be won). The
+// screen, opened on a saved deck that no longer reads (#211); the departure screen (#58), open to
+// set out at once (#1045), where 間合いの履 moves the start back; the mode screen; one battle to its
+// end screen; back to the enemies from there for another, given up at once (#211); back to the deck
+// screen and through the departure screen again; then the chain up to its end screen (and its
+// second battle, should the first be won). The
 // buttons are pressed by name. A demo battle suggests no card, so the unattended switches only end
 // each turn and the enemy wins; the flow is what is checked, not the fight. A screenshot of each
 // screen goes to Logs/DemoShots for a look by eye (not in batchmode, which renders nothing). The saved
@@ -70,13 +71,11 @@ namespace Depiction.PlayModeTests
                 yield return null;
                 Assert.That(PlayerPrefs.GetString(SavedDeckKey), Does.StartWith("side_sweep:2,kesa_cut:2,"), "出立の支度へ did not save the prototype deck");
 
-                // #58: the departure screen. No talent yet, so it cannot set out; the first kind of the
-                // deck becomes the talent, and 間合いの履 (the fifth tool) moves the start to cell 1.
+                // #58: the departure screen. A legal deck may set out with nothing picked (#1045), and
+                // 間合いの履 (the fifth tool) moves the start to cell 1.
                 Assert.That(Active("SetOut"), Is.Not.Null, "the departure screen did not open");
                 Assert.That(BackdropAlpha("Departure"), Is.EqualTo(1f), "the departure screen lets the battle show through");
-                Assert.That(Interactable("SetOut"), Is.False, "出立する is open with no talent picked");
-                Press("Talent0");
-                Assert.That(Interactable("SetOut"), Is.True, "出立する stayed shut with the talent picked");
+                Assert.That(Interactable("SetOut"), Is.True, "出立する is shut with a legal deck");
                 // Row4 is 間合いの履 because the screen lists ItemCatalogue.Tools in order; dotnet test
                 // pins that index (DepartureSuppliesTests.TheShoesAreTheFifthTool).
                 PressIn("Tools", "Row4", "Plus");
@@ -153,7 +152,7 @@ namespace Depiction.PlayModeTests
                 Assert.That(DeckNotice(), Is.Empty, "the line about the saved deck stayed after 出立の支度へ");
                 Press("ToBattle");
                 yield return null;
-                Assert.That(Interactable("SetOut"), Is.True, "the talent picked before was not kept");
+                Assert.That(Interactable("SetOut"), Is.True, "出立する is shut on the second visit");
                 Press("SetOut");
                 yield return null;
                 Press("Chain");
@@ -210,7 +209,6 @@ namespace Depiction.PlayModeTests
                 Press("Prototype");
                 Press("ToBattle");
                 yield return null;
-                Press("Talent0");
                 Press("SetOut");
                 yield return null;
                 Assert.That(Active("Surrender"), Is.Null, "the 降参 button is up on the mode screen");

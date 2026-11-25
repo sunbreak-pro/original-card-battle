@@ -7,6 +7,10 @@
 // The SVG <g> is G; its class ('is-lit' / 'is-walked' / '') is a state of the base line's CssStates, which transitions
 // stroke and stroke-width (300ms); the dash pattern, the caps and the drop-shadow have no transition and are set from
 // the same declarations at once (the kit's CssStates leaves them to the element).
+//
+// On a map drawn as the rock's cross-section (#1050, MapLook.Strata: layer 1) the edge is a tunnel instead
+// (MakeTunnel): Exploration.Tunnel's curve stroked thick in the rock's colours, the flow a dark line with the amber
+// dashes over it, driven by the same classes.
 using System;
 using System.Globalization;
 using Exploration;
@@ -74,8 +78,77 @@ namespace Trial.Explore
         private float[] _inlineDash;
         private bool _reduce;
 
+        /// <summary>The flow's lines (one on the plain map; the dark line and the amber dashes over it in a tunnel).</summary>
+        private readonly System.Collections.Generic.List<PathLayer> _flows = new System.Collections.Generic.List<PathLayer>();
+
+        /// <summary>The rule of the flow shown (the plain one, or a tunnel's).</summary>
+        private string _flowCss = FlowCss;
+
+        /// <summary>The tunnel this edge is drawn as on a strata map (#1050); null on the plain map.</summary>
+        public Tunnel Tunnel { get; private set; }
+
         /// <summary>The edge is still on screen (the map was not rebuilt since).</summary>
         public bool Alive => G;
+
+        /// <summary>The drawn line's length (the straight segment, or the tunnel's curve).</summary>
+        public float DrawnLength => Tunnel != null ? Tunnel.Length : (float)Math.Sqrt((X2 - X1) * (X2 - X1) + (Y2 - Y1) * (Y2 - Y1));
+
+        // ------------------------------------------------------------------ the tunnel (#1050, battle-visual-v1 §2.5)
+
+        /// <summary>A tunnel not walked: the dark rock's colour, thick, round at its ends (hidden under the chambers).</summary>
+        private static string TunnelCss(StrataLayout s, StrataPalette p) =>
+            "stroke: " + p.TunnelFar + "; stroke-width: " + Num(s.TunnelWidth) + "; stroke-linecap: round; fill: none; transition: stroke 300ms, stroke-width 300ms;";
+
+        /// <summary>A tunnel walked: lit by the place.</summary>
+        private static string TunnelWalkedCss(StrataPalette p) => "stroke: " + p.TunnelWalked + ";";
+
+        /// <summary>A tunnel open from where the player stands: brighter still, the amber dashes down its middle.</summary>
+        private static string TunnelLitCss(StrataPalette p) => "stroke: " + p.TunnelLit + ";";
+
+        /// <summary>The dark line under the amber dashes (so the amber reads on the lit tunnel).</summary>
+        private static readonly string TunnelFlowUnderCss =
+            "stroke: " + StrataPalette.Ground + "; stroke-width: " + Num(StrataLayout.FlowUnderWidth) + "; stroke-linecap: round; stroke-dasharray: "
+            + Num(StrataLayout.FlowDash) + " " + Num(StrataLayout.FlowGap) + "; opacity: 0; fill: none;";
+
+        /// <summary>The amber dashes (24 a period, so the plain map's ocbg-explore-flow runs them).</summary>
+        private static readonly string TunnelFlowCss =
+            "stroke: var(--amber); stroke-width: " + Num(StrataLayout.FlowWidth) + "; stroke-linecap: round; stroke-dasharray: "
+            + Num(StrataLayout.FlowDash) + " " + Num(StrataLayout.FlowGap) + "; opacity: 0; fill: none;";
+
+        /// <summary>
+        /// The edge of a strata map drawn as tunnel <paramref name="t"/>: the thick curve and, over it, the flow (the dark
+        /// line and the amber dashes) shown while it is lit. Driven like a plain edge (SetClass / FlowFrom / the draw-in).
+        /// </summary>
+        public static ExploreEdgeView MakeTunnel(RectTransform parent, EdgeLine e, Tunnel t, StrataLayout s, StrataPalette p, bool reducedMotion = false)
+        {
+            if (t == null) throw new ArgumentNullException(nameof(t));
+            var v = new ExploreEdgeView
+            {
+                Edge = e, X1 = t.Start.X, Y1 = t.Start.Y, X2 = t.End.X, Y2 = t.End.Y, _reduce = reducedMotion, Tunnel = t, _flowCss = TunnelFlowCss,
+            };
+            v.G = Ui.Div(parent, "g", 0f, 0f, ExploreStyle.StageW, ExploreStyle.StageH);
+            string d = Curve(t, false);
+            string baseCss = TunnelCss(s, p);
+
+            v.Base = PathGraphic.Make(v.G, 0f, 0f, ExploreStyle.StageW, ExploreStyle.StageH, "ocbg-explore-tunnel");
+            v._base = v.Base.Add(LineLayer(d, baseCss));
+            v._states = CssStates.Of(v.Base).Base(baseCss).State("." + ClsWalked, TunnelWalkedCss(p)).State("." + ClsLit, TunnelLitCss(p));
+            v._states.Apply(instant: true);
+
+            v.Flow = PathGraphic.Make(v.G, 0f, 0f, ExploreStyle.StageW, ExploreStyle.StageH, "ocbg-explore-tunnel-flow");
+            v._flows.Add(v.Flow.Add(LineLayer(d, TunnelFlowUnderCss)));
+            v._flow = v.Flow.Add(LineLayer(d, TunnelFlowCss));
+            v._flows.Add(v._flow);
+            v.Flow.Opacity = OpacityOf(TunnelFlowCss);
+            return v;
+        }
+
+        /// <summary>The tunnel's curve as an SVG path ("M x y C …"), from its upper end, or from its lower end when reversed.</summary>
+        internal static string Curve(Tunnel t, bool reversed)
+        {
+            MapPoint a = reversed ? t.End : t.Start, b = reversed ? t.C2 : t.C1, c = reversed ? t.C1 : t.C2, d = reversed ? t.Start : t.End;
+            return "M" + Num(a.X) + " " + Num(a.Y) + "C" + Num(b.X) + " " + Num(b.Y) + " " + Num(c.X) + " " + Num(c.Y) + " " + Num(d.X) + " " + Num(d.Y);
+        }
 
         // js: scenes/explore/ExploreScene.js:461
         /// <summary>
@@ -97,6 +170,7 @@ namespace Trial.Explore
 
             v.Flow = PathGraphic.Make(v.G, 0f, 0f, ExploreStyle.StageW, ExploreStyle.StageH, "ocbg-explore-edge-flow");
             v._flow = v.Flow.Add(LineLayer(d, FlowCss));
+            v._flows.Add(v._flow);
             v.Flow.Opacity = OpacityOf(FlowCss);
             return v;
         }
@@ -120,7 +194,7 @@ namespace Trial.Explore
             ApplyStatic();
 
             bool lit = cls == ClsLit;
-            Flow.Opacity = lit ? OpacityOf(FlowCss + FlowLitCss) : OpacityOf(FlowCss);
+            Flow.Opacity = lit ? OpacityOf(_flowCss + FlowLitCss) : OpacityOf(_flowCss);
             if (lit && !_reduce && (_flowAnim == null || !_flowAnim.Running)) _flowAnim = CssAnimator.Play(Flow, FlowAnim);
             else if (!lit && _flowAnim != null)
             {
@@ -135,9 +209,13 @@ namespace Trial.Explore
         {
             if (!G || _flowFromCurrent == fromCurrent) return;
             _flowFromCurrent = fromCurrent;
-            string d = fromCurrent ? Segment(X1, Y1, X2, Y2) : Segment(X2, Y2, X1, Y1);
-            _flow.Paths.Clear();
-            _flow.Paths.Add(PathData.Cached(d));
+            string d = Tunnel != null ? Curve(Tunnel, !fromCurrent)
+                : fromCurrent ? Segment(X1, Y1, X2, Y2) : Segment(X2, Y2, X1, Y1);
+            foreach (PathLayer flow in _flows)
+            {
+                flow.Paths.Clear();
+                flow.Paths.Add(PathData.Cached(d));
+            }
             Flow.LayersChanged();
         }
 

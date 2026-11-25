@@ -4,7 +4,6 @@
 // forecast and the step taken can never disagree.
 using System.Collections.Generic;
 using System.Linq;
-using Backdrop;
 using DungeonCore;
 using Journal;
 
@@ -18,28 +17,42 @@ namespace Exploration
             bool mapLive = session.MapIsLive;
             var nodes = NodePanels(session);
 
-            // Trial extension (js: ExplorationScreenBuilder.js:717): 刻限の砂 and 防瘴の面 shown where their numbers are
-            // (the band), and the aim's hint. state.TimeLimit is the profile's outside trial.
-            string timeBonusLabel = state.TimeBonus > 0
-                ? ExplorationText.TimeBonus(ToolNames(state.Loadout, ReliefKind.Time), state.TimeBonus) : "";
-            string reliefLabel = session.Trial && state.Loadout.DensityRelief > 0 ? ReliefLabel(session) : "";
+            // Trial extension (js: ExplorationScreenBuilder.js:717): the aim's hint.
             string hint = !mapLive ? "" : session.IsAiming ? ExplorationText.AimHint
-                : "明るい枠のノードへ進めます。踏んだノードへは刻限を使わずに移れます。";
+                : "明るい枠のノードへ進めます。踏んだノードへは日数を使わずに移れます。";
+            var (nextDays, daysForecast) = DaysAhead(session);
+            MapLook look = MapLooks.ForLayer(state.Profile.Layer);
+            bool strata = look == MapLook.Strata;
 
             return new ExplorationScreen
             {
-                LayerTitle = ExplorationText.LayerTitle(state.Profile.Layer, state.Profile.DisplayName(session.CarvingTaken)),
+                LayerTitle = CalendarText.LayerTitle(state.Profile, session.CarvingTaken),
                 Layer = state.Profile.Layer,
-                TimeLabel = $"刻限 {state.TimeLeft} / {state.TimeLimit}",
-                TimeLeft = state.TimeLeft,
-                TimeLimit = state.TimeLimit,
-                Miasma = Gauge(session),
+                BackdropLayer = state.Profile.BackdropLayer,
+                DaysLeft = state.DaysLeft,
+                DaysLabel = CalendarText.DaysLabel(state.DaysLeft),
+                CalendarFrozen = state.Calendar.IsFrozen,
+                CalendarNote = CalendarText.Note(state.Calendar),
+                NextDaysLeft = nextDays,
+                DaysForecastLabel = daysForecast,
                 HpLabel = $"HP {state.Hp} / {state.MaxHp}",
                 StaminaLabel = $"スタミナ {state.Stamina} / {state.MaxStamina}",
                 MaxStaminaLabel = MaxStaminaLabel(state),
                 MarksLabel = $"訓練の刻み {state.TrainingMarks}",
                 Nodes = nodes,
                 Edges = Edges(state, nodes),
+                Layout = MapLayout.ForRows(state.Map.RowCount),
+                Look = look,
+                Strata = strata ? StrataLayout.ForRows(state.Map.RowCount) : null,
+                Palette = strata ? StrataPalette.For(state.Profile.BackdropLayer) : null,
+                Depths = Depths(state.Profile.Layer),
+                Calendar = new CalendarBar(state.DaysLeft, nextDays, state.Calendar.IsFrozen),
+                Hp = state.Hp,
+                MaxHp = state.MaxHp,
+                Stamina = state.Stamina,
+                MaxStamina = state.MaxStamina,
+                HpValueLabel = $"{state.Hp} / {state.MaxHp}",
+                StaminaValueLabel = $"{state.Stamina} / {state.MaxStamina}",
                 CurrentNodeId = state.CurrentNodeId,
                 Hint = hint,
                 ToolsLabel = ToolsLabel(state.Loadout),
@@ -54,8 +67,6 @@ namespace Exploration
                 Cards = CardsPage,
                 Settings = SettingsPage,
                 ToolCards = ToolCards(session),
-                TimeBonusLabel = timeBonusLabel,
-                ReliefLabel = reliefLabel,
                 Aiming = session.IsAiming,
                 Events = session.Events,
             };
@@ -91,9 +102,40 @@ namespace Exploration
                     Note = note,
                     Title = $"{ExplorationText.Glyph(node.Kind)}　{ExplorationText.KindLabel(node.Kind)}",
                     Detail = Detail(note, lines, options),
+                    Figures = Figures(session, node, standing),
                 });
             }
             return nodes;
+        }
+
+        /// <summary>
+        /// Who stands in the window of a combat node (#1050): the journal's names split into enemies (fights joined by
+        /// 「 → 」, the enemies of one fight by 「 + 」), each 「？」 unknown. A far node and a node nothing is known of show
+        /// one unknown figure; the other kinds show none.
+        /// </summary>
+        private static IReadOnlyList<WindowFigure> Figures(ExplorationSession session, MapNode node, NodeStanding standing)
+        {
+            if (!node.Kind.IsCombat()) return new WindowFigure[0];
+            if (standing == NodeStanding.Far) return new[] { WindowFigure.Unknown };
+            var intel = session.Intel.ForNode(node, session.State.Profile.Layer, session.Surveyed);
+            if (intel == null || intel.EnemyName.Length == 0) return new[] { WindowFigure.Unknown };
+            return intel.EnemyName.Split(new[] { " → ", " + " }, System.StringSplitOptions.None)
+                .Select(name => name.Trim() == ExplorationText.UnknownEnemy ? WindowFigure.Unknown : WindowFigure.Known)
+                .ToArray();
+        }
+
+        /// <summary>The depth column (#1050): the seven layers top down, the one the player is on marked, the king room named.</summary>
+        private static IReadOnlyList<DepthCell> Depths(int layer)
+        {
+            var cells = new List<DepthCell>();
+            for (int at = 1; at <= Lair.LayerCount; at++)
+            {
+                DepthMark mark = at < layer ? DepthMark.Passed : at == layer ? DepthMark.Current : DepthMark.Below;
+                bool king = at == Lair.KingLayer;
+                string note = mark == DepthMark.Current ? ExplorationText.DepthHere : king ? ExplorationText.KingRoom : "";
+                cells.Add(new DepthCell(at, mark, note, king));
+            }
+            return cells;
         }
 
         private static List<EdgeLine> Edges(ExplorationState state, IReadOnlyList<NodePanel> nodes)
@@ -150,8 +192,8 @@ namespace Exploration
         private static string NoteOf(NodeStanding standing) => standing switch
         {
             NodeStanding.Current => "今いるノード",
-            NodeStanding.Reachable => "入ると刻限を 1 使う",
-            NodeStanding.Revisit => "踏んだノード。刻限を使わずに移れる",
+            NodeStanding.Reachable => "入ると暦が 1 日進む",
+            NodeStanding.Revisit => "踏んだノード。日数を使わずに移れる",
             NodeStanding.Resolved => "踏んだノード",
             _ => ExplorationText.FarNode,
         };
@@ -194,11 +236,15 @@ namespace Exploration
             {
                 case NodeKind kind when kind.IsCombat():
                     if (node.Kind == NodeKind.Elite) lines.Add("避けて通れる寄り道");
-                    if (node.Kind == NodeKind.Boss)
+                    if (node.Kind == NodeKind.Boss && state.Profile.IsKingLayer)
                     {
-                        lines.Add(state.Profile.IsLast
-                            ? "倒すと、この生で潜り切ったことになる"
-                            : "倒すと階層間の休憩へ進む");
+                        // seven_layers_v4.md §2.2: the days the king's fall adds, net of the kings already down.
+                        lines.Add("倒すと王が倒れ、戻るまで暦が止まる");
+                        lines.Add(CalendarText.Extension(state.Calendar.ExtensionIfKingDown(state.Region)));
+                    }
+                    else if (node.Kind == NodeKind.Boss)
+                    {
+                        lines.Add("倒すと階層間の休憩へ進む");
                     }
                     var intel = session.Intel.ForNode(node, state.Profile.Layer, session.Surveyed);
                     if (intel == null || intel.EnemyName.Length == 0)
@@ -315,11 +361,7 @@ namespace Exploration
             // Trial extension: a 泉 heals on arrival, so its step's forecast counts the HP.
             if (arrivalEvent != null && !after.IsOver) after = ExplorationReducer.ApplyEvent(after, arrivalEvent.Value, true);
 
-            var lines = new List<string>
-            {
-                $"刻限 {ExplorationText.Change(before.TimeLeft, after.TimeLeft)}",
-                $"瘴気 {before.MiasmaPercent}% → {after.MiasmaPercent}%",
-            };
+            var lines = new List<string> { CalendarText.ForecastLine(before, after) };
             if (after.MaxStamina != before.MaxStamina)
                 lines.Add($"最大スタミナ {ExplorationText.Change(before.MaxStamina, after.MaxStamina)}");
             if (after.Stamina != before.Stamina)
@@ -327,70 +369,49 @@ namespace Exploration
             if (after.Hp != before.Hp)
                 lines.Add($"HP {ExplorationText.Change(before.Hp, after.Hp)}");
 
+            // dungeon_exploration_v4.md §6.4: the one warning left is the calendar running out on this node.
             var warnings = new List<string>();
-            if (after.Phase == RunPhase.MiasmaDeath)
-            {
-                warnings.Add($"ここで瘴気が {Miasma.DeathAt}% に達し、この生が終わります");
-            }
-            else
-            {
-                // Judged on the maximum itself: a 休息 that crosses a 20% line still lifts it by 2.
-                if (after.MaxStamina < before.MaxStamina)
-                {
-                    int line = Miasma.MaxStaminaPenalty(after.MiasmaPercent) * Miasma.StepPercent;
-                    warnings.Add($"瘴気が {line}% を越え、最大スタミナが {before.MaxStamina} から {after.MaxStamina} に下がります");
-                }
-                if (after.Phase == RunPhase.PushedOut)
-                    warnings.Add("刻限が尽き、この層の行動が終わります");
-            }
+            if (after.Phase == RunPhase.Expired) warnings.Add(CalendarText.ExpiryWarning);
             return new StepForecast(before, after, lines, warnings);
         }
 
-        private static MiasmaGauge Gauge(ExplorationSession session)
+        /// <summary>
+        /// The days left after the next day the run can spend, tried on the core the way a step's forecast is: the
+        /// first new node next door while the layer is explored, the descent at the interlude. The band draws that day
+        /// ahead of time (§6.4) and says what it costs.
+        /// </summary>
+        private static (int NextDays, string Label) DaysAhead(ExplorationSession session)
         {
             var state = session.State;
-            int percent = state.MiasmaPercent;
-            int next = percent;
-            string forecast = "";
-
-            if (state.Phase == RunPhase.Exploring && state.TimeLeft > 0)
+            int now = state.DaysLeft;
+            if (state.Phase == RunPhase.Exploring)
             {
-                next = Miasma.Accumulate(percent, state.EffectiveDensity);
-                forecast = $"次の 1 歩で +{state.EffectiveDensity}%";
+                var ahead = state.ReachableUnresolved();
+                if (ahead.Count == 0) return (now, "");
+                int after = ExplorationReducer.Step(state, ahead[0]).DaysLeft;
+                if (after < now) return (after, CalendarText.StepCosts(now - after));
+                return (now, state.Calendar.IsFrozen ? "" : CalendarText.DayFree);
             }
-            else if (session.TryDescend() is ExplorationState below)
+            if (session.TryDescend() is ExplorationState below)
             {
-                // The next layer's entry node is resolved on arrival, so descending costs one step at once.
-                next = below.MiasmaPercent;
-                // Trial extension (js: ExplorationScreenBuilder.js:273): the label says what a step of the next layer adds
-                // — its density, as the map's 「次の 1 歩で +N%」 does — not the gap to the 100% cap.
-                forecast = $"降りると +{(session.Trial ? below.EffectiveDensity : below.MiasmaPercent - percent)}%";
+                // The next layer's entry node is resolved on arrival, so descending costs its day at once (§6.5).
+                if (below.DaysLeft < now) return (below.DaysLeft, CalendarText.DescendCosts(now - below.DaysLeft));
+                return (now, state.Calendar.IsFrozen ? "" : CalendarText.DescendFree);
             }
-            // battle-visual-v1 §2.5: a step whose share ahead is drawn in 注意 (a 20% line crossed, or
-            // death reached) says so with △ too. Only this forecast of the next step: a 休息 that crosses
-            // a line may still lift max stamina, which StepForecast judges on the maximum itself.
-            if (forecast.Length > 0) forecast = MiasmaLook.ForecastMark(percent, next) + forecast;
-
-            var stepLines = new List<int>();
-            for (int line = Miasma.StepPercent; line < Miasma.DeathAt; line += Miasma.StepPercent) stepLines.Add(line);
-
-            return new MiasmaGauge(percent, next, $"瘴気 {percent}%", forecast, stepLines);
+            return (now, "");
         }
 
-        /// <summary>「最大 9 = 10 − 瘴気 1」, plus the temporary modifier when there is one.</summary>
+        /// <summary>「最大 12 = 10 + 一時 2」: the base and the temporary changes, or the maximum alone.</summary>
         private static string MaxStaminaLabel(ExplorationState state)
         {
-            int penalty = Miasma.MaxStaminaPenalty(state.MiasmaPercent);
             int temp = state.TempMaxStaminaMod;
             int max = state.MaxStamina;
 
             // The 3..14 clamp can break the sum; then only the maximum itself is honest to print.
-            if (Miasma.BaseMaxStamina - penalty + temp != max) return $"最大 {max}";
-
-            string label = $"最大 {max} = {Miasma.BaseMaxStamina} − 瘴気 {penalty}";
-            if (temp > 0) label += $" + 一時 {temp}";
-            else if (temp < 0) label += $" − 一時 {-temp}";
-            return label;
+            if (temp == 0 || StaminaRules.BaseMaxStamina + temp != max) return $"最大 {max}";
+            return temp > 0
+                ? $"最大 {max} = {StaminaRules.BaseMaxStamina} + 一時 {temp}"
+                : $"最大 {max} = {StaminaRules.BaseMaxStamina} − 一時 {-temp}";
         }
 
         private static string ToolsLabel(RunLoadout loadout)
@@ -441,13 +462,6 @@ namespace Exploration
             }
 
             var profile = state.Profile;
-            int relief = state.Loadout.DensityRelief;
-            string density = $"1 刻限ごとに +{state.EffectiveDensity}%";
-            // Trial extension (js: ExplorationScreenBuilder.js:634): the density stops at its floor (seven_layers_v4.md
-            // §3.2 「濃度は 1 より下がりません」), so a subtraction that would go below it says so.
-            if (relief > 0 && session.Trial && profile.Density - relief < state.EffectiveDensity)
-                density += $"（{ExplorationText.ReliefFloor(profile.Density, relief, state.EffectiveDensity)}）";
-            else if (relief > 0) density += $"（層の濃さ {profile.Density} − ツール {relief}）";
 
             var counts = System.Enum.GetValues(typeof(NodeKind)).Cast<NodeKind>()
                 .Where(k => state.Map.CountOf(k) > 0)
@@ -457,8 +471,8 @@ namespace Exploration
             var more = session.Intel as IJournalPages;
             var rows = new List<JournalRow>
             {
-                new JournalRow("瘴気の濃さ", density),
-                new JournalRow("刻限", $"{state.TimeLimit}（寄り道なしの踏破は {state.Map.ShortestPathCost}）"),
+                new JournalRow("領域", profile.Region == Region.Common ? Region.Common.Label() : CalendarText.RegionName(profile.Region)),
+                new JournalRow("日数", $"寄り道なしで抜けると {state.Map.ShortestPathCost} 日"),
                 new JournalRow("ノード", string.Join("・", counts)),
                 new JournalRow("情報収集", session.Surveyed ? SurveyLine(session) ?? "済ませた。この層の敵 1 種が開示度 2 になった" : "まだ"),
             };
@@ -473,7 +487,7 @@ namespace Exploration
             }
             rows.AddRange(more?.DungeonRows(layer) ?? System.Array.Empty<JournalRow>());
             pages.Add(new JournalPage($"dungeon-{layer}", JournalTab.Dungeon,
-                ExplorationText.LayerTitle(layer, profile.DisplayName(session.CarvingTaken)), rows));
+                CalendarText.LayerTitle(profile, session.CarvingTaken), rows));
             // Trial extension (js: ExplorationScreenBuilder.js:661): reading the layer-two carving adds a page
             // (seven_layers_v4.md §5 「手記に頁が 1 つ増える」); a life that knows the name from an earlier life has it too.
             if (session.Trial && session.CarvingTaken)

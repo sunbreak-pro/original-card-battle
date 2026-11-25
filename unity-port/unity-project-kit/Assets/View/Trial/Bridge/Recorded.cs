@@ -422,6 +422,16 @@ namespace Trial.Bridge
         public ILegacySource LegacySource => Raw.LegacySource;
         public DeathTrace PendingTrace => Raw.PendingTrace;
         public bool CarvingTaken => Raw.CarvingTaken;
+
+        /// <summary>The collapse calendar the life walks on (seven_layers_v4.md §2).</summary>
+        public CalendarState Calendar => Raw.Calendar;
+
+        /// <summary>The region chosen at the layer-two interlude (ScreenAction.ChooseRegion, logged through Act); null until then.</summary>
+        public Region? Region => Raw.Region;
+
+        /// <summary>The layer-two interlude waits on the choice of a region.</summary>
+        public bool NeedsRegion => Raw.NeedsRegion;
+
         public bool Surveyed => Raw.Surveyed;
         public int PendingBattleNode => Raw.PendingBattleNode;
         public Encounter PendingEncounter => Raw.PendingEncounter;
@@ -458,6 +468,7 @@ namespace Trial.Bridge
         public bool CanUseConsumable(int index) => Raw.CanUseConsumable(index);
         public bool HasSurveyed(int layer) => Raw.HasSurveyed(layer);
         public ExplorationState TryDescend() => Raw.TryDescend();
+        public LayerProfile NextLayer() => Raw.NextLayer();
         public EventKind? EventAt(int nodeId) => Raw.EventAt(nodeId);
         public LayerMap MapOf(LayerProfile profile, ulong seed) => Raw.MapOf(profile, seed);
         public bool CarvingKnownAt(ulong seed) => Raw.CarvingKnownAt(seed);

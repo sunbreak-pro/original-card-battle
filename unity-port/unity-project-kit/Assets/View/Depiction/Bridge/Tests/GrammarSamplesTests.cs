@@ -40,15 +40,15 @@ namespace Depiction.Bridge.Tests
         }
 
         [Test]
-        public void TheSlashPicture_AndTheTraitPicture_AreTheSameCard_KesaCut()
+        public void TheSlashPicture_IsKesaCut_AndTheTraitPicture_TheFirstBlowThatLightsOne()
         {
-            // The issue's example: 袈裟斬り (斬) lights its +5 at gap 0, and is plain from gap 1.
+            // The issue's example was 袈裟斬り for both: its +5 lit at gap 0, plain from gap 1. #1038 took the trait off
+            // the starter cards, so the trait cue falls back to the first blow that lights one, 大上段 (#3).
             GrammarSample slash = GrammarSamples.All[0];
             GrammarSample accent = GrammarSamples.All[GrammarSamples.All.Count - 1];
             Assert.That(slash.Card.Id, Is.EqualTo("kesa_cut"));
-            Assert.That(accent.Card.Id, Is.EqualTo("kesa_cut"));
-            Assert.That(accent.StartGap, Is.EqualTo(0));
-            Assert.That(slash.StartGap, Is.EqualTo(1));
+            Assert.That(accent.Card.Id, Is.EqualTo("overhead"));
+            Assert.That(accent.TraitAccent, Is.True);
         }
 
         /// <summary>

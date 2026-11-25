@@ -21,6 +21,8 @@ namespace Exploration.Bridge
     {
         private readonly DeckLimits _limits;
         private readonly int _startPages;
+        private readonly List<CardMastery> _startMastery;
+        private readonly List<string> _startOwned;
         private ResultCard _result;
         private int _eventsClosed;
         private LegacyReceipt _taken;
@@ -322,7 +324,8 @@ namespace Exploration.Bridge
             MaxHp = start.MaxHp,
             Hp = start.Hp,
             Stamina = start.Stamina,
-            MiasmaPercent = start.MiasmaPercent,
+            Calendar = start.Calendar,
+            Region = start.Region,
             ResolvesEvents = start.ResolvesEvents,
             Loadout = start.Loadout,
             Traces = start.Traces,
@@ -403,6 +406,10 @@ namespace Exploration.Bridge
                 _pages += _startPages;
                 InheritedPages = _startPages;
             }
+            // The carry-over (#1025, ExpeditionOptions.StartMastery / StartOwned): the explorer starts with the kinds and
+            // the 段 earlier lives grew. Nothing carried in: the book and the kinds stay as BeginLife made them.
+            _owned.UnionWith(_startOwned);
+            if (_startMastery.Count > 0) Mastery = Mastery with { Records = Inheritance.MergeMastery(Mastery.Records, _startMastery) };
         }
     }
 

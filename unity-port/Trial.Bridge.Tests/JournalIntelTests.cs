@@ -33,7 +33,7 @@ namespace Trial.Bridge.Tests
             var intel = new JournalIntel();
             var start = new RunStart { Seed = seed, Trial = trial };
             if (loadout != null) start.Loadout = loadout;
-            var ex = new Expedition(start, null, null, null, intel, journal);
+            var ex = new Expedition(start, null, null, intel, journal);
             intel.Bind(ex);
             return new IntelLife { Ex = ex, Intel = intel };
         }
@@ -140,9 +140,10 @@ namespace Trial.Bridge.Tests
                             if (session.HasPendingBattle) session.Act(ScreenAction.WinBattle);
                         }
                     }
-                    if (session.State.Phase == RunPhase.LayerCleared || session.State.Phase == RunPhase.PushedOut)
+                    if (session.State.Phase == RunPhase.LayerCleared)
                     {
                         session.Act(ScreenAction.GoToInterlude);
+                        if (NeedsRegion(session)) session.Act(ScreenAction.ChooseRegion, RegionArg(Region.Dragon));
                         if (session.Act(ScreenAction.Descend))
                         {
                             Check();
@@ -359,7 +360,7 @@ namespace Trial.Bridge.Tests
             var o = Json.Parse(
                 "{\"v\":1,\"generation\":1,\"name\":\"試\",\"seed\":\"" + seed + "\",\"toolSlots\":3,\"deckMax\":40,\"survivorBonus\":false," +
                 "\"traceLayers\":[],\"carvingKnown\":false,\"journal\":{\"Disclosure\":{}},\"choice\":{\"deck\":[],\"battleToolIds\":[]," +
-                "\"loadout\":{\"tools\":[],\"consumables\":[],\"slots\":3},\"talent\":null,\"toolIds\":[],\"consumableIds\":[]}}");
+                "\"loadout\":{\"tools\":[],\"consumables\":[],\"slots\":3},\"toolIds\":[],\"consumableIds\":[]}}");
             LifeStartData start = LifeStartData.FromJson(o);
             start.Choice.Deck = deck.ToList();
             return start;
@@ -390,8 +391,11 @@ namespace Trial.Bridge.Tests
             if (s.HasPendingFound) { if (!s.Act(ScreenAction.TakeFound, "0")) s.Act(ScreenAction.LeaveFound); return true; }
             if (s.HasPendingSurvey) { s.Act(ScreenAction.ChooseSurvey, s.SurveyChoices[0]); return true; }
             if (st.IsOver) return false;
+            if (NeedsRegion(s)) { s.Act(ScreenAction.ChooseRegion, RegionArg(Region.Dragon)); return true; }
             if (st.Phase == RunPhase.Interlude) { s.Act(ScreenAction.Descend); return true; }
             if (ExplorationReducer.CanInterlude(st)) { s.Act(ScreenAction.GoToInterlude); return true; }
+            // a king down with the others standing: no way down from the king's room, the life ends alive (#888)
+            if (st.Phase == RunPhase.LayerCleared && st.Profile.IsKingLayer) { s.Act(ScreenAction.AskEndLife); s.Act(ScreenAction.ConfirmEndLife); return true; }
             List<MapNode> open = st.Map.Nodes.Where(n => ExplorationReducer.CanStep(st, n.Id)).ToList();
             List<MapNode> fresh = open.Where(n => !st.HasResolved(n.Id)).ToList();
             MapNode node = pick(fresh.Count > 0 ? fresh : open);

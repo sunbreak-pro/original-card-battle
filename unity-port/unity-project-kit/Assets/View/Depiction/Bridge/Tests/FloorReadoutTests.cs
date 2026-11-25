@@ -127,8 +127,10 @@ namespace Depiction.Bridge.Tests
         [Test]
         public void TheNextRecovery_FillsWhatTheTurnSpent()
         {
-            // Three 呼吸を整える (cost 2; 温存: 残 6 以上で次ターン回復 +1) and three 後ろ跳び (cost 1).
-            var deck = Cards.BuildDeck(new[] { CardCatalog.Brace, CardCatalog.BackLeap }, 3);
+            // Three 呼吸を整える (cost 2; 温存: 残 6 以上で次ターン回復 +1) and three 後ろ跳び (cost 1). #1038 took the trait
+            // off the starter card, so 温存 is played on a copy that keeps the one the card table lists.
+            CardDef brace = CardCatalog.Brace with { Trait = CardCatalog.StarterTableTraits["brace"] };
+            var deck = Cards.BuildDeck(new[] { brace, CardCatalog.BackLeap }, 3);
             var (state, writer, frame) = Begun(Enemies.PolearmWarped, 3, deck);
             Assert.That(state.Player.Stamina, Is.EqualTo(10));
             Assert.That(frame.Player.NextRecovery, Is.EqualTo(0), "full: nothing comes back");

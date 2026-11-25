@@ -194,14 +194,16 @@ namespace Depiction.Bridge.Tests
         [Test]
         public void AFiredTrait_MarksTheBlow_AndNeverMovesItsStrength()
         {
-            // 袈裟斬り pays +5 adjacent: gap 0 lights it, gap 1 does not.
-            DepictionEvent lit = Play(CardCatalog.KesaCut);
+            // 袈裟斬り pays +5 adjacent: gap 0 lights it, gap 1 does not. #1038 took the trait off the starter card, so
+            // the trait is played on a copy that keeps the one the card table lists.
+            CardDef kesa = CardCatalog.KesaCut with { Trait = CardCatalog.StarterTableTraits["kesa_cut"] };
+            DepictionEvent lit = Play(kesa);
             Cue blow = lit.Cues.Single(c => c.Kind == CueKind.Slash);
             Assert.That(lit.Cues.Any(c => c.Kind == CueKind.TraitFire), Is.True);
             Assert.That(blow.TraitAccent, Is.True);
             Assert.That(blow.Intensity, Is.EqualTo(EffectStrength.Uniform), "the cue does not change the tier (J2)");
 
-            var setup = new BattleSetup(Enemies.PolearmWarped, Cards.BuildDeck(new[] { CardCatalog.KesaCut }, 6),
+            var setup = new BattleSetup(Enemies.PolearmWarped, Cards.BuildDeck(new[] { kesa }, 6),
                 BattleSetup.SliceFieldCells, StartGap: 1);
             BattleState state = TurnLoop.Start(setup, NoShuffle).State;
             var writer = new CoreScriptWriter(setup.Enemy);

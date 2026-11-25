@@ -45,16 +45,28 @@ namespace DungeonContent.Tests
         }
 
         [Test]
-        public void TheMaskAndTheIncenseMatchTheSevenLayerTable()
+        public void TheCalendarItemsReplaceTheMiasmaOnes()
         {
-            // seven_layers_v4.md §3.2 counts on exactly these two numbers.
-            var mask = ItemCatalogue.Tool("bosho_no_men");
-            Assert.That(mask.Effect, Is.EqualTo(ItemEffect.MiasmaDensity));
-            Assert.That(mask.Amount, Is.EqualTo(1));
+            // tools_and_consumables_v4.md §2.4 (#887 / #888): the three items that worked on 瘴気 and 刻限 now work on days.
+            var thread = ItemCatalogue.Tool("kaerimichi_no_ito");
+            Assert.That(thread.Name, Is.EqualTo("帰り道の糸"));
+            Assert.That(thread.Effect, Is.EqualTo(ItemEffect.ShortHandover));
 
-            var incense = ItemCatalogue.Consumable("joka_no_ko");
-            Assert.That(incense.Effect, Is.EqualTo(ItemEffect.MiasmaGauge));
-            Assert.That(incense.Amount, Is.EqualTo(10));
+            var sand = ItemCatalogue.Tool("hiyomi_no_suna");
+            Assert.That(sand.Name, Is.EqualTo("日読みの砂"));
+            Assert.That(sand.Effect, Is.EqualTo(ItemEffect.EntryDayFree));
+
+            var pill = ItemCatalogue.Consumable("hayagake_no_gan");
+            Assert.That(pill.Name, Is.EqualTo("早駆けの丸薬"));
+            Assert.That(pill.Effect, Is.EqualTo(ItemEffect.NextStepFree));
+
+            Assert.That(new[] { thread, sand, pill }.All(i => i.Side == EffectSide.Exploration), Is.True);
+            Assert.That(new[] { ItemEffect.EntryDayFree, ItemEffect.ShortHandover, ItemEffect.NextStepFree }.Select(e => e.ToToken()),
+                Is.EqualTo(new[] { "entry_day_free", "short_handover", "next_step_free" }));
+
+            foreach (string gone in new[] { "bosho_no_men", "kokugen_no_suna", "joka_no_ko" })
+                Assert.That(ItemCatalogue.All.Any(i => i.Id == gone), Is.False, gone);
+            Assert.That(ItemCatalogue.All.Any(i => i.Name.Contains("面")), Is.False, "the mask is the one that crosses the seal (world-v1.md §1.2)");
         }
 
         [Test]
@@ -121,7 +133,7 @@ namespace DungeonContent.Tests
         {
             Assert.Throws<ArgumentOutOfRangeException>(() => ItemCatalogue.Tool("nope"));
             Assert.Throws<ArgumentOutOfRangeException>(() => ItemCatalogue.Consumable("nope"));
-            Assert.Throws<ArgumentOutOfRangeException>(() => ItemCatalogue.Tool("joka_no_ko"));
+            Assert.Throws<ArgumentOutOfRangeException>(() => ItemCatalogue.Tool("hayagake_no_gan"));
         }
     }
 }

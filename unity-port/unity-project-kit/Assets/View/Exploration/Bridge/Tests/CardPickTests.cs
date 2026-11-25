@@ -26,10 +26,11 @@ namespace Exploration.Bridge.Tests
         public void ARealElite_LaysOutItsCards_AndTheOnePickedIsOwnedAndInTheDeck()
         {
             // Layer 7's elite is always 統牙の長竜, and no boss before it teaches its cards. Since v4.10
-            // dropped #53 牙の突進 (#824) it lays out its one card, #52 群れの咆哮.
+            // dropped #53 牙の突進 (#824) it lays out its one card, #52 群れの咆哮. Nothing is picked on the way:
+            // #1049's longer layers win enough battles to fill the deck, and the card must find a place in it.
             var expedition = new Expedition(new RunStart { Seed = 5 });
-            WalkToLayer(expedition, 7);
-            WalkToAndWin(expedition, NodeKind.Elite);
+            WalkToLayer(expedition, 7, pickOnTheWay: false);
+            WalkToAndWin(expedition, NodeKind.Elite, pickOnTheWay: false);
 
             CardPick pick = CardPicks.For(expedition);
             var ids = pick.Choices.Select(c => c.CardId).ToList();
@@ -53,8 +54,10 @@ namespace Exploration.Bridge.Tests
         }
 
         [Test]
-        public void AWonBattlesCardReward_LaysOutThreeCards_OneToPick()
+        public void AWonBattlesCardReward_LaysOutLayerOnesUnownedCards_OneToPick()
         {
+            // Layer 1's pile is #58〜#60, and #60 跳び退り is a starter card since #1038 (swordsman_cards_v4 §2.1), so the
+            // pile lays out the two left. Filling the empty place is #992's.
             Expedition expedition = WinUntilACardIsOffered();
             CardPick pick = CardPicks.For(expedition);
             var ids = pick.Choices.Select(c => c.CardId).ToList();
@@ -62,16 +65,16 @@ namespace Exploration.Bridge.Tests
             {
                 Assert.That(pick.Kind, Is.EqualTo(PickKind.PileCard));
                 Assert.That(pick.Title, Is.EqualTo(CardPicks.PileTitle));
-                Assert.That(ids.Count, Is.EqualTo(CardPile.Choices));
-                Assert.That(ids.All(CardPile.Of(1).Contains), Is.True, "layer 1 deals its own pile");
+                Assert.That(ids, Is.EquivalentTo(CardPile.Of(1).Except(Expedition.InitialKinds)), "layer 1 deals its own pile");
+                Assert.That(ids.Count, Is.EqualTo(CardPile.Choices - 1));
             });
 
-            Assert.That(CardPicks.Choose(expedition, ids[2]), Is.True);
+            Assert.That(CardPicks.Choose(expedition, ids[1]), Is.True);
             Assert.Multiple(() =>
             {
-                Assert.That(expedition.Owned.Contains(ids[2]), Is.True);
-                Assert.That(expedition.Deck.Any(c => c.Def.Id == ids[2]), Is.True);
-                Assert.That(expedition.Owned.Contains(ids[0]) || expedition.Owned.Contains(ids[1]), Is.False, "one of the three");
+                Assert.That(expedition.Owned.Contains(ids[1]), Is.True);
+                Assert.That(expedition.Deck.Any(c => c.Def.Id == ids[1]), Is.True);
+                Assert.That(expedition.Owned.Contains(ids[0]), Is.False, "one of the two");
                 Assert.That(CardPicks.For(expedition).IsShown, Is.False);
             });
         }
@@ -98,7 +101,7 @@ namespace Exploration.Bridge.Tests
                 Assert.That(pick.Kind, Is.EqualTo(PickKind.Training));
                 Assert.That(pick.Title, Is.EqualTo(CardPicks.TrainingTitle));
                 Assert.That(ids, Is.EqualTo(expedition.Deck.Select(c => c.Def.Id).Distinct()), "each kind of the deck once, in deck order");
-                Assert.That(ids.Take(PrototypeDeck.Kinds.Count), Is.EqualTo(PrototypeDeck.Kinds.Select(d => d.Id)), "the deck set out with comes first");
+                Assert.That(ids.Take(StarterDeck.Kinds.Count), Is.EqualTo(StarterDeck.Kinds.Select(d => d.Id)), "the deck set out with comes first");
                 Assert.That(pick.Choices[0].Caption, Is.EqualTo("刻み 0"));
             });
 
@@ -116,7 +119,9 @@ namespace Exploration.Bridge.Tests
         [Test]
         public void NoPick_ShowsDuringABattle()
         {
-            Expedition expedition = WinUntilACardIsOffered();
+            // a seed with a battle right after the entry: #1049's maps may open on a row without one
+            Expedition expedition = WinUntilACardIsOffered(e =>
+                e.Session.State.ReachableUnresolved().Any(id => e.Session.State.Map.Node(id).Kind.IsCombat()));
             ExplorationSession session = expedition.Session;
             int next = session.State.ReachableUnresolved().First(id => session.State.Map.Node(id).Kind.IsCombat());
             Assert.That(session.Step(next), Is.True);
@@ -165,14 +170,14 @@ namespace Exploration.Bridge.Tests
 
         // ---- helpers ----
 
-        /// <summary>The first seed whose entry battle, won, lays out the card pile to pick from.</summary>
-        private static Expedition WinUntilACardIsOffered()
+        /// <summary>The first seed whose entry battle, won, lays out the card pile to pick from (and passes <paramref name="also"/>).</summary>
+        private static Expedition WinUntilACardIsOffered(Func<Expedition, bool> also = null)
         {
             for (ulong seed = 1; seed < 100; seed++)
             {
                 var expedition = new Expedition(new RunStart { Seed = seed });
                 WinPending(expedition);
-                if (CardPicks.For(expedition).Kind == PickKind.PileCard) return expedition;
+                if (CardPicks.For(expedition).Kind == PickKind.PileCard && (also == null || also(expedition))) return expedition;
             }
             Assert.Fail("no seed in 1〜99 dealt a card at the entry battle");
             return null;
@@ -196,25 +201,25 @@ namespace Exploration.Bridge.Tests
         /// <summary>
         /// Wins the battle, then picks the first card of a pile offer it leaves, as a player would before
         /// walking on. An elite's offer is left to the next battle to replace, so no elite's card is
-        /// owned before the elite a test is about.
+        /// owned before the elite a test is about. Without <paramref name="pick"/> the pile's offer is left too.
         /// </summary>
-        private static void WinAndPick(Expedition expedition)
+        private static void WinAndPick(Expedition expedition, bool pick = true)
         {
             WinPending(expedition);
-            CardPick pick = CardPicks.For(expedition);
-            if (pick.Kind == PickKind.PileCard)
-                Assert.That(CardPicks.Choose(expedition, pick.Choices[0].CardId), Is.True);
+            CardPick offer = CardPicks.For(expedition);
+            if (pick && offer.Kind == PickKind.PileCard)
+                Assert.That(CardPicks.Choose(expedition, offer.Choices[0].CardId), Is.True);
         }
 
         /// <summary>
         /// Walks the shortest way to the nearest unresolved node of this kind, winning every battle on the
-        /// way and picking from its offer, and steps onto it with the choice given. The last battle's
-        /// offer is left waiting.
+        /// way and picking from its offer (unless <paramref name="pickOnTheWay"/> is false), and steps onto it
+        /// with the choice given. The last battle's offer is left waiting.
         /// </summary>
-        private static void WalkToAndWin(Expedition expedition, NodeKind kind, RestChoice choice = RestChoice.Rest)
+        private static void WalkToAndWin(Expedition expedition, NodeKind kind, RestChoice choice = RestChoice.Rest, bool pickOnTheWay = true)
         {
             ExplorationSession session = expedition.Session;
-            if (session.HasPendingBattle) WinAndPick(expedition);
+            if (session.HasPendingBattle) WinAndPick(expedition, pickOnTheWay);
             IReadOnlyList<int> path = PathTo(session.State, kind);
             foreach (int node in path)
             {
@@ -223,17 +228,18 @@ namespace Exploration.Bridge.Tests
                 if (session.HasPendingStep) Assert.That(session.Act(ScreenAction.ConfirmStep), Is.True);
                 if (!session.HasPendingBattle) continue;
                 if (last) WinPending(expedition);
-                else WinAndPick(expedition);
+                else WinAndPick(expedition, pickOnTheWay);
             }
         }
 
-        private static void WalkToLayer(Expedition expedition, int layer)
+        private static void WalkToLayer(Expedition expedition, int layer, bool pickOnTheWay = true)
         {
             ExplorationSession session = expedition.Session;
             while (session.State.Profile.Layer < layer)
             {
-                WalkToAndWin(expedition, NodeKind.Boss);
+                WalkToAndWin(expedition, NodeKind.Boss, pickOnTheWay: pickOnTheWay);
                 Assert.That(session.Act(ScreenAction.GoToInterlude), Is.True);
+                if (session.NeedsRegion) Assert.That(session.Act(ScreenAction.ChooseRegion, (int)Region.Dragon), Is.True);
                 Assert.That(session.Act(ScreenAction.Descend), Is.True);
                 Assert.That(session.ConfirmingDescend, Is.False, "the descent does not end the life");
             }

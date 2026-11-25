@@ -162,12 +162,13 @@ public static class Decks
     /// <summary>
     /// swordsman_cards_v4 §5-5: every 素直 card (no trait, not a stance) × 3. A reference row, not a
     /// §13 criterion. Since v4.10 (#824) the six plain kinds make 18 cards, under §8's floor of 20, as
-    /// §5-5 writes it; the report marks the deck invalid and the bench still fights it.
+    /// §5-5 writes it; the report marks the deck invalid and the bench still fights it. The starter cards that lost their
+    /// trait in #1038 carry none without being 素直 (no +2, swordsman_cards_v4 §2.1), so they stay out.
     /// </summary>
     public static SimDeck Plain()
     {
         var rows = CardCatalog.All
-            .Where(c => c.AllTraits.Count == 0 && !Cards.IsStanceCard(c))
+            .Where(c => CardCatalog.IsPlain(c) && !Cards.IsStanceCard(c))
             .Select(c => (CardId: c.Id, Copies: Constants.CopiesMax))
             .ToList();
         while (rows.Sum(r => r.Copies) > Constants.DeckMax) rows.RemoveAt(rows.Count - 1);

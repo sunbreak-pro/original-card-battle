@@ -108,10 +108,21 @@ namespace InheritanceCore
     /// </summary>
     public static partial class Inheritance
     {
-        /// <summary>The save format's version (R-21).</summary>
-        public const int SaveVersion = 1;
+        /// <summary>
+        /// The newest save format this build reads and writes (R-21). A lineage is written at the oldest version that
+        /// holds it: <see cref="PlainVersion"/> until it plays the carry-over, so such a lineage stays the JS's byte for
+        /// byte and an older build still reads it.
+        /// </summary>
+        public const int SaveVersion = 2;
 
-        private static readonly LifeEnding[] Deaths = { LifeEnding.MiasmaDeath, LifeEnding.Fallen };
+        /// <summary>The browser trial's shape: a lineage without a carry-over (#1025) is written at this version.</summary>
+        public const int PlainVersion = 1;
+
+        /// <summary>The version that adds the carry-over (#1025): a lineage holding one is written at it.</summary>
+        public const int CarryoverVersion = 2;
+
+        // Expired is the C#'s own ending (#888): the life did not come back, so it closes like a death.
+        private static readonly LifeEnding[] Deaths = { LifeEnding.MiasmaDeath, LifeEnding.Fallen, LifeEnding.Expired };
         private static readonly LifeEnding[] Survivals = { LifeEnding.Survived, LifeEnding.Completed };
 
         // -----------------------------------------------------------------------------------------
@@ -162,9 +173,17 @@ namespace InheritanceCore
             }
         }
 
+        // A lineage keeps its places by layer number only: which region a deep layer belonged to is not recorded yet
+        // (region-aware traces are left out of #888). Layers 1 and 2 are shared and named by the lair; a deeper layer
+        // keeps the name the trial's seven-layer lair gave its depth, which is also what the JS golden prints.
+        private static readonly string[] SevenLayerNames =
+            { "燦光の樹海", "■■の秘跡", "大黒蛇の住処", "輝晶の間", "暗き死海", "獄雷峡", "果てなき世界" };
+
         // js: core/inheritance/Inheritance.js:233
         private static string LayerName(Lineage lineage, int layer) =>
-            SevenLayers.Of(layer).DisplayName(lineage.Player.CarvingTaken);
+            layer < Lair.FirstRegionLayer
+                ? Lair.LayerLabel(layer, lineage.Player.CarvingTaken)
+                : SevenLayerNames[RequireInt(layer, "layer", 1, Lair.LayerCount) - 1];
 
         // js: core/inheritance/Inheritance.js:237
         private static string PlaceTitle(Lineage lineage, int layer, NodeKind? nodeKind)
@@ -603,7 +622,7 @@ namespace InheritanceCore
         /// </summary>
         // js: core/inheritance/Inheritance.js:550
         public static Lineage NewLineage(ulong seed) => new Lineage(
-            SaveVersion,
+            PlainVersion,
             Ulong(seed),
             Array.Empty<LifeRecord>(),
             null,
@@ -614,6 +633,24 @@ namespace InheritanceCore
         /// <summary><see cref="NewLineage(ulong)"/> for a seed kept as decimal text (wraps mod 2^64).</summary>
         // js: core/inheritance/Inheritance.js:550
         public static Lineage NewLineage(string seed) => NewLineage(SeedOf(seed));
+
+        /// <summary>
+        /// A new lineage that plays the carry-over from its first life when <paramref name="carryOver"/> is true
+        /// (<see cref="CarryingOver"/>), else <see cref="NewLineage(ulong)"/>.
+        /// </summary>
+        public static Lineage NewLineage(ulong seed, bool carryOver) => carryOver ? CarryingOver(NewLineage(seed)) : NewLineage(seed);
+
+        /// <summary>
+        /// The lineage switched to the carry-over (#1025, opt-in): one explorer goes down again and again, and what a life
+        /// grew stays for the next one (Carryover). A lineage already on it is returned as it is. The lives, traces and
+        /// survivor it holds stay; from here on a closed life leaves no trace, and the next life gets no survivor's
+        /// bonus or journal.
+        /// </summary>
+        public static Lineage CarryingOver(Lineage lineage)
+        {
+            if (lineage == null) throw new ArgumentNullException(nameof(lineage));
+            return lineage.CarriesOver ? lineage : lineage.WithCarryover(Carryover.Empty);
+        }
 
         // js: core/inheritance/Inheritance.js:562
         private static int NextGeneration(Lineage lineage) => lineage.Lives.Count + (lineage.Current != null ? 1 : 0) + 1;
@@ -631,7 +668,17 @@ namespace InheritanceCore
             var c = lineage.Current;
             if (c != null) return new Heir(c.Generation, c.Name, c.Tier);
             int generation = lineage.Lives.Count + 1;
-            return new Heir(generation, HeirName(lineage.Seed, generation), TierAfter(LastLife(lineage)));
+            return new Heir(generation, DrawnName(lineage, generation), TierAfter(LastLife(lineage)));
+        }
+
+        /// <summary>
+        /// The name the next life sets out under before the player writes over it: the drawn heir's, or under the
+        /// carry-over the explorer's own (the last life's), since the same one goes down again.
+        /// </summary>
+        private static string DrawnName(Lineage lineage, int generation)
+        {
+            var last = LastLife(lineage);
+            return lineage.CarriesOver && last != null ? last.Name : HeirName(lineage.Seed, generation);
         }
 
         /// <summary>The default seed of a life when StartLife is given none: drawn from the lineage seed.</summary>
@@ -656,7 +703,7 @@ namespace InheritanceCore
         public static IReadOnlyList<int> TraceLayers(Lineage lineage)
         {
             var layers = new List<int>();
-            for (int layer = 1; layer <= SevenLayers.Count; layer++)
+            for (int layer = 1; layer <= Lair.LayerCount; layer++)
             {
                 if (TraceForLayer(lineage, layer) != null) layers.Add(layer);
             }
@@ -695,11 +742,16 @@ namespace InheritanceCore
             var previous = LastLife(lineage);
             ulong runSeed = seed ?? LifeSeed(lineage, generation);
 
-            var survivor = lineage.Survivor;
+            // The carry-over (#1025) replaces what a survivor hands on: no bonus, no survivor's journal, and a survivor
+            // from before the switch stays as it stood.
+            var carried = lineage.Carryover;
+            var survivor = carried != null ? null : lineage.Survivor;
             bool bonus = survivor != null && survivor.BonusLivesLeft > 0;
             bool passes = survivor != null && survivor.Journal != null && survivor.Generation == generation - 1;
-            var journal = passes ? NormalizeJournal(survivor!.Journal) : EmptyJournal();
-            Survivor? nextSurvivor = null;
+            var journal = carried != null
+                ? new Journal(carried.Journal.Disclosure, carried.Journal.Pages, null, carried.Journal.Scribbles)
+                : passes ? NormalizeJournal(survivor!.Journal) : EmptyJournal();
+            Survivor? nextSurvivor = carried != null ? lineage.Survivor : null;
             if (survivor != null)
             {
                 int left = bonus ? survivor.BonusLivesLeft - 1 : survivor.BonusLivesLeft;
@@ -709,14 +761,16 @@ namespace InheritanceCore
             int tier = TierAfter(previous);
             var life = new LifeRecord(
                 generation,
-                ChosenHeirName(name, HeirName(lineage.Seed, generation)),
+                ChosenHeirName(name, DrawnName(lineage, generation)),
                 tier,
                 Ulong(runSeed),
                 bonus,
                 bonus ? survivor!.Generation : (int?)null,
-                journal.Pages.Count > 0 || journal.Disclosure.Count > 0 || journal.Scribbles.Count > 0 || journal.Memo.Length > 0,
+                journal.Pages.Count > 0 || journal.Disclosure.Count > 0 || journal.Scribbles.Count > 0 || journal.Memo.Length > 0
+                    || (carried != null && carried.Journal.Memo.Length > 0),
                 null, null, null, null, null, null, null, null);
-            var next = new Lineage(lineage.Version, lineage.Seed, lineage.Lives, life, lineage.Traces, nextSurvivor, lineage.Player);
+            var next = new Lineage(lineage.Version, lineage.Seed, lineage.Lives, life, lineage.Traces, nextSurvivor, lineage.Player,
+                lineage.Calendar, carried);
 
             int toolSlots = bonus ? InheritanceRules.SurvivorToolSlots : RunLoadout.ToolSlots;
             int deckMax = Constants.DeckMax + (bonus ? InheritanceRules.SurvivorDeckBonus : 0);
@@ -734,7 +788,9 @@ namespace InheritanceCore
                 bonus,
                 TraceLayers(next),
                 lineage.Player.CarvingTaken,
-                AttireOf(tier));
+                AttireOf(tier),
+                carried,
+                carried?.Journal.Memo);
         }
 
         /// <summary>Where the life stands, from a finished ExplorationState: layer, node, node kind and Phase.</summary>
@@ -775,37 +831,62 @@ namespace InheritanceCore
         private static Place CheckPlace(LifePlace place, LifeEnding[] allowed)
         {
             // field(undefined, 'Layer') is undefined: the JS refuses a missing place as a missing layer.
-            if (place == null) throw new InheritanceRuleException(RangeMessage("layer", 1, SevenLayers.Count, "undefined"));
-            int layer = RequireInt(place.Layer, "layer", 1, SevenLayers.Count);
+            if (place == null) throw new InheritanceRuleException(RangeMessage("layer", 1, Lair.LayerCount, "undefined"));
+            int layer = RequireInt(place.Layer, "layer", 1, Lair.LayerCount);
             int? nodeId = place.NodeId;
             if (nodeId.HasValue) RequireInt(nodeId.Value, "node id", 0);
             NodeKind? nodeKind = place.NodeKind;
             if (nodeKind.HasValue && !Enum.IsDefined(typeof(NodeKind), nodeKind.Value))
                 throw new InheritanceRuleException($"unknown node kind {nodeKind.Value}");
-            RunPhase ending = place.Ending ?? PhaseOf(allowed[0]);
-            if (!Enum.IsDefined(typeof(RunPhase), ending)) throw new InheritanceRuleException($"{ending} is not a RunPhase");
-            LifeEnding? asEnding = EndingOf(ending);
+            LifeEnding? asEnding;
+            string named;
+            if (place.NamedEnding.HasValue)
+            {
+                asEnding = place.NamedEnding.Value;
+                named = asEnding.Value.ToString();
+            }
+            else if (place.Ending == null)
+            {
+                // No ending is the first allowed one, as the JS reads it: a death with none is the legacy 瘴気死,
+                // which RunPhase no longer has.
+                return new Place(layer, nodeId, nodeKind, allowed[0]);
+            }
+            else
+            {
+                RunPhase ending = place.Ending.Value;
+                if (!Enum.IsDefined(typeof(RunPhase), ending)) throw new InheritanceRuleException($"{ending} is not a RunPhase");
+                asEnding = EndingOf(ending);
+                named = ending.ToString();
+            }
             if (!asEnding.HasValue || Array.IndexOf(allowed, asEnding.Value) < 0)
-                throw new InheritanceRuleException($"{ending} is not one of {string.Join(" / ", allowed)}");
+                throw new InheritanceRuleException($"{named} is not one of {string.Join(" / ", allowed.Where(IsJsEnding))}");
             return new Place(layer, nodeId, nodeKind, asEnding.Value);
         }
 
-        /// <summary>The LifeEnding a RunPhase names (the JS's LifeEnding values are RunPhase's names), or null.</summary>
+        // The refusal names the endings the JS has: its words are pinned by the JS golden, and Expired is the C#'s own.
+        private static bool IsJsEnding(LifeEnding ending) => ending != LifeEnding.Expired;
+
+        /// <summary>
+        /// The LifeEnding a RunPhase names (the JS's LifeEnding values are RunPhase's names), or null. LifeEnding.MiasmaDeath
+        /// has no RunPhase any more: it only comes back from lineages saved before #888.
+        /// </summary>
         public static LifeEnding? EndingOf(RunPhase phase) => phase switch
         {
-            RunPhase.MiasmaDeath => LifeEnding.MiasmaDeath,
             RunPhase.Fallen => LifeEnding.Fallen,
             RunPhase.Completed => LifeEnding.Completed,
             RunPhase.Survived => LifeEnding.Survived,
+            RunPhase.Expired => LifeEnding.Expired,
             _ => null,
         };
 
-        private static RunPhase PhaseOf(LifeEnding ending) => ending switch
+        /// <summary>The RunPhase a LifeEnding names, or null for the legacy MiasmaDeath, which has none.</summary>
+        public static RunPhase? PhaseOf(LifeEnding ending) => ending switch
         {
-            LifeEnding.MiasmaDeath => RunPhase.MiasmaDeath,
             LifeEnding.Fallen => RunPhase.Fallen,
             LifeEnding.Completed => RunPhase.Completed,
-            _ => RunPhase.Survived,
+            LifeEnding.Survived => RunPhase.Survived,
+            LifeEnding.Expired => RunPhase.Expired,
+            _ => null,
         };
 
         // js: core/inheritance/Inheritance.js:718
@@ -816,12 +897,12 @@ namespace InheritanceCore
         }
 
         /// <summary>
-        /// The heir died (HP 0 or 瘴気死, concept-v3 §8.1 / §8.3, tier1 R1-11). The life closes, and a trace stays at
+        /// The heir died (HP 0, or the calendar ran out with the heir in the lair; concept-v3 §8.1 / §8.3, tier1 R1-11). The life closes, and a trace stays at
         /// the place of death with the journal: every card at 習熟 1 段 or more and every filled page (§14), minus the
         /// cards the shallow rule keeps out (§8.4 / §14). Earlier traces stay (§8.3).
         /// </summary>
         /// <param name="life">The life in progress (its record), or null for the current one.</param>
-        /// <param name="place">Layer 1..7, node, node kind, Ending Fallen or MiasmaDeath (null reads as MiasmaDeath).</param>
+        /// <param name="place">Layer 1..7, node, node kind, Ending Fallen or Expired (null reads as the legacy MiasmaDeath).</param>
         /// <param name="deck">The life's mastery: a MasteryBook or a list of entries.</param>
         /// <param name="journal">The life's journal; CarvingTaken records the carving.</param>
         /// <param name="opts">Display names to store (CardName, EnemyName).</param>
@@ -838,6 +919,7 @@ namespace InheritanceCore
         {
             var current = CheckLife(lineage, generation);
             var where = CheckPlace(place, Deaths);
+            if (lineage.CarriesOver) return CloseCarried(lineage, current, where, deck, journal, opts, alive: false);
             var cards = MasteredCards(deck, opts?.CardName);
             var book = NormalizeJournal(journal);
             var built = BuildCandidates(current, where.Layer, cards, book, opts?.EnemyName);
@@ -852,7 +934,8 @@ namespace InheritanceCore
                 null,
                 lineage.Traces.Concat(new[] { trace }),
                 lineage.Survivor,
-                PlayerAfter(lineage, journal));
+                PlayerAfter(lineage, journal),
+                lineage.Calendar);
         }
 
         /// <summary>
@@ -878,6 +961,7 @@ namespace InheritanceCore
         {
             var current = CheckLife(lineage, generation);
             var where = CheckPlace(place, Survivals);
+            if (lineage.CarriesOver) return CloseCarried(lineage, current, where, deck, journal, opts, alive: true);
             var book = NormalizeJournal(journal);
             bool cleared = where.Ending == LifeEnding.Completed;
             int lives = opts != null && opts.ExtraBossWon ? InheritanceRules.ExtraBossBonusLives : InheritanceRules.SurvivorBonusLives;
@@ -914,7 +998,54 @@ namespace InheritanceCore
                 null,
                 traces,
                 survivor,
-                PlayerAfter(lineage, journal, rootDefeated: cleared));
+                PlayerAfter(lineage, journal, rootDefeated: cleared),
+                lineage.Calendar);
+        }
+
+        /// <summary>
+        /// A life closes under the carry-over (#1025): it leaves no trace and makes no survivor; what it grew goes onto the
+        /// lineage's Carryover for the next life. A fall keeps each card at the 段 it reached, with the ticks of that 段's
+        /// threshold (the ticks short of the next 段 are lost); a life that came back keeps every tick, and a card still at
+        /// 段 0 with ticks. Merged with the record so far through MergeMastery: the higher 段 and ticks stay, and the card
+        /// that held the third 段 first keeps it. The kinds learned (EndOptions.Owned; a cleared life adds 歪みの根's
+        /// cards, since no trace carries them) and the whole journal stay too, the memo as this life left it.
+        /// </summary>
+        private static Lineage CloseCarried(Lineage lineage, LifeRecord current, Place where, LifeDeck? deck, Journal? journal,
+            EndOptions? opts, bool alive)
+        {
+            var carried = lineage.Carryover ?? Carryover.Empty;
+            var kept = new List<CardMastery>();
+            // MasteredCards checks the deck and gives each card the threshold of its 段.
+            foreach (var c in MasteredCards(deck, opts?.CardName))
+            {
+                int ticks = c.Ticks;
+                if (alive && deck?.Book != null) ticks = Math.Max(ticks, deck.Book.TicksOf(c.CardId));
+                if (c.Rank == 0 && ticks == 0) continue;
+                kept.Add(new CardMastery(c.CardId, ticks, c.Rank));
+            }
+            var cards = MergeMastery(carried.Records, kept).Values;
+
+            bool cleared = where.Ending == LifeEnding.Completed;
+            var owned = carried.Owned.Concat(opts?.Owned ?? (IEnumerable<string>)Array.Empty<string>());
+            if (cleared)
+            {
+                owned = owned.Concat((opts?.RootCards ?? Array.Empty<CardEntry>())
+                    .Where(c => !string.IsNullOrEmpty(c.CardId))
+                    .Select(c => c.CardId!));
+            }
+            var book = MergeJournal(journal, carried.Journal);
+
+            var closed = current.Closed(where.Ending, where.Layer, where.NodeId, where.NodeKind, null);
+            return new Lineage(
+                lineage.Version,
+                lineage.Seed,
+                lineage.Lives.Concat(new[] { closed }),
+                null,
+                lineage.Traces,
+                lineage.Survivor,
+                PlayerAfter(lineage, journal, rootDefeated: cleared),
+                lineage.Calendar,
+                new Carryover(cards, owned, book));
         }
 
         /// <summary>RecordDeath or RecordSurvival by the place's Ending (a finished ExplorationState's Phase).</summary>
@@ -930,7 +1061,7 @@ namespace InheritanceCore
         private static Lineage RecordEndOf(Lineage lineage, int? generation, LifePlace place, LifeDeck? deck, Journal? journal, EndOptions? opts)
         {
             RunPhase? phase = place?.Ending;
-            LifeEnding? ending = phase.HasValue ? EndingOf(phase.Value) : null;
+            LifeEnding? ending = place?.NamedEnding ?? (phase.HasValue ? EndingOf(phase.Value) : null);
             if (ending.HasValue && Array.IndexOf(Deaths, ending.Value) >= 0) return RecordDeathOf(lineage, generation, place!, deck, journal, opts);
             if (ending.HasValue && Array.IndexOf(Survivals, ending.Value) >= 0) return RecordSurvivalOf(lineage, generation, place!, deck, journal, opts);
             throw new InheritanceRuleException($"{(phase.HasValue ? phase.Value.ToString() : "undefined")} does not end a life");
@@ -1013,7 +1144,9 @@ namespace InheritanceCore
                 current.WithTakenTraceId(traceId),
                 lineage.Traces.Where(t => t.Id != traceId),
                 lineage.Survivor,
-                lineage.Player);
+                lineage.Player,
+                lineage.Calendar,
+                lineage.Carryover);
             return new TakeResult(next, new TakenLegacy(traceId, cards, journal, trace.Candidates.Count - taken.Count));
         }
     }

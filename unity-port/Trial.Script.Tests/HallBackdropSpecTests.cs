@@ -79,6 +79,21 @@ namespace Trial.Script.Tests
         }
 
         [Test]
+        public void TheBasesWall_IsTheCanvasDark_WithNoLightOfItsOwn()
+        {
+            // #1052: the light of the base is the way down's, which the scene draws.
+            LayerBackdrop gate = HallBackdropSpec.Gate();
+            int Byte(float v) => (int)System.Math.Round(v * 255);
+            Assert.That(gate.Layer, Is.EqualTo(0), "not a layer: it takes no painted art");
+            Assert.That(gate.Name, Is.EqualTo("拠点"));
+            Assert.That(gate.Sky.Select(s => s.At), Is.EqualTo(new[] { 0f, 0.6f, 1f }));
+            Assert.That(gate.Sky.Select(s => new[] { Byte(s.Color.R), Byte(s.Color.G), Byte(s.Color.B) }),
+                Is.EqualTo(new[] { new[] { 0x1a, 0x1d, 0x27 }, new[] { 0x12, 0x15, 0x1e }, new[] { 0x09, 0x0b, 0x10 } }));
+            Assert.That(gate.Hazes, Is.Empty);
+            Assert.That(BackdropSpec.Specks(gate), Is.Empty);
+        }
+
+        [Test]
         public void EachCall_BuildsAFreshRoom()
         {
             LayerBackdrop a = HallBackdropSpec.For();

@@ -90,7 +90,7 @@ namespace Exploration.Tests
         [Test]
         public void EscAnswersAConfirmationFirst()
         {
-            var session = Explorable(new ExplorationSession(new RunStart { MiasmaPercent = 98 }));
+            var session = Explorable(new ExplorationSession(new RunStart { Calendar = new CalendarState(2) }));
             int target = session.State.ReachableUnresolved().First();
             session.Toggle(Overlay.Journal);
             session.Step(target);
