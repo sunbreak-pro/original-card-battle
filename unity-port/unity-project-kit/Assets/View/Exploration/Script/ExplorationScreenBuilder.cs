@@ -39,6 +39,7 @@ namespace Exploration
                 MarksLabel = $"訓練の刻み {state.TrainingMarks}",
                 Nodes = nodes,
                 Edges = Edges(state, nodes),
+                Layout = MapLayout.ForRows(state.Map.RowCount),
                 CurrentNodeId = state.CurrentNodeId,
                 Hint = hint,
                 ToolsLabel = ToolsLabel(state.Loadout),

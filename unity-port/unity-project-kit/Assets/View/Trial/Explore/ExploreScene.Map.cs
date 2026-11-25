@@ -13,6 +13,9 @@
 // (Delay / Timeout / Clock); the stylesheet's transitions and keyframes run on the document clock (CssStates,
 // CssAnimator), untouched by 演出短縮 as in the JS. The map's engaging dim (.is-engaging: brightness .55) and its
 // interlude fade are the map layer's own rules (the scene core registers them on MapLayer).
+//
+// The node, the walker and the selection frame take their sizes from the map's MapLayout (ExplorationScreen.Layout):
+// the JS's on a map of five rows or fewer, smaller on a longer one so that its rows fit the area (#1049).
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -49,14 +52,18 @@ namespace Trial.Explore
         /// <summary>explore.css:105 .ocbg-explore.is-busy .ocbg-explore-sel.</summary>
         private const string SelBusyCss = "opacity: 0;";
 
-        /// <summary>ExploreScene.js:259 OCB.TargetFrame(SEL.w, SEL.h, { hook: 20, width: 3, glow: 12 }).</summary>
-        private const float SelHook = 20f, SelStroke = 3f, SelGlow = 12f;
+        /// <summary>
+        /// ExploreScene.js:259 OCB.TargetFrame(SEL.w, SEL.h, { hook: 20, width: 3, glow: 12 }): the stroke and the glow; the
+        /// hook is MapLayout.SelHook.
+        /// </summary>
+        private const float SelStroke = 3f, SelGlow = 12f;
 
-        /// <summary>updateMap: the frame sits 18 px above the node's top (it frames the node and its label).</summary>
-        private const float SelAbove = 18f;
-
-        /// <summary>explore.css:107 .ocbg-explore-walker.</summary>
-        private const string WalkerCss = "position: absolute; left: 0; top: 0; width: 52px; height: 52px; z-index: 3; pointer-events: none; will-change: transform;";
+        /// <summary>
+        /// explore.css:107 .ocbg-explore-walker; its 52px box is MapLayout.WalkerBox (the state machine writes the box back
+        /// on every change, so the rule must name the map's size).
+        /// </summary>
+        private static string WalkerCss(float box) =>
+            "position: absolute; left: 0; top: 0; width: " + Px(box) + "; height: " + Px(box) + "; z-index: 3; pointer-events: none; will-change: transform;";
 
         /// <summary>explore.css:206 .ocbg-explore-walker (trial: the leap fades it).</summary>
         private const string WalkerTransitionCss = "transition: opacity 240ms ease-in-out;";
@@ -73,15 +80,8 @@ namespace Trial.Explore
         /// <summary>explore.css:108 the glow's animation (explore.css:109 @keyframes ocbg-explore-breathe).</summary>
         private const string BreatheAnim = "ocbg-explore-breathe 2.6s ease-in-out infinite";
 
-        private const float WalkerGlowInset = -24f;
-
         /// <summary>explore.css:110 .ocbg-explore-walker-disc (inset 6px: 40 × 40).</summary>
         private const string WalkerDiscCss = "position: absolute; inset: 6px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--panel-solid); border: 3px solid var(--amber); box-shadow: 0 2px 6px color-mix(in srgb, var(--ground) 80%, transparent), var(--shadow-reach);";
-
-        private const float WalkerDiscInset = 6f;
-
-        /// <summary>ExploreScene.js:262 ico('person', 24, 'var(--ink)') in the disc.</summary>
-        private const float WalkerIcon = 24f;
 
         /// <summary>explore.css:111 .ocbg-explore-walker.is-landed .ocbg-explore-walker-disc (explore.css:112 @keyframes ocbg-explore-land).</summary>
         private const string LandAnim = "ocbg-explore-land 320ms cubic-bezier(.22,.61,.36,1)";
@@ -118,6 +118,9 @@ namespace Trial.Explore
         /// <summary>The selection frame has not been drawn yet (its first place and look come without a transition).</summary>
         private bool SelFresh = true;
 
+        /// <summary>The sizes the nodes, the walker and the selection frame are drawn at (the map's ExplorationScreen.Layout).</summary>
+        private MapLayout MapSize = MapLayout.Full;
+
         // js: scenes/explore/ExploreScene.js:252
         /// <summary>
         /// Builds the map layer's content into MapLayer (ExploreScene.js:253-269): pool, edges, nodes, selection frame,
@@ -134,26 +137,18 @@ namespace Trial.Explore
             NodesLayer = Ui.Div(MapLayer, "ocbg-explore-nodes", 0f, 0f, ExploreStyle.StageW, ExploreStyle.StageH);
 
             // the selection frame (opacity 0 until a node is pinned; hidden while a step runs)
-            SelFrame = Ui.Div(MapLayer, "ocbg-explore-sel", 0f, 0f, ExploreStyle.SelW, ExploreStyle.SelH);
-            Ocb.TargetFrame(SelFrame, ExploreStyle.SelW, ExploreStyle.SelH, new OcbFrameOpts { Hook = SelHook, Width = SelStroke, Glow = SelGlow });
+            SelFrame = Ui.Div(MapLayer, "ocbg-explore-sel", 0f, 0f, MapSize.SelW, MapSize.SelH);
+            DrawSelFrame();
             SelStates = CssStates.Of(SelFrame).Base(SelCss).State(".is-on", SelOnCss);
             SelStates.Apply(instant: true);
             WatchRootClass(".is-busy", SelStates, SelBusyCss);
 
             // the walker: glow (breathing) and the disc with the person
-            Walker = Ui.Div(MapLayer, "ocbg-explore-walker", 0f, 0f, ExploreStyle.WalkerBox, ExploreStyle.WalkerBox);
+            Walker = Ui.Div(MapLayer, "ocbg-explore-walker", 0f, 0f, MapSize.WalkerBox, MapSize.WalkerBox);
             WalkerNode = UiNode.Of(Walker);
             WalkerNode.Z = WalkerZ;
-            float glowSize = ExploreStyle.WalkerBox - 2f * WalkerGlowInset;
-            BoxGraphic glow = BoxGraphic.Make(Walker, WalkerGlowCss, WalkerGlowInset, WalkerGlowInset, glowSize, glowSize, "ocbg-explore-walker-glow");
-            // explore.css:401 @media (prefers-reduced-motion: reduce) .ocbg-explore-walker-glow { animation: none } (the same
-            // rule's `.ocbg-explore-node-face` loses to the reachable / jump rules' specificity: the beckon keeps running)
-            if (!Reduce) CssAnimator.Play(glow, BreatheAnim);
-            float discSize = ExploreStyle.WalkerBox - 2f * WalkerDiscInset;
-            WalkerDisc = BoxGraphic.Make(Walker, WalkerDiscCss, WalkerDiscInset, WalkerDiscInset, discSize, discSize, "ocbg-explore-walker-disc");
-            PathGraphic person = ExploreIcons.Ico(WalkerDisc.rectTransform, "person", WalkerIcon, ExploreStyle.Ink);
-            Ui.Place(person.rectTransform, (discSize - WalkerIcon) / 2f, (discSize - WalkerIcon) / 2f);
-            WalkerStates = CssStates.Of(Walker).Base(WalkerCss + WalkerTransitionCss).State(".is-leaping", WalkerLeapingCss);
+            DrawWalker();
+            WalkerStates = CssStates.Of(Walker).Base(WalkerCss(MapSize.WalkerBox) + WalkerTransitionCss).State(".is-leaping", WalkerLeapingCss);
             WalkerStates.Apply(instant: true);
 
             // explore.css:371 .ocbg-explore.is-interlude .ocbg-explore-node { pointer-events: none; }
@@ -161,6 +156,55 @@ namespace Trial.Explore
             {
                 foreach (ExploreNodeView rec in NodeEls.Values) rec.SetPointerEvents(!on);
             });
+        }
+
+        /// <summary>OCB.TargetFrame(SEL.w, SEL.h, …) in the selection frame, at the map's size.</summary>
+        private void DrawSelFrame()
+        {
+            Ocb.TargetFrame(SelFrame, MapSize.SelW, MapSize.SelH, new OcbFrameOpts { Hook = MapSize.SelHook, Width = SelStroke, Glow = SelGlow });
+        }
+
+        /// <summary>The walker's glow (breathing) and its disc with the person, at the map's size.</summary>
+        private void DrawWalker()
+        {
+            float box = MapSize.WalkerBox, glowInset = MapSize.WalkerGlowInset, discInset = MapSize.WalkerDiscInset, icon = MapSize.WalkerIcon;
+            float glowSize = box - 2f * glowInset;
+            BoxGraphic glow = BoxGraphic.Make(Walker, WalkerGlowCss, glowInset, glowInset, glowSize, glowSize, "ocbg-explore-walker-glow");
+            // explore.css:401 @media (prefers-reduced-motion: reduce) .ocbg-explore-walker-glow { animation: none } (the same
+            // rule's `.ocbg-explore-node-face` loses to the reachable / jump rules' specificity: the beckon keeps running)
+            if (!Reduce) CssAnimator.Play(glow, BreatheAnim);
+            float discSize = box - 2f * discInset;
+            WalkerDisc = BoxGraphic.Make(Walker, WalkerDiscCss, discInset, discInset, discSize, discSize, "ocbg-explore-walker-disc");
+            PathGraphic person = ExploreIcons.Ico(WalkerDisc.rectTransform, "person", icon, ExploreStyle.Ink);
+            Ui.Place(person.rectTransform, (discSize - icon) / 2f, (discSize - icon) / 2f);
+        }
+
+        /// <summary>
+        /// A map of another size (#1049): the selection frame and the walker are drawn again at it. Their states (on,
+        /// busy, leaping) stay: only their boxes and what is inside change.
+        /// </summary>
+        private void ResizeMapMarks(MapLayout size)
+        {
+            // every size follows the face, so the same face is the same look
+            if (size == null || size.Node == MapSize.Node) return;
+            MapSize = size;
+            if (SelFrame)
+            {
+                Ui.Clear(SelFrame);
+                Ui.Size(SelFrame, size.SelW, size.SelH);
+                DrawSelFrame();
+            }
+            if (Walker)
+            {
+                Ui.Clear(Walker);
+                Ui.Size(Walker, size.WalkerBox, size.WalkerBox);
+                DrawWalker();
+                if (WalkerStates)
+                {
+                    WalkerStates.Base(WalkerCss(size.WalkerBox) + WalkerTransitionCss);
+                    WalkerStates.Apply(instant: true);
+                }
+            }
         }
 
         // ------------------------------------------------------------------ helpers
@@ -178,8 +222,8 @@ namespace Trial.Explore
         {
             if (WalkerNode)
             {
-                WalkerNode.SetTransform(x - ExploreStyle.WalkerBox / 2f,
-                    y - ExploreStyle.WalkerUp * perch - ExploreStyle.WalkerBox / 2f - hop, 1f, 1f, 0f);
+                WalkerNode.SetTransform(x - MapSize.WalkerBox / 2f,
+                    y - MapSize.WalkerUp * perch - MapSize.WalkerBox / 2f - hop, 1f, 1f, 0f);
             }
             if (PoolNode) PoolNode.SetTransform(x - PoolW / 2f, y - PoolH / 2f, 1f, 1f, 0f);
         }
@@ -216,6 +260,7 @@ namespace Trial.Explore
         /// </summary>
         private void BuildMap(ExplorationScreen scr, bool enter)
         {
+            ResizeMapMarks(scr.Layout);
             Ui.Clear(NodesLayer);
             Ui.Clear(EdgesLayer);
             NodeEls.Clear();
@@ -232,7 +277,7 @@ namespace Trial.Explore
                 Vector2 a = NodePos(na);
                 Vector2 b = NodePos(nb);
                 float len = Hypot(b.x - a.x, b.y - a.y);
-                float k = ExploreStyle.EdgeInset / len;
+                float k = MapSize.EdgeInset / len;
                 float x1 = a.x + (b.x - a.x) * k;
                 float y1 = a.y + (b.y - a.y) * k;
                 float x2 = b.x - (b.x - a.x) * k;
@@ -266,7 +311,7 @@ namespace Trial.Explore
             foreach (NodePanel n in scr.Nodes)
             {
                 Vector2 p = NodePos(n);
-                ExploreNodeView rec = ExploreNodeView.Make(NodesLayer, n, p.x - ExploreStyle.Node / 2f, p.y - ExploreStyle.Node / 2f);
+                ExploreNodeView rec = ExploreNodeView.Make(NodesLayer, n, MapSize, p.x - MapSize.Node / 2f, p.y - MapSize.Node / 2f);
                 int id = n.Id;
                 rec.Hit.Enter += _ => OnHover(id, true);
                 rec.Hit.Exit += _ => OnHover(id, false);
@@ -332,7 +377,8 @@ namespace Trial.Explore
             if (pn != null)
             {
                 Vector2 p = NodePos(pn);
-                float tx = p.x - ExploreStyle.SelW / 2f, ty = p.y - ExploreStyle.Node / 2f - SelAbove;
+                // the frame sits SelAbove (18 px in the JS) over the node's top: it frames the node and its label
+                float tx = p.x - MapSize.SelW / 2f, ty = p.y - MapSize.Node / 2f - MapSize.SelAbove;
                 SelStates.SetState(".is-on", true, false);
                 // selFrame.style.transform = translate(…): the inline transform (transition: transform 160ms decel)
                 SelStates.State("style", "transform: translate(" + Px(tx) + ", " + Px(ty) + ");", true);
@@ -556,7 +602,7 @@ namespace Trial.Explore
             float ms = Dur(Math.Min(820f, 420f + len * 0.9f));
             float t0 = Now;
             // the trail runs along the drawn edge segment, from the node left toward the node reached
-            float k = Math.Min(0.45f, ExploreStyle.EdgeInset / len);
+            float k = Math.Min(0.45f, MapSize.EdgeInset / len);
             float sx = a.x + (b.x - a.x) * k;
             float sy = a.y + (b.y - a.y) * k;
             float ex = b.x - (b.x - a.x) * k;
