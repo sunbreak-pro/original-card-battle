@@ -15,6 +15,7 @@ using System.Linq;
 using Depiction;
 using Depiction.Bridge;
 using TMPro;
+using Trial.Bridge;
 using Trial.Geometry;
 using Trial.Kit;
 using UnityEngine;
@@ -233,6 +234,68 @@ namespace Trial.Meta
             card.Node.SetStyleTransform(sx: scale, sy: scale);
             card.Node.Place(0f, 0f);
             return holder;
+        }
+
+        // ---- the small card of 出立's table (#1051) ---------------------------------------------------------------
+
+        /// <summary>The frame colour of a kind as CSS (the DS's --attr: a movement card is drawn as a skill).</summary>
+        public static string FrameCss(CardKind kind) => Ocb.AttrOf(AttrOf.TryGetValue(kind, out string a) ? a : "skill").FrameCss;
+
+        /// <summary>The colour of a value column's number (the DS's role colours; a move or a draw keeps the body colour).</summary>
+        public static Rgba ValueInk(CardValueKind? kind) =>
+            kind == CardValueKind.Power ? DsTokens.Phosphor
+            : kind == CardValueKind.Guard ? DsTokens.Guard
+            : kind == CardValueKind.Heal ? DsTokens.HpText
+            : DsTokens.Ink;
+
+        /// <summary>
+        /// The small card's words inside its frame (Trial.Bridge.DepartTable's boxes, from the cell's top left): the cost
+        /// circle, the attribute's icon and the reach tag on the top row, the name, then the first value's number and word
+        /// (or, without a value, the card's first row of text). Only the number takes a role colour (30 px); every text
+        /// under 24 px keeps the body colour (battle-visual-v1 §2.3).
+        /// </summary>
+        public static void SmallFace(RectTransform parent, SmallCard card)
+        {
+            if (card == null) throw new ArgumentNullException(nameof(card));
+            TableBox top = DepartTable.CardTop;
+
+            // the cost circle
+            RectTransform cost = Ocb.El(parent, "cost", DepartTable.Css.CardCost);
+            Label.Make(cost, card.Cost.ToString(System.Globalization.CultureInfo.InvariantCulture), MetaStyle.Text(DepartTable.Css.CardCost), "n");
+            Ocb.Flow(cost, DepartTable.Css.CardCost);
+            UiNode.Of(cost).Place(top.X, top.Y);
+
+            // the attribute's icon in its frame colour
+            OcbAttrInfo attr = Ocb.AttrOf(AttrOf.TryGetValue(card.Kind, out string a) ? a : "skill");
+            PathGraphic icon = Ocb.Icon(parent, attr.Icon, DepartTable.AttrIconSize, attr.Frame);
+            Ui.Place(icon.rectTransform, top.X + DepartTable.CostSize + 8f, top.Y + (top.H - DepartTable.AttrIconSize) / 2f);
+
+            // the reach tag at the right end
+            TextStyle rs = MetaStyle.Text(DepartTable.Css.CardReach);
+            float rw = TextMeasure.Width(card.Reach, rs) + 12f + 2f, rh = rs.LineHeightPx + 2f + 2f;
+            BoxGraphic reach = BoxGraphic.Make(parent, DepartTable.Css.CardReach, top.Right - rw, top.Y + (top.H - rh) / 2f, rw, rh, "reach");
+            Label.Make(reach.rectTransform, card.Reach, rs, 7f, 2f, null, null, "text");
+
+            // the name
+            TableBox nameBox = DepartTable.CardName;
+            TextStyle ns = MetaStyle.Text(DepartTable.Css.CardName);
+            Label.Make(parent, card.Name, ns, nameBox.X, nameBox.Y, nameBox.W, nameBox.H, "name");
+
+            // the one value: its number and word on one baseline, or a row of the card's text
+            TableBox val = DepartTable.CardValue;
+            TextStyle ws = MetaStyle.Text(DepartTable.Css.CardWord);
+            float x = val.X;
+            if (card.Number.Length > 0)
+            {
+                TextStyle num = MetaStyle.Text(DepartTable.Css.CardNumber);
+                TextMeshProUGUI n = Label.Make(parent, card.Number, num, x, val.Y, null, null, "number");
+                Label.SetColor(n, ValueInk(card.ValueKind));
+                x += TextMeasure.Width(card.Number, num) + 8f;
+                float baseline = val.Y + TextMath.CssBaselineFromTop(num.Spec);
+                Label.Make(parent, card.Word, ws, x, baseline - TextMath.CssBaselineFromTop(ws.Spec), Math.Max(1f, val.Right - x), null, "word");
+                return;
+            }
+            Label.Make(parent, card.Word, ws, x, val.Y, val.W, val.H, "word");
         }
 
         // js: scenes/meta/cardFace.js:98

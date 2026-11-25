@@ -20,6 +20,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Trial.Bridge\Trial.Bridge.csproj" />
+    <!-- DepartTableTests reads the shelf's line art with the kit's own path parser. -->
+    <ProjectReference Include="..\Trial.Geometry\Trial.Geometry.csproj" />
   </ItemGroup>
 
 </Project>
