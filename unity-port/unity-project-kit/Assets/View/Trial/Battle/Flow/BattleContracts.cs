@@ -429,7 +429,7 @@ namespace Trial.Battle
     // js: scenes/battle/BattleScene.js:144 and scenes/battle/field.js:112
     public sealed class FieldOpts
     {
-        /// <summary>opts.layer: the exploration's layer (BackdropSpec.For); 0 = env.LayerNo.</summary>
+        /// <summary>opts.layer: the backdrop slot (BackdropSpec.For); the scene hands env.BackdropNo (#1029); 0 = env.LayerNo.</summary>
         public int Layer;
         /// <summary>opts.nodeKind.</summary>
         public BattleNodeKind NodeKind;

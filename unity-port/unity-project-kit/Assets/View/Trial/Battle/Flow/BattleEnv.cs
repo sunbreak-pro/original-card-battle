@@ -544,10 +544,10 @@ namespace Trial.Battle
         /// <param name="audio">ctx.audio; null = silent.</param>
         /// <param name="layer">ctx.layer, the exploration's layer 1..7 (0 reads 1; clamped to 1..7).</param>
         /// <param name="nodeKind">ctx.nodeKind (JS default 'Battle').</param>
-        /// <param name="miasmaPercent">ctx.miasmaPercent when the app gives it, else null (the writer's corner always says 0).</param>
         /// <param name="log">Where console.error goes; null = <see cref="BattleLog.Console"/>.</param>
+        /// <param name="backdrop">The layer's backdrop slot (LayerProfile.BackdropLayer, 1..7); 0 = the layer's own.</param>
         public BattleEnv(IBattleSettings settings = null, IBattleAudio audio = null, int layer = 1,
-            BattleNodeKind nodeKind = BattleNodeKind.Battle, float? miasmaPercent = null, IBattleLog log = null)
+            BattleNodeKind nodeKind = BattleNodeKind.Battle, IBattleLog log = null, int backdrop = 0)
         {
             Settings = settings ?? new BattleSettings();
             Clock = new BattleClock(Settings);
@@ -555,8 +555,8 @@ namespace Trial.Battle
             Geom = new BattleGeom();
             Audio = new SafeAudio(audio, Clock);
             LayerNo = LayerNoOf(layer);
+            BackdropNo = backdrop == 0 ? LayerNo : LayerNoOf(backdrop);
             NodeKind = nodeKind;
-            MiasmaPercent = miasmaPercent;
             Log = log ?? BattleLog.Console;
         }
 
@@ -578,14 +578,17 @@ namespace Trial.Battle
         /// <summary>env.settings: ctx.settings (read speed / shortFx live; only the player writes speed).</summary>
         public IBattleSettings Settings { get; }
 
-        /// <summary>env.layerNo: the exploration's layer, 1..7.</summary>
+        /// <summary>env.layerNo: the exploration's layer, 1..7 (the corner's 階層 and the loss's title).</summary>
         public int LayerNo { get; }
+
+        /// <summary>
+        /// Unity addition (#1029): the backdrop slot the field draws, 1..7. A region's layer borrows a named place's
+        /// backdrop (#888), so this follows the map's slot rather than the depth.
+        /// </summary>
+        public int BackdropNo { get; }
 
         /// <summary>env.nodeKind.</summary>
         public BattleNodeKind NodeKind { get; }
-
-        /// <summary>env.miasmaPercent: the exploration's miasma % when the app hands it, else null.</summary>
-        public float? MiasmaPercent { get; }
 
         /// <summary>The scene's console.error.</summary>
         public IBattleLog Log { get; }

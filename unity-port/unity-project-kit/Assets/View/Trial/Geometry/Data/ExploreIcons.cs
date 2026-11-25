@@ -41,33 +41,47 @@ namespace Trial.Geometry
             { "pouch", "M8 7h8l3 4v6a4 4 0 01-4 4H9a4 4 0 01-4-4v-6zM9 7L8 4h8l-1 3" },
         };
 
+        // Unity addition (#1029): items the C# catalogue has and the JS table does not. Kept out of Table, whose names and
+        // strings are pinned to the JS (DataTablesTests); drawn in the same 24 × 24 line style.
+        private static readonly string[,] UnityTable =
+        {
+            // 早駆けの丸薬 (#888 replaced 浄化の香): a slanted capsule with its seam and three trailing speed lines
+            { "hayagake_no_gan", "M7.9 11.9L13.9 5.9A3 3 0 0118.1 10.1L12.1 16.1A3 3 0 017.9 11.9zM10.9 8.9l4.2 4.2M6 18l-3 3M5 14.5l-2 2M9.5 19l-2 2" },
+        };
+
         // js: scenes/explore/icons.js:41 FILLED
         private static readonly HashSet<string> FilledSet = new HashSet<string>(StringComparer.Ordinal) { "heart", "pip" };
 
         private static readonly Dictionary<string, string> PathMap = DsIcons.ToMap(Table);
         private static readonly string[] NameList = DsIcons.Column(Table);
+        private static readonly Dictionary<string, string> UnityPathMap = DsIcons.ToMap(UnityTable);
 
         /// <summary>The fallback of an unknown name (icons.js:55 `EXPLORE_ICONS[name] || EXPLORE_ICONS.pouch`).</summary>
         public const string Fallback = "pouch";
 
+        /// <summary>EXPLORE_ICONS' names in the JS order (the Unity additions are not among them).</summary>
         public static IReadOnlyList<string> Names => NameList;
+        /// <summary>EXPLORE_ICONS, byte-identical to the JS (the Unity additions are not among them).</summary>
         public static IReadOnlyDictionary<string, string> Paths => PathMap;
+        /// <summary>The Unity additions: icons for item ids the JS table lacks.</summary>
+        public static IReadOnlyDictionary<string, string> UnityPaths => UnityPathMap;
         public static IReadOnlyCollection<string> Filled => FilledSet;
 
-        public static bool Has(string name) => name != null && PathMap.ContainsKey(name);
+        public static bool Has(string name) => name != null && (PathMap.ContainsKey(name) || UnityPathMap.ContainsKey(name));
         public static bool IsFilled(string name) => name != null && FilledSet.Contains(name);
 
         /// <summary>
         /// js: scenes/explore/icons.js:47 ico(): the path of `name` (pouch when unknown), filled for heart / pip
-        /// unless <paramref name="outline"/> (opts.outline draws them stroked).
+        /// unless <paramref name="outline"/> (opts.outline draws them stroked). A Unity addition is found too.
         /// </summary>
         public static IconDef Get(string name, bool outline = false)
         {
-            string d = name != null && PathMap.TryGetValue(name, out string p) ? p : PathMap[Fallback];
+            string d = name != null && (PathMap.TryGetValue(name, out string p) || UnityPathMap.TryGetValue(name, out p))
+                ? p : PathMap[Fallback];
             return new IconDef(name, d, IconDef.Box24, IsFilled(name) && !outline);
         }
 
         /// <summary>js: scenes/explore/icons.js:73 itemIcon(): the icon of a consumable or tool id, falling back to the pouch.</summary>
-        public static string ItemIcon(string id) => id != null && PathMap.ContainsKey(id) ? id : Fallback;
+        public static string ItemIcon(string id) => Has(id) ? id : Fallback;
     }
 }

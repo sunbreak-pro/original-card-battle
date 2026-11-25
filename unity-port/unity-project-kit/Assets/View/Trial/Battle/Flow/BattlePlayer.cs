@@ -115,8 +115,6 @@ namespace Trial.Battle
         public string LayerTitle = "";
         /// <summary>ctx.nodeKind.</summary>
         public BattleNodeKind NodeKind;
-        /// <summary>ctx.miasmaPercent.</summary>
-        public float? MiasmaPercent;
         /// <summary>ctx.chain, or null for a fight on its own (the frame's Corner then says it).</summary>
         public BattleChain Chain;
         /// <summary>ctx.disclosureOf(enemyId) → the journal's 開示度.</summary>
