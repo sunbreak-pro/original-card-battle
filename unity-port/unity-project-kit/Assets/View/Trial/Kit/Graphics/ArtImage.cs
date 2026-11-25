@@ -123,11 +123,67 @@ namespace Trial.Kit
             Debug.LogWarning("[ArtImage] " + source.name + " is shown with its sRGB decode, darker than painted (" + why + "). Import it with sRGB off to show it as painted.");
         }
 
-        private static void Kill(UnityEngine.Object o)
+        internal static void Kill(UnityEngine.Object o)
         {
             if (!o) return;
             if (Application.isPlaying) UnityEngine.Object.Destroy(o);
             else UnityEngine.Object.DestroyImmediate(o);
         }
+    }
+
+    /// <summary>
+    /// A laid picture that takes the CSS brightness of its ancestors (UiNode.Filter), as the kit's graphics do (#772: a
+    /// standing picture dims with its figure and a back enemy's is lifted). A RawImage alone ignores the filter.
+    /// </summary>
+    // The brightness rides on the material's _Color, not the vertex colour: a vertex colour stops at 1, and the back enemies
+    // are lifted to 1.5 and 2. Grayscale is not modelled: a multiply cannot grey a picture, and no figure is greyed.
+    [AddComponentMenu("")]
+    [DisallowMultipleComponent]
+    [RequireComponent(typeof(RawImage))]
+    public sealed class ArtFilter : MonoBehaviour, IFilterTarget
+    {
+        private RawImage _img;
+        private Material _mat;
+        private float _brightness = 1f;
+
+        /// <summary>The filter of `img` (added when missing), set to the filter in force where it stands.</summary>
+        public static ArtFilter On(RawImage img)
+        {
+            if (!img) return null;
+            ArtFilter f = img.GetComponent<ArtFilter>();
+            if (!f) f = img.gameObject.AddComponent<ArtFilter>();
+            f._img = img;
+            f.SetInheritedFilter(UiNode.FilterAt(img.transform));
+            return f;
+        }
+
+        public void SetInheritedFilter(ColorFilter filter)
+        {
+            if (filter.Brightness == _brightness) return;
+            _brightness = filter.Brightness;
+            Apply();
+        }
+
+        private void Apply()
+        {
+            if (!_img) _img = GetComponent<RawImage>();
+            if (!_img) return;
+            if (_brightness == 1f)
+            {
+                _img.material = null;
+                return;
+            }
+            if (!_mat) _mat = new Material(Materials.Ui) { name = "Trial ArtFilter", hideFlags = HideFlags.DontSave };
+            float k = Math.Max(0f, _brightness);
+            _mat.color = Materials.Property(new Rgba(k, k, k, 1f));
+            if (_img.material != _mat) _img.material = _mat;
+            else _img.SetMaterialDirty();
+        }
+
+        // A colour set before the stage switched its target is encoded for the other target.
+        private void OnEnable() => Materials.GammaEncodingChanged += Apply;
+        private void OnDisable() => Materials.GammaEncodingChanged -= Apply;
+
+        private void OnDestroy() => ArtImage.Kill(_mat);
     }
 }

@@ -313,6 +313,16 @@ namespace Trial.Battle
             },
         };
 
+        /// <summary>The art id of the player's standing picture while the script names none (#772: the swordsman is the only player).</summary>
+        public const string PlayerArtId = "swordsman";
+
+        /// <summary>The art id whose standing picture a figure wears (FigureArtShelf): the script's, or PlayerArtId for a player it leaves unnamed.</summary>
+        public static string PictureIdOf(UnitSide side, string artId)
+        {
+            if (!string.IsNullOrEmpty(artId)) return artId;
+            return side == UnitSide.Player ? PlayerArtId : "";
+        }
+
         /// <summary>silhouetteOf(side, artId, size): the player is the swordsman; an enemy by its id (VARIANTS), else warden (size ≥ 2) or spearman.</summary>
         // js: scenes/battle/field/art.js:143
         public static string SilhouetteOf(UnitSide side, string artId, int size)
