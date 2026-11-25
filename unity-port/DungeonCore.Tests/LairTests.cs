@@ -16,18 +16,22 @@ namespace DungeonCore.Tests
         }
 
         [Test]
-        public void EveryRouteRunsSevenLayersAndThirtyShortestDaysToTheKing()
+        public void EveryRouteRunsSevenLayersAndFortyFiveToFiftySevenShortestDaysToTheKing()
         {
             foreach (Region region in Lair.Regions)
             {
                 var route = Lair.Route(region);
                 Assert.That(route.Select(p => p.Layer), Is.EqualTo(Enumerable.Range(1, 7)), region.ToString());
-                // §3.2: 5 + 5 + 5 + 4 + 4 + 4 + 3.
-                Assert.That(route.Select(p => p.ShortestPathCost), Is.EqualTo(new[] { 5, 5, 5, 4, 4, 4, 3 }), region.ToString());
-                Assert.That(route.Sum(p => p.ShortestPathCost), Is.EqualTo(30), region.ToString());
-                // §3.2: every node of a route is 63 days.
-                Assert.That(route.Select(p => p.MapSpec.NodeCount), Is.EqualTo(new[] { 11, 11, 11, 8, 8, 8, 6 }), region.ToString());
-                Assert.That(route.Sum(p => p.MapSpec.NodeCount), Is.EqualTo(63), region.ToString());
+                // §3.2: 7〜9 a layer for layers 1〜6, then the king room's 3.
+                Assert.That(route.Select(p => p.ShortestPathCost), Is.EqualTo(new[] { 7, 7, 7, 7, 7, 7, 3 }), region.ToString());
+                Assert.That(route.Select(p => p.MapSpec.MaxShortestPathCost), Is.EqualTo(new[] { 9, 9, 9, 9, 9, 9, 3 }), region.ToString());
+                Assert.That(route.Sum(p => p.ShortestPathCost), Is.EqualTo(45), region.ToString());
+                Assert.That(route.Sum(p => p.MapSpec.MaxShortestPathCost), Is.EqualTo(57), region.ToString());
+                // §3.2: every node of a route is 93〜123 days.
+                Assert.That(route.Select(p => p.MapSpec.NodeCount), Is.EqualTo(new[] { 17, 17, 17, 12, 12, 12, 6 }), region.ToString());
+                Assert.That(route.Select(p => p.MapSpec.MaxNodeCount), Is.EqualTo(new[] { 23, 23, 23, 16, 16, 16, 6 }), region.ToString());
+                Assert.That(route.Sum(p => p.MapSpec.NodeCount), Is.EqualTo(93), region.ToString());
+                Assert.That(route.Sum(p => p.MapSpec.MaxNodeCount), Is.EqualTo(123), region.ToString());
                 Assert.That(route.Take(2).All(p => p.Region == Region.Common), Is.True);
                 Assert.That(route.Skip(2).All(p => p.Region == region), Is.True);
                 Assert.That(route.Last().IsKingLayer, Is.True);
@@ -38,28 +42,39 @@ namespace DungeonCore.Tests
         [Test]
         public void TheRowWidthsAreTheTable()
         {
+            // §7: layers 1〜3 draw middle rows 2〜4 wide, layers 4〜6 draw them 1〜3 wide; the king room is 1,4,1.
             foreach (var profile in Lair.Profiles)
             {
-                int[] expected = profile.Layer <= 3 ? new[] { 1, 3, 3, 3, 1 }
-                    : profile.Layer <= 6 ? new[] { 1, 3, 3, 1 }
-                    : new[] { 1, 4, 1 };
-                Assert.That(profile.MapSpec.RowWidths, Is.EqualTo(expected), profile.ToString());
+                string at = profile.ToString();
+                if (profile.IsKingLayer)
+                {
+                    Assert.That(profile.MapSpec.Shapes.Single().RowWidths, Is.EqualTo(new[] { 1, 4, 1 }), at);
+                    continue;
+                }
+                Assert.That(profile.MapSpec.Shapes.Select(s => s.RowCount), Is.EqualTo(new[] { 7, 8, 9 }), at);
+                foreach (var shape in profile.MapSpec.Shapes)
+                {
+                    Assert.That(shape.IsDrawn, Is.True, at);
+                    Assert.That((shape.MinWidth, shape.MaxWidth), Is.EqualTo(profile.Layer <= 3 ? (2, 4) : (1, 3)), at);
+                }
             }
         }
 
-        // §7: battle (the entry counted), elite, rest, survey, event, carving, boss.
-        [TestCase(1, 4, 1, 2, 1, 2, 0)]
-        [TestCase(2, 3, 1, 2, 1, 2, 1)]
-        [TestCase(3, 4, 1, 2, 1, 2, 0)]
-        [TestCase(4, 3, 1, 2, 1, 0, 0)]
-        [TestCase(5, 3, 1, 2, 1, 0, 0)]
-        [TestCase(6, 3, 1, 2, 1, 0, 0)]
-        [TestCase(7, 2, 1, 1, 0, 1, 0)]
-        public void EveryRegionHasTheSameNodeMix(int layer, int battles, int elites, int rests, int surveys, int events, int carvings)
+        // §7: per shape, battle (the entry counted), elite, rest, survey, event, carving, boss.
+        [TestCase(1, 7, 8, 1, 2, 1, 4, 0)]
+        [TestCase(1, 9, 12, 1, 2, 1, 6, 0)]
+        [TestCase(2, 8, 9, 1, 2, 1, 5, 1)]
+        [TestCase(3, 7, 8, 1, 2, 1, 4, 0)]
+        [TestCase(4, 7, 5, 1, 2, 1, 2, 0)]
+        [TestCase(5, 8, 6, 1, 2, 1, 3, 0)]
+        [TestCase(6, 9, 8, 1, 2, 1, 3, 0)]
+        [TestCase(7, 3, 2, 1, 1, 0, 1, 0)]
+        public void EveryRegionHasTheSameNodeMix(int layer, int rows, int battles, int elites, int rests, int surveys, int events, int carvings)
         {
             foreach (Region region in Lair.Regions)
             {
-                var map = Lair.Of(layer, region).Map(7UL);
+                var profile = Lair.Of(layer, region);
+                var map = Enumerable.Range(0, 200).Select(s => profile.Map((ulong)s)).First(m => m.RowCount == rows);
                 string at = $"{region} {layer}";
                 Assert.That(map.CountOf(NodeKind.Battle), Is.EqualTo(battles), at);
                 Assert.That(map.CountOf(NodeKind.Elite), Is.EqualTo(elites), at);
@@ -68,6 +83,20 @@ namespace DungeonCore.Tests
                 Assert.That(map.CountOf(NodeKind.Event), Is.EqualTo(events), at);
                 Assert.That(map.CountOf(NodeKind.Carving), Is.EqualTo(carvings), at);
                 Assert.That(map.CountOf(NodeKind.Boss), Is.EqualTo(1), at);
+            }
+        }
+
+        [Test]
+        public void EveryRegion_DrawsTheSameShapeForTheSameSeed()
+        {
+            // The regions differ by enemies and backdrops, not by the map (§7).
+            for (int layer = Lair.FirstRegionLayer; layer < Lair.KingLayer; layer++)
+            {
+                foreach (ulong seed in new ulong[] { 1, 7, 99 })
+                {
+                    var prints = Lair.Regions.Select(r => Lair.Of(layer, r).Map(seed).Fingerprint()).Distinct();
+                    Assert.That(prints.Count(), Is.EqualTo(1), $"layer {layer} seed {seed}");
+                }
             }
         }
 

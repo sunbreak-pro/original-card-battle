@@ -148,7 +148,7 @@ namespace Exploration.Tests
             s.Act(ScreenAction.GoToInterlude);
             Assert.That(s.Screen().Card.Lines[0], Is.EqualTo($"HP +5（最大の 30%{ExplorationText.CappedMark}）で HP 50 / 50"));
             // a rest node at full HP reads the same way (the first seed whose rest is in sight from the entry)
-            string restLine = Enumerable.Range(1, 8)
+            string restLine = Enumerable.Range(1, 60)
                 .Select(seed => Trial((ulong)seed).Screen().Nodes.FirstOrDefault(n => n.Kind == NodeKind.Rest && n.Lines.Count > 0))
                 .First(n => n != null).Lines[0];
             Assert.That(restLine, Does.Match(@"^休む: HP \+0（最大の 15%・上限まで）・"));

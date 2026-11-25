@@ -181,10 +181,33 @@ namespace Trial.Bridge.Tests
                 List<MapNode> open = st.Map.Nodes.Where(n => ExplorationReducer.CanStep(st, n.Id)).ToList();
                 Assert.That(open.Count, Is.GreaterThan(0), "no open node");
                 List<MapNode> fresh = open.Where(n => !st.HasResolved(n.Id)).ToList();
-                MapNode node = pick(fresh.Count > 0 ? fresh : open, st);
+                // With nothing new next to it, the walk heads back over resolved nodes toward the nearest new one. The
+                // longer maps of #1049 leave pockets a walk that only looks one step ahead would pace in forever.
+                MapNode node = pick(fresh.Count > 0 ? fresh : new List<MapNode> { TowardFresh(st) ?? open[0] }, st);
                 if (node.Kind == NodeKind.Trace) opts.OnTrace?.Invoke(st.Profile.Layer);
                 Assert.That(s.Step(node.Id), Is.True, "step refused");
             }
+        }
+
+        /// <summary>The first step of the shortest way over resolved nodes to the nearest unresolved one, or null.</summary>
+        public static MapNode TowardFresh(ExplorationState st)
+        {
+            var first = new Dictionary<int, int>();
+            var queue = new Queue<int>();
+            queue.Enqueue(st.CurrentNodeId);
+            var seen = new HashSet<int> { st.CurrentNodeId };
+            while (queue.Count > 0)
+            {
+                int at = queue.Dequeue();
+                foreach (int next in st.Map.Neighbours(at))
+                {
+                    if (!seen.Add(next)) continue;
+                    first[next] = at == st.CurrentNodeId ? next : first[at];
+                    if (!st.HasResolved(next)) return st.Map.Node(first[next]);
+                    queue.Enqueue(next);
+                }
+            }
+            return null;
         }
 
         /// <summary>The layer-two interlude waits on the choice of a region (its card offers the three ways down).</summary>

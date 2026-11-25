@@ -213,8 +213,14 @@ namespace Exploration.Bridge.Tests
                 new LegacyPage(DungeonJournal.PageId(1), "ダンジョン", new Dictionary<string, int> { [spring] = 2 }),
                 new LegacyPage("memo-1", "メモ", null, "罠に注意", other),
             };
-            var expedition = new Expedition(new RunStart { Seed = 4, Traces = LedgerOf(1, pages) });
-            WalkTo(expedition, NodeKind.Trace);
+            // The first seed whose way to the trace meets neither that enemy nor a spring (it was seed 4 until #1049).
+            Expedition expedition = null;
+            for (ulong seed = 4; seed < 60; seed++)
+            {
+                expedition = new Expedition(new RunStart { Seed = seed, Traces = LedgerOf(1, pages) });
+                WalkTo(expedition, NodeKind.Trace);
+                if (expedition.DisclosureOf(enemy) == 0 && expedition.Journal.EntryLevel(spring) == 0) break;
+            }
             Assert.That(expedition.DisclosureOf(enemy), Is.EqualTo(0), "the life has not met it");
             Assert.That(expedition.Journal.EntryLevel(spring), Is.EqualTo(0));
 

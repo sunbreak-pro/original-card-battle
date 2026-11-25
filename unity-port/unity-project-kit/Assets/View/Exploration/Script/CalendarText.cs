@@ -100,10 +100,13 @@ namespace Exploration
 
         /// <summary>
         /// The next layer as the interlude previews it (§6.5): its title, its node count and the days a straight run
-        /// through it takes.
+        /// through it takes. The numbers are the map's: layers 1〜6 draw 7〜9 rows per map, not one size per layer (#1049).
         /// </summary>
-        public static string LayerPreview(LayerProfile profile, bool clueTaken) =>
-            $"{LayerTitle(profile, clueTaken)}: ノード {profile.MapSpec.NodeCount}、真っ直ぐ抜けると {profile.ShortestPathCost} 日";
+        public static string LayerPreview(LayerProfile profile, LayerMap map, bool clueTaken)
+        {
+            if (map == null) throw new ArgumentNullException(nameof(map));
+            return $"{LayerTitle(profile, clueTaken)}: ノード {map.NodeCount}、真っ直ぐ抜けると {map.ShortestPathCost} 日";
+        }
 
         /// <summary>The layer-two interlude's lead over the three ways down (§6.5).</summary>
         public const string RegionChoiceLead = "ここで 3 つの降り口に分かれる。選んだ領域は、この生のあいだ変えられない。";

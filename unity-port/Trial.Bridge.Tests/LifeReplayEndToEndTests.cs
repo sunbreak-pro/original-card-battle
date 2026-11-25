@@ -310,7 +310,8 @@ namespace Trial.Bridge.Tests
                 }
                 List<MapNode> open = st.Map.Nodes.Where(n => ExplorationReducer.CanStep(st, n.Id)).ToList();
                 List<MapNode> fresh = open.Where(n => !st.HasResolved(n.Id)).ToList();
-                List<MapNode> pick = fresh.Count > 0 ? fresh : open;
+                // nothing new next to it: back over resolved nodes toward the nearest new one (#1049's longer maps)
+                List<MapNode> pick = fresh.Count > 0 ? fresh : new List<MapNode> { TowardFresh(st) ?? open[0] };
                 // toward the trace node while this life has not taken its trace
                 MapNode trace = app.Live.Raw.InheritedTraceId == null
                     ? st.Map.Nodes.FirstOrDefault(n => n.Kind == NodeKind.Trace && !st.HasResolved(n.Id))
@@ -322,8 +323,10 @@ namespace Trial.Bridge.Tests
                     node = open.FirstOrDefault(n => n.Id == first);
                 }
                 node = node ?? pick[0];
+                bool freshTrace = node.Kind == NodeKind.Trace && !st.HasResolved(node.Id);
                 Assert.That(s.Step(node.Id), Is.True, "step refused");
-                if (node.Kind == NodeKind.Trace && !s.State.IsOver) TakeTrace(app, st.Profile.Layer);
+                // a trace node walked over again offers nothing more
+                if (freshTrace && !s.State.IsOver) TakeTrace(app, st.Profile.Layer);
             }
             throw new AssertionException("the life did not end");
         }
@@ -346,11 +349,12 @@ namespace Trial.Bridge.Tests
             return got;
         }
 
-        // Lineage 5: the survivor's heir dies on layer 3 (636 saved points). Lineage 1: it reaches layer 6 (1031 saved points;
-        // descents, events, found consumables, the survey's pick, consumables and a 標の石 jump on the way). Lineages 6 and 8
-        // lose life 2 on layer 1, so they do not play this story.
-        [TestCase(5UL)]
-        [TestCase(1UL)]
+        // On the 7〜9-row maps of #1049: lineage 3: the survivor's heir dies on layer 1 (401 saved points). Lineage 8: it
+        // reaches layer 6 (2087 saved points; descents, events, found consumables, the survey's pick, consumables and a
+        // 標の石 jump on the way; about three minutes). Lineages 2, 5, 6, 7 and 9 do not play this story: life 2 falls before
+        // it reaches the trace or before it can end alive.
+        [TestCase(3UL)]
+        [TestCase(8UL)]
         public void ThreeLives_ADeath_ATraceTaken_ASurvivor_ReplayFromEverySavedPoint_ToTheStateTheyWereSavedIn(ulong lineageSeed)
         {
             var app = new App(Inheritance.NewLineage(lineageSeed));

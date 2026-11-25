@@ -57,7 +57,10 @@ namespace DungeonCore
 
         public LayerMapSpec MapSpec { get; }
 
-        /// <summary>Days to reach the boss without detouring: one per row.</summary>
+        /// <summary>
+        /// The fewest days to reach the boss without detouring: one per row of the shortest map the layer draws. A drawn
+        /// map's own is <see cref="LayerMap.ShortestPathCost"/>.
+        /// </summary>
         public int ShortestPathCost => MapSpec.ShortestPathCost;
 
         /// <summary>The region's king room: the last layer a life walks (§3.1).</summary>
@@ -83,8 +86,8 @@ namespace DungeonCore
     /// The lair of the 80% build (seven_layers_v4.md §3): two shared layers, then three regions of four layers and
     /// each region's king room. Layer 8, 果てなき世界, is not built in the 80% version (§9).
     ///
-    /// Every region is as long as the others: 5 + 5 + 5 + 4 + 4 + 4 + 3 = 30 days from the surface to the king when
-    /// no detour is taken (§3.2).
+    /// Every region is as long as the others: layers 1〜6 draw 7〜9 rows each and the king room has 3, so the surface to
+    /// the king takes 45〜57 days when no detour is taken (§3.2, #1049).
     /// </summary>
     public static class Lair
     {
@@ -102,6 +105,10 @@ namespace DungeonCore
 
         /// <summary>The backdrops drawn so far, indexed 1..7 (Backdrop's own numbering).</summary>
         public const int BackdropCount = 7;
+
+        // Declared before the profiles: static fields initialise in the order they are written, and the profiles read it.
+        /// <summary>The row counts a map of layers 1〜6 is drawn with, one picked per map (§3.2, #1049).</summary>
+        public static IReadOnlyList<int> DrawnRowCounts { get; } = new ReadOnlyCollection<int>(new[] { 7, 8, 9 });
 
         /// <summary>The three regions, in the order the interlude of layer 2 offers them.</summary>
         public static IReadOnlyList<Region> Regions { get; } =
@@ -154,13 +161,12 @@ namespace DungeonCore
 
         private static LayerProfile[] BuildShared() => new[]
         {
-            new LayerProfile(1, Region.Common, "燦光の樹海", null, 1,
-                Wide(1, battles: 3, events: 2, rests: 2, surveys: 1)),
+            new LayerProfile(1, Region.Common, "燦光の樹海", null, 1, Wide(1)),
 
             // Layer two hides its name. One battle is traded for the carving that reveals it (§8). The true name is
             // 龍神, the dragon god, not 竜神: 竜神 gave way to the dragon kings (world-v1.md §5.3).
             new LayerProfile(2, Region.Common, "■■の秘跡", "龍神の秘跡", 2,
-                Wide(2, battles: 3, events: 2, rests: 2, surveys: 1).With(NodeKind.Carving, 1)),
+                Wide(2).With(NodeKind.Carving, 1)),
         };
 
         // §3.2's table. Every region has the same node mix (§7); the regions differ by enemies and backdrops. A
@@ -196,14 +202,12 @@ namespace DungeonCore
         };
 
         private static LayerProfile Third(Region region, string? name, int backdrop) =>
-            new LayerProfile(3, region, name ?? Unnamed(3, region), null, backdrop,
-                Wide(3, battles: 3, events: 2, rests: 2, surveys: 1));
+            new LayerProfile(3, region, name ?? Unnamed(3, region), null, backdrop, Wide(3));
 
-        // Layers 4〜6 narrow and hold no event: the deep layers are run through rather than combed (§7). Each still
-        // offers two nodes that move max stamina, both rests (§7.1, R2-4).
+        // Layers 4〜6 narrow: the deep layers are run through rather than combed (§7). Each still offers two nodes that
+        // move max stamina, both rests (§7.1, R2-4).
         private static LayerProfile Deep(int layer, Region region, string? name, int backdrop) =>
-            new LayerProfile(layer, region, name ?? Unnamed(layer, region), null, backdrop,
-                Narrow(layer, battles: 2, rests: 2, surveys: 1));
+            new LayerProfile(layer, region, name ?? Unnamed(layer, region), null, backdrop, Narrow(layer));
 
         // The king room. Its middle row takes an event rather than a second rest: two rests side by side would let a
         // life rest twice right before the king (§7.1). Every king room is drawn on the void's backdrop until design
@@ -220,25 +224,32 @@ namespace DungeonCore
 
         private static string Unnamed(int layer, Region region) => $"{region.Label()}の領域 第 {layer} 層";
 
-        /// <summary>Eleven nodes over five rows: the full-sized layer of dungeon_exploration_v4 §3.1.</summary>
-        private static LayerMapSpec Wide(int layer, int battles, int events, int rests, int surveys) =>
-            new LayerMapSpec(layer, new[] { 1, 3, 3, 3, 1 }, new Dictionary<NodeKind, int>
-            {
-                [NodeKind.Battle] = battles,
-                [NodeKind.Elite] = 1,
-                [NodeKind.Rest] = rests,
-                [NodeKind.Survey] = surveys,
-                [NodeKind.Event] = events,
-            });
+        /// <summary>
+        /// Layers 1〜3: middle rows 2〜4 wide, three middle nodes a row on average. The elite, the rests and the survey stay
+        /// as they were; the nodes the longer maps add are events and battles (§7).
+        /// </summary>
+        private static LayerMapSpec Wide(int layer) => Drawn(layer, minWidth: 2, maxWidth: 4, perRow: 3, events: middleRows => middleRows - 1);
 
-        /// <summary>Eight nodes over four rows, with no event.</summary>
-        private static LayerMapSpec Narrow(int layer, int battles, int rests, int surveys) =>
-            new LayerMapSpec(layer, new[] { 1, 3, 3, 1 }, new Dictionary<NodeKind, int>
+        /// <summary>
+        /// Layers 4〜6: middle rows 1〜3 wide, two middle nodes a row on average, so the deep layers are still run through
+        /// rather than combed (§7).
+        /// </summary>
+        private static LayerMapSpec Narrow(int layer) => Drawn(layer, minWidth: 1, maxWidth: 3, perRow: 2, events: middleRows => middleRows / 2);
+
+        private static LayerMapSpec Drawn(int layer, int minWidth, int maxWidth, int perRow, Func<int, int> events) =>
+            new LayerMapSpec(layer, DrawnRowCounts.Select(rows =>
             {
-                [NodeKind.Battle] = battles,
-                [NodeKind.Elite] = 1,
-                [NodeKind.Rest] = rests,
-                [NodeKind.Survey] = surveys,
-            });
+                int middleRows = rows - 2;
+                int middle = middleRows * perRow;
+                var quotas = new Dictionary<NodeKind, int>
+                {
+                    [NodeKind.Elite] = 1,
+                    [NodeKind.Rest] = 2,
+                    [NodeKind.Survey] = 1,
+                    [NodeKind.Event] = events(middleRows),
+                };
+                quotas[NodeKind.Battle] = middle - quotas.Values.Sum();
+                return new MapShape(rows, minWidth, maxWidth, quotas);
+            }).ToArray());
     }
 }

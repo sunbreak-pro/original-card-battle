@@ -29,12 +29,15 @@ namespace Exploration.Tests
             var interlude = session.Screen();
             Assert.That(interlude.Card.Kind, Is.EqualTo(CardKind.Interlude));
             Assert.That(interlude.Card.Buttons.Select(b => b.Action), Is.EqualTo(new[] { ScreenAction.Descend, ScreenAction.AskEndLife }));
-            Assert.That(interlude.Card.Lines.Last(), Is.EqualTo("次は第 2 層　■■の秘跡: ノード 11、真っ直ぐ抜けると 5 日"));
+            string preview = interlude.Card.Lines.Last();
             Assert.That(interlude.DaysForecastLabel, Is.EqualTo("降りると 1 日進む"));
 
             int days = session.State.DaysLeft;
             Assert.That(session.Act(ScreenAction.Descend), Is.True);
             var below = session.Screen();
+            // #1049: the layer's size is the map's, so the preview names the map the descent drew
+            var map = session.State.Map;
+            Assert.That(preview, Is.EqualTo($"次は第 2 層　■■の秘跡: ノード {map.NodeCount}、真っ直ぐ抜けると {map.ShortestPathCost} 日"));
             Assert.That(below.LayerTitle, Is.EqualTo("第 2 層　■■の秘跡"));
             Assert.That(session.State.DaysLeft, Is.EqualTo(interlude.NextDaysLeft), "the interlude's forecast is the descent");
             Assert.That(session.State.DaysLeft, Is.EqualTo(days - 1), "the entry node takes its day at once");
@@ -58,7 +61,8 @@ namespace Exploration.Tests
             Assert.That(card.Buttons.Take(3).Select(b => b.Label), Is.EqualTo(new[] { "竜の領域", "寄生の領域", "亡霊の領域" }));
             Assert.That(card.Buttons.Take(3).Select(b => b.Arg),
                 Is.EqualTo(Lair.Regions.Select(r => ((int)r).ToString(System.Globalization.CultureInfo.InvariantCulture))));
-            Assert.That(card.Buttons[0].Note, Is.EqualTo("第 3 層　大黒蛇の住処（竜の領域）: ノード 11、真っ直ぐ抜けると 5 日"));
+            Assert.That(card.Buttons[0].Note, Does.StartWith("第 3 層　大黒蛇の住処（竜の領域）: ノード "));
+            string parasiteNote = card.Buttons[1].Note;
 
             Assert.That(session.Act(ScreenAction.Descend), Is.False, "the way down is one of the three");
             Assert.That(session.TryDescend(), Is.Null);
@@ -76,6 +80,9 @@ namespace Exploration.Tests
             Assert.That(session.Act(ScreenAction.Descend), Is.True);
             Assert.That(session.State.Profile.Layer, Is.EqualTo(3));
             Assert.That(session.State.Profile.Region, Is.EqualTo(Region.Parasite));
+            // #1049: the note named the map the descent drew
+            var map = session.State.Map;
+            Assert.That(parasiteNote, Is.EqualTo($"{session.Screen().LayerTitle}: ノード {map.NodeCount}、真っ直ぐ抜けると {map.ShortestPathCost} 日"));
         }
 
         [Test]
@@ -166,8 +173,8 @@ namespace Exploration.Tests
         [Test]
         public void ADescentThatRunsTheCalendarOutIsWarnedAndAsksFirst()
         {
-            // Six days: the five nodes of layer one's straight route leave one; layer two's entry takes it.
-            var session = new ExplorationSession(new RunStart { Calendar = new CalendarState(6) });
+            // One day more than layer one's straight route: the route leaves one; layer two's entry takes it.
+            var session = new ExplorationSession(new RunStart { Calendar = new CalendarState(LayerOneRows() + 1) });
             WalkToBoss(session);
             Assert.That(session.State.DaysLeft, Is.EqualTo(1));
             session.Act(ScreenAction.GoToInterlude);
@@ -195,8 +202,9 @@ namespace Exploration.Tests
         {
             // 日読みの砂 (tools_and_consumables_v4.md §2.4): a layer's entry node takes no day, layer one's included.
             var sand = new RunLoadout(new[] { ReliefItem.EntryDay("hiyomi_no_suna") }, null, RunLoadout.ToolSlots, true);
-            var session = new ExplorationSession(new RunStart { Calendar = new CalendarState(5), Loadout = sand });
-            Assert.That(session.State.DaysLeft, Is.EqualTo(5), "layer one's entry was free");
+            int rows = LayerOneRows();
+            var session = new ExplorationSession(new RunStart { Calendar = new CalendarState(rows), Loadout = sand });
+            Assert.That(session.State.DaysLeft, Is.EqualTo(rows), "layer one's entry was free");
             WalkToBoss(session);
             Assert.That(session.State.DaysLeft, Is.EqualTo(1));
             session.Act(ScreenAction.GoToInterlude);
@@ -398,6 +406,9 @@ namespace Exploration.Tests
             Assert.That(enemyPage.Tab, Is.EqualTo(JournalTab.Enemy));
             Assert.That(enemyPage.Disclosure, Is.Zero);
         }
+
+        /// <summary>The rows of the layer-one map a default session draws: the days of its straight route (#1049: 7〜9).</summary>
+        private static int LayerOneRows() => new ExplorationSession().State.Map.ShortestPathCost;
 
         /// <summary>A breadth-first route over the map's links, excluding the start.</summary>
         private static IReadOnlyList<int> RouteTo(LayerMap map, int from, int to)

@@ -63,7 +63,7 @@ namespace DungeonContent
 
             new ItemDef("hiyomi_no_suna", "日読みの砂", "ひよみのすな",
                 ItemEffect.EntryDayFree, 1,
-                "層の入口のノードで日が進まない。地上から王の前までの 30 日が 23 日になる"),
+                "層の入口のノードで日が進まない。地上から王の前までの日数が 7 日減る"),
 
             new ItemDef("utsushi_no_tobari", "写しの帳", "うつしのとばり",
                 ItemEffect.ChooseSurveyTarget, 1,
