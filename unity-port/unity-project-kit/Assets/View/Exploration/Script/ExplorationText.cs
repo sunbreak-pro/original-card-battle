@@ -63,6 +63,17 @@ namespace Exploration
 
         public const string FarNode = "遠いノードは種別しか分かりません";
 
+        /// <summary>The depth column's heading and the word under the layer the player is on (#1050).</summary>
+        public const string DepthHeading = "深さ";
+
+        public const string DepthHere = "今いる";
+
+        /// <summary>Layer 7, as the hall names it.</summary>
+        public const string KingRoom = "王の間";
+
+        /// <summary>Over the calendar's bar while it runs (#1050).</summary>
+        public const string CalendarHeading = "崩壊まで";
+
         /// <summary>An item's name from the catalogue. An id the catalogue does not know throws.</summary>
         public static string ItemName(string id) => Item(id).Name;
 

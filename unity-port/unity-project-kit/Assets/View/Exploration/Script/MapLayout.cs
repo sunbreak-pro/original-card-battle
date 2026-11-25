@@ -12,6 +12,9 @@ namespace Exploration
         /// <summary>The map area the node fractions spread over (ExploreScene.js:47 AREA).</summary>
         public const float AreaWidth = 1060f, AreaHeight = 680f;
 
+        /// <summary>The map area's centre on the 1920 × 1080 stage (ExploreScene.js:47 AREA.cx / cy).</summary>
+        public const float AreaCentreX = 652f, AreaCentreY = 548f;
+
         /// <summary>The JS's node face (ExploreScene.js:48 NODE).</summary>
         public const float FullNode = 88f;
 

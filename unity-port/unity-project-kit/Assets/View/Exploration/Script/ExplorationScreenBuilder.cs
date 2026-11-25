@@ -21,6 +21,8 @@ namespace Exploration
             string hint = !mapLive ? "" : session.IsAiming ? ExplorationText.AimHint
                 : "明るい枠のノードへ進めます。踏んだノードへは日数を使わずに移れます。";
             var (nextDays, daysForecast) = DaysAhead(session);
+            MapLook look = MapLooks.ForLayer(state.Profile.Layer);
+            bool strata = look == MapLook.Strata;
 
             return new ExplorationScreen
             {
@@ -40,6 +42,17 @@ namespace Exploration
                 Nodes = nodes,
                 Edges = Edges(state, nodes),
                 Layout = MapLayout.ForRows(state.Map.RowCount),
+                Look = look,
+                Strata = strata ? StrataLayout.ForRows(state.Map.RowCount) : null,
+                Palette = strata ? StrataPalette.For(state.Profile.BackdropLayer) : null,
+                Depths = Depths(state.Profile.Layer),
+                Calendar = new CalendarBar(state.DaysLeft, nextDays, state.Calendar.IsFrozen),
+                Hp = state.Hp,
+                MaxHp = state.MaxHp,
+                Stamina = state.Stamina,
+                MaxStamina = state.MaxStamina,
+                HpValueLabel = $"{state.Hp} / {state.MaxHp}",
+                StaminaValueLabel = $"{state.Stamina} / {state.MaxStamina}",
                 CurrentNodeId = state.CurrentNodeId,
                 Hint = hint,
                 ToolsLabel = ToolsLabel(state.Loadout),
@@ -89,9 +102,40 @@ namespace Exploration
                     Note = note,
                     Title = $"{ExplorationText.Glyph(node.Kind)}　{ExplorationText.KindLabel(node.Kind)}",
                     Detail = Detail(note, lines, options),
+                    Figures = Figures(session, node, standing),
                 });
             }
             return nodes;
+        }
+
+        /// <summary>
+        /// Who stands in the window of a combat node (#1050): the journal's names split into enemies (fights joined by
+        /// 「 → 」, the enemies of one fight by 「 + 」), each 「？」 unknown. A far node and a node nothing is known of show
+        /// one unknown figure; the other kinds show none.
+        /// </summary>
+        private static IReadOnlyList<WindowFigure> Figures(ExplorationSession session, MapNode node, NodeStanding standing)
+        {
+            if (!node.Kind.IsCombat()) return new WindowFigure[0];
+            if (standing == NodeStanding.Far) return new[] { WindowFigure.Unknown };
+            var intel = session.Intel.ForNode(node, session.State.Profile.Layer, session.Surveyed);
+            if (intel == null || intel.EnemyName.Length == 0) return new[] { WindowFigure.Unknown };
+            return intel.EnemyName.Split(new[] { " → ", " + " }, System.StringSplitOptions.None)
+                .Select(name => name.Trim() == ExplorationText.UnknownEnemy ? WindowFigure.Unknown : WindowFigure.Known)
+                .ToArray();
+        }
+
+        /// <summary>The depth column (#1050): the seven layers top down, the one the player is on marked, the king room named.</summary>
+        private static IReadOnlyList<DepthCell> Depths(int layer)
+        {
+            var cells = new List<DepthCell>();
+            for (int at = 1; at <= Lair.LayerCount; at++)
+            {
+                DepthMark mark = at < layer ? DepthMark.Passed : at == layer ? DepthMark.Current : DepthMark.Below;
+                bool king = at == Lair.KingLayer;
+                string note = mark == DepthMark.Current ? ExplorationText.DepthHere : king ? ExplorationText.KingRoom : "";
+                cells.Add(new DepthCell(at, mark, note, king));
+            }
+            return cells;
         }
 
         private static List<EdgeLine> Edges(ExplorationState state, IReadOnlyList<NodePanel> nodes)

@@ -250,6 +250,14 @@ namespace Exploration
         /// with its forecast (「【休む】暦 残り 312 → 311 日　HP 30 → 38」) and its warnings.
         /// </summary>
         public IReadOnlyList<string> Detail { get; init; }
+
+        /// <summary>
+        /// Who stands in the detail panel's window on a map drawn as chambers (#1050): one entry per enemy of a combat
+        /// node, known when the journal names it, unknown (「？」) otherwise. Empty for the other kinds.
+        /// </summary>
+        public IReadOnlyList<WindowFigure> Figures { get => _figures; init => _figures = value ?? new WindowFigure[0]; }
+
+        private readonly IReadOnlyList<WindowFigure> _figures = new WindowFigure[0];
     }
 
     /// <summary>A link between two nodes. Lit when it leads from where the player stands to somewhere they can go.</summary>
@@ -465,6 +473,7 @@ namespace Exploration
         private readonly string _daysForecastLabel = "";
         private readonly IReadOnlyList<EventOutcome> _events = new EventOutcome[0];
         private readonly MapLayout _layout = MapLayout.Full;
+        private readonly IReadOnlyList<DepthCell> _depths = new DepthCell[0];
 
         /// <summary>「第 2 層　■■の秘跡」, 「第 3 層　大黒蛇の住処（竜の領域）」 or 「竜の領域 第 4 層」 (§6.2).</summary>
         public string LayerTitle { get; init; }
@@ -514,6 +523,32 @@ namespace Exploration
 
         /// <summary>How big the map draws its nodes: smaller on a map of more than five rows, so the rows fit one screen (#1049).</summary>
         public MapLayout Layout { get => _layout; init => _layout = value ?? MapLayout.Full; }
+
+        /// <summary>How this layer's map is drawn: the JS's squares and lines, or chambers and tunnels (#1050).</summary>
+        public MapLook Look { get; init; }
+
+        /// <summary>The chambers' sizes when Look is Strata (null otherwise).</summary>
+        public StrataLayout Strata { get; init; }
+
+        /// <summary>The chambers' colours when Look is Strata (null otherwise).</summary>
+        public StrataPalette Palette { get; init; }
+
+        /// <summary>The depth column on the map's left (Strata): one cell per layer, top down.</summary>
+        public IReadOnlyList<DepthCell> Depths { get => _depths; init => _depths = value ?? new DepthCell[0]; }
+
+        /// <summary>The calendar drawn as one bar (Strata).</summary>
+        public CalendarBar Calendar { get; init; }
+
+        public int Hp { get; init; }
+        public int MaxHp { get; init; }
+        public int Stamina { get; init; }
+        public int MaxStamina { get; init; }
+
+        /// <summary>「38 / 50」: HP beside its heart and bar (Strata).</summary>
+        public string HpValueLabel { get; init; }
+
+        /// <summary>「8 / 10」: stamina beside its pips (Strata).</summary>
+        public string StaminaValueLabel { get; init; }
 
         public int CurrentNodeId { get; init; }
 

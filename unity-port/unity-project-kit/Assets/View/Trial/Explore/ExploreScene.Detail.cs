@@ -5,6 +5,9 @@
 // shows changed (drawDetail's key), and laid out here in stage px as the stylesheet's flex column lays it out: the head
 // (grid 72 | 1fr | auto), the lines (grid 92 | 1fr, baseline), the options pinned to the bottom (margin-top: auto). When
 // the content overflows the panel it is set again tighter (is-tight, then is-tighter), as the JS does.
+//
+// On a layer drawn as the rock's cross-section (#1050, layer 1) a window onto the chosen chamber opens over the head
+// while the panel has the room; a tighter fit drops it so the ways in stay inside.
 using System;
 using System.Collections.Generic;
 using Exploration;
@@ -202,6 +205,13 @@ namespace Trial.Explore
             mark.Opacity = 0.05f;
             mark.gameObject.name = "ocbg-explore-detail-mark";
 
+            // ---- a strata map's window onto the chosen chamber (#1050); it gives way when the panel has to tighten ----
+            if (level == 0 && Screen != null && Screen.Look == MapLook.Strata && Screen.Palette != null)
+            {
+                y += DetailWindow(body, node, Screen.Palette, x0, y, w);
+                y += gap;
+            }
+
             // ---- the head: token | titles | pill ----
             y += DetailHead(body, node, x0, y, w, tighter);
 
@@ -266,6 +276,65 @@ namespace Trial.Explore
         /// </summary>
         private static float DetailMarkSpanH() =>
             260f + (22f - TextMath.CssBaselineFromTop(new FontSpec(Family.Body, 400, 16f, 22f)));
+
+        /// <summary>
+        /// The window over the panel (#1050): the chosen chamber seen close, the layer's light behind, and against it the
+        /// enemies of a combat chamber as silhouettes (one the journal does not know is a dashed arch with 「？」), or the
+        /// kind's line icon in any other chamber. A far chamber's window stays dark. Line art and silhouettes stand in
+        /// until #90's pictures arrive. Returns its height.
+        /// </summary>
+        private float DetailWindow(RectTransform body, NodePanel node, StrataPalette palette, float x, float y, float w)
+        {
+            const float h = StrataLayout.WindowH;
+            bool far = node.Standing == NodeStanding.Far;
+            string light = far
+                ? "background: " + palette.FarFill + ";"
+                : "background: linear-gradient(180deg, " + palette.WindowTop + " 0%, " + palette.WindowMid + " 52%, " + palette.WindowBottom + " 100%);";
+            BoxGraphic window = BoxGraphic.Make(body, "border-radius: " + Px(StrataLayout.WindowRadius) + "; " + light, x, y, w, h, "ocbg-explore-window");
+            RectTransform rt = window.rectTransform;
+            Rgba shade = CssColor.Parse(far ? StrataPalette.FarIcon : StrataPalette.Silhouette);
+
+            if (node.Figures.Count == 0)
+            {
+                const float icon = StrataLayout.WindowIcon;
+                PathGraphic mark = ExploreIcons.Ico(rt, node.Kind, icon, shade);
+                Ui.Place(mark.rectTransform, (w - icon) / 2f, (h - icon) / 2f);
+                return h;
+            }
+
+            // the figures side by side, their feet on the window's floor
+            FigureDef def = Ocb.FigureOf("spearman");
+            float knownW = def.W * StrataLayout.WindowFigureH / def.H;
+            float total = 0f;
+            foreach (WindowFigure f in node.Figures) total += f == WindowFigure.Known ? knownW : StrataLayout.WindowUnknownW;
+            total += StrataLayout.WindowFigureGap * (node.Figures.Count - 1);
+            float scale = total > w - 32f ? (w - 32f) / total : 1f;
+            float fx = (w - total * scale) / 2f;
+            foreach (WindowFigure f in node.Figures)
+            {
+                if (f == WindowFigure.Known)
+                {
+                    float fh = StrataLayout.WindowFigureH * scale;
+                    PathGraphic fig = Ocb.Figure(rt, "spearman", fh, shade, Rgba.Transparent);
+                    Ui.Place(fig.rectTransform, fx, h - fh);
+                    fx += knownW * scale;
+                }
+                else
+                {
+                    float aw = StrataLayout.WindowUnknownW * scale, ah = StrataLayout.WindowUnknownH * scale;
+                    string arch = "border: " + Px(StrataLayout.WindowUnknownBorder) + " dashed " + (far ? StrataPalette.FarIcon : StrataPalette.Silhouette)
+                                  + "; border-bottom: none; border-radius: " + Px(aw / 2f) + " " + Px(aw / 2f) + " 0 0;";
+                    BoxGraphic a = BoxGraphic.Make(rt, arch, fx, h - ah, aw, ah, "unknown");
+                    TextStyle q = PanelText("font: 800 " + Px(StrataLayout.WindowMarkSize) + "/" + Px(StrataLayout.WindowMarkSize + 8f)
+                                            + " var(--font-display); color: " + (far ? StrataPalette.FarIcon : StrataPalette.Silhouette) + "; text-align: center;");
+                    Label.Make(a.rectTransform, ExplorationText.UnknownEnemy, q, 0f, ah - StrataLayout.WindowMarkSize - 8f - 10f * scale, aw,
+                        StrataLayout.WindowMarkSize + 8f, "mark");
+                    fx += aw;
+                }
+                fx += StrataLayout.WindowFigureGap * scale;
+            }
+            return h;
+        }
 
         /// <summary>The head (grid 72 | 1fr | auto, centred; the pill top-aligned). Returns its height.</summary>
         private float DetailHead(RectTransform body, NodePanel node, float x0, float y, float w, bool tighter)
