@@ -175,7 +175,7 @@ namespace Exploration
                 lines.Add(CalendarText.RegionChoiceLead);
                 foreach (Region region in Lair.Regions)
                 {
-                    string preview = CalendarText.LayerPreview(Lair.Of(Lair.SacramentLayer + 1, region), session.CarvingTaken);
+                    string preview = PreviewOf(session, Lair.Of(Lair.SacramentLayer + 1, region));
                     lines.Add(preview);
                     buttons.Add(new CardButton(CalendarText.RegionName(region), ScreenAction.ChooseRegion,
                         ((int)region).ToString(CultureInfo.InvariantCulture), preview));
@@ -185,7 +185,7 @@ namespace Exploration
             {
                 // The name the life knows (DisplayName) — the same as Name in the C#, where the layer-two carving is
                 // never read before its own layer; a lineage that read it in an earlier life knows it from the start (R-20).
-                lines.Add($"次は{CalendarText.LayerPreview(next, session.CarvingTaken)}");
+                lines.Add($"次は{PreviewOf(session, next)}");
                 var below = session.TryDescend();
                 if (below != null && below.Phase == RunPhase.Expired)
                     lines.Add("！ 降りると入口で暦が尽き、世界が終わります");
@@ -201,6 +201,11 @@ namespace Exploration
             buttons.Add(new CardButton(ExplorationText.EndLifeButton, ScreenAction.AskEndLife));
             return new ScreenCard(CardKind.Interlude, "階層間の休憩", lines, buttons);
         }
+
+        // The map the descent will draw, from the same seed, so the preview names its own size (#1049).
+        private static string PreviewOf(ExplorationSession session, LayerProfile profile) =>
+            CalendarText.LayerPreview(profile,
+                session.MapOf(profile, ExplorationSession.LayerSeed(session.RunSeed, profile.Layer)), session.CarvingTaken);
 
         /// <summary>
         /// A life's end card, with the one button §6.9 gives every ending. 期限切れ needs it as much as the others: it is

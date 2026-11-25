@@ -1,8 +1,8 @@
 // One node of the exploration map (ExploreScene.js:481-502 buildMap's node, :506-521 updateMap's classes;
-// explore.css:84-102, :205): the 88 × 88 box (.ocbg-explore-node), its lift wrapper (face + label: the hover lift,
-// the resolved fade), the face with its icon and the standing styles (border, shadow, background, the boss outline,
-// the beckon of a node the player can walk to or jump to), the label under it, and the arrival ripple (the face's
-// ::after). Owned by EX-MAP.
+// explore.css:84-102, :205): the node's box (.ocbg-explore-node: 88 × 88 in the JS, smaller on a long map by its
+// MapLayout), its lift wrapper (face + label: the hover lift, the resolved fade), the face with its icon and the
+// standing styles (border, shadow, background, the boss outline, the beckon of a node the player can walk to or jump
+// to), the label under it, and the arrival ripple (the face's ::after). Owned by EX-MAP.
 //
 // The JS keeps { el, face, label, kind, standing } per node and restyles it through class names; here the classes are
 // the states of two CssStates (the face's and the lift's, registered in the stylesheet's cascade order) and two CSS
@@ -83,8 +83,11 @@ namespace Trial.Explore
 
         // ------------------------------------------------------------------ the record buildMap keeps ({ el, face, label, kind, standing })
 
-        /// <summary>.ocbg-explore-node (role=button, data-node): the 88 × 88 pointer target.</summary>
+        /// <summary>.ocbg-explore-node (role=button, data-node): the Layout.Node square pointer target.</summary>
         public RectTransform El;
+
+        /// <summary>The map's sizes the node was built with (#1049).</summary>
+        public MapLayout Layout;
 
         /// <summary>.ocbg-explore-node-lift (hover: translateY(−6px) scale(1.04); resolved: opacity .6).</summary>
         public RectTransform Lift;
@@ -112,7 +115,7 @@ namespace Trial.Explore
         /// <summary>The face's box (its border, background, shadows and the boss outline).</summary>
         public BoxGraphic FaceBox;
 
-        /// <summary>ico(n.Kind, 44, nodeIconColor(n)) in the face (redrawn when the standing changes).</summary>
+        /// <summary>ico(n.Kind, Layout.Icon, nodeIconColor(n)) in the face (redrawn when the standing changes).</summary>
         public PathGraphic Icon;
 
         /// <summary>The face's ::after (the arrival ripple's ring, inset −3).</summary>
@@ -138,14 +141,15 @@ namespace Trial.Explore
 
         // js: scenes/explore/ExploreScene.js:481
         /// <summary>
-        /// The node of buildMap at (x, y) (its box's top-left: the centre minus NODE / 2) under the nodes layer: the box,
-        /// the lift, the face (empty until the first SetStanding draws its icon), the ripple ring, the label.
+        /// The node of buildMap at (x, y) (its box's top-left: the centre minus Layout.Node / 2) under the nodes layer: the
+        /// box, the lift, the face (empty until the first SetStanding draws its icon), the ripple ring, the label.
         /// </summary>
-        public static ExploreNodeView Make(RectTransform parent, NodePanel n, float x, float y)
+        public static ExploreNodeView Make(RectTransform parent, NodePanel n, MapLayout layout, float x, float y)
         {
             if (n == null) throw new ArgumentNullException(nameof(n));
-            const float node = ExploreStyle.Node;
-            var v = new ExploreNodeView { Id = n.Id, Row = n.Row, Kind = n.Kind };
+            layout = layout ?? MapLayout.Full;
+            float node = layout.Node;
+            var v = new ExploreNodeView { Id = n.Id, Row = n.Row, Kind = n.Kind, Layout = layout };
 
             // .ocbg-explore-node kind-…: position absolute at the node's box, pointer-events: auto (under the map's none)
             v.El = Ui.Div(parent, "ocbg-explore-node kind-" + ExploreStyle.KindClass(n.Kind), x, y, node, node);
@@ -177,11 +181,13 @@ namespace Trial.Explore
             UiNode.Of(v.After).Opacity = 0f;
             v.PlaceAfter();
 
-            // .ocbg-explore-node-label: left 50%, top 96, translateX(−50%); the label is part of the node (it takes the hover)
+            // .ocbg-explore-node-label: left 50%, top Layout.LabelTop (96 in the JS), translateX(−50%); the label is part of
+            // the node (it takes the hover)
             TextStyle ls = TextStyle.FromCss(LabelCss);
-            TMP_Text label = global::Trial.Kit.Label.Make(v.Lift, n.KindLabel ?? "", ls, 0f, 96f, null, null, "ocbg-explore-node-label");
+            float labelTop = layout.LabelTop;
+            TMP_Text label = global::Trial.Kit.Label.Make(v.Lift, n.KindLabel ?? "", ls, 0f, labelTop, null, null, "ocbg-explore-node-label");
             float w = label.rectTransform.sizeDelta.x;
-            Ui.Place(label.rectTransform, node / 2f - w / 2f, 96f);
+            Ui.Place(label.rectTransform, node / 2f - w / 2f, labelTop);
             TextGlow.For(label);
             label.raycastTarget = true;
             v.Label = label;
@@ -213,8 +219,9 @@ namespace Trial.Explore
 
             // rec.face.textContent = ''; rec.face.appendChild(ico(n.Kind, 44, nodeIconColor(n))): centred in the face
             if (Icon) Ui.Remove(Icon);
-            Icon = ExploreIcons.Ico(Face, n.Kind, 44f, iconColor);
-            Ui.Place(Icon.rectTransform, (ExploreStyle.Node - 44f) / 2f, (ExploreStyle.Node - 44f) / 2f);
+            float icon = Layout.Icon, at = (Layout.Node - icon) / 2f;
+            Icon = ExploreIcons.Ico(Face, n.Kind, icon, iconColor);
+            Ui.Place(Icon.rectTransform, at, at);
             Icon.transform.SetAsFirstSibling(); // ::after stays above the content
         }
 
@@ -270,8 +277,8 @@ namespace Trial.Explore
 
         /// <summary>
         /// The face's ::after box. The face (position: absolute) is its containing block, so `inset: -3px` is measured from
-        /// the face's padding box: the ring follows the face's border width in force (2px: 90 × 90 at −1; is-current's
-        /// 3px: 88 × 88 at 0, the node's own edge; is-resolved's 1px: 92 × 92 at −2).
+        /// the face's padding box: the ring follows the face's border width in force (on an 88 px node, 2px: 90 × 90 at −1;
+        /// is-current's 3px: 88 × 88 at 0, the node's own edge; is-resolved's 1px: 92 × 92 at −2).
         /// </summary>
         private void PlaceAfter()
         {
@@ -279,7 +286,7 @@ namespace Trial.Explore
             const float inset = 3f;
             float bw = FaceBox.Style.Top.Used;
             float at = bw - inset;
-            float size = ExploreStyle.Node - 2f * bw + 2f * inset;
+            float size = Layout.Node - 2f * bw + 2f * inset;
             Ui.Place(After.rectTransform, at, at, size, size);
         }
 

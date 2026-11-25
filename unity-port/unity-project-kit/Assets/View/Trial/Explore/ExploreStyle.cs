@@ -16,21 +16,11 @@ namespace Trial.Explore
 
         // js: scenes/explore/ExploreScene.js:47
         /// <summary>AREA: the map area (ExplorationScreenView MapWidth × MapHeight, centred in the map).</summary>
-        public const float AreaCx = 652f, AreaCy = 548f, AreaW = 1060f, AreaH = 680f;
+        public const float AreaCx = 652f, AreaCy = 548f, AreaW = MapLayout.AreaWidth, AreaH = MapLayout.AreaHeight;
 
-        // js: scenes/explore/ExploreScene.js:48
-        public const float Node = 88f;
-
-        // js: scenes/explore/ExploreScene.js:50
-        /// <summary>WALKER_UP: the walker stands on the top edge of its node (clear of the icon and of the label above).</summary>
-        public const float WalkerUp = Node / 2f + 6f;
-
-        // js: scenes/explore/ExploreScene.js:51
-        public const float WalkerBox = 52f;
-
-        // js: scenes/explore/ExploreScene.js:53
-        /// <summary>EDGE_INSET: where an edge line starts and ends, measured from a node's centre.</summary>
-        public const float EdgeInset = Node / 2f + 8f;
+        // js: scenes/explore/ExploreScene.js:48-53, :258
+        // NODE, WALKER_UP, WALKER_BOX, EDGE_INSET and SEL are the map's MapLayout (ExplorationScreen.Layout): a map of more
+        // than five rows draws them smaller so its rows fit the area (#1049).
 
         // js: scenes/explore/ExploreScene.js:54
         public const float DetailX = 1304f, DetailY = 112f, DetailW = 592f, DetailH = 604f;
@@ -41,10 +31,6 @@ namespace Trial.Explore
         // js: scenes/explore/ExploreScene.js:56
         /// <summary>MAP_CENTER: the cards over the map centre here.</summary>
         public const float MapCenterX = 652f, MapCenterY = 540f;
-
-        // js: scenes/explore/ExploreScene.js:258
-        /// <summary>SEL: the selection frame's box (node and label).</summary>
-        public const float SelW = Node + 44f, SelH = Node + 58f;
 
         // js: scenes/explore/ExploreScene.js:276
         public const float EndLifeX = 24f, EndLifeY = 980f, EndLifeW = 288f, EndLifeH = 68f;
@@ -74,9 +60,9 @@ namespace Trial.Explore
         public const float StageW = 1920f, StageH = 1080f;
 
         /// <summary>The node centre of a builder's map fraction (ExploreScene.js:410 nodePos).</summary>
-        public static float NodeX(float x) => AreaCx + (x - 0.5f) * AreaW;
+        public static float NodeX(float x) => AreaCx + MapLayout.OffsetX(x);
 
-        public static float NodeY(float y) => AreaCy + (0.5f - y) * AreaH;
+        public static float NodeY(float y) => AreaCy + MapLayout.OffsetY(y);
 
         // ------------------------------------------------------------------ the DOM's z-index (explore.css)
 

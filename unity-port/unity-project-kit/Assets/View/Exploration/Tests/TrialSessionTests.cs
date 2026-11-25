@@ -717,9 +717,10 @@ namespace Exploration.Tests
         // ---------------------------------------------------------------- events (§5)
 
         [Test]
-        public void TheTwoEventsOfALayer_NeverRepeatAKind_AndLayerSevenNeverDrawsASpring()
+        public void TheEventsOfALayer_GoThroughEveryKindBeforeOneRepeats_AndLayerSevenNeverDrawsASpring()
         {
-            // js: test/ext/world.test.mjs:647
+            // js: test/ext/world.test.mjs:647. Since #1049 a layer holds 4〜6 events (seven_layers_v4.md §7): the three
+            // kinds are drawn without a repeat, then the table is drawn from again.
             var counts = new Dictionary<EventKind, int> { [EventKind.Spring] = 0, [EventKind.HeavyChest] = 0, [EventKind.StrangeMeal] = 0 };
             for (ulong seed = 1; seed <= 300; seed++)
             {
@@ -727,9 +728,9 @@ namespace Exploration.Tests
                 {
                     var map = Lair.Of(layer, Region.Dragon).Map(seed);
                     var kinds = LayerEvents.Draw(map, layer, id => ExplorationSession.EventSeed(seed, layer, id)).Values.ToList();
-                    Assert.That(kinds.Count, Is.EqualTo(2));
-                    Assert.That(kinds[0], Is.Not.EqualTo(kinds[1]), $"layer {layer} seed {seed}");
-                    if (layer == 1) foreach (var k in kinds) counts[k]++;
+                    Assert.That(kinds.Count, Is.EqualTo(map.CountOf(NodeKind.Event)).And.InRange(4, 6));
+                    Assert.That(kinds.Take(3).Distinct().Count(), Is.EqualTo(3), $"layer {layer} seed {seed}");
+                    if (layer == 1) foreach (var k in kinds.Take(2)) counts[k]++;
                 }
                 var map7 = Lair.Of(7, Region.Dragon).Map(seed);
                 var k7 = LayerEvents.Draw(map7, 7, id => ExplorationSession.EventSeed(seed, 7, id)).Values.ToList();
@@ -776,7 +777,8 @@ namespace Exploration.Tests
         public void 泉_HealsOnArrival_ByTheLayersShare_AndIsRecorded()
         {
             // js: test/ext/world.test.mjs:693
-            var (seed, node) = SeedWithEvent(EventKind.Spring);
+            // a spring next to the entry, so the walk meets no other event on the way (#1049's maps hold up to six)
+            var (seed, node) = SeedWithEvent(EventKind.Spring, (s0, n) => s0.State.Map.Predecessors(n.Id).Contains(s0.State.Map.EntryId));
             var s = Trial(seed);
             Win(s);
             ClearChoices(s);

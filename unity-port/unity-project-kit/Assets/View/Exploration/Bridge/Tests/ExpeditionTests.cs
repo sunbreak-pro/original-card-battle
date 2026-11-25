@@ -553,18 +553,26 @@ namespace Exploration.Bridge.Tests
         [Test]
         public void ATurnedPage_WaitsBehindTheElitesPick_AndIsDealtAfterIt()
         {
-            // Seed 1, taking each layer's elite before its boss: layer 5's elite is 統牙の長竜, whose card
-            // is not owned, and its 40% page lands on a layer with nothing to tell.
-            var expedition = new Expedition(new RunStart { Seed = 1 });
-            for (int layer = 1; layer <= 4; layer++)
+            // The first seed that, taking each layer's elite before its boss, meets 統牙の長竜 as layer 5's elite with its
+            // card not owned, and whose 40% page lands on a layer with nothing to tell. It was seed 1 until #1049 drew
+            // longer maps.
+            Expedition expedition = null;
+            BattleReturn elite = null;
+            for (ulong seed = 1; seed <= 40 && elite == null; seed++)
             {
-                WalkToAndWin(expedition, NodeKind.Elite);
-                WalkToBossAndWin(expedition, out _);
-                Assert.That(expedition.Session.Act(ScreenAction.GoToInterlude), Is.True);
-                if (expedition.Session.NeedsRegion) Assert.That(expedition.Session.Act(ScreenAction.ChooseRegion, (int)Region.Dragon), Is.True);
-                Assert.That(expedition.Session.Act(ScreenAction.Descend), Is.True);
+                expedition = new Expedition(new RunStart { Seed = seed });
+                for (int layer = 1; layer <= 4; layer++)
+                {
+                    WalkToAndWin(expedition, NodeKind.Elite);
+                    WalkToBossAndWin(expedition, out _);
+                    Assert.That(expedition.Session.Act(ScreenAction.GoToInterlude), Is.True);
+                    if (expedition.Session.NeedsRegion) Assert.That(expedition.Session.Act(ScreenAction.ChooseRegion, (int)Region.Dragon), Is.True);
+                    Assert.That(expedition.Session.Act(ScreenAction.Descend), Is.True);
+                }
+                BattleReturn met = WalkToAndWin(expedition, NodeKind.Elite);
+                if (met.Offered.SequenceEqual(UniqueCards.OfElite("pack_alpha")) && met.PagesTurned == 1) elite = met;
             }
-            BattleReturn elite = WalkToAndWin(expedition, NodeKind.Elite);
+            Assert.That(elite, Is.Not.Null, "some seed in 1〜40 plays this story");
 
             Assert.That(elite.Offered, Is.EqualTo(UniqueCards.OfElite("pack_alpha")), "統牙の長竜 offers its one card since v4.10 (#824)");
             Assert.That(elite.PagesTurned, Is.EqualTo(1));

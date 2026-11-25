@@ -23,27 +23,54 @@ namespace DungeonCore
             if (map == null) throw new ArgumentNullException(nameof(map));
             if (spec == null) throw new ArgumentNullException(nameof(spec));
 
-            CheckShape(map, spec);
+            var shape = CheckShape(map, spec);
             CheckEnds(map);
             CheckEdgesGoForwardOneRow(map);
+            CheckBranches(map);
             CheckEveryNodeIsOnARoute(map);
             CheckDetoursAreAvoidable(map);
             CheckThereIsAFork(map);
-            CheckQuotas(map, spec);
+            CheckQuotas(map, shape);
         }
 
-        private static void CheckShape(LayerMap map, LayerMapSpec spec)
+        private static MapShape CheckShape(LayerMap map, LayerMapSpec spec)
         {
-            if (map.NodeCount != spec.NodeCount)
-                throw new MapValidationException($"map has {map.NodeCount} nodes, spec asks for {spec.NodeCount}");
-            if (map.RowCount != spec.RowCount)
-                throw new MapValidationException($"map has {map.RowCount} rows, spec asks for {spec.RowCount}");
+            var shape = spec.ShapeOf(map.RowCount)
+                ?? throw new MapValidationException(
+                    $"map has {map.RowCount} rows, spec asks for one of {string.Join(" / ", spec.Shapes.Select(s => s.RowCount))}");
+            if (map.NodeCount != shape.NodeCount)
+                throw new MapValidationException($"map has {map.NodeCount} nodes, its shape asks for {shape.NodeCount}");
 
-            for (int r = 0; r < spec.RowCount; r++)
+            for (int r = 0; r < shape.RowCount; r++)
             {
                 int width = map.Row(r).Count;
-                if (width != spec.RowWidths[r])
-                    throw new MapValidationException($"row {r} holds {width} nodes, spec asks for {spec.RowWidths[r]}");
+                if (shape.RowWidths != null)
+                {
+                    if (width != shape.RowWidths[r])
+                        throw new MapValidationException($"row {r} holds {width} nodes, spec asks for {shape.RowWidths[r]}");
+                    continue;
+                }
+                bool end = r == 0 || r == shape.RowCount - 1;
+                int min = end ? 1 : r == 1 ? shape.FirstRowMin : shape.MinWidth;
+                int max = end ? 1 : r == 1 ? shape.FirstRowMax : shape.MaxWidth;
+                if (width < min || width > max)
+                    throw new MapValidationException($"row {r} holds {width} nodes, its shape allows {min}..{max}");
+            }
+            return shape;
+        }
+
+        /// <summary>
+        /// A node leads to 1..MaxBranches nodes (#1049). Only a node alone in its row (the entry of the king room) may
+        /// lead to more, since it has to reach the whole next row.
+        /// </summary>
+        private static void CheckBranches(LayerMap map)
+        {
+            foreach (var node in map.Nodes)
+            {
+                int ways = map.Successors(node.Id).Count;
+                if (ways > LayerMapSpec.MaxBranches && map.Row(node.Row).Count > 1)
+                    throw new MapValidationException(
+                        $"node {node.Id} leads to {ways} nodes; no more than {LayerMapSpec.MaxBranches}");
             }
         }
 
@@ -111,6 +138,21 @@ namespace DungeonCore
                 if (row.All(n => n.Kind.IsDetour()))
                     throw new MapValidationException($"row {r} is nothing but detours, so the player cannot avoid them");
             }
+
+            // A plain node in every row is not enough once rows merge and fan out: the plain nodes must also link up.
+            var seen = new HashSet<int> { map.EntryId };
+            var queue = new Queue<int>();
+            queue.Enqueue(map.EntryId);
+            while (queue.Count > 0)
+            {
+                foreach (int next in map.Successors(queue.Dequeue()))
+                {
+                    if (map.Node(next).Kind.IsDetour() || !seen.Add(next)) continue;
+                    queue.Enqueue(next);
+                }
+            }
+            if (!seen.Contains(map.BossId))
+                throw new MapValidationException("every way to the boss passes a detour, so the player cannot avoid them");
         }
 
         private static void CheckThereIsAFork(LayerMap map)
@@ -119,9 +161,9 @@ namespace DungeonCore
                 throw new MapValidationException("the map has no fork; every layer must offer a choice");
         }
 
-        private static void CheckQuotas(LayerMap map, LayerMapSpec spec)
+        private static void CheckQuotas(LayerMap map, MapShape shape)
         {
-            foreach (var pair in spec.Quotas)
+            foreach (var pair in shape.Quotas)
             {
                 int wanted = pair.Value;
                 int got = map.CountOf(pair.Key);

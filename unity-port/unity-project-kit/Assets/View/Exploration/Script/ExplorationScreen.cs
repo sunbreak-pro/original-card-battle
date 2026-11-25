@@ -464,6 +464,7 @@ namespace Exploration
         private readonly string _calendarNote = "";
         private readonly string _daysForecastLabel = "";
         private readonly IReadOnlyList<EventOutcome> _events = new EventOutcome[0];
+        private readonly MapLayout _layout = MapLayout.Full;
 
         /// <summary>「第 2 層　■■の秘跡」, 「第 3 層　大黒蛇の住処（竜の領域）」 or 「竜の領域 第 4 層」 (§6.2).</summary>
         public string LayerTitle { get; init; }
@@ -510,6 +511,9 @@ namespace Exploration
         public IReadOnlyList<NodePanel> Nodes { get; init; }
 
         public IReadOnlyList<EdgeLine> Edges { get; init; }
+
+        /// <summary>How big the map draws its nodes: smaller on a map of more than five rows, so the rows fit one screen (#1049).</summary>
+        public MapLayout Layout { get => _layout; init => _layout = value ?? MapLayout.Full; }
 
         public int CurrentNodeId { get; init; }
 

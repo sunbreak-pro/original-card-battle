@@ -117,11 +117,12 @@ namespace DungeonCore.Tests
         }
 
         [Test]
-        public void TheSandTurnsThirtyDaysToTheKingIntoTwentyThree()
+        public void TheSandTakesTheSevenEntryDaysOffTheWayToTheKing()
         {
             // tools_and_consumables_v4.md §2.4: seven entry nodes at 0 days.
-            Assert.That(RunStraightDown(Region.Parasite, RunLoadout.Empty).DaysLeft, Is.EqualTo(Calendar.TotalDays - 30));
-            Assert.That(RunStraightDown(Region.Parasite, new RunLoadout(new[] { Sand })).DaysLeft, Is.EqualTo(Calendar.TotalDays - 23));
+            int straight = StraightDays(Region.Parasite);
+            Assert.That(RunStraightDown(Region.Parasite, RunLoadout.Empty).DaysLeft, Is.EqualTo(Calendar.TotalDays - straight));
+            Assert.That(RunStraightDown(Region.Parasite, new RunLoadout(new[] { Sand })).DaysLeft, Is.EqualTo(Calendar.TotalDays - (straight - 7)));
         }
 
         [Test]
@@ -202,8 +203,9 @@ namespace DungeonCore.Tests
         [Test]
         public void ExpiryOutranksTheLayerBoss()
         {
-            // Layer one's shortest route is five days: the boss takes the last one.
-            var state = WalkStraightDown(Lair.Of(1), 9UL, RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10, new CalendarState(5));
+            // The calendar holds exactly the layer's shortest route: the boss takes the last day.
+            int days = Lair.Of(1).Map(9UL).ShortestPathCost;
+            var state = WalkStraightDown(Lair.Of(1), 9UL, RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10, new CalendarState(days));
             Assert.That(state.HasResolved(state.Map.BossId), Is.True);
             Assert.That(state.Phase, Is.EqualTo(RunPhase.Expired));
         }
@@ -333,13 +335,14 @@ namespace DungeonCore.Tests
         }
 
         [Test]
-        public void AStraightRunToTheKingCostsThirtyDays()
+        public void AStraightRunToTheKingCostsADayARow_FortyFiveToFiftySevenDays()
         {
             // seven_layers_v4.md §3.2, walked end to end rather than summed on paper.
             foreach (Region region in Lair.Regions)
             {
                 var state = BeatTheBoss(RunStraightDown(region, RunLoadout.Empty));
-                Assert.That(state.DaysLeft, Is.EqualTo(Calendar.TotalDays - 30), region.ToString());
+                Assert.That(StraightDays(region), Is.InRange(45, 57), region.ToString());
+                Assert.That(state.DaysLeft, Is.EqualTo(Calendar.TotalDays - StraightDays(region)), region.ToString());
                 Assert.That(state.Phase, Is.EqualTo(RunPhase.LayerCleared), region.ToString());
                 Assert.That(state.Profile.IsKingLayer, Is.True);
                 Assert.That(state.Calendar.KingReturns.Keys, Is.EqualTo(new[] { region }));
@@ -541,6 +544,10 @@ namespace DungeonCore.Tests
             }
             return state;
         }
+
+        /// <summary>The rows of the maps <see cref="RunStraightDown"/> walks: one day a row.</summary>
+        private static int StraightDays(Region region) =>
+            Lair.Route(region).Sum(p => p.Map(p.Layer == 1 ? 1UL : (ulong)p.Layer).ShortestPathCost);
 
         private static ExplorationState BeatTheBoss(ExplorationState state) =>
             ExplorationReducer.ReportBattle(state, state.Hp, state.Stamina);

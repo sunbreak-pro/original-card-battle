@@ -1,6 +1,7 @@
 // The exploration screen's frame (dungeon_exploration_v4.md §6): what each node shows, what a step
 // forecasts, and that the forecast is the step. Runs in Unity's EditMode runner and under
 // `dotnet test` (unity-port/Exploration.Script.Tests) on the same files.
+using System.Collections.Generic;
 using System.Linq;
 using DungeonCore;
 using Exploration;
@@ -204,6 +205,31 @@ namespace Exploration.Tests
             Assert.That(entry.Y, Is.EqualTo(1f));
             Assert.That(boss.Y, Is.EqualTo(0f));
             Assert.That(screen.Nodes.All(n => n.X > 0f && n.X < 1f), Is.True);
+        }
+
+        [Test]
+        public void TheLongerMapsAreLaidOutByTheirRowCount_WithNoTwoNodesOnOneSpot()
+        {
+            // #1049: layers draw 7〜9 rows and rows 1〜4 wide. The view keeps every row on one screen (no scrolling), so
+            // the rows share the map's height evenly and each row spreads its nodes over the width.
+            var rowCounts = new HashSet<int>();
+            for (ulong seed = 1; seed <= 60; seed++)
+            {
+                var screen = new ExplorationSession(new RunStart { Seed = seed }).Screen();
+                int rows = screen.Nodes.Max(n => n.Row) + 1;
+                rowCounts.Add(rows);
+                foreach (var row in screen.Nodes.GroupBy(n => n.Row))
+                {
+                    int width = row.Count();
+                    foreach (var n in row)
+                    {
+                        Assert.That(n.Y, Is.EqualTo(1f - (float)n.Row / (rows - 1)).Within(1e-6f), $"seed {seed} node {n.Id}");
+                        Assert.That(n.X, Is.EqualTo((n.Column + 0.5f) / width).Within(1e-6f), $"seed {seed} node {n.Id}");
+                    }
+                }
+                Assert.That(screen.Nodes.Select(n => (n.X, n.Y)).Distinct().Count(), Is.EqualTo(screen.Nodes.Count), $"seed {seed}");
+            }
+            Assert.That(rowCounts, Is.EquivalentTo(new[] { 7, 8, 9 }));
         }
 
         [Test]
