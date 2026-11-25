@@ -230,7 +230,10 @@ namespace Trial.Meta
         /// <summary>The running life: its book when none is handed in, its 開示度 and its rare pages.</summary>
         public Expedition Expedition;
 
-        /// <summary>main.js journalCtx: the saved lineage (journal.js itself does not read it).</summary>
+        /// <summary>
+        /// main.js journalCtx: the saved lineage. journal.js itself does not read it; here its past lives and the rules of
+        /// traces make a page outside battle (JournalBookOf.PastLivesPage, #1053).
+        /// </summary>
         public Lineage Lineage;
 
         /// <summary>The fight's enemies with their names (and rows).</summary>
@@ -269,6 +272,7 @@ namespace Trial.Meta
             Book = Book,
             Pages = Pages,
             Expedition = Expedition,
+            Lineage = Lineage,
             Enemies = Enemies,
             EnemyIds = EnemyIds,
             DisclosureOf = DisclosureOf,
