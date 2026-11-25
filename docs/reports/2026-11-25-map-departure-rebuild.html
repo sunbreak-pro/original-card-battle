@@ -1,0 +1,924 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>地図と出立の作り替え</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* 左に追従する目次 + 右に 1 本の読み筋(題 → 結論 → 理由 → 根拠 → 参考)。
+     ライトが既定。ダークは右上のボタンで選んだときだけ使う(OS の設定には追従しない)。
+     色は :root とダークのブロックにだけ hex で書き、ほかはすべてトークン(var(--…))で当てる。 */
+  :root {
+    --ground: #f6f8f9; --panel: #ffffff; --ink: #1c2327; --muted: #56636b;
+    --line: #d9e0e3; --accent: #0e6b74; --accent-ink: #ffffff; --accent-soft: #e2f0f0;
+    --row: #f1f5f6; --ok: #2c7a4b; --warn: #966010; --stop: #a23c3c; --idle: #e3e8eb; --code-bg: #eef3f4;
+    --shadow: 0 1px 2px rgba(20, 40, 45, .05), 0 6px 18px rgba(20, 40, 45, .04);
+    --font-body: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+    --font-mono: "IBM Plex Mono", "Consolas", "Courier New", monospace;
+    /* 余白のスケール */
+    --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px; --sp-7: 48px; --sp-8: 72px; --sp-9: 96px;
+    /* チャート: カテゴリ(系列そのものが主題のときだけ使う。ふつうは accent 1 本 + グレー) */
+    --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --c4: #eda100; --c5: #e87ba4; --c6: #008300;
+    /* チャート: 連続(1 色相。明るい → 濃い)と、各段に載せる文字の色 */
+    --seq-1: #cde2fb; --seq-2: #86b6ef; --seq-3: #3987e5; --seq-4: #1c5cab; --seq-5: #0d366b;
+    --seq-1-ink: #1c2327; --seq-2-ink: #1c2327; --seq-3-ink: #0b1114; --seq-4-ink: #ffffff; --seq-5-ink: #ffffff;
+    /* チャート: 罫線と軸(軸は棒の「その他」の塗りにも使う) */
+    --grid: #e4e9ec; --axis: #75848b;
+    color-scheme: light;
+  }
+  @media not print {
+    :root[data-theme="dark"] {
+      --ground: #111618; --panel: #1a2125; --ink: #e4e9eb; --muted: #99a6ad;
+      --line: #2c363b; --accent: #5fc4cc; --accent-ink: #0f1c1e; --accent-soft: #163338;
+      --row: #1e262a; --ok: #6fc48f; --warn: #e0a94a; --stop: #e07a7a; --idle: #2c363b; --code-bg: #0f1417;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .35);
+      --c1: #3987e5; --c2: #d95926; --c3: #199e70; --c4: #c98500; --c5: #d55181; --c6: #008300;
+      --seq-1: #1f3a57; --seq-2: #2a5a92; --seq-3: #3987e5; --seq-4: #86b6ef; --seq-5: #cde2fb;
+      --seq-1-ink: #e4e9eb; --seq-2-ink: #ffffff; --seq-3-ink: #0b1114; --seq-4-ink: #0b1114; --seq-5-ink: #0b1114;
+      --grid: #2a3439; --axis: #7f8d94;
+      color-scheme: dark;
+    }
+  }
+  :root { --gap-section: var(--sp-8); --gap-card: var(--sp-5); }
+  @media (max-width: 599px) { :root { --gap-section: var(--sp-7); --gap-card: var(--sp-4); } }
+
+  * { box-sizing: border-box; }
+  /* scroll-padding-top: 固定のテーマボタン(下端 56px)に、目次・脚注・Shift+Tab で飛んだ先を隠さない(節ごとの scroll-margin は持たない) */
+  html { scroll-behavior: smooth; scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 72px); }
+  body { margin: 0; background: var(--ground); color: var(--ink); font-family: var(--font-body);
+    font-size: 16px; line-height: 1.9; -webkit-font-smoothing: antialiased; }
+  code, pre, .mono { font-family: var(--font-mono); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { transition: none !important; animation: none !important; }
+  }
+
+  /* テーマ切り替え(右上に固定。.page の上に 64px の予約余白を取って本文と重ねない)。
+     JS が data-theme を付けるまで出さない(JS が動かないとき、効かないボタンを残さない)。印刷では出さない */
+  .themeswitch { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 12px); right: calc(env(safe-area-inset-right, 0px) + 16px); z-index: 50;
+    display: none; gap: 2px; padding: 3px; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 8px; box-shadow: var(--shadow); }
+  @media screen { :root[data-theme] .themeswitch { display: inline-flex; } }
+  .themeswitch button { appearance: none; font: inherit; font-size: 14px; line-height: 1; height: 36px; min-width: 64px; padding: 0 14px;
+    border: 0; border-radius: 4px; background: transparent; color: var(--muted); cursor: pointer; }
+  .themeswitch button:hover { background: var(--row); color: var(--ink); }
+  .themeswitch button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+
+  /* レイアウト: 目次 250px + 本文 最大 880px。本文の列は子の間を gap で空ける */
+  .page { max-width: 1226px; margin: 0 auto; padding: 64px 24px 96px; display: grid;
+    grid-template-columns: 250px minmax(0, 880px); gap: var(--sp-7); justify-content: center; }
+  .page.no-toc { grid-template-columns: minmax(0, 880px); }
+  .main { min-width: 0; display: flex; flex-direction: column; gap: var(--sp-6); }
+  section { display: flex; flex-direction: column; gap: var(--sp-5); min-width: 0; }
+  /* 節と節の間 = main の gap(32px) + この margin = 72px(幅 600px 未満は 48px) */
+  .main > section { margin-top: calc(var(--gap-section) - var(--sp-6)); }
+  /* 幅 999px 以下は 1 列。並びは 題の面 → 結論カード → 目次 → 節(結論カードがない報告書は 題の面 → 目次 → 節) */
+  @media (max-width: 999px) {
+    .page { display: flex; flex-direction: column; gap: var(--sp-6); padding: 64px 16px 72px; }
+    .main { display: contents; }
+    .hero { order: -2; }
+    .main > :is(.verdicts, .tiles) { order: -1; }
+  }
+
+  /* 目次 */
+  .toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 24px); align-self: start;
+    max-height: calc(100vh - 48px); overflow-y: auto; font-size: 14px; }
+  .toc-title { font-size: 13px; font-weight: 700; color: var(--muted); margin: 0 0 var(--sp-2); }
+  .toc-progress { height: 3px; background: var(--idle); border-radius: 4px; overflow: hidden; margin: 0 0 var(--sp-3); }
+  .toc-progress > span { display: block; height: 100%; width: 0; background: var(--accent); transition: width .15s linear; }
+  .toc ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+  .toc a { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; align-items: start; padding: 8px 10px;
+    border-radius: 4px; color: var(--muted); text-decoration: none; line-height: 1.5; border-left: 3px solid transparent; }
+  .toc a:hover { background: var(--row); color: var(--ink); }
+  /* .toc は overflow-y: auto で横も切るので、焦点の輪は外ではなくリンクの内側に描く */
+  .toc a:focus-visible { outline-offset: -2px; }
+  .toc .lbl { display: block; font-size: 14px; }
+  .toc .toc-claim { display: block; font-size: 13px; color: var(--muted); font-weight: 400; line-height: 1.5; }
+  .toc a[aria-current="location"] .toc-claim { color: var(--ink); }
+  .toc .no { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 13px;
+    font-weight: 700; font-family: var(--font-mono); background: var(--idle); color: var(--ink); }
+  .toc a.done .no { background: transparent; color: var(--ok); box-shadow: inset 0 0 0 1.5px var(--ok); }
+  .toc a.done .no::before { content: "✓"; font-family: var(--font-body); }
+  .toc a.done .no > span { display: none; }
+  .toc a[aria-current="location"] { background: var(--accent-soft); color: var(--accent); font-weight: 700; border-left-color: var(--accent); }
+  .toc a[aria-current="location"] .no { background: var(--accent); color: var(--accent-ink); box-shadow: none; }
+  @media (max-width: 999px) {
+    .toc { order: 0; position: static; max-height: none; align-self: stretch; }
+  }
+
+  /* 題の面 */
+  .hero { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow);
+    padding: 40px 44px; display: flex; flex-direction: column; gap: var(--sp-4); }
+  @media (max-width: 599px) { .hero { padding: 24px 20px; } }
+  .eyebrow { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-3); align-items: center; font-size: 13px; color: var(--muted); font-weight: 700; margin: 0; }
+  h1 { font-size: clamp(26px, 3.4vw, 36px); line-height: 1.4; margin: 0; text-wrap: balance; font-weight: 700; letter-spacing: .01em; }
+  .lede { font-size: 17px; color: var(--muted); margin: 0; }
+  .meta { display: flex; flex-direction: row; flex-wrap: wrap; gap: var(--sp-2) var(--sp-5); margin: 0; padding: var(--sp-4) 0 0; border-top: 1px solid var(--line);
+    font-size: 13px; color: var(--muted); list-style: none; }
+  .meta b { color: var(--ink); font-weight: 700; margin-right: 4px; font-variant-numeric: tabular-nums; }
+
+  /* 見出しと本文。本文の 1 行は全角 40 字前後(40em)。図・表・カードは列の幅いっぱい */
+  .kicker { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--accent); font-weight: 700; margin: 0; max-width: none; }
+  .kicker .no { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+  .kicker::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  h2 { font-size: 24px; line-height: 1.5; margin: 0; text-wrap: balance; }
+  /* 小さな分類名(kicker)と主張(h2)は近づけて 1 組に見せる。この 1 か所だけ負の margin で gap を詰める */
+  .kicker + h2 { margin-top: calc(var(--sp-3) - var(--sp-5)); }
+  h3 { font-size: 17px; line-height: 1.5; margin: 0; }
+  p { margin: 0; }
+  p, ul, ol { max-width: 40em; }
+  ul, ol { padding-left: 1.4em; margin: 0; display: flex; flex-direction: column; gap: var(--sp-2); }
+  /* flex でない箱(.callout・.finding・li・td・dd)の中で段落や一覧が続くとき、間隔が 0 にならないようにする */
+  :is(.callout, .finding, li, td, dd) > :is(p, ul, ol) + :is(p, ul, ol) { margin-top: var(--sp-4); }
+  /* 日本語の折り返し: 見出し・リード文・カードの文は語や句の途中で割らない。段落の最終行を 1〜2 字にしない。
+     対応していないブラウザでは無視され、従来どおりに折り返す */
+  h1, h2, h3, .lede, .verdict p, .fig > figcaption, .compare figcaption, .hbar-label, .tile .l, .vhead p { word-break: auto-phrase; }
+  .page :is(p, li, td, dd, caption) { word-break: auto-phrase; }
+  p, li, td, dd, caption { text-wrap: pretty; }
+  /* 英単語・ファイル名・製品名を折り返させない(見出し・カード・図のラベルは全角 12 字以内にするか、これで守る) */
+  .nobr { white-space: nowrap; }
+  a { color: var(--accent); }
+  sup.ref { font-size: 13px; margin-left: 1px; line-height: 0; }
+  sup.ref a { text-decoration: none; }
+
+  /* 大きな塊(図・表・カード列・案パネル)の上下は、gap(24px) + この margin(8px) = 32px 以上 */
+  .fig, .tablewrap, .rowcards, .decision, .verdicts, .tiles, .compare, .split, .variants, .callout, .steps, pre { margin-block: var(--sp-2); }
+  .main > section > :last-child { margin-bottom: 0; }
+
+  /* 部品: 結論カード・チップ・数字タイル */
+  .verdicts, .tiles, .meta, .legend, .hbar, .steps, .refs, .rowcards, .toc ol { max-width: none; }
+  .verdicts { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--gap-card); padding: 0; list-style: none; }
+  .verdict { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); padding: var(--sp-5);
+    display: flex; flex-direction: column; gap: var(--sp-3); min-width: 0; break-inside: avoid; }
+  .verdict .tag { font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: var(--sp-2); }
+  .verdict .tag::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+  .verdict.now .tag { color: var(--ok); } .verdict.later .tag { color: var(--warn); } .verdict.skip .tag { color: var(--stop); }
+  .verdict h3 { font-size: 18px; text-wrap: balance; }
+  .verdict p { color: var(--muted); font-size: 15px; line-height: 1.8; }
+  .chip { display: inline-block; border-radius: 4px; padding: 1px 8px; font-size: 13px; font-weight: 700; line-height: 1.6; color: var(--accent-ink); white-space: nowrap; }
+  .chip.ok { background: var(--ok); } .chip.warn { background: var(--warn); } .chip.stop { background: var(--stop); }
+  .chip.idle { background: var(--idle); color: var(--ink); } .chip.kind { background: var(--accent); }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: var(--gap-card); padding: 0; list-style: none; }
+  .tile { background: var(--panel); border: 1px solid var(--line); border-top: 4px solid var(--idle); border-radius: 8px; box-shadow: var(--shadow);
+    padding: var(--sp-4) var(--sp-5) var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-1); }
+  .tile.ok { border-top-color: var(--ok); } .tile.warn { border-top-color: var(--warn); } .tile.stop { border-top-color: var(--stop); }
+  .tile .n { font-size: 32px; font-weight: 700; line-height: 1.3; font-family: var(--font-mono); display: block; white-space: nowrap; }
+  /* 数字の後ろの単位(36<span class="u">か月</span>)は小さく添える。数字と単位が別の行に割れない */
+  .tile .n .u { font: 700 16px var(--font-body); margin-left: 4px; }
+  .tile .l { font-size: 14px; line-height: 1.6; color: var(--muted); text-wrap: balance; }
+  .dist { display: flex; height: 10px; border-radius: 4px; overflow: hidden; background: var(--idle); gap: 2px; }
+  .dist > span { display: block; height: 100%; }
+  .dist .ok { background: var(--ok); } .dist .warn { background: var(--warn); } .dist .stop { background: var(--stop); } .dist .idle { background: var(--muted); }
+  /* 進捗バー(HTML)。svg の帯(rect.bar、.chart .bar)には当てない: CSS の height が rect の height 属性を上書きするため */
+  .bar:not(rect) { height: 8px; background: var(--idle); border-radius: 4px; overflow: hidden; min-width: 80px; }
+  .bar:not(rect) > span { display: block; height: 100%; background: var(--accent); }
+  .compare { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--gap-card); }
+  .compare > figure { margin: 0; min-width: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: var(--sp-5);
+    display: flex; flex-direction: column; gap: var(--sp-3); }
+  .compare figcaption { font-size: 14px; font-weight: 700; color: var(--muted); }
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: var(--sp-4) var(--sp-5); overflow-x: auto; font-size: 14px; line-height: 1.7; }
+  pre code { background: none; padding: 0; }
+  p code, li code, td code { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: .9em; }
+  .callout { border: 1px solid var(--line); background: var(--accent-soft); padding: var(--sp-5); border-radius: 8px; font-size: 15px; line-height: 1.8; }
+  .callout strong { color: var(--accent); }
+  .finding { border-left: 3px solid var(--line); padding: var(--sp-1) 0 var(--sp-1) var(--sp-4); }
+  .finding.stop { border-left-color: var(--stop); } .finding.warn { border-left-color: var(--warn); } .finding.ok { border-left-color: var(--ok); }
+  .note { font-size: 14px; color: var(--muted); }
+
+  /* 表: セルの内側は 12px × 20px */
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); box-shadow: var(--shadow); }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; line-height: 1.7; font-variant-numeric: tabular-nums; }
+  caption { caption-side: top; text-align: left; font-weight: 700; font-size: 15px; line-height: 1.7; padding: var(--sp-4) 20px var(--sp-3); border-bottom: 1px solid var(--line); }
+  th, td { text-align: left; padding: 12px 20px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 13px; color: var(--muted); background: var(--row); font-weight: 700; white-space: nowrap; }
+  tbody tr:nth-child(even) td { background: var(--row); }
+  th.num, td.num { text-align: right; white-space: nowrap; font-family: var(--font-mono); }
+  td.nowrap { white-space: nowrap; }
+  tr { break-inside: avoid; }
+  tr:last-child td { border-bottom: 0; }
+  td.state { white-space: nowrap; font-weight: 700; }
+  td.state.wrap { white-space: normal; } /* 結果が文のセル(td class="state wrap yes")。短い状態語は wrap なしで折り返さない */
+  td.state.yes { color: var(--ok); } td.state.no { color: var(--stop); } td.state.maybe { color: var(--warn); }
+  /* 3 列以上の表は、狭い幅で列が数文字に潰れないよう、表の枠の中で横に動かす。列が多いほど最小幅を広げる(後ろの規則が勝つ)。
+     :where() で詳しさを 0 にしてあるので、table.stack や印刷の min-width: 0 が素直に勝つ */
+  .tablewrap > table:where(:has(thead th:nth-child(3))) { min-width: 36em; }
+  .tablewrap > table:where(:has(thead th:nth-child(4))) { min-width: 44em; }
+  .tablewrap > table:where(:has(thead th:nth-child(5))) { min-width: 48em; }
+  /* 標題は、表が横に動いても枠の見えている幅に留めて左端に残す。幅は枠の幅(100cqw)で決める。
+     container query の単位が使えない古いブラウザでは、幅 999px 以下だけ画面の幅から近似する */
+  .tablewrap caption { position: sticky; left: 0; box-sizing: border-box; }
+  @media (max-width: 999px) { .tablewrap caption { width: min(100%, calc(100vw - 34px)); } }
+  @supports (width: 1cqw) {
+    .tablewrap { container-type: inline-size; }
+    .tablewrap caption { width: 100cqw; }
+  }
+  /* 列が 4 つ以上の表(table class="wide")。列を押し縮めて 1 行を数文字にせず、列の幅を保ったまま、表の枠(.tablewrap)の中だけを横に動かす。
+     文のセルは全角 12 字ぶんに左右の余白(40px)を足した幅を、列の最小幅にする(足りなければ枠の中で横に動く)。
+     Chrome はセルの width を「望ましい幅」として表の幅に合わせて縮めるので min-width も付ける(Firefox は width を最小幅として扱う)。
+     数値・状態語・折り返さない語のセルは指定せず、語の幅に任せる。
+     :where() で詳しさを下げてあるので、幅 599px 以下の table.stack と印刷の指定が素直に勝つ */
+  table.wide :where(td:not(.num, .nowrap, .state:not(.wrap))) { width: calc(12em + 40px); min-width: calc(12em + 40px); }
+  /* 縦積みの表(table class="stack"。各 td に data-label="列の名前")。幅 599px 以下では、行を縦に積み、
+     セルの前に data-label の文字を出す。thead は見えない位置に置く(読み上げには残る)。
+     全セルが短い表だけに付ける。長い文の比較は .rowcards にする。数字が主体の表と評価表(table.heat)には付けない */
+  @media (max-width: 599px) {
+    .tablewrap > table.stack { min-width: 0; }
+    table.stack colgroup { display: none; }
+    table.stack tbody, table.stack tr, table.stack td { display: block; }
+    table.stack thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    table.stack td { border-bottom: 0; padding: var(--sp-1) var(--sp-5); text-align: left; white-space: normal; width: auto; min-width: 0; }
+    table.stack td[data-label]::before { content: attr(data-label); display: block; font-size: 13px; line-height: 1.6; font-weight: 700; color: var(--muted); }
+    table.stack td:first-child { padding-top: var(--sp-3); font-weight: 700; }
+    table.stack td:last-child { padding-bottom: var(--sp-3); border-bottom: 1px solid var(--line); }
+    table.stack tbody tr:last-child td:last-child { border-bottom: 0; }
+  }
+
+  /* 行のカード(ul class="rowcards")。文章が主体の比較は表にせず、1 件を 1 枚のカードにして、題(h3)の下に項目名(dt)と文(dd)を積む。
+     幅 760px 以上は項目名を左の列に置く(狭い列に長い文を押し込まない) */
+  .rowcards { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--gap-card); }
+  .rowcards > li { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); padding: var(--sp-5);
+    display: flex; flex-direction: column; gap: var(--sp-3); min-width: 0; break-inside: avoid; }
+  .rowcards dl, .decision dl { margin: 0; display: flex; flex-direction: column; gap: var(--sp-3); }
+  .rowcards dl > div, .decision dl > div { display: flex; flex-direction: column; gap: var(--sp-1); min-width: 0; }
+  .rowcards dt, .decision dt { font-size: 13px; font-weight: 700; line-height: 1.6; color: var(--muted); }
+  .rowcards dd, .decision dd { margin: 0; font-size: 15px; line-height: 1.8; }
+  @media (min-width: 760px) {
+    .rowcards dl > div, .decision dl > div { display: grid; grid-template-columns: 11em minmax(0, 1fr); gap: var(--sp-4); align-items: baseline; }
+  }
+
+  /* 判断カード(article class="decision")。判断 1 つを 1 枚にし、4 つの欄を同じ順で並べる:
+     .d-situation 何が起きているか / .d-reason なぜ決める必要があるか / .d-options 選ぶと何が起きるか(選択肢ごとの li) /
+     .d-pick 推奨と根拠(.d-choice 推す選択肢の名前、.d-basis 根拠)。欄が欠けるか空なら、検査が ERROR にする */
+  .decision { background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 8px; box-shadow: var(--shadow);
+    padding: var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; break-inside: avoid; }
+  .decision h3 { font-size: 18px; text-wrap: balance; }
+  .decision dl { gap: var(--sp-4); }
+  .decision .d-pick { background: var(--accent-soft); border-radius: 4px; padding: var(--sp-3) var(--sp-4); }
+  .decision .d-pick dt { color: var(--accent); }
+  .decision .d-choice { font-weight: 700; }
+  .decision .d-basis { margin-top: var(--sp-1); }
+
+  /* 図の枠: 図の主張(figcaption)を図の上に出す */
+  .fig { margin-inline: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow);
+    padding: var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; overflow-x: auto; break-inside: avoid; }
+  .fig > figcaption { font-size: 16px; font-weight: 700; line-height: 1.6; color: var(--ink); }
+  .fig-note { font-size: 13px; line-height: 1.7; color: var(--muted); max-width: none; }
+  /* svg.chart は幅 640px 未満では横に動く。SVG だけを <div class="chartscroll"> で包み、図の主張(figcaption)・凡例・注記は動かさない。
+     動かせる側の端に影を出して知らせる(動かせるときだけ見える。白(--panel)の覆いが中身と一緒に動き、端まで来ると影を隠す)。
+     右端は初めに切れて見えるので、値は図の左側に置く。color-mix が効かないブラウザでは影を出さず、.fig の白がそのまま残る */
+  .chartscroll { overflow-x: auto; min-width: 0; }
+  @supports (background: color-mix(in srgb, red 50%, transparent)) {
+    .chartscroll {
+      background:
+        linear-gradient(to right, var(--panel) 40%, transparent) left center / 32px 100% no-repeat local,
+        linear-gradient(to left, var(--panel) 40%, transparent) right center / 32px 100% no-repeat local,
+        radial-gradient(farthest-side at 0 50%, color-mix(in srgb, var(--ink) 24%, transparent), transparent) left center / 12px 100% no-repeat scroll,
+        radial-gradient(farthest-side at 100% 50%, color-mix(in srgb, var(--ink) 24%, transparent), transparent) right center / 12px 100% no-repeat scroll,
+        var(--panel);
+    }
+  }
+
+  /* 横棒グラフ: 大きさの比較。値は右に文字でも書く。強調する 1 行だけ accent、ほかはグレー */
+  .hbar { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--sp-3); }
+  .hbar-row { display: grid; grid-template-columns: minmax(8em, 14em) minmax(0, 1fr) 4.5em; gap: var(--sp-2) var(--sp-4); align-items: center; }
+  .hbar-label { font-size: 15px; line-height: 1.6; min-width: 0; }
+  .hbar-track { display: block; height: 14px; background: var(--idle); border-radius: 4px; overflow: hidden; }
+  .hbar-fill { display: block; height: 100%; border-radius: 4px; background: var(--bar, var(--axis)); }
+  .hbar-val { font-family: var(--font-mono); font-size: 15px; text-align: right; font-variant-numeric: tabular-nums; }
+  .hbar .is-focus { --bar: var(--accent); }
+  .hbar-row.is-focus .hbar-label, .hbar-row.is-focus .hbar-val { font-weight: 700; }
+  .hbar .c1 { --bar: var(--c1); } .hbar .c2 { --bar: var(--c2); } .hbar .c3 { --bar: var(--c3); }
+  .hbar .c4 { --bar: var(--c4); } .hbar .c5 { --bar: var(--c5); } .hbar .c6 { --bar: var(--c6); }
+  @media (max-width: 599px) {
+    .hbar-row { grid-template-columns: minmax(0, 1fr) 4em; }
+    .hbar-label { grid-column: 1 / -1; }
+  }
+  /* 文と図の並び(.split)の中の横棒: 列が 325〜490px しかなく、既定のラベル列(最大 14em)だと棒が 0px になる。
+     ラベルを棒の上の行に出して、棒と値だけを並べる(幅 760px 未満は .split が 1 列になるので、既定の並びのまま) */
+  @media (min-width: 760px) {
+    .split .hbar-row { grid-template-columns: minmax(0, 1fr) 3.5em; gap: var(--sp-1) var(--sp-3); }
+    .split .hbar-label { grid-column: 1 / -1; }
+  }
+
+  /* 凡例: 2 系列以上のとき必須 */
+  .legend { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: row; flex-wrap: wrap; gap: var(--sp-2) var(--sp-5); font-size: 14px; line-height: 1.6; color: var(--muted); }
+  .legend li { display: inline-flex; align-items: center; gap: var(--sp-2); }
+  .sw { display: inline-block; width: 12px; height: 12px; border-radius: 4px; background: var(--axis); flex: none; }
+  .sw.c1 { background: var(--c1); } .sw.c2 { background: var(--c2); } .sw.c3 { background: var(--c3); }
+  .sw.c4 { background: var(--c4); } .sw.c5 { background: var(--c5); } .sw.c6 { background: var(--c6); }
+
+  /* SVG チャート: viewBox の幅は 640 にそろえる(最小幅 640px で等倍になり、文字は 13px を下回らない) */
+  svg.chart { display: block; width: 100%; min-width: 640px; height: auto; overflow: visible; }
+  .chart .grid { stroke: var(--grid); stroke-width: 1; fill: none; }
+  .chart .axis { stroke: var(--axis); stroke-width: 1.5; fill: none; }
+  .chart .tick { stroke: var(--axis); stroke-width: 1; fill: none; }
+  .chart .t { fill: var(--ink); font-family: var(--font-body); font-size: 13px; }
+  .chart .t-muted { fill: var(--muted); }
+  .chart .ln-1 { --series: var(--c1); } .chart .ln-2 { --series: var(--c2); }
+  .chart .ln-3 { --series: var(--c3); } .chart .ln-4 { --series: var(--c4); }
+  .chart .is-focus { --series: var(--accent); }
+  .chart .ln { fill: none; stroke: var(--series, var(--axis)); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+  .chart .area { fill: var(--series, var(--axis)); fill-opacity: .14; stroke: none; }
+  .chart .dot { fill: var(--series, var(--axis)); stroke: var(--panel); stroke-width: 2; }
+  /* 期間の帯(rect class="bar" に x・y・width・height を属性で書く)。重なる帯は --panel の縁で分ける */
+  .chart .bar { fill: var(--series, var(--axis)); stroke: var(--panel); stroke-width: 2; }
+  .chart .quad { fill: var(--row); stroke: var(--line); stroke-width: 1; }
+  .chart .quad.is-focus { fill: var(--accent-soft); stroke: var(--accent); }
+  .chart .node { fill: var(--panel); stroke: var(--axis); stroke-width: 1.5; }
+  .chart .node.is-focus { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2; }
+  .chart .edge { fill: none; stroke: var(--axis); stroke-width: 1.5; }
+  .chart .arrowhead { fill: var(--axis); stroke: none; }
+  .chart .edge-label { fill: var(--muted); font-family: var(--font-body); font-size: 13px; paint-order: stroke; stroke: var(--panel); stroke-width: 4px; stroke-linejoin: round; }
+
+  /* 評価表: 案 × 基準の点数を濃淡で見せる(数値は必ず文字で載せる) */
+  table.heat td, table.heat th { text-align: center; }
+  table.heat td { vertical-align: middle; }
+  table.heat th:first-child, table.heat td:first-child { text-align: left; min-width: 9em; }
+  table.heat td[data-l] { font-family: var(--font-mono); font-weight: 700; border-left: 1px solid var(--panel); }
+  table.heat td[data-l="1"] { background: var(--seq-1); color: var(--seq-1-ink); }
+  table.heat td[data-l="2"] { background: var(--seq-2); color: var(--seq-2-ink); }
+  table.heat td[data-l="3"] { background: var(--seq-3); color: var(--seq-3-ink); }
+  table.heat td[data-l="4"] { background: var(--seq-4); color: var(--seq-4-ink); }
+  table.heat td[data-l="5"] { background: var(--seq-5); color: var(--seq-5-ink); }
+  /* 幅 599px 以下で横に動かしても、先頭列(行の名前)は左に残す。固定した列の背景は行の色と同じにして、後ろのセルを隠す */
+  @media (max-width: 599px) {
+    table.heat th:first-child, table.heat td:first-child { position: sticky; left: 0; z-index: 1; box-shadow: 1px 0 0 var(--line); }
+    table.heat tbody td:first-child { background: var(--panel); }
+    table.heat tbody tr:nth-child(even) td:first-child { background: var(--row); }
+  }
+
+  /* 手順: 順番に意味があるときだけ。番号は CSS カウンタ */
+  .steps { list-style: none; padding: 0; margin: 0; counter-reset: step; display: flex; flex-direction: column; gap: var(--sp-4); }
+  .steps > li { counter-increment: step; position: relative; padding: 2px 0 0 52px; min-height: 36px; }
+  .steps > li::before { content: counter(step); position: absolute; left: 0; top: 0; width: 36px; height: 36px; border-radius: 50%;
+    display: grid; place-items: center; background: var(--accent); color: var(--accent-ink); font-family: var(--font-mono); font-weight: 700; font-size: 15px; }
+  .steps strong { display: block; }
+
+  /* 文と図の並び: 幅 760px 未満で縦積み */
+  .split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: var(--sp-6); align-items: start; }
+  .split > div { display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; }
+  .split > .fig { margin-block: 0; }
+  .split.rev > :first-child { order: 2; }
+  @media (max-width: 759px) {
+    .split { grid-template-columns: minmax(0, 1fr); gap: var(--sp-5); }
+    .split.rev > :first-child { order: 0; }
+  }
+
+  /* 参考 */
+  .refs { font-size: 14px; line-height: 1.8; color: var(--muted); padding: var(--sp-5) var(--sp-5) var(--sp-5) calc(var(--sp-5) + 1.6em);
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+  .refs li { overflow-wrap: anywhere; }
+  .refs li:target { color: var(--ink); }
+
+  /* 切り替え式の案パネル(UI/UX 案)。JS が動くと .is-ready が付き、ボタンで 1 案ずつ見せる。
+     動かないときはタブを隠して全案を縦に並べる。全パネルを同じ grid セルに重ねるので、切り替えても高さは変わらない */
+  .variants { display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; }
+  .variants-tabs { display: none; }
+  .variants.is-ready .variants-tabs { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: var(--sp-2); }
+  @media (max-width: 699px) {
+    .variants.is-ready .variants-tabs { grid-auto-flow: row; grid-auto-columns: auto; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    /* 案が奇数個のとき、最後の 1 つは 2 列ぶんの幅にして、左に 1 つだけ残らないようにする */
+    .variants.is-ready .variants-tabs > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+  }
+  .variants-tabs .chip { margin-left: auto; }
+  .variants-tabs [role="tab"] { appearance: none; font: inherit; font-size: 14px; font-weight: 700; line-height: 1.4; color: var(--ink); text-align: left;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px; min-height: 44px; padding: 10px 14px 13px; cursor: pointer;
+    position: relative; overflow: hidden; display: flex; flex-wrap: wrap; align-items: center; align-content: center; gap: var(--sp-1) 10px; }
+  .variants-tabs [role="tab"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: transparent; }
+  .variants-tabs [role="tab"]:hover { background: var(--row); }
+  .variants-tabs [role="tab"][aria-selected="true"] { background: var(--accent-soft); border-color: var(--accent); }
+  .variants-tabs [role="tab"][aria-selected="true"]::after { background: var(--accent); }
+  .vt-name { flex: 1 1 auto; min-width: 0; }
+  .variants-stage { display: flex; flex-direction: column; gap: var(--sp-6); }
+  .variants.is-ready .variants-stage { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .vpanel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); padding: var(--sp-5);
+    display: flex; flex-direction: column; gap: var(--sp-5); min-width: 0; }
+  .variants.is-ready .vpanel { grid-area: 1 / 1; visibility: hidden; opacity: 0; }
+  .variants.is-ready .vpanel.is-active { visibility: visible; opacity: 1; }
+  /* 切り替えのフェードは、利用者が最初に案を切り替えたとき(script が .is-live を付ける)から。
+     最初の描画で動かすと、スクリーンショットや印刷が途中の半透明の画面を写す */
+  .variants.is-live .vpanel { transition: opacity .12s ease, visibility 0s linear .12s; }
+  .variants.is-live .vpanel.is-active { transition: opacity .12s ease; }
+  /* 幅 700px 未満は、見せていない案を高さ 0 にたたむ(重ねたままだと、短い案の下に最も高い案ぶんの空白が残る)。
+     印刷は全案を並べるので、画面(screen)だけに効かせる */
+  @media screen and (max-width: 699px) {
+    .variants.is-ready .vpanel:not(.is-active) { max-height: 0; overflow: hidden; padding-block: 0; border-width: 0; box-shadow: none; }
+  }
+  .vhead { display: flex; flex-direction: column; gap: var(--sp-2); }
+  .vhead h3 { font-size: 18px; }
+  .vhead p { color: var(--muted); }
+  .vnotes { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--sp-4) var(--sp-5); margin: 0; padding: var(--sp-4) 0 0; border-top: 1px solid var(--line); }
+  .vnotes > div { display: flex; flex-direction: column; gap: var(--sp-1); min-width: 0; }
+  .vnotes dt { font-size: 13px; font-weight: 700; color: var(--muted); }
+  .vnotes dd { margin: 0; font-size: 15px; line-height: 1.8; }
+
+  /* モックアップの枠(案の中身は #mockup-styles が .mk-<記号> で持つ。レポートのトークンとは独立) */
+  .mock { container-type: inline-size; min-width: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--panel); }
+  /* container query が効かないブラウザでは、案が枠より広くなる。切り捨てず、枠の中で横に動かして読めるようにする */
+  @supports not (container-type: inline-size) { .mock { overflow-x: auto; } }
+  .mock-bar { display: flex; align-items: center; gap: var(--sp-3); padding: 10px 14px; background: var(--row); border-bottom: 1px solid var(--line); font-size: 13px; line-height: 1.4; color: var(--muted); }
+  .mock-dots { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--axis); margin-right: 40px; box-shadow: 16px 0 0 var(--axis), 32px 0 0 var(--axis); }
+  .mock-url { flex: 1; min-width: 0; padding: 2px 10px; border-radius: 4px; background: var(--panel); border: 1px solid var(--line); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mock[data-device="phone"] { width: 100%; max-width: 390px; margin-inline: auto; border-width: 2px; border-radius: 28px; }
+  .mock[data-device="phone"] .mock-bar { display: none; }
+  .mocks { display: flex; flex-wrap: wrap; gap: var(--sp-5); align-items: flex-start; }
+  .mocks > .mock { flex: 1 1 320px; margin-inline: 0; }
+  .mocks > .mock[data-device="phone"] { flex: 0 1 390px; }
+  /* 広い画面とスマホ画面を縦に重ねるとき(.mocks に stack を付ける)。横に並べると広い画面が 416px 前後に狭まる */
+  .mocks.stack { flex-direction: column; align-items: stretch; }
+  .mocks.stack > .mock { flex: none; width: 100%; }
+  .mocks.stack > .mock[data-device="phone"] { width: min(100%, 390px); align-self: center; }
+
+  @media print {
+    :root { --shadow: none; }
+    /* 背景のグラフィックを刷らない設定(Chrome の既定)でも、評価表・チップ・棒グラフ・手順の番号の色を残す */
+    *, *::before, *::after { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { background: var(--panel); }
+    .chartscroll { background: var(--panel); }
+    /* 印刷では表を横に動かせない。枠を切らず、最小幅を外して列を詰め、見出しも折り返して、右端の列(評価表の合計など)を失わない */
+    .tablewrap { overflow: visible; }
+    .tablewrap > table { min-width: 0; }
+    table.wide td { width: auto; min-width: 0; }
+    th { white-space: normal; word-break: auto-phrase; }
+    .themeswitch, .toc { display: none; }
+    .page { display: block; padding: 0; max-width: none; }
+    .main { display: flex; }
+    h2, .kicker, h3 { break-after: avoid; }
+    .refs a::after { content: " (" attr(href) ")"; }
+    .variants-tabs, .variants.is-ready .variants-tabs { display: none; }
+    .variants.is-ready .variants-stage { display: flex; flex-direction: column; gap: var(--sp-6); }
+    .variants.is-ready .vpanel { visibility: visible; opacity: 1; }
+  }
+</style>
+<!-- 案(UI/UX のモックアップ)が必要な報告書だけ、この直後に <style id="mockup-styles"> を足す。セレクタは必ず .mk-<案の記号> から始める。 -->
+</head>
+<body>
+<script>
+  /* テーマの初期化: 描画前に data-theme を決める。保存値(light / dark)があればそれ、なければ light。
+     本文の最初の要素に置く(Artifact で外枠を外しても動く)。localStorage が使えなくても止まらない */
+  (function () {
+    var t = 'light';
+    try {
+      var s = localStorage.getItem('html-report-theme');
+      if (s === 'light' || s === 'dark') t = s;
+    } catch (e) {}
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+
+<div class="themeswitch" role="group" aria-label="表示の明るさ">
+  <button type="button" data-theme-set="light" aria-pressed="true">ライト</button>
+  <button type="button" data-theme-set="dark" aria-pressed="false">ダーク</button>
+</div>
+
+<div class="page" lang="ja">
+  <nav class="toc" aria-label="目次">
+    <p class="toc-title">目次</p>
+    <div class="toc-progress" aria-hidden="true"><span></span></div>
+    <ol>
+      <li><a href="#s-status" data-target="s-status"><span class="no"><span>1</span></span><span><span class="lbl">進み具合</span><span class="toc-claim">8&nbsp;本が main に入った</span></span></a></li>
+      <li><a href="#s-screens" data-target="s-screens"><span class="no"><span>2</span></span><span><span class="lbl">変わった画面</span><span class="toc-claim">3&nbsp;つの画面が新しい形に</span></span></a></li>
+      <li><a href="#s-check" data-target="s-check"><span class="no"><span>3</span></span><span><span class="lbl">Unity で見る点</span><span class="toc-claim">6&nbsp;場面を Unity で確かめる</span></span></a></li>
+      <li><a href="#s-decided" data-target="s-decided"><span class="no"><span>4</span></span><span><span class="lbl">今日の決定</span><span class="toc-claim">決定 5&nbsp;つを次の作業へ</span></span></a></li>
+      <li><a href="#s-incidents" data-target="s-incidents"><span class="no"><span>5</span></span><span><span class="lbl">途中で起きたこと</span><span class="toc-claim">指示と merge の止まりを直した</span></span></a></li>
+      <li><a href="#s-open" data-target="s-open"><span class="no"><span>6</span></span><span><span class="lbl">仮定と未確認</span><span class="toc-claim">画面の見え方は未確認</span></span></a></li>
+      <li><a href="#s-next" data-target="s-next"><span class="no"><span>7</span></span><span><span class="lbl">次に判断が要る点</span><span class="toc-claim">決めていただく点が 4&nbsp;つ</span></span></a></li>
+      <li><a href="#s-refs" data-target="s-refs"><span class="no"><span>8</span></span><span><span class="lbl">参考</span><span class="toc-claim">出典 3&nbsp;件</span></span></a></li>
+    </ol>
+  </nav>
+
+  <main class="main">
+    <header class="hero">
+      <p class="eyebrow"><span class="chip kind">進捗</span><span>2026-11-25</span><span>探索の地図と出立の画面</span></p>
+      <h1>地図と出立の作り替えは 3&nbsp;件とも main に入り、残りは Unity での確認です</h1>
+      <p class="lede">2026-11-25&nbsp;に選んだデザイン案を、試遊版の Unity 版に入れました。前提の Issue（課題の票）が開いたままだったので、前提から順に 4&nbsp;回に分けて回しました。画面は Unity の編集画面（Unity Editor）でまだ見ていません。</p>
+      <ul class="meta"><li><b>3</b>件の出典</li><li><b>約 16 分</b>で読めます（推定）</li></ul>
+    </header>
+
+    <section id="s-status">
+      <p class="kicker"><span class="no">01</span>進み具合</p>
+      <h2>地図と出立の 3&nbsp;件は、前提の 5&nbsp;件と合わせて 8&nbsp;本の PR で main に入りました</h2>
+      <p>main は c8157b8a から f9dae794&nbsp;に進みました。8&nbsp;本の PR は、それぞれ全体確認（ビルド・lint・テスト・Unity のコンパイルなどの自動の確認）が成功しています<sup class="ref"><a href="#ref-2">[2]</a></sup>。実装した役とは別の役が Issue と差分を読む確認でも、止めるべき問題（Blocking）は 0&nbsp;件でした。</p>
+      <ul class="tiles">
+        <li class="tile ok"><span class="n">8</span><span class="l">完了（main に入った PR）</span></li>
+        <li class="tile warn"><span class="n">8</span><span class="l">待ち（Unity で確認する Issue）</span></li>
+        <li class="tile"><span class="n">0</span><span class="l">進行中</span></li>
+        <li class="tile stop"><span class="n">0</span><span class="l">止まっている（確認で落ちた PR）</span></li>
+      </ul>
+      <div class="tablewrap">
+        <table class="wide">
+          <caption>8&nbsp;本の PR はすべて main に入り、8&nbsp;件の Issue は Unity での確認を待っています</caption>
+          <thead><tr><th>回</th><th>Issue と中身</th><th>PR</th><th>merge の commit</th><th>状態</th><th>次に動く人</th></tr></thead>
+          <tbody>
+            <tr><td class="num">1</td><td>#1029&nbsp;暦の実装のあとに残った直し（戦闘の背景の番号・早駆けの丸薬の絵・瘴気 0% の欄）</td><td class="nowrap">#1055</td><td class="nowrap">c4980209</td><td class="state"><span class="chip ok">main に入った</span></td><td>こうだいさん（Unity で確認）</td></tr>
+            <tr><td class="num">1</td><td>#1049&nbsp;層の地図を 7〜9&nbsp;行に延ばし、行き先が 1〜3&nbsp;つのノードを混ぜる</td><td class="nowrap">#1056</td><td class="nowrap">67dc92fe</td><td class="state"><span class="chip ok">main に入った</span></td><td>こうだいさん（Unity で確認）</td></tr>
+            <tr><td class="num">2</td><td>#1031&nbsp;同じ 1&nbsp;人が潜り直す形の画面に残った世代の語を直す</td><td class="nowrap">#1059</td><td class="nowrap">7837ae23</td><td class="state"><span class="chip ok">main に入った</span></td><td>こうだいさん（Unity で確認）</td></tr>
+            <tr><td class="num">2</td><td>#1050&nbsp;探索の地図を「層の断面を降りる」形に（第 1&nbsp;層）</td><td class="nowrap">#1061</td><td class="nowrap">6defaae0</td><td class="state"><span class="chip ok">main に入った</span></td><td>こうだいさん（Unity で確認）</td></tr>
+            <tr><td class="num">2</td><td>#1038&nbsp;最初の探索を、最初期の札 11&nbsp;種の束で始める</td><td class="nowrap">#1062</td><td class="nowrap">5674817c</td><td class="state"><span class="chip ok">main に入った</span></td><td>こうだいさん（Unity で確認）</td></tr>
+            <tr><td class="num">3</td><td>#1053&nbsp;拠点の一覧と痕跡の規則 4&nbsp;行を、手記で読めるようにする</td><td class="nowrap">#1064</td><td class="nowrap">e8e4a9a3</td><td class="state"><span class="chip ok">main に入った</span></td><td>こうだいさん（Unity で確認）</td></tr>
+            <tr><td class="num">3</td><td>#1051&nbsp;出立の 2&nbsp;段を「支度の卓」の 1&nbsp;画面に</td><td class="nowrap">#1065</td><td class="nowrap">e0b2a43f</td><td class="state"><span class="chip ok">main に入った</span></td><td>こうだいさん（Unity で確認）</td></tr>
+            <tr><td class="num">4</td><td>#1052&nbsp;拠点と出立を「降り口の前」の 1&nbsp;つの場面に</td><td class="nowrap">#1066</td><td class="nowrap">f9dae794</td><td class="state"><span class="chip ok">main に入った</span></td><td>こうだいさん（Unity で確認）</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>地図と出立の 3&nbsp;件は #1050・#1051・#1052&nbsp;です。残りの 5&nbsp;件は、その前提です。Issue と PR の番号と題は、GitHub の記録<sup class="ref"><a href="#ref-1">[1]</a></sup>で確かめられます。</p>
+      <p>Issue の 8&nbsp;件は、どれも開いたままにしています。PR は Issue の番号を Refs（関連づけるだけで、閉じない書き方）で書いていて、Unity での確認が残っているためです。</p>
+      <p>戻すときは、新しい順に取り消しの commit（revert）を作ります。コマンドは <code>git revert -m 1 &lt;commit&gt;</code> です。Unity のプロジェクトへ写す作業（<code>npm run unity:sync</code>）は済んでいます。Unity のコンパイル確認（<code>npm run unity:check</code>）の出力は「Every Unity assembly compiles」でした。</p>
+    </section>
+
+    <section id="s-screens">
+      <p class="kicker"><span class="no">02</span>変わった画面</p>
+      <h2>地図・支度の卓・降り口の前の 3&nbsp;つの画面が新しい形になりました</h2>
+      <ul class="rowcards">
+        <li>
+          <h3>地図（第 1&nbsp;層だけ）</h3>
+          <dl>
+            <div><dt>何が変わったか</dt><dd>部屋は岩に開いた空洞、道は曲線の通路になりました。上の帯の暦は 1&nbsp;本のバー、HP はハートとバー、スタミナは粒で示します。左に 7&nbsp;層のうちの今の深さを出し、詳細の板の上に部屋の窓を置きました。地図は縦に送りません。</dd></div>
+            <div><dt>大きさや値</dt><dd>空洞の大きさは、下の表のとおりです。第 1&nbsp;層の幕の上で、本文の文字の対比は 5.51&nbsp;です。琥珀（黄色がかった色）の対比は 3.15&nbsp;です。このゲームの決まり（本文 4.5&nbsp;以上、琥珀 3&nbsp;以上）を、どちらも満たします。</dd></div>
+            <div><dt>変えなかったこと</dt><dd>第 2〜7&nbsp;層の地図は、今の四角と直線のままです。第 2〜6&nbsp;層は、行の数に合わせてノードの大きさだけ縮めました。第 7&nbsp;層（王の間）は 3&nbsp;行のままで、大きさも変わりません。</dd></div>
+          </dl>
+        </li>
+        <li>
+          <h3>支度の卓</h3>
+          <dl>
+            <div><dt>何が変わったか</dt><dd>出立の 2&nbsp;段を 1&nbsp;画面にまとめました。左に小さい札の一覧と品の棚、右に荷（束の山・枚数・ゲージ・道具の枠・消耗品の枠・読む板・「出立する」）を置きます。上には崩壊の暦（崩壊までの日数を数える表示）を置きました。</dd></div>
+            <div><dt>大きさや値</dt><dd>最初の探索の札は 11&nbsp;種で、最初のデッキは 20&nbsp;枚です。最初期の構え（スタンス）は 2&nbsp;種で、どちらか 1&nbsp;種だけ入れられます。開始の位置の図は、品「間合いの履」の読む板の中に出します。</dd></div>
+            <div><dt>変えなかったこと</dt><dd>属性の内訳と才能の札は置いていません。属性の内訳は画面に出さず、札のアイコンを押して開く形を Issue #1054&nbsp;で別に作ります。</dd></div>
+          </dl>
+        </li>
+        <li>
+          <h3>降り口の前</h3>
+          <dl>
+            <div><dt>何が変わったか</dt><dd>拠点と出立を 1&nbsp;つの場面にまとめました。中央に降り口と探索者の影絵を置きます。上に暦、右に 7&nbsp;つの層を置きます。左には探索者の名前と 3&nbsp;行（これまでの探索の回数・いちばん深く到達した層・前の探索）を置きます。足元に束・道具・消耗品の箱と「降りる」があります。一覧と痕跡の規則 4&nbsp;行は、手記（ゲーム内の記録の頁）へ移しました。痕跡は、死んだ探索者が残す跡です。手記のダンジョンのタブの最後の頁「これまでの探索」で読めます。拠点から手記のボタンと J キーで開けます。</dd></div>
+            <div><dt>大きさや値</dt><dd>「降りる」は 1&nbsp;秒押し続けると探索へ出ます。この場面が出るのは、同じ 1&nbsp;人が潜り直す形（持ち越しの形）のときだけです。</dd></div>
+            <div><dt>変えなかったこと</dt><dd>世代が替わる形は、元の拠点の画面のままです。この判断は、実装した役が行いました。</dd></div>
+          </dl>
+        </li>
+      </ul>
+      <div class="tablewrap">
+        <table class="stack">
+          <caption>行の数が増えるほど、第 1&nbsp;層の空洞とほかの層のノードを小さくします（単位は px）</caption>
+          <thead><tr><th>行の数</th><th>第 1&nbsp;層の空洞</th><th>第 2〜6&nbsp;層のノード</th></tr></thead>
+          <tbody>
+            <tr><td class="nowrap" data-label="行の数">5&nbsp;行以下</td><td data-label="第 1&nbsp;層の空洞">170×104</td><td data-label="第 2〜6&nbsp;層のノード">88</td></tr>
+            <tr><td class="nowrap" data-label="行の数">7&nbsp;行</td><td data-label="第 1&nbsp;層の空洞">120×74</td><td data-label="第 2〜6&nbsp;層のノード">64</td></tr>
+            <tr><td class="nowrap" data-label="行の数">8&nbsp;行</td><td data-label="第 1&nbsp;層の空洞">102×62</td><td data-label="第 2〜6&nbsp;層のノード">52</td></tr>
+            <tr><td class="nowrap" data-label="行の数">9&nbsp;行</td><td data-label="第 1&nbsp;層の空洞">88×54</td><td data-label="第 2〜6&nbsp;層のノード">44</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="s-check">
+      <p class="kicker"><span class="no">03</span>Unity で見る点</p>
+      <h2>画面は Unity Editor でまだ見ていないので、6&nbsp;つの場面を確かめてください</h2>
+      <ul class="tiles">
+        <li class="tile"><span class="n">4<span class="u">項目</span></span><span class="l">降り口の前</span></li>
+        <li class="tile"><span class="n">5<span class="u">項目</span></span><span class="l">支度の卓</span></li>
+        <li class="tile"><span class="n">4<span class="u">項目</span></span><span class="l">第 1&nbsp;層の地図</span></li>
+        <li class="tile"><span class="n">1<span class="u">項目</span></span><span class="l">第 2&nbsp;層以降の地図</span></li>
+        <li class="tile"><span class="n">3<span class="u">項目</span></span><span class="l">戦闘</span></li>
+        <li class="tile"><span class="n">1<span class="u">項目</span></span><span class="l">文</span></li>
+      </ul>
+      <ol class="steps">
+        <li><strong>Trial.unity を開く</strong><code>Assets/Scenes/Trial.unity</code> を開きます。</li>
+        <li><strong>「はじめから」を選ぶ</strong>Play を押し、タイトルで「はじめから」を選びます。古い保存の「つづきから」は使わないでください。戦闘の再生がずれて、最初からやり直しになることがあります。</li>
+        <li><strong>6&nbsp;場面を順に見る</strong>下の場面ごとの項目を、順に確かめます。</li>
+      </ol>
+      <h3>降り口の前</h3>
+      <ul>
+        <li>影絵の大きさと位置、降り口の縁の影が合っているか。</li>
+        <li>束の箱を押して卓を開き、組み直して「← 拠点へ」で戻ると、箱の枚数が変わるか。</li>
+        <li>「降りる」を Enter とマウスで、それぞれ 1&nbsp;秒押し続けて探索へ出られるか。途中で離すと、バーが戻るか。</li>
+        <li>手記のボタンと J キーで、ダンジョンのタブの最後に「これまでの探索」の頁が出るか。</li>
+      </ul>
+      <h3>支度の卓</h3>
+      <ul>
+        <li>11&nbsp;種の札だけが並び、最初のデッキが 20&nbsp;枚か。</li>
+        <li>水の構えを入れたまま鉄壁の構えの「+」を押すと、断りの文が出るか。</li>
+        <li>札や品にポインタ（マウスの矢印）を載せたとき、読む板が出るか。</li>
+        <li>品「間合いの履」の読む板で、開始の位置の図が出るか。品の棚の名前どうしが接して、見づらくないか。</li>
+        <li>特性を外した 9&nbsp;種の札の面（「特性なし」の 1&nbsp;行と、灯らないランプ）が正しく出るか。</li>
+      </ul>
+      <h3>第 1&nbsp;層の地図</h3>
+      <ul>
+        <li>地図が 7〜9&nbsp;行あり、1&nbsp;画面に収まるか。空洞の角丸・グラデーション・二重の枠が見えるか。</li>
+        <li>通路の流れる点線と、駒（探索者の印）が通路に沿って歩くか。2&nbsp;本の通路が同じ部屋へ集まる所で、重なりが見づらくないか。</li>
+        <li>帯のバー・HP のバー・スタミナの粒が、数字と重ならないか。窓の影絵と「？」が読めるか。</li>
+        <li>第 2&nbsp;層へ降りたら、今の見た目に戻るか。</li>
+      </ul>
+      <h3>第 2&nbsp;層以降の地図</h3>
+      <p>縮めたノード（最小 44px）と、ラベルの釣り合いを見てください。アイコンが小さくなって読みにくくないかも確かめます。</p>
+      <h3>戦闘</h3>
+      <ul>
+        <li>竜の領域の第 4&nbsp;層で、地図と戦闘の背景が同じか。</li>
+        <li>左上の角の情報に、瘴気（ゲーム内の値の一つ）の欄がないか。</li>
+        <li>早駆けの丸薬が、袋ではなく丸薬の絵か。</li>
+      </ul>
+      <h3>文</h3>
+      <p>持ち越しの形（同じ 1&nbsp;人が潜り直す形）の拠点と終わりの画面を確かめてください。「N 回目」「これまでの探索」「次の探索」と出て、入りきっているかを見ます。</p>
+    </section>
+
+    <section id="s-decided">
+      <p class="kicker"><span class="no">04</span>今日の決定</p>
+      <h2>今日決めた 5&nbsp;つのうち 2&nbsp;つは、新しい Issue に分けました</h2>
+      <ul>
+        <li>行が 7〜9&nbsp;に増えたら、空洞を小さくして 1&nbsp;画面に収めます。縦には送りません。</li>
+        <li>束の属性の内訳は出しません。細かい情報は、札のアイコンを押して開く形にします。その形は、Issue #1054（支度の卓に、束の細かい情報を開く札のアイコンを足す）で別に作ります。</li>
+        <li>拠点の「これまでの踏破者」（これまでに探索した人の一覧）と、痕跡の規則 4&nbsp;行は、手記へ移します。Issue #1053（拠点の一覧と痕跡の規則を手記で読めるようにする）で実装し、main に入りました。</li>
+        <li>#1051&nbsp;と #1052&nbsp;は、#1039（特性の語をなくす C# の作業）を待たずに先に作ります。</li>
+        <li>回した Issue は main まで入れてから、次の回へ続けます。</li>
+      </ul>
+      <div class="tablewrap">
+        <table class="wide">
+          <caption>今日作った Issue は 6&nbsp;件です。2&nbsp;件は着手でき、2&nbsp;件はこうだいさんの判断を待っています</caption>
+          <thead><tr><th>Issue</th><th>中身</th><th>状態</th></tr></thead>
+          <tbody>
+            <tr><td class="nowrap">#1053</td><td>拠点の一覧と痕跡の規則を手記で読めるようにする</td><td class="state"><span class="chip ok">main に入った</span></td></tr>
+            <tr><td class="nowrap">#1054</td><td>支度の卓に、束の細かい情報を開く札のアイコンを足す</td><td class="state wrap"><span class="chip idle">置き場と中身が未定</span></td></tr>
+            <tr><td class="nowrap">#1057</td><td>出会いと報酬の設計書を、イベントが 1&nbsp;層に 2〜6&nbsp;つある地図に合わせる</td><td class="state wrap"><span class="chip warn">こうだいさんの判断待ち</span></td></tr>
+            <tr><td class="nowrap">#1058</td><td>元になる文書の食い違い: 構想の「100&nbsp;日で一本道の潜行が約 3&nbsp;回」と、最短の道のり</td><td class="state wrap"><span class="chip warn">こうだいさんの判断待ち</span></td></tr>
+            <tr><td class="nowrap">#1063</td><td>元になる文書の食い違い: 探索の設計書 §6.10&nbsp;の見た目の記述を、§2.5&nbsp;を指す形に直す</td><td class="state wrap"><span class="chip ok">着手できる</span></td></tr>
+            <tr><td class="nowrap">#1067</td><td>降り口の前で、キーボードだけで支度の卓を開けるようにし、荷の食い違いで暗く止まらないようにする</td><td class="state wrap"><span class="chip ok">着手できる</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="s-incidents">
+      <p class="kicker"><span class="no">05</span>途中で起きたこと</p>
+      <h2>指示の絞りすぎと merge の止まりは、その回のうちに直しました</h2>
+      <ul class="rowcards">
+        <li>
+          <h3>指示の絞りすぎ（最初の回）</h3>
+          <dl>
+            <div><dt>何が起きたか</dt><dd>#1049&nbsp;に「ノードの見た目に触らない」と書いたため、8〜9&nbsp;行でラベルが下のノードに重なったまま PR になりました。</dd></div>
+            <div><dt>どう直したか</dt><dd>#1050&nbsp;が描き直すのは第 1&nbsp;層だけです。そこで、行の数でノードを縮める直しを 1&nbsp;回足してから入れました。</dd></div>
+            <div><dt>次に効く形</dt><dd>範囲を絞る指示を書くときは、Issue の「やること」の番号と突き合わせてから書きます。</dd></div>
+          </dl>
+        </li>
+        <li>
+          <h3>merge が止まった（最初の回）</h3>
+          <dl>
+            <div><dt>何が起きたか</dt><dd>1&nbsp;本は、PR を開いて merge まで運ぶ役が、merge のコマンドを cd とつないで打ち、hook（自動の確認の仕組み）に止められました。もう 1&nbsp;本は、Issue の「依存」の節にある関連の箇条書きを、merge の事前確認が依存先と読んで見送りました。</dd></div>
+            <div><dt>どう直したか</dt><dd>どちらも Claude Code（メインのチャット）が入れ直しました。</dd></div>
+            <div><dt>次に効く形</dt><dd>2&nbsp;度目の回からは、Issue の関連を別の見出しに分けてから回し、merge が通りました。書き方の決まりは、Claude Code の記憶（memory）に残しました。</dd></div>
+          </dl>
+        </li>
+        <li>
+          <h3>文書 1&nbsp;本の衝突（3&nbsp;度目の回）</h3>
+          <dl>
+            <div><dt>何が起きたか</dt><dd>写し方の文書（<code>unity-port/TRIAL-PORT.md</code>）を、ほぼ全部の Issue が書きます。そのため 1&nbsp;回衝突しました。</dd></div>
+            <div><dt>どう直したか</dt><dd>merge まで運ぶ役が両方の項目を残して解きました。Claude Code が確認をやり直してから入れました。</dd></div>
+            <div><dt>次に効く形</dt><dd>追記だけの文書の衝突は、両方の項目を残せば解けます。次も同じ扱いにし、解いたあとに確認をやり直します。</dd></div>
+          </dl>
+        </li>
+        <li>
+          <h3>空きメモリが下限を割った（2&nbsp;度目の回）</h3>
+          <dl>
+            <div><dt>何が起きたか</dt><dd>コードを書く役 3&nbsp;体と、#1050&nbsp;の分割を重ねた途中で、空きメモリが 3.42 GB（14:32）まで下がりました。下限の 6 GB を割りました。</dd></div>
+            <div><dt>どう直したか</dt><dd>3&nbsp;度目の回からは、コードを書く役を 2&nbsp;体までにしました。</dd></div>
+            <div><dt>次に効く形</dt><dd>コードを書く役を 3&nbsp;体重ねると、下限を割ります。下の表の値が目安です。</dd></div>
+          </dl>
+        </li>
+      </ul>
+      <div class="tablewrap">
+        <table class="stack">
+          <caption>回ごとの空きメモリの最小は、下限の 6 GB に対して、この差でした<sup class="ref"><a href="#ref-3">[3]</a></sup></caption>
+          <thead><tr><th>回</th><th>空きメモリの最小</th><th>下限との差</th></tr></thead>
+          <tbody>
+            <tr><td class="nowrap" data-label="回">1</td><td data-label="空きメモリの最小">9.51 GB</td><td data-label="下限との差">+3.51 GB（計算）</td></tr>
+            <tr><td class="nowrap" data-label="回">2</td><td data-label="空きメモリの最小">3.42 GB</td><td data-label="下限との差">−2.58 GB（計算）</td></tr>
+            <tr><td class="nowrap" data-label="回">3</td><td data-label="空きメモリの最小">未確認（2&nbsp;度目と同じ記録に入り、単独の最小を取っていません）</td><td data-label="下限との差">未確認</td></tr>
+            <tr><td class="nowrap" data-label="回">4</td><td data-label="空きメモリの最小">12.58 GB</td><td data-label="下限との差">+6.58 GB（計算）</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>仕組みの側の直しの案は、Claude Code の設定の話です。判断は求めません。</p>
+      <ul>
+        <li>PR を開いて merge まで運ぶ役が、merge のコマンドを cd とつないで打っていました。4&nbsp;回のうち 3&nbsp;回で起きました。うち 2&nbsp;回は、単独で打ち直して通りました。その役の決まりに「merge のコマンドは単独で打つ」を足します。</li>
+        <li>merge の事前確認が、Issue の「依存」の節の「関連」の箇条書きを、依存先として数えます。読み方を直すか、Issue の書き方の決まりに入れます。</li>
+        <li>台本（画面の動きを書いた 63 KB の文書）を書き写して渡す手順は重いです。そこで、プロジェクトの決まりの文を埋め込んだ写しを作業フォルダに置いて渡す形にしました。</li>
+      </ul>
+    </section>
+
+    <section id="s-open">
+      <p class="kicker"><span class="no">06</span>仮定と未確認</p>
+      <h2>画面の見え方は未確認で、キーボードの操作に穴が 1&nbsp;つあります</h2>
+      <ul class="tiles">
+        <li class="tile"><span class="n">3<span class="u">件</span></span><span class="l">仮定</span></li>
+        <li class="tile warn"><span class="n">4<span class="u">件</span></span><span class="l">未確認</span></li>
+      </ul>
+      <ul>
+        <li>仮定: 依頼の意図を「見せ方だけを変え、規則と操作は変えない」と読みました。「降りる」を押し続ける操作と、品を押して荷に入れる形は、デザイン案の絵に従いました。</li>
+        <li>仮定: 「札のアイコンを押すと細かい情報が開く」は、#1051&nbsp;に入れず #1054&nbsp;に分けました。置き場と中身が決まっていないためです。</li>
+        <li>仮定: 新しい「降り口の前」は、同じ 1&nbsp;人が潜り直す形のときだけ出ます。世代が替わる形は元の画面のままにしました。</li>
+        <li>未確認: 画面はどれも Unity Editor で見ていません。確かめたのは、位置と大きさの計算のテスト（dotnet test）と、Unity のコンパイルまでです。</li>
+        <li>未確認: キーボードだけでは、降り口の前から支度の卓を開けません（#1067&nbsp;で直します）。</li>
+        <li>未確認: 拠点の設計書（<code>CAMP_FACILITIES_DESIGN.md</code> §3.1）は、まだ古い形です。入口の文書（<code>.claude/CLAUDE.md</code>）の試遊版の説明は、PR #1068&nbsp;で直しました。この PR は、まだ main に入っていません。</li>
+        <li>未確認: 履歴の古い分を archive（終えた計画書の置き場）へ移す作業はしていません。同じファイルを触る記録の PR が 3&nbsp;本開いたままのためです。</li>
+      </ul>
+    </section>
+
+    <section id="s-next">
+      <p class="kicker"><span class="no">07</span>次に判断が要る点</p>
+      <h2>決めていただく点が 4&nbsp;つあります</h2>
+      <article class="decision">
+        <h3>構想の「100&nbsp;日で一本道の潜行が約 3&nbsp;回」を、数え直すか、暦を延ばすか（Issue #1058）</h3>
+        <dl>
+          <div class="d-situation"><dt>何が起きているか</dt><dd>層の道のりを 7〜9&nbsp;日に延ばしたため、地上から王の前までの最短が 30&nbsp;日から 45〜57&nbsp;日になりました。構想の文書は「100&nbsp;日で一本道の潜行が約 3&nbsp;回」と書いています。今の数字では、1〜2&nbsp;回になります。</dd></div>
+          <div class="d-reason"><dt>なぜ決める必要があるか</dt><dd>決めないと、構想の文書と層の設計書が違う数を書いたまま残ります。暦と層の長さを調整する次の Issue も、書けません。</dd></div>
+          <div class="d-options"><dt>選ぶと何が起きるか</dt><dd><ul>
+            <li><b>構想を数え直す</b>: 構想の §6&nbsp;を「約 1〜2&nbsp;回」に書き直します。暦も層もそのままです。1&nbsp;人の探索者が深く潜れる回数が少ない前提で遊ぶことになります。</li>
+            <li><b>暦を延ばす</b>: 100&nbsp;日を延ばして、約 3&nbsp;回に戻します。暦の長さを決め直す Issue が要ります。</li>
+            <li><b>層の道のりを短くする</b>: 今日入れた 7〜9&nbsp;行を戻します。地図を入り組ませた決定を、やり直すことになります。</li>
+          </ul></dd></div>
+          <div class="d-pick"><dt>推奨と根拠</dt><dd><p class="d-choice">構想を数え直す</p><p class="d-basis">暦の 100&nbsp;日も層の 7〜9&nbsp;行も、こうだいさんが決めたばかりです。どちらも試遊でまだ確かめていません。先に遊んでから、足りなければ暦を延ばすほうが手戻りが少ないためです。</p></dd></div>
+        </dl>
+      </article>
+      <article class="decision">
+        <h3>同じ種類のイベントが 1&nbsp;層に 2&nbsp;回出てよいか（Issue #1057）</h3>
+        <dl>
+          <div class="d-situation"><dt>何が起きているか</dt><dd>イベントの種類は 3&nbsp;つ（泉・重い宝箱・特殊な食事）です。第 1〜3&nbsp;層にはイベントが 4〜6&nbsp;つ並ぶようになりました。そのため同じ種類が 1&nbsp;層に 2&nbsp;回出ます。第 6&nbsp;層は泉が出ないため、残りの 2&nbsp;種類を巡る形になります。</dd></div>
+          <div class="d-reason"><dt>なぜ決める必要があるか</dt><dd>決めないと、出会いと報酬の設計書（イベントの置く数と、重い宝箱の期待値）を書き直せません。</dd></div>
+          <div class="d-options"><dt>選ぶと何が起きるか</dt><dd><ul>
+            <li><b>今のまま出してよい</b>: 設計書を今の数で書き直すだけで済みます。同じイベントが続くことがあります。</li>
+            <li><b>種類を足す</b>: イベントの種類を増やす Issue を別に作ります。中身を考える作業が要ります。</li>
+            <li><b>イベントの数を減らす</b>: 増えたノードを通常戦闘に寄せます。戦闘が続く層になります。</li>
+          </ul></dd></div>
+          <div class="d-pick"><dt>推奨と根拠</dt><dd><p class="d-choice">今のまま出してよい</p><p class="d-basis">試遊で、同じイベントの続き方を見てから種類を足すかを決められます。設計書の直しは、すぐ進められるためです。</p></dd></div>
+        </dl>
+      </article>
+      <article class="decision">
+        <h3>束の細かい情報を開く札のアイコンを、どこに置き、何を出すか（Issue #1054）</h3>
+        <dl>
+          <div class="d-situation"><dt>何が起きているか</dt><dd>束の属性の内訳は画面に出しっぱなしにせず、札のアイコンを押して開く形にすると決まりました。置き場と、開いたときに出す中身は決まっていません。</dd></div>
+          <div class="d-reason"><dt>なぜ決める必要があるか</dt><dd>決めないと、支度の卓に札のアイコンを足す作業（Issue #1054）に着手できません。束を組むときに、種類ごとの枚数を見る手段もないままになります。</dd></div>
+          <div class="d-options"><dt>選ぶと何が起きるか</dt><dd><ul>
+            <li><b>上端の帯に置き、種類ごとの枚数だけを出す</b>: 作りがいちばん小さくなります。攻撃・防御・スキル・構えの枚数だけが読めます。</li>
+            <li><b>束の山のそばに置き、種類ごとの枚数だけを出す</b>: 荷の欄の中で完結します。荷の欄が少し詰まります。</li>
+            <li><b>上端の帯に置き、コストと届く間合いの分布も出す</b>: 束の偏りが詳しく分かります。板が大きくなり、数える値が増えます。</li>
+          </ul></dd></div>
+          <div class="d-pick"><dt>推奨と根拠</dt><dd><p class="d-choice">上端の帯に置き、種類ごとの枚数だけを出す</p><p class="d-basis">こうだいさんの案（画面の上端のヘッダー付近）に沿うためです。最小で作り、足りなければ後から足せます。</p></dd></div>
+        </dl>
+      </article>
+      <article class="decision">
+        <h3>記録とデザイン案の PR を、どの順で入れるか</h3>
+        <dl>
+          <div class="d-situation"><dt>何が起きているか</dt><dd>開いたままの PR が 5&nbsp;本あります。文書の PR は、#1046（探索の地図と出立の画面のデザイン案）と #1068（入口の文書の試遊版の説明）です。記録の PR は、#1021（特性と状態の数値の報告書）、#1047（デザイン案の進捗の記録）、今日の記録です。#1047&nbsp;は #1021&nbsp;の上に、今日の記録は #1047&nbsp;の上に積んであります。別のチャットの PR #1043（最初期の札の束の決定の記録）も、同じ記録のファイルを触っています。</dd></div>
+          <div class="d-reason"><dt>なぜ決める必要があるか</dt><dd>決めないと、記録の PR が積み上がり続けます。どれかを先に入れると、残りが同じファイルで衝突します。</dd></div>
+          <div class="d-options"><dt>選ぶと何が起きるか</dt><dd><ul>
+            <li><b>このチャットの分だけ順に入れる</b>: #1046、#1068、#1021、#1047、今日の記録の順に入れます。#1043&nbsp;は、別のチャットが入ったあとの main に合わせ直してもらいます。</li>
+            <li><b>#1043&nbsp;も合わせて入れる</b>: 6&nbsp;本とも入ります。#1043&nbsp;の衝突は、このチャットが解きます。別のチャットが作業中の記録に触ることになります。</li>
+            <li><b>入れない</b>: 今のまま残ります。こうだいさんが順番を決めてから入れます。</li>
+          </ul></dd></div>
+          <div class="d-pick"><dt>推奨と根拠</dt><dd><p class="d-choice">このチャットの分だけ順に入れる</p><p class="d-basis">#1043&nbsp;は、別のチャットが動いている最中です。こちらで触ると、書き手が 2&nbsp;人になるためです。</p></dd></div>
+        </dl>
+      </article>
+    </section>
+
+    <section id="s-refs">
+      <p class="kicker"><span class="no">08</span>参考</p>
+      <h2>出典は 3&nbsp;件で、いずれもこのセッションの記録です</h2>
+      <ol class="refs">
+        <li id="ref-1">GitHub の PR と Issue（sunbreak-pro/original-card-battle、2026-11-25&nbsp;の gh の出力）</li>
+        <li id="ref-2">このセッションの Workflow（まとめて回す仕組み）4&nbsp;回の結果（各役の報告）</li>
+        <li id="ref-3">Claude Code のメモリ記録（30&nbsp;秒ごとの空きメモリの CSV 3&nbsp;本）</li>
+      </ol>
+    </section>
+  </main>
+</div>
+
+<script>
+  /* 目次: 現在地の強調(aria-current)、読み終えた節(.done)、上端の進捗バー。節が 3 つ以下で目次がなければ何もしない */
+  (() => {
+    const links = [...document.querySelectorAll('.toc a[data-target]')];
+    const sections = links.map(a => document.getElementById(a.dataset.target));
+    const bar = document.querySelector('.toc-progress > span');
+    if (!links.length || sections.some(s => !s)) return;
+    let ticking = false;
+    const update = () => {
+      ticking = false;
+      const root = document.documentElement;
+      const line = window.innerHeight * 0.3;
+      let idx = 0;
+      sections.forEach((s, i) => { if (s.getBoundingClientRect().top <= line) idx = i; });
+      const max = root.scrollHeight - window.innerHeight;
+      if (max > 0 && window.scrollY >= max - 4) idx = sections.length - 1;
+      links.forEach((a, i) => {
+        a.classList.toggle('done', i < idx);
+        if (i === idx) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current');
+      });
+      if (bar) bar.style.width = (max > 0 ? Math.min(100, (window.scrollY / max) * 100) : 100) + '%';
+      /* 目次が画面より高いとき(.toc は内側でスクロールする)、現在地のリンクを目次の見える範囲に入れる */
+      const box = links[idx].closest('.toc');
+      if (box && box.scrollHeight > box.clientHeight + 1) {
+        const b = box.getBoundingClientRect(), r = links[idx].getBoundingClientRect();
+        if (r.top < b.top) box.scrollTop -= b.top - r.top + 8;
+        else if (r.bottom > b.bottom) box.scrollTop += r.bottom - b.bottom + 8;
+      }
+    };
+    const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+    addEventListener('scroll', onScroll, { passive: true });
+    addEventListener('resize', onScroll);
+    update();
+  })();
+
+  /* テーマ切り替え: data-theme と aria-pressed を更新し、選んだ値を保存する(保存できなくても切り替えは効く) */
+  (() => {
+    const root = document.documentElement;
+    const buttons = [...document.querySelectorAll('[data-theme-set]')];
+    if (!buttons.length) return;
+    const current = () => (root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light');
+    const paint = () => {
+      const now = current();
+      buttons.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.themeSet === now)));
+    };
+    buttons.forEach(b => b.addEventListener('click', () => {
+      const v = b.dataset.themeSet === 'dark' ? 'dark' : 'light';
+      root.setAttribute('data-theme', v);
+      try { localStorage.setItem('html-report-theme', v); } catch (e) {}
+      paint();
+    }));
+    if (root.getAttribute('data-theme') !== current()) root.setAttribute('data-theme', current());
+    /* ホストが後から data-theme を外したら light を付け直す(付いていないと、切り替えボタンごと消える)。付けた値(dark など)には従う */
+    new MutationObserver(() => {
+      if (!root.hasAttribute('data-theme')) root.setAttribute('data-theme', 'light');
+      paint();
+    }).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+    paint();
+  })();
+
+  /* 印刷: ダークを選んでいても、印刷の間だけ light にして、印刷のあとで元に戻す(案の画面の暗い上書きも印刷に出さない)。
+     印刷の間に別の値へ変わっていたら、戻さない。利用者がボタンを押したら、控え(saved)を捨てる
+     (afterprint が来ない環境で、古い控えが残って次の印刷を素通りさせたり、選んだ値を戻したりしない)。
+     保存値(localStorage)は触らない。ボタンの押下表示は印刷の間だけ light になる */
+  (() => {
+    const root = document.documentElement;
+    let saved = null;
+    document.querySelectorAll('[data-theme-set]').forEach(b => b.addEventListener('click', () => { saved = null; }));
+    const toLight = () => {
+      if (saved !== null) return;
+      saved = root.getAttribute('data-theme') || 'light';
+      if (saved !== 'light') root.setAttribute('data-theme', 'light');
+    };
+    const restore = () => {
+      if (saved === null) return;
+      const back = saved;
+      saved = null;
+      if (root.getAttribute('data-theme') === 'light') root.setAttribute('data-theme', back);
+    };
+    addEventListener('beforeprint', toLight);
+    addEventListener('afterprint', restore);
+    try {
+      const mq = matchMedia('print');
+      const onChange = e => (e.matches ? toLight() : restore());
+      if (mq.addEventListener) mq.addEventListener('change', onChange); else if (mq.addListener) mq.addListener(onChange);
+    } catch (e) {}
+  })();
+
+  /* 切り替え式の案パネル: クリックと 矢印キー左右 / Home / End で案を切り替える(選んだタブだけ tabindex=0)。
+     見せない案には inert と aria-hidden を付ける。案の数に依存しない。JS が動かないときは .is-ready が付かず、全案が縦に並ぶ。
+     利用者が最初に切り替えたとき .is-live を付け、フェードはそこから動く(最初の描画では動かさない) */
+  (() => {
+    document.querySelectorAll('[data-variants]').forEach(root => {
+      const tabs = [...root.querySelectorAll('[role="tab"]')];
+      const panels = tabs.map(t => document.getElementById(t.getAttribute('aria-controls')));
+      if (!tabs.length || panels.some(p => !p)) return;
+      const select = (i, focus) => {
+        tabs.forEach((t, j) => {
+          const on = i === j;
+          t.setAttribute('aria-selected', String(on));
+          t.setAttribute('tabindex', on ? '0' : '-1');
+          panels[j].classList.toggle('is-active', on);
+          if (on) { panels[j].removeAttribute('inert'); panels[j].removeAttribute('aria-hidden'); }
+          else { panels[j].setAttribute('inert', ''); panels[j].setAttribute('aria-hidden', 'true'); }
+        });
+        if (focus) tabs[i].focus();
+      };
+      const live = () => root.classList.add('is-live');
+      tabs.forEach((t, i) => {
+        t.addEventListener('click', () => { live(); select(i, false); });
+        t.addEventListener('keydown', e => {
+          if (e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) return;
+          let next = -1;
+          if (e.key === 'ArrowRight') next = (i + 1) % tabs.length;
+          else if (e.key === 'ArrowLeft') next = (i - 1 + tabs.length) % tabs.length;
+          else if (e.key === 'Home') next = 0;
+          else if (e.key === 'End') next = tabs.length - 1;
+          if (next < 0) return;
+          e.preventDefault();
+          live();
+          select(next, true);
+        });
+      });
+      const first = tabs.findIndex(t => t.getAttribute('aria-selected') === 'true');
+      select(first < 0 ? 0 : first, false);
+      root.classList.add('is-ready');
+    });
+  })();
+</script>
+</body>
+</html>
