@@ -183,7 +183,7 @@ namespace Trial.Battle.Flow.Tests.Fakes
         /// <param name="source">The battle: a trial source is wrapped in a RecordingSource (Source); any other (a fixed script) is handed as it is.</param>
         public Rig(IDepictionSource source, BattleAuto auto = null, BattleChain chain = null, BattleSettings settings = null)
         {
-            Env = new BattleEnv(settings ?? new BattleSettings(), Audio, 1, BattleNodeKind.Battle, null, Log);
+            Env = new BattleEnv(settings ?? new BattleSettings(), Audio, 1, BattleNodeKind.Battle, Log);
             Hand = new FakeHand(Env);
             Field = new FakeField(Env);
             Hud = new FakeHud(Env);

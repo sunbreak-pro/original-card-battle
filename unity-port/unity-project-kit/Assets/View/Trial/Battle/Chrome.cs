@@ -1,5 +1,5 @@
 // The battle screen's chrome (docs/BATTLE_SCENE.md §6c, battle-views §3.7): the corner tag (CornerInfoView: turn, layer,
-// chain dots, miasma, each with its tip), the speed switch (BattleSpeedButton), the journal button, the settings gear (only
+// chain dots, each with its tip; the JS's miasma % left with the miasma, #888 / #1029), the speed switch (BattleSpeedButton), the journal button, the settings gear (only
 // with settingsInBattle), the turn banners, the result paper (a win's / a loss's result screen), the chain banner and the
 // loss ink. Layers hud / float / over. Port of scenes/battle/hud/chrome.js.
 //
@@ -22,7 +22,7 @@ namespace Trial.Battle
     {
         /// <summary>
         /// CornerTips (scene addition): what each of the corner's items is, on hover, in a line under the tag. The numbers are
-        /// the frame's and the app's; the miasma's effect is Miasma's (concept-v3 §6).
+        /// the frame's and the app's.
         /// </summary>
         // js: scenes/battle/hud/chrome.js:18
         public static class CornerTips
@@ -31,11 +31,6 @@ namespace Trial.Battle
             public static string Layer(int n) => "第 " + n.ToString(CultureInfo.InvariantCulture) + " 層";
             public static string Chain(int index, int total) =>
                 "連戦：" + total.ToString(CultureInfo.InvariantCulture) + " 戦のうち " + index.ToString(CultureInfo.InvariantCulture) + " 戦目";
-            /// <summary>
-            /// 「瘴気 n%」. The exploration dropped the miasma and its stamina penalty in #888, so the tip names the leftover
-            /// value only; removing the corner itself is the battle HUD's own follow-up.
-            /// </summary>
-            public static string Miasma(float pct) => "瘴気 " + Ocb.Num(pct) + "%";
         }
 
         /// <summary>JOURNAL_TIP: the journal button's tooltip (the DS JournalButton's title and its key). scene text</summary>
@@ -139,12 +134,12 @@ namespace Trial.Battle
         private readonly BattleChain _chainOpt;
         private readonly HudTip _tip;
         private readonly RectTransform _el;
-        private readonly TextMeshProUGUI _turn, _floor, _miasma;
-        private readonly RectTransform _turnItem, _floorItem, _chainItem, _miasmaItem;
-        /// <summary>words: what each item says on hover (turn, floor, chain, miasma).</summary>
+        private readonly TextMeshProUGUI _turn, _floor;
+        private readonly RectTransform _turnItem, _floorItem, _chainItem;
+        /// <summary>words: what each item says on hover (turn, floor, chain).</summary>
         private readonly Dictionary<string, string> _words = new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            ["turn"] = "", ["floor"] = "", ["chain"] = "", ["miasma"] = "",
+            ["turn"] = "", ["floor"] = "", ["chain"] = "",
         };
         private string _chainKey = "";
 
@@ -160,11 +155,9 @@ namespace Trial.Battle
             _turnItem = Item("turn", "hourglass", DsTokens.Ink, bs, out _turn);
             _floorItem = Item("floor", "stairs", DsTokens.Ink, bs, out _floor);
             _chainItem = Ocb.El(_el, "ocbg-battle-corner-chain", ChainCss + Ocb.CornerSpanCss);
-            _miasmaItem = Item("miasma", "miasma", DsTokens.Phosphor, bs, out _miasma);
             Hover(_turnItem, "turn");
             Hover(_floorItem, "floor");
             Hover(_chainItem, "chain");
-            Hover(_miasmaItem, "miasma");
             UiNode.Of(_el).Place(24f, CornerLayout.CornerInfoTop, null, CornerLayout.CornerInfoHeight);
             Layout();
         }
@@ -212,7 +205,7 @@ namespace Trial.Battle
         // js: scenes/battle/hud.js:219
         public float Right => _el ? UiNode.Of(_el).X + UiNode.Of(_el).W : 24f + 232f;
 
-        /// <summary>bind(corner): turn, the layer (env.LayerNo), the chain's dots (the app's, else the frame's; ● for fights won), miasma %.</summary>
+        /// <summary>bind(corner): turn, the layer (env.LayerNo), the chain's dots (the app's, else the frame's; ● for fights won).</summary>
         // js: scenes/battle/hud/chrome.js:72
         public void Bind(CornerFrame corner)
         {
@@ -238,12 +231,9 @@ namespace Trial.Battle
                     Ocb.NoShrink(dot);
                 }
             }
-            float pct = _env.MiasmaPercent ?? c.MiasmaPercent;
-            Label.SetText(_miasma, Ocb.Num(pct) + "%");
             _words["turn"] = HudChrome.CornerTips.Turn(c.Turn.ToString(CultureInfo.InvariantCulture));
             _words["floor"] = HudChrome.CornerTips.Layer(_env.LayerNo);
             _words["chain"] = total > 0 ? HudChrome.CornerTips.Chain(index, total) : "";
-            _words["miasma"] = HudChrome.CornerTips.Miasma(pct);
             Layout();
         }
 
@@ -253,7 +243,6 @@ namespace Trial.Battle
             Ocb.Flow(_turnItem, Ocb.CornerSpanCss);
             Ocb.Flow(_floorItem, Ocb.CornerSpanCss);
             if (_chainItem.gameObject.activeSelf) Ocb.Flow(_chainItem, ChainCss + Ocb.CornerSpanCss);
-            Ocb.Flow(_miasmaItem, Ocb.CornerSpanCss);
             Ocb.Flow(_el, ElCss, null, null, CornerLayout.CornerInfoHeight);
         }
 

@@ -58,6 +58,27 @@ namespace Trial.Geometry.Tests
             Assert.That(ExploreIcons.ItemIcon("no_such_item"), Is.EqualTo("pouch"));
         }
 
+        // #1029: 早駆けの丸薬 has an icon of its own on the Unity side; the JS table (Names / Paths) stays as the JS has it.
+        [Test]
+        public void TheSwiftPillHasItsOwnIcon_OutsideTheJsTable()
+        {
+            Assert.That(ExploreIcons.ItemIcon("hayagake_no_gan"), Is.EqualTo("hayagake_no_gan"));
+            Assert.That(ExploreIcons.Get("hayagake_no_gan").D, Is.EqualTo(ExploreIcons.UnityPaths["hayagake_no_gan"]));
+            Assert.That(ExploreIcons.Get("hayagake_no_gan").D, Is.Not.EqualTo(ExploreIcons.Paths["pouch"]));
+            Assert.That(ExploreIcons.Get("hayagake_no_gan").Filled, Is.False, "a line icon like the others");
+            Assert.That(ExploreIcons.Names, Does.Not.Contain("hayagake_no_gan"));
+            Assert.That(ExploreIcons.Paths.ContainsKey("hayagake_no_gan"), Is.False);
+            foreach (string n in ExploreIcons.UnityPaths.Keys)
+                Assert.That(ExploreIcons.Paths.ContainsKey(n), Is.False, n + " must not shadow a JS icon");
+            // the path stays inside the 24 × 24 box
+            foreach (Polyline l in Flatten.Run(ExploreIcons.UnityPaths["hayagake_no_gan"], Affine.Identity))
+                foreach (Vec2 v in l.Points)
+                {
+                    Assert.That(v.X, Is.InRange(0f, 24f));
+                    Assert.That(v.Y, Is.InRange(0f, 24f));
+                }
+        }
+
         [Test]
         public void ExtraIconsMatchTheJs()
         {

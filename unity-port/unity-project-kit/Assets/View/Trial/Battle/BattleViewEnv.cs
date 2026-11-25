@@ -91,9 +91,9 @@ namespace Trial.Battle
 
         private bool _contextPinned;
 
-        internal BattleViewEnv(IBattleSettings settings, IBattleAudio audio, int layer, BattleNodeKind nodeKind, float? miasmaPercent,
+        internal BattleViewEnv(IBattleSettings settings, IBattleAudio audio, int layer, BattleNodeKind nodeKind, int backdrop,
             IBattleLog log, TrialStage stage)
-            : base(settings, audio, layer, nodeKind, miasmaPercent, log)
+            : base(settings, audio, layer, nodeKind, log, backdrop)
         {
             Stage = stage;
             Layer = new BattleViewLayers();
