@@ -13,13 +13,15 @@ namespace Trial.Bridge.Tests
     public sealed class OldMapSaveTests
     {
         // Written by the build before #1049 (lineage 11, life 1, nothing carried): the entry fight won, then a step to
-        // node 3, the right end of row 1 of the 1,3,3,3,1 map it drew then (a survey there).
+        // node 3, the right end of row 1 of the 1,3,3,3,1 map it drew then (a survey there). The entry fight's calls were
+        // recorded again under #1038, which took the traits off 袈裟斬り and 呼吸を整える: the fight the old calls played no
+        // longer ends the same way. The entry fight does not read the map, so the step is the one the old build logged.
         private const string StartBefore = """
             {"v":1,"generation":1,"name":"ナディア","seed":"1690397200466873065","toolSlots":3,"deckMax":40,"survivorBonus":false,"traceLayers":[],"carvingKnown":false,"journal":{"Disclosure":{},"Pages":[],"Memo":"","Scribbles":[]},"choice":{"deck":[["side_sweep-0","side_sweep"],["side_sweep-1","side_sweep"],["kesa_cut-0","kesa_cut"],["kesa_cut-1","kesa_cut"],["reach_thrust-0","reach_thrust"],["reach_thrust-1","reach_thrust"],["brace-0","brace"],["brace-1","brace"],["feint-0","feint"],["feint-1","feint"],["boar_rush-0","boar_rush"],["boar_rush-1","boar_rush"],["body_check-0","body_check"],["body_check-1","body_check"],["step_in_guard-0","step_in_guard"],["step_in_guard-1","step_in_guard"],["step_out_guard-0","step_out_guard"],["step_out_guard-1","step_out_guard"],["shield_bash-0","shield_bash"],["shield_bash-1","shield_bash"]],"battleToolIds":[],"loadout":{"tools":[],"consumables":[],"slots":3,"trial":true},"toolIds":[],"consumableIds":[]}}
             """;
 
         private const string LogBefore = """
-            [["E","StartEncounter",[]],["B","StartNext",[true]],["C","AdvanceAuto",[]],["C","TryPlay",["brace-1","AboveThrowLine"]],["C","TryPlay",["brace-0","AboveThrowLine"]],["C","EndTurn",[]],["C","AdvanceAuto",[],3],["C","TryPlay",["side_sweep-0","Receiver"]],["C","TryPlay",["step_in_guard-0","AboveThrowLine"]],["C","TryPlay",["side_sweep-1","Receiver"]],["C","TryPlay",["body_check-0","Receiver"]],["C","EndTurn",[]],["C","AdvanceAuto",[],3],["C","TryPlay",["body_check-1","Receiver"]],["C","EndTurn",[]],["C","AdvanceAuto",[],3],["C","TryPlay",["kesa_cut-1","Receiver"]],["C","EndTurn",[]],["C","AdvanceAuto",[],3],["C","TryPlay",["step_out_guard-0","AboveThrowLine"]],["C","TryPlay",["body_check-1","Receiver"]],["C","AdvanceAuto",[]],["B","Finish",["$source"]],["E","Return",[]],["S","Step",[3,"Rest"]]]
+            [["E","StartEncounter",[]],["B","StartNext",[true]],["C","AdvanceAuto",[]],["C","TryPlay",["brace-1","AboveThrowLine"]],["C","TryPlay",["brace-0","AboveThrowLine"]],["C","EndTurn",[]],["C","AdvanceAuto",[],3],["C","TryPlay",["side_sweep-0","Receiver"]],["C","TryPlay",["step_in_guard-0","AboveThrowLine"]],["C","TryPlay",["side_sweep-1","Receiver"]],["C","EndTurn",[]],["C","AdvanceAuto",[],3],["C","TryPlay",["body_check-1","Receiver"]],["C","TryPlay",["feint-0","Receiver"]],["C","EndTurn",[]],["C","AdvanceAuto",[],3],["C","TryPlay",["kesa_cut-1","Receiver"]],["C","EndTurn",[]],["C","AdvanceAuto",[],3],["C","TryPlay",["step_out_guard-0","AboveThrowLine"]],["C","EndTurn",[]],["C","AdvanceAuto",[],3],["C","TryPlay",["side_sweep-0","Receiver"]],["C","AdvanceAuto",[]],["B","Finish",["$source"]],["E","Return",[]],["S","Step",[3,"Rest"]]]
             """;
 
         [Test]

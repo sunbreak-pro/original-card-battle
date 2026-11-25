@@ -474,10 +474,11 @@ namespace Trial.Meta
             _ctx = ctx ?? throw new ArgumentNullException(nameof(ctx));
             _sound = MetaUtil.SoundOf(ctx);
             _lifeStart = ctx.LifeStart;
-            // js: scenes/meta/departure.js:109 — the kinds the heir may build from: the router's (or the initial forty), plus
-            // the prototype deck's (Expedition.BeginLife owns its start deck's kinds anyway), so 「試作デッキ」 opens at its full 20.
+            // js: scenes/meta/departure.js:109 — the kinds the heir may build from: the router's (or the starter's eleven), plus
+            // the preset deck's (Expedition.BeginLife owns its start deck's kinds anyway), so the preset opens whole. The preset
+            // is the starter deck since #1038, where the JS's is the prototype deck.
             _owned = ctx.OwnsCatalogue ? null
-                : DeckBuilder.WithPrototypeKinds(ctx.Owned != null && ctx.Owned.Count > 0 ? ctx.Owned : Expedition.InitialKinds);
+                : DeckBuilder.WithStarterKinds(ctx.Owned != null && ctx.Owned.Count > 0 ? ctx.Owned : Expedition.InitialKinds);
             // The life's limits (DeckLimits.From reads the four numbers; a missing one is the C#'s).
             _limits = LimitsOf(_lifeStart);
             _deckMin = _limits.DeckMin;
@@ -502,7 +503,7 @@ namespace Trial.Meta
             }
             else
             {
-                _deck = Adopt(DeckBuilder.Prototype(_limits));
+                _deck = Adopt(DeckBuilder.Starter(_limits));
             }
             _supplies = DepartureCarry.NewBuilder(_limits);
             if (draft != null)
@@ -749,7 +750,7 @@ namespace Trial.Meta
             string[] names = { MetaText.Prototype, MetaText.Random, MetaText.Clear };
             Action[] acts =
             {
-                () => Replace(Adopt(DeckBuilder.Prototype(_limits))),
+                () => Replace(Adopt(DeckBuilder.Starter(_limits))),
                 () => Replace(RandomDeck()),
                 () => Replace(new DeckBuilder(_owned, _limits)),
             };
@@ -1000,7 +1001,8 @@ namespace Trial.Meta
                 string text = _deck.CountText(c.Def.Id);
                 Label.SetText(c.Count, text);
                 c.IsIn = text != "";
-                c.Plus.Disabled = !_deck.CanAdd(c.Def.Id);
+                // #1038: the ＋ of a refusal with a reason stays pressable, so pressing it says why (Add).
+                c.Plus.Disabled = !_deck.CanAdd(c.Def.Id) && _deck.RefusalOf(c.Def.Id).Length == 0;
                 c.Minus.Disabled = _deck.CountOf(c.Def.Id) == 0;
                 c.Face.Toggle("is-sel", _selected != null && _selected.Id == c.Def.Id);
             }
@@ -1429,6 +1431,9 @@ namespace Trial.Meta
             {
                 _sound.Play("refusal");
                 Shake(cell.Plus);
+                // #1038: the second starter stance is refused with the reason; the JS has no such rule.
+                string why = _deck.RefusalOf(def.Id);
+                if (why.Length > 0) SetNotice(why);
             }
         }
 

@@ -330,7 +330,9 @@ namespace Depiction.Bridge
                 CoreText.Describe(def.Face, def.Attributes),
             };
             string trait = CoreText.TraitLines(def);
-            lines.Add(trait.Length > 0 ? "特性: " + trait : "特性: なし（素直な札）");
+            // A starter card lost its trait in #1038 without the 素直 +2 (swordsman_cards_v4 §2.1), so it is no 素直な札.
+            lines.Add(trait.Length > 0 ? "特性: " + trait
+                : CardCatalog.StarterTableTraits.ContainsKey(def.Id) ? "特性: なし" : "特性: なし（素直な札）");
             if (!string.IsNullOrEmpty(def.Description)) lines.Add("「" + def.Description + "」");
             return lines;
         }
@@ -433,6 +435,51 @@ namespace Depiction.Bridge
                 if (seen.Add(def.Id)) all.Add(def.Id);
             }
             return all;
+        }
+
+        /// <summary>
+        /// <paramref name="kinds"/> and then the starter deck's kinds (<see cref="StarterDeck"/>, #1038), each once: the
+        /// owned kinds of a departure whose preset deck is the starter's, so the preset opens whole.
+        /// </summary>
+        public static List<string> WithStarterKinds(IEnumerable<string> kinds)
+        {
+            var all = new List<string>();
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            if (kinds != null)
+            {
+                foreach (string id in kinds)
+                {
+                    if (seen.Add(id)) all.Add(id);
+                }
+            }
+            foreach (CardDef def in StarterDeck.Kinds)
+            {
+                if (seen.Add(def.Id)) all.Add(def.Id);
+            }
+            return all;
+        }
+
+        /// <summary>The first expedition's default deck (<see cref="StarterDeck"/>, #1038): the starter's kinds × 2. <paramref name="limits"/> is the builder's.</summary>
+        public static DeckBuilder Starter(DeckLimits limits = null)
+        {
+            var builder = new DeckBuilder(null, limits);
+            foreach (CardDef def in StarterDeck.Kinds)
+            {
+                for (int i = 0; i < StarterDeck.Copies; i++) builder.Add(def.Id);
+            }
+            return builder;
+        }
+
+        /// <summary>
+        /// Why <see cref="Add"/> refuses <paramref name="id"/>, when the deck screen has a reason to print (#1038): the
+        /// other starter stance is in the deck (DeckRules.StanceRival). "" for every other refusal and for a card that goes in.
+        /// </summary>
+        public string RefusalOf(string id)
+        {
+            if (!Known(id) || !Holds(Owned, id)) return "";
+            CardDef rival = DeckRules.StanceRival(Build(), id);
+            return rival == null ? ""
+                : "スタンスは 1 種だけ入れられます。「" + rival.Name + "」を外すと入れられます";
         }
 
         /// <summary>The slice's ten kinds × 2 (#71), the deck the battle scene fought with until #190. (Trial: <paramref name="limits"/> is the builder's.)</summary>

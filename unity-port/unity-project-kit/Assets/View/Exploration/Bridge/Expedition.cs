@@ -25,8 +25,11 @@ namespace Exploration.Bridge
 {
     public sealed partial class Expedition : IExplorationKeeper
     {
-        /// <summary>concept-v3 §14 / swordsman_cards_v4 §2: the kinds every character owns from the start (#1〜#40).</summary>
-        public static readonly IReadOnlyList<string> InitialKinds = CardCatalog.Initial.Select(d => d.Id).ToList();
+        /// <summary>
+        /// concept-v3 §14.7 / swordsman_cards_v4 §2.1: the kinds the first expedition owns, the starter's eleven
+        /// (<see cref="CardCatalog.Starter"/>, #1038). The rest of §2's initial cards are learned on the way.
+        /// </summary>
+        public static readonly IReadOnlyList<string> InitialKinds = CardCatalog.Starter.Select(d => d.Id).ToList();
 
         /// <summary>
         /// The 開示度 a battle leaves the journal at for every enemy fought, and for one a 観察 was played
@@ -54,7 +57,7 @@ namespace Exploration.Bridge
         private DungeonCore.IRng _pileRng;
 
         /// <param name="start">How the exploration starts (seed, HP, stamina, gauge, exploration tools).</param>
-        /// <param name="deck">The deck the life sets out with; null for the slice's prototype deck.</param>
+        /// <param name="deck">The deck the life sets out with; null for the starter's default deck (<see cref="StarterDeck"/>, #1038).</param>
         /// <param name="battleToolIds">
         /// The tools in the slots that act inside a battle (間合いの履, 息継ぎの笛, 竜鱗の欠片, 竜語の符;
         /// tools_and_consumables_v4.md §2), as catalogue ids. The tools that act on the exploration go in
@@ -82,7 +85,7 @@ namespace Exploration.Bridge
             _limits = options?.Limits;
             Trial = options?.Trial == true || start?.Trial == true;
             start = TrialStart(start, options);
-            _startDeck = (deck ?? PrototypeDeck.Build()).ToList();
+            _startDeck = (deck ?? StarterDeck.Build()).ToList();
             DeckValidation validation = Cards.Validate(_startDeck, _limits);
             if (!validation.Ok) throw new ArgumentException("Expedition: the deck breaks §8 — " + string.Join(" / ", validation.Errors), nameof(deck));
             _startJournal = journal ?? new Dictionary<string, int>();

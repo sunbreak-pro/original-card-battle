@@ -17,6 +17,27 @@ namespace BattleCore.Tests
     {
         private static readonly IRng NoShuffle = new FixedRng(0.9999999);
 
+        /// <summary>
+        /// §2.1 (#1038): the nine starter cards whose trait came off. The canon's §2 / §3 tables and §4 tallies still list
+        /// those traits (#1022 takes them out), so each tally below is the canon's less these nine.
+        /// </summary>
+        private static readonly string[] StarterTraitsTakenOff =
+            { "wrist_cut", "kesa_cut", "observe", "brace", "footwork", "leap_back", "dash_in", "water_stance", "iron_wall" };
+
+        [Test]
+        public void TheStarterTableTraits_AreTheNineTheTablesStillList()
+        {
+            var traits = CardCatalog.StarterTableTraits;
+            Assert.Multiple(() =>
+            {
+                Assert.That(traits.Keys, Is.EquivalentTo(StarterTraitsTakenOff));
+                Assert.That(traits["kesa_cut"], Is.EqualTo(new Trait(TraitCondition.GapAtMost, TraitEffect.PowerBonus, 5, Threshold: 0)));
+                Assert.That(traits["brace"], Is.EqualTo(new Trait(TraitCondition.Reserve, TraitEffect.NextTurnRecovery, 1, Threshold: 6)));
+                Assert.That(traits["iron_wall"], Is.EqualTo(new Trait(TraitCondition.SelfHas, TraitEffect.GuardBonus, 3, Watch: StatusKind.Parry)));
+                Assert.That(traits["dash_in"], Is.EqualTo(new Trait(TraitCondition.GapAtLeast, TraitEffect.Draw, 1, Threshold: 2)));
+            });
+        }
+
         // ---- The catalog ----
 
         [Test]
@@ -231,14 +252,16 @@ namespace BattleCore.Tests
         {
             // §1.4 (v4.5): every attack card's power is the band value for its column and reach width —
             // the single row for a lone attack face, the two-face row beside a second face or a
-            // movement (§1.1) — plus what the canon adds outside the table: 素直 +2 and #79's +2 (#208).
+            // movement (§1.1) — plus what the canon adds outside the table: 素直 +2 and #79's +2 (#208). A starter
+            // card whose trait came off (§2.1) is no 素直 card and has no +2.
             var off = new List<string>();
             foreach (var card in CardCatalog.All.Where(c => c.Attribute == BattleAttribute.Attack))
             {
                 bool single = card.Attributes == BattleAttribute.Attack && !AttributeRule.HasMovement(card.Face);
                 int width = Bands.Width(card.Face.ReachOrDefault);
                 int band = single ? Bands.Single(width, card.Column) : Bands.Dual(width, card.Column);
-                int extra = card.Trait == null || card.Id == "shadow_lunge" ? 2 : 0;
+                bool plain = card.Trait == null && !StarterTraitsTakenOff.Contains(card.Id);
+                int extra = plain || card.Id == "shadow_lunge" ? 2 : 0;
                 int expected = band + extra;
                 if (card.Face.Power != expected) off.Add(card.Id + ": " + card.Face.Power + ", the table says " + expected);
             }
@@ -249,56 +272,65 @@ namespace BattleCore.Tests
         public void TheTraits_MatchTheCanonTally()
         {
             // §4.2 / §4.4 (v4.10): 65 cards carry a trait; the six plain ones (素直) and the stances #84 /
-            // #85 none, and no card has a second since #80 背水の陣 left.
+            // #85 none, and no card has a second since #80 背水の陣 left. Less the starter's nine (§2.1): 56 and 17.
             Assert.Multiple(() =>
             {
-                Assert.That(CardCatalog.All.Count(c => c.Trait != null), Is.EqualTo(65));
-                Assert.That(CardCatalog.All.Count(c => c.Trait == null), Is.EqualTo(8));
+                Assert.That(CardCatalog.All.Count(c => c.Trait != null), Is.EqualTo(65 - StarterTraitsTakenOff.Length));
+                Assert.That(CardCatalog.All.Count(c => c.Trait == null), Is.EqualTo(8 + StarterTraitsTakenOff.Length));
+                Assert.That(StarterTraitsTakenOff.Where(id => CardCatalog.ById(id).Trait != null), Is.Empty);
                 Assert.That(CardCatalog.All.Count(c => c.ExtraTrait != null), Is.EqualTo(0));
                 Assert.That(CardCatalog.All.Where(c => c.Trait != null).Any(c => c.Trait!.Condition == TraitCondition.Unguarded),
                     Is.False, "無防備 is the enemy-side word (§17.6 F1)");
             });
         }
 
-        /// <summary>§4.2 (v4.10): the condition tally.</summary>
-        [TestCase(TraitCondition.Combo, 7)]
-        [TestCase(TraitCondition.Moved, 2)]
+        /// <summary>
+        /// §4.2 (v4.10): the condition tally, less the starter's nine (§2.1, #1038): 連動 7 → 6 (跳び退り), 移動後 2 → 1
+        /// (水の構え), 温存 2 → 1 (呼吸を整える), 初手 4 → 3 (足運び), 手薄 2 → 1 (観察), 自分の状態 6 → 5 (鉄壁の構え).
+        /// </summary>
+        [TestCase(TraitCondition.Combo, 6)]
+        [TestCase(TraitCondition.Moved, 1)]
         [TestCase(TraitCondition.OmenIs, 9)]
-        [TestCase(TraitCondition.Reserve, 2)]
+        [TestCase(TraitCondition.Reserve, 1)]
         [TestCase(TraitCondition.Desperate, 1)]
-        [TestCase(TraitCondition.FirstPlay, 4)]
+        [TestCase(TraitCondition.FirstPlay, 3)]
         [TestCase(TraitCondition.Finisher, 3)]
         [TestCase(TraitCondition.Broken, 2)]
         [TestCase(TraitCondition.Chain, 4)]
-        [TestCase(TraitCondition.Thin, 2)]
+        [TestCase(TraitCondition.Thin, 1)]
         [TestCase(TraitCondition.FoeHas, 9)]
-        [TestCase(TraitCondition.SelfHas, 6)]
+        [TestCase(TraitCondition.SelfHas, 5)]
         public void TheConditions_MatchTheCanonTally(TraitCondition condition, int count)
         {
             Assert.That(CardCatalog.All.Count(c => c.Trait != null && c.Trait.Condition == condition), Is.EqualTo(count));
         }
 
+        /// <summary>The 間合い cards of §4.4 whose trait came off with the starter's (§2.1, #1038).</summary>
+        private static readonly string[] StarterGapCards = { "kesa_cut", "wrist_cut", "dash_in" };
+
         [Test]
         public void TheGapConditions_AreFourteen()
         {
-            // §4.2 / §4.4 (v4.10): 間合い counts 14.
+            // §4.2 / §4.4 (v4.10): 間合い counts 14; three of them are starter cards and carry none since #1038.
             Assert.That(CardCatalog.All.Count(c => c.Trait != null
                 && (c.Trait.Condition == TraitCondition.GapAtMost || c.Trait.Condition == TraitCondition.GapAtLeast)),
-                Is.EqualTo(Constants.PositionTraitCards));
+                Is.EqualTo(Constants.PositionTraitCards - StarterGapCards.Length));
         }
 
         /// <summary>
         /// §4.3 (v4.10): the effect tally. #51 brought the traits of 変幻の構え (間合い 0: 追撃), 根縛り
         /// (相手の状態(鈍足): ドロー +1) and 大狼の構え (自分の状態(強化): 追撃) to v4.4 (#257); v4.10
-        /// turned #68's 転換 into 重撃.
+        /// turned #68's 転換 into 重撃. Less the starter's nine (§2.1, #1038): スタミナ 8 → 5 (小手打ち・足運び・跳び退り),
+        /// 威力 10 → 9 (袈裟斬り), Guard 14 → 13 (鉄壁の構え), ドロー 8 → 6 (観察・駆け込み), コスト 3 → 2 (水の構え),
+        /// 次ターン回復 3 → 2 (呼吸を整える).
         /// </summary>
-        [TestCase(TraitEffect.StaminaGain, 8)]
-        [TestCase(TraitEffect.PowerBonus, 10)]
-        [TestCase(TraitEffect.GuardBonus, 14)]
-        [TestCase(TraitEffect.Draw, 8)]
+        [TestCase(TraitEffect.StaminaGain, 5)]
+        [TestCase(TraitEffect.PowerBonus, 9)]
+        [TestCase(TraitEffect.GuardBonus, 13)]
+        [TestCase(TraitEffect.Draw, 6)]
         [TestCase(TraitEffect.Status, 5)]
-        [TestCase(TraitEffect.CostDown, 3)]
-        [TestCase(TraitEffect.NextTurnRecovery, 3)]
+        [TestCase(TraitEffect.CostDown, 2)]
+        [TestCase(TraitEffect.NextTurnRecovery, 2)]
         [TestCase(TraitEffect.HeavyBlow, 9)]
         [TestCase(TraitEffect.Convert, 1)]
         [TestCase(TraitEffect.FollowUp, 4)]
@@ -342,9 +374,12 @@ namespace BattleCore.Tests
             {
                 Assert.That(over, Is.Empty, "§1.2: three cards at most share a pair");
                 // §4.4 (v4.10) 「最大重複 2。上限 3。2 枚の組は 10 組。v4.9 で 3 枚だった 間合い 2 以上 + 威力と
-                // 予兆(攻撃) + Guard は、どちらも 2 枚になりました」.
+                // 予兆(攻撃) + Guard は、どちらも 2 枚になりました」. Two of the ten lost a card with the starter's traits
+                // (§2.1, #1038): 連動(A) + スタミナ (跳び退り, 翻し足) and 間合い 2 以上 + ドロー (駆け込み, 投げ刃).
                 Assert.That(atTheCap, Is.Empty);
-                Assert.That(pairs.Count(p => p.Value.Count == 2), Is.EqualTo(10));
+                Assert.That(pairs.Count(p => p.Value.Count == 2), Is.EqualTo(8));
+                Assert.That(pairs["Combo(Attack) : StaminaGain"], Is.EqualTo(new[] { "twist_away" }));
+                Assert.That(pairs["GapAtLeast(2) : Draw"], Is.EqualTo(new[] { "throw_blade" }));
                 Assert.That(pairs["GapAtLeast(2) : PowerBonus"], Is.EquivalentTo(new[] { "reach_thrust", "boar_rush" }));
                 Assert.That(pairs["OmenIs(Attack) : GuardBonus"], Is.EquivalentTo(new[] { "back_leap", "bulwark" }));
             });
@@ -362,15 +397,16 @@ namespace BattleCore.Tests
             _ => false,
         };
 
-        [TestCase(true, true, new[] { "body_check", "kesa_cut", "abyss_stance" }, new[] { 1, 2, 3 })]
+        [TestCase(true, true, new[] { "body_check", "abyss_stance" }, new[] { 1, 3 })]
         [TestCase(true, false, new[] { "reach_thrust", "blood_dance", "boar_rush" }, new[] { 2, 2, 3 })]
-        [TestCase(false, true, new[] { "wrist_cut", "shield_bash", "deflect", "low_guard" }, new[] { 1, 2, 2, 3 })]
-        [TestCase(false, false, new[] { "dash_in", "throw_blade", "stone_throw", "gale_thrust" }, new[] { 1, 2, 2, 3 })]
+        [TestCase(false, true, new[] { "shield_bash", "deflect", "low_guard" }, new[] { 2, 2, 3 })]
+        [TestCase(false, false, new[] { "throw_blade", "stone_throw", "gale_thrust" }, new[] { 2, 2, 3 })]
         public void TheFourteenGapCards_FillTheFourCells_OnColumnsOneTwoTwoThree(bool attack, bool close, string[] cards, int[] columns)
         {
             // §4.4 (v4.10) 「攻撃 × 詰めて得 3 / 攻撃 × 離れて得 3 / 防御 × 詰めて得 4 / 防御 × 離れて得 4」, 「各マスの
             // 列は 1 / 2 / 2 / 3 で、攻撃の 2 マスは 1 つずつ欠けています」 (§1.3 の 2). 詰めて得 is 間合い n 以下,
-            // 離れて得 間合い n 以上 (K6). The ids are §4.4's table, column 1 first.
+            // 離れて得 間合い n 以上 (K6). The ids are §4.4's table, column 1 first, less the three starter cards whose
+            // trait came off (§2.1, #1038): 袈裟斬り (攻撃 × 詰めて得), 小手打ち (防御 × 詰めて得), 駆け込み (防御 × 離れて得).
             var gapCards = CardCatalog.All.Where(c => c.Trait != null
                 && (c.Trait.Condition == TraitCondition.GapAtMost || c.Trait.Condition == TraitCondition.GapAtLeast)).ToList();
             var cell = gapCards.Where(c => AttackEffect(c.Trait!) == attack && (c.Trait!.Condition == TraitCondition.GapAtMost) == close)
@@ -378,7 +414,7 @@ namespace BattleCore.Tests
 
             Assert.Multiple(() =>
             {
-                Assert.That(gapCards, Has.Count.EqualTo(Constants.PositionTraitCards));
+                Assert.That(gapCards, Has.Count.EqualTo(Constants.PositionTraitCards - StarterGapCards.Length));
                 Assert.That(cell.Select(c => c.Id), Is.EquivalentTo(cards));
                 Assert.That(cell.Select(c => c.Column), Is.EqualTo(columns));
             });
@@ -453,6 +489,30 @@ namespace BattleCore.Tests
         {
             // §2.4 hits (#253): no card whose attack face strikes twice or more gives the opponent a status.
             Assert.That(CardCatalog.All.Where(c => !Cards.MultiHitCarriesNoFoeStatus(c)).Select(c => c.Id), Is.Empty);
+        }
+
+        [Test]
+        public void TheStarter_IsTheElevenOfSection21_WithNoTrait()
+        {
+            // swordsman_cards_v4 §2.1 (v4.15, #1035): #4 / #2 / #5, #22 / #11 / #12, #25 / #60 / #63, and the stances #16 / #39.
+            Assert.Multiple(() =>
+            {
+                Assert.That(CardCatalog.Starter.Select(CardCatalog.NumberOf), Is.EqualTo(new[] { 4, 2, 5, 22, 11, 12, 25, 60, 63, 16, 39 }));
+                Assert.That(CardCatalog.Starter.Select(c => c.Id), Is.EqualTo(new[]
+                {
+                    "wrist_cut", "kesa_cut", "side_sweep", "observe", "brace", "iron_block",
+                    "footwork", "leap_back", "dash_in", "water_stance", "iron_wall",
+                }));
+                Assert.That(CardCatalog.Starter.Where(c => c.Trait != null || c.ExtraTrait != null).Select(c => c.Id), Is.Empty,
+                    "§2.1: the starter carries no trait");
+                Assert.That(CardCatalog.Starter.Select(c => c.Id).Except(new[] { "side_sweep", "iron_block" }),
+                    Is.EquivalentTo(StarterTraitsTakenOff), "the two 素直 cards had none to take off");
+                Assert.That(CardCatalog.StarterStances, Is.EqualTo(new[] { CardCatalog.WaterStance, CardCatalog.IronWall }));
+                Assert.That(CardCatalog.Starter.Where(c => c.Attribute == BattleAttribute.Stance), Is.EqualTo(CardCatalog.StarterStances));
+                // The attacks and the guards are one each of cost 1, 2 and 3 (§2.1).
+                Assert.That(CardCatalog.Starter.Where(c => c.Attribute == BattleAttribute.Attack).Select(c => c.Cost), Is.EqualTo(new[] { 1, 2, 3 }));
+                Assert.That(CardCatalog.Starter.Where(c => c.Attribute == BattleAttribute.Guard).Select(c => c.Cost), Is.EqualTo(new[] { 1, 2, 3 }));
+            });
         }
 
         [Test]

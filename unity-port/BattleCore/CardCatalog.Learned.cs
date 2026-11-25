@@ -3,7 +3,8 @@ namespace BattleCore
     /// <summary>
     /// swordsman_cards_v4.md §3: the learned thirty-eight (#41-#79 less the four v4.10 dropped, #824,
     /// then #84 背水の陣 and #85 覚醒 with their rules, #826), in canon order, grouped by where they
-    /// are found. None of them is 素直; all but #84 and #85 carry a trait.
+    /// are found. None of them is 素直; all but #84 and #85 carry a trait, except #60 and #63, which joined
+    /// the starter (§2.1) and carry none since #1038.
     /// </summary>
     public static partial class CardCatalog
     {
@@ -155,11 +156,10 @@ namespace BattleCore
             Targets: TargetKind.Self,
             Description: "とっさに刃を上げる");
 
-        /// <summary>#60. Leaps back two and draws; a stamina point after an attack.</summary>
+        /// <summary>#60. Leaps back two and draws. A starter card (§2.1), so it carries no trait (#1038).</summary>
         public static readonly CardDef LeapBack = new CardDef(
             "leap_back", "跳び退り", BattleAttribute.None, 1,
             new Face(Move: -2, Draw: 1),
-            Combo(BattleAttribute.Attack, TraitEffect.StaminaGain, 1),
             Targets: TargetKind.Self,
             Description: "斬ってから跳んで退く");
 
@@ -179,11 +179,10 @@ namespace BattleCore
             FoeHas(StatusKind.Slow, TraitEffect.HeavyBlow),
             Description: "足の止まった相手を払う");
 
-        /// <summary>#63. Dashes forward two and regains a stamina point; draws from a gap of 2 or more.</summary>
+        /// <summary>#63. Dashes forward two and regains a stamina point. A starter card (§2.1), so it carries no trait (#1038).</summary>
         public static readonly CardDef DashIn = new CardDef(
             "dash_in", "駆け込み", BattleAttribute.None, 1,
             new Face(Move: 2, StaminaGain: 1),
-            AtLeast(2, TraitEffect.Draw, 1),
             Targets: TargetKind.Self,
             Description: "遠くから駆けて視野を広げる");
 

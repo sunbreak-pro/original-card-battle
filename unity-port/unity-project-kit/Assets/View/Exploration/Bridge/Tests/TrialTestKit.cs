@@ -45,7 +45,9 @@ namespace Exploration.Bridge.Tests
             RunLoadout loadout = Loadouts.ToRunLoadout(Loadout.Of(tools, consumables ?? Array.Empty<string>(), slots), slots);
             var start = new RunStart { Seed = seed, Loadout = loadout, MapFor = mapFor };
             var options = new ExpeditionOptions { Trial = true, Limits = limits, CarvingKnown = carvingKnown, StartPages = startPages };
-            return new Expedition(start, deck, null, null, journal, options);
+            // The JS sets out with the prototype deck, and the parity grids read it; Expedition's own default is the
+            // starter deck since #1038.
+            return new Expedition(start, deck ?? PrototypeDeck.Build(), null, null, journal, options);
         }
 
         /// <summary>Wins the waiting battle with this HP and stamina left (no fight played: the core's end is reported).</summary>

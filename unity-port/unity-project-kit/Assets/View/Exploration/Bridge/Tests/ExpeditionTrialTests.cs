@@ -170,7 +170,8 @@ namespace Exploration.Bridge.Tests
             WalkTo(full, n => n.Kind == NodeKind.Boss);
             Win(full);
             Assert.That(full.PendingResult.PileSpent, Is.False);
-            Assert.That(full.Offer.Count, Is.EqualTo(3));
+            // Layer 1's pile less #60 跳び退り, a starter card since #1038.
+            Assert.That(full.Offer.Count, Is.EqualTo(2));
         }
 
         [Test]
@@ -183,7 +184,7 @@ namespace Exploration.Bridge.Tests
             WalkTo(ex, n => n.Kind == NodeKind.Boss);
             Win(ex);
             Assert.That(ex.DeckMax, Is.EqualTo(20));
-            Assert.That(ex.OfferFits, Is.EqualTo(new[] { false, false, false }));
+            Assert.That(ex.OfferFits, Is.EqualTo(new[] { false, false }), "layer 1's pile less #60 跳び退り, a starter card since #1038");
             Assert.That(ex.Learn(ex.Offer[0]), Is.True);
             Assert.That(ex.Deck.Count, Is.EqualTo(20));
 
@@ -501,7 +502,7 @@ namespace Exploration.Bridge.Tests
             Assert.That(s.State.MaxStamina, Is.EqualTo(before.MaxStamina - 2));
             Assert.That(s.State.Stamina, Is.LessThanOrEqualTo(s.State.MaxStamina), "current stamina follows the lower maximum");
             Assert.That(s.State.DaysLeft, Is.EqualTo(before.DaysLeft), "the day was paid by the step");
-            Assert.That(ex.Offer.Count, Is.EqualTo(3), "the card pile lays out three");
+            Assert.That(ex.Offer.Count, Is.EqualTo(2), "the card pile lays out layer 1's two (#60 跳び退り is a starter card since #1038)");
             Assert.That(ex.Pages, Is.EqualTo(pages));
             EventOutcome last = s.Events[s.Events.Count - 1];
             Assert.That(last.Cards, Is.EqualTo(ex.Offer));
@@ -557,7 +558,7 @@ namespace Exploration.Bridge.Tests
 
             var fresh = Trial(1);
             ChestFind dealt = fresh.TakeChest(1, 5, contents);
-            Assert.That(dealt.Cards.Count, Is.EqualTo(CardPile.Choices));
+            Assert.That(dealt.Cards.Count, Is.EqualTo(CardPile.Choices - 1), "layer 1's pile less #60 跳び退り, a starter card since #1038");
             Assert.That(dealt.PileSpent, Is.False);
             Assert.That(fresh.Offer, Is.EqualTo(dealt.Cards));
             Assert.That(Trial(1).TakeChest(1, 5, contents).Cards, Is.EqualTo(dealt.Cards), "seeded from the node");

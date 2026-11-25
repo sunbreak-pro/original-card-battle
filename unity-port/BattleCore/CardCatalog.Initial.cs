@@ -2,17 +2,17 @@ namespace BattleCore
 {
     /// <summary>
     /// swordsman_cards_v4.md §2: the initial thirty-five (#2-#40 less the five v4.10 dropped, #824),
-    /// in canon order. Six are 素直 (no trait, +2 already in the number).
+    /// in canon order. Six are 素直 (no trait, +2 already in the number). Seven more are starter cards (§2.1)
+    /// and carry no trait since #1038, without the +2 (§2.1 leaves adding it to the test bench).
     /// </summary>
     public static partial class CardCatalog
     {
         // ---- A ----
 
-        /// <summary>#2. Pays +5 for standing adjacent.</summary>
+        /// <summary>#2. The basic attack of the starter (§2.1): no trait since #1038.</summary>
         public static readonly CardDef KesaCut = new CardDef(
             "kesa_cut", "袈裟斬り", BattleAttribute.Attack, 2,
             new Face(Power: 15),
-            AtMost(0, TraitEffect.PowerBonus, 5),
             Description: "肩口から斬り下ろす");
 
         /// <summary>#3. A heavy blow into an attack omen (a guard omen shows on about 5% of plays, #208).</summary>
@@ -22,11 +22,10 @@ namespace BattleCore
             OmenIs(OmenKind.Attack, TraitEffect.HeavyBlow),
             Description: "振りかぶって叩き落とす");
 
-        /// <summary>#4. The light column-1 cut that hands back a stamina point when adjacent.</summary>
+        /// <summary>#4. The light column-1 cut of the starter (§2.1): no trait since #1038.</summary>
         public static readonly CardDef WristCut = new CardDef(
             "wrist_cut", "小手打ち", BattleAttribute.Attack, 1,
             new Face(Power: 7),
-            AtMost(0, TraitEffect.StaminaGain, 1),
             Description: "手元を狙う軽い一撃");
 
         /// <summary>#5. The plain column-3 attack (#1 突き, its twin, left in v4.10), widened to 0〜2 (width 3) in v4.6 (#401): 21 on the band table plus the 素直 +2.</summary>
@@ -72,11 +71,13 @@ namespace BattleCore
 
         // ---- G ----
 
-        /// <summary>#11. The single-attribute Guard; rewards holding stamina back.</summary>
+        /// <summary>
+        /// #11. The single-attribute Guard of the starter (§2.1): no trait since #1038. Its 型替え steps keep the
+        /// trait it had (MasteryProfiles) until #1022 redraws them.
+        /// </summary>
         public static readonly CardDef Brace = new CardDef(
             "brace", "呼吸を整える", BattleAttribute.Guard, 2,
             new Face(Guard: 9),
-            Reserve(6, TraitEffect.NextTurnRecovery, 1),
             Targets: TargetKind.Self,
             Description: "息を整えて受けに備える");
 
@@ -112,11 +113,10 @@ namespace BattleCore
 
         // ---- St ----
 
-        /// <summary>#16. Stance: +2 recovery on turns that start at a gap of 2 or more; costs one less after a move.</summary>
+        /// <summary>#16. Stance: +2 recovery on turns that start at a gap of 2 or more. A starter stance (§2.1): no trait since #1038.</summary>
         public static readonly CardDef WaterStance = new CardDef(
             "water_stance", "水の構え", BattleAttribute.Stance, 2,
             new Face(Stance: new StanceDef(StanceHook.TurnStart, StanceWhen.GapAtLeast, Threshold: 2, Recovery: 2)),
-            When(TraitCondition.Moved, TraitEffect.CostDown, 1),
             Targets: TargetKind.Self,
             Description: "退いて息を戻す型");
 
@@ -144,11 +144,13 @@ namespace BattleCore
             Targets: TargetKind.Self,
             Description: "次の一手に力を溜める");
 
-        /// <summary>#22. 3 Guard (the two-face column-1 Guard) and a draw, one more draw when it leaves the hand thin. 防御 since v4.5.</summary>
+        /// <summary>
+        /// #22. 3 Guard (the two-face column-1 Guard) and a draw. 防御 since v4.5. A starter card (§2.1): no trait
+        /// since #1038; its 型替え steps (MasteryProfiles.Observe) stay until #1022 redraws them.
+        /// </summary>
         public static readonly CardDef Observe = new CardDef(
             "observe", "観察", BattleAttribute.Guard | BattleAttribute.Skill, 1,
             new Face(Guard: 3, Draw: 1),
-            When(TraitCondition.Thin, TraitEffect.Draw, 1),
             Targets: TargetKind.Self,
             Description: "受けを固めて相手をよく見る");
 
@@ -169,11 +171,10 @@ namespace BattleCore
 
         // ---- M ----
 
-        /// <summary>#25. Steps forward one and draws; a stamina point as the first play.</summary>
+        /// <summary>#25. Steps forward one and draws. A starter card (§2.1): no trait since #1038.</summary>
         public static readonly CardDef Footwork = new CardDef(
             "footwork", "足運び", BattleAttribute.None, 1,
             new Face(Move: 1, Draw: 1),
-            When(TraitCondition.FirstPlay, TraitEffect.StaminaGain, 1),
             Targets: TargetKind.Self,
             Description: "先に足を運ぶ");
 
@@ -267,11 +268,13 @@ namespace BattleCore
 
         // ---- St (stance only since v4.4, #257) ----
 
-        /// <summary>#39. Stance: once a turn, a 防御 card costs one less (column 3 → 2 in v4.4); +3 Guard now while parrying.</summary>
+        /// <summary>
+        /// #39. Stance: once a turn, a 防御 card costs one less (column 3 → 2 in v4.4). A starter stance (§2.1): no
+        /// trait since #1038; its 型替え steps keep the trait it had (MasteryProfiles) until #1022 redraws them.
+        /// </summary>
         public static readonly CardDef IronWall = new CardDef(
             "iron_wall", "鉄壁の構え", BattleAttribute.Stance, 2,
             new Face(Stance: new StanceDef(StanceHook.CostDiscount, Attribute: BattleAttribute.Guard)),
-            SelfHas(StatusKind.Parry, TraitEffect.GuardBonus, 3),
             Targets: TargetKind.Self,
             Description: "見切った上で壁になる");
 

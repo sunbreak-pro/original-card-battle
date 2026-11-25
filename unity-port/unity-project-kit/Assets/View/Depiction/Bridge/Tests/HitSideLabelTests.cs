@@ -12,9 +12,12 @@ namespace Depiction.Bridge.Tests
     {
         private static readonly IRng NoShuffle = new FixedRng(0.9999999);
 
+        // #1038 took the trait off the starter card 袈裟斬り; the label of a trait's add is read on a copy that keeps the
+        // one the card table lists.
         private static readonly CardDef[] Hand =
         {
-            CardCatalog.KesaCut, CardCatalog.Feint, CardCatalog.Brace, CardCatalog.ReachThrust, CardCatalog.BackLeap,
+            CardCatalog.KesaCut with { Trait = CardCatalog.StarterTableTraits["kesa_cut"] },
+            CardCatalog.Feint, CardCatalog.Brace, CardCatalog.ReachThrust, CardCatalog.BackLeap,
         };
 
         /// <summary>Plays 袈裟斬り (+5 at 間合い 0) at <paramref name="gap"/> against an enemy holding <paramref name="enemyStatuses"/>.</summary>

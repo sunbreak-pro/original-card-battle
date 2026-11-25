@@ -73,9 +73,9 @@ namespace Depiction.Bridge.Tests
         public void StanceCards_HaveNoCap_OnlyTheThreeOfAKindHolds()
         {
             // §4 (v4.4): the three-card cap of §19.6 S15 is gone. Ten stance cards across four kinds go in;
-            // a fourth copy of one kind is still refused.
+            // a fourth copy of one kind is still refused, and so is the second of the starter's two stances (#1038).
             var deck = new DeckBuilder();
-            foreach (string id in new[] { "water_stance", "water_stance", "water_stance", "keen_eye", "keen_eye", "keen_eye", "mist_step", "mist_step", "mist_step", "iron_wall" })
+            foreach (string id in new[] { "water_stance", "water_stance", "water_stance", "keen_eye", "keen_eye", "keen_eye", "mist_step", "mist_step", "mist_step", "anchor_stance" })
             {
                 Assert.That(deck.Add(id), Is.True, id);
             }
@@ -83,6 +83,9 @@ namespace Depiction.Bridge.Tests
             {
                 Assert.That(deck.StanceCount, Is.EqualTo(10));
                 Assert.That(deck.CanAdd("water_stance"), Is.False, "a fourth copy of one kind");
+                Assert.That(deck.CanAdd("iron_wall"), Is.False, "the other starter stance");
+                Assert.That(deck.RefusalOf("iron_wall"), Is.EqualTo("スタンスは 1 種だけ入れられます。「水の構え」を外すと入れられます"));
+                Assert.That(deck.RefusalOf("water_stance"), Is.EqualTo(""), "a fourth copy has no line to print");
                 Assert.That(deck.CanAdd("priest_prayer"), Is.True, "another stance kind");
                 Assert.That(deck.CanAdd("side_sweep"), Is.True);
             });
@@ -180,7 +183,8 @@ namespace Depiction.Bridge.Tests
         [Test]
         public void TheCardText_IsTheBridgesWords()
         {
-            List<string> lines = DeckBuilder.DetailOf(CardCatalog.KesaCut);
+            // #1038 took the traits off the starter cards; the trait's line is read on a copy that keeps the one the table lists.
+            List<string> lines = DeckBuilder.DetailOf(CardCatalog.KesaCut with { Trait = CardCatalog.StarterTableTraits["kesa_cut"] });
             Assert.Multiple(() =>
             {
                 Assert.That(DeckBuilder.LineOf(CardCatalog.BoarRush), Is.EqualTo("猪突猛進　コスト 3　攻撃"));
@@ -189,6 +193,7 @@ namespace Depiction.Bridge.Tests
                     "袈裟斬り", "コスト 2　攻撃　届く間合い 0〜1", "敵に 15 ダメージ。", "特性: 間合い0 +5", "「肩口から斬り下ろす」",
                 }));
                 Assert.That(DeckBuilder.DetailOf(CardCatalog.SideSweep)[3], Is.EqualTo("特性: なし（素直な札）"));
+                Assert.That(DeckBuilder.DetailOf(CardCatalog.KesaCut)[3], Is.EqualTo("特性: なし"), "a starter card, not a 素直 one");
                 Assert.That(DeckBuilder.DetailOf(CardCatalog.Brace)[1], Is.EqualTo("コスト 2　防御　自分向き"));
                 Assert.That(CardCatalog.All.All(c => DeckBuilder.DetailOf(c).All(l => l.Length > 0)), Is.True);
             });
@@ -203,6 +208,23 @@ namespace Depiction.Bridge.Tests
             Assert.That(deck.Total, Is.EqualTo(20));
             Assert.That(deck.IsValid, Is.True);
             Assert.That(deck.Build().Select(c => c.Def.Id).Distinct(), Is.EquivalentTo(PrototypeDeck.Kinds.Select(k => k.Id)));
+        }
+
+        [Test]
+        public void TheStarterPreset_IsTheStarterDeck_AndOpensWholeOnTheStartersKinds()
+        {
+            // #1038: the first expedition's default deck, on a builder that owns only the starter's eleven.
+            List<string> owned = DeckBuilder.WithStarterKinds(CardCatalog.Starter.Select(d => d.Id));
+            DeckBuilder deck = DeckBuilder.Starter().WithOwned(owned);
+            Assert.Multiple(() =>
+            {
+                Assert.That(owned, Is.EqualTo(CardCatalog.Starter.Select(d => d.Id)), "the starter deck adds no kind of its own");
+                Assert.That(DeckBuilder.WithStarterKinds(null), Is.EqualTo(StarterDeck.Kinds.Select(d => d.Id)));
+                Assert.That(deck.Total, Is.EqualTo(20));
+                Assert.That(deck.IsValid, Is.True, string.Join(" / ", deck.Validate().Errors));
+                Assert.That(deck.Build().Select(c => c.InstanceId), Is.EquivalentTo(StarterDeck.Build().Select(c => c.InstanceId)));
+                Assert.That(DeckBuilder.Starter(DeckLimits.Default.With(deckMax: 45)).Limits.DeckMax, Is.EqualTo(45), "the builder's limits");
+            });
         }
 
         [Test]

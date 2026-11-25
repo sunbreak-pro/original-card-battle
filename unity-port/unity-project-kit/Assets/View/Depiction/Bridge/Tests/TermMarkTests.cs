@@ -32,7 +32,8 @@ namespace Depiction.Bridge.Tests
         [Test]
         public void Brace_UnderlinesReserve()
         {
-            CardFace face = FaceOf(CardCatalog.Brace);
+            // #1038 took the trait off the starter card; the mark is read on a copy that keeps the one the card table lists.
+            CardFace face = FaceOf(CardCatalog.Brace with { Trait = CardCatalog.StarterTableTraits["brace"] });
             TermMark reserve = face.Terms.Single();
             Assert.That(reserve.Word, Is.EqualTo("温存"));
             Assert.That(reserve.Row, Is.EqualTo(TermRow.TraitTop));

@@ -349,12 +349,13 @@ namespace Trial.Bridge.Tests
             return got;
         }
 
-        // On the 7〜9-row maps of #1049: lineage 3: the survivor's heir dies on layer 1 (401 saved points). Lineage 8: it
-        // reaches layer 6 (2087 saved points; descents, events, found consumables, the survey's pick, consumables and a
-        // 標の石 jump on the way; about three minutes). Lineages 2, 5, 6, 7 and 9 do not play this story: life 2 falls before
-        // it reaches the trace or before it can end alive.
+        // On the 7〜9-row maps of #1049, with the starter cards' traits off (#1038): lineage 3: the survivor's heir dies on
+        // layer 1 (387 saved points). Lineage 1: it dies on layer 3 (1714 saved points; descents, the region's choice, events,
+        // found consumables and consumables on the way; about a minute). Lineages 2, 5〜9 and 11〜13 do not play this story: life 2 falls before it reaches the
+        // trace or before it can end alive. In lineages 10 and 16 the heir lives on until the calendar runs out, which this
+        // story does not reach.
         [TestCase(3UL)]
-        [TestCase(8UL)]
+        [TestCase(1UL)]
         public void ThreeLives_ADeath_ATraceTaken_ASurvivor_ReplayFromEverySavedPoint_ToTheStateTheyWereSavedIn(ulong lineageSeed)
         {
             var app = new App(Inheritance.NewLineage(lineageSeed));

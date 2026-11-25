@@ -14,9 +14,16 @@ namespace Depiction.Bridge.Tests
     {
         private static readonly IRng NoShuffle = new FixedRng(0.9999999);
 
+        // #1038 took the traits off the starter cards (swordsman_cards_v4 §2.1). These tests read a trait's words and
+        // lamp on a copy that keeps the one the card table lists.
+        private static CardDef Listed(CardDef def) =>
+            CardCatalog.StarterTableTraits.TryGetValue(def.Id, out Trait trait) ? def with { Trait = trait } : def;
+
+        private static readonly CardDef Kesa = Listed(CardCatalog.KesaCut);
+
         private static readonly CardDef[] Hand =
         {
-            CardCatalog.KesaCut, CardCatalog.ReachThrust, CardCatalog.Brace, CardCatalog.BackLeap, CardCatalog.PurgeFlash,
+            Kesa, CardCatalog.ReachThrust, Listed(CardCatalog.Brace), CardCatalog.BackLeap, CardCatalog.PurgeFlash,
         };
 
         /// <summary>Two 瘴牙の走竜 side by side past turn 1's start, the first one <paramref name="gap"/> away.</summary>
@@ -55,7 +62,7 @@ namespace Depiction.Bridge.Tests
             Assert.That(new[] { state.GapTo(0), state.GapTo(1) }, Is.EqualTo(new[] { 0, 1 }));
 
             // 袈裟斬り (0〜1, 間合い 0 → +5): both hounds are in reach, only the first stands adjacent.
-            bool lit = Lit(state, CardCatalog.KesaCut, out List<bool> perEnemy);
+            bool lit = Lit(state, Kesa, out List<bool> perEnemy);
 
             Assert.That(lit, Is.True);
             Assert.That(perEnemy, Is.EqualTo(new[] { true, false }));
@@ -155,7 +162,7 @@ namespace Depiction.Bridge.Tests
         [TestCase("observe", "手薄", "→ ドロー +1", "出した直後の手札が 2 枚以下なら、さらに 1 枚引く")]
         public void TheSampleCards_ReadAsSection9Writes(string id, string top, string bottom, string hover)
         {
-            CardFace face = CoreText.FaceOf(CardCatalog.ById(id));
+            CardFace face = CoreText.FaceOf(Listed(CardCatalog.ById(id)));
 
             Assert.That(face.TraitTop, Is.EqualTo(top));
             Assert.That(face.TraitBottom, Is.EqualTo(bottom));
@@ -270,8 +277,8 @@ namespace Depiction.Bridge.Tests
         [Test]
         public void TheDetail_NamesOneAttribute_TheTargetAndTheReach()
         {
-            CardDetail kesa = CoreText.FaceOf(CardCatalog.KesaCut).Detail;
-            CardDetail brace = CoreText.FaceOf(CardCatalog.Brace).Detail;
+            CardDetail kesa = CoreText.FaceOf(Kesa).Detail;
+            CardDetail brace = CoreText.FaceOf(Listed(CardCatalog.Brace)).Detail;
 
             Assert.That(kesa.Name, Is.EqualTo("袈裟斬り"));
             Assert.That(kesa.KindLine, Is.EqualTo("攻撃 ・ 敵 1 体 ・ 間合い 0〜1"));

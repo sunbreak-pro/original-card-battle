@@ -68,9 +68,11 @@ namespace BattleCore.Tests
                 Assert.That(CardCatalog.StepInGuard.Trait, Is.Null, "素直");
                 Assert.That(CardCatalog.StepOutGuard.Trait, Is.Null, "素直");
 
+                // The starter cards carry none since #1038 (swordsman_cards_v4 §2.1).
+                Assert.That(CardCatalog.KesaCut.Trait, Is.Null, "a starter card");
+                Assert.That(CardCatalog.Brace.Trait, Is.Null, "a starter card");
+
                 // v4.3 (#160, settled on the card canon; #179 brought the three slice cards in line).
-                Assert.That(CardCatalog.KesaCut.Trait, Is.EqualTo(
-                    new Trait(TraitCondition.GapAtMost, TraitEffect.PowerBonus, 5, Threshold: 0)));
                 Assert.That(CardCatalog.ReachThrust.Trait, Is.EqualTo(
                     new Trait(TraitCondition.GapAtLeast, TraitEffect.PowerBonus, 5, Threshold: 2)));
                 Assert.That(CardCatalog.BoarRush.Trait, Is.EqualTo(
@@ -79,8 +81,6 @@ namespace BattleCore.Tests
                     new Trait(TraitCondition.GapAtMost, TraitEffect.GuardBonus, 3, Threshold: 0)));
                 Assert.That(CardCatalog.BodyCheck.Trait, Is.EqualTo(
                     new Trait(TraitCondition.GapAtMost, TraitEffect.HeavyBlow, 0, Threshold: 0)));
-                Assert.That(CardCatalog.Brace.Trait, Is.EqualTo(
-                    new Trait(TraitCondition.Reserve, TraitEffect.NextTurnRecovery, 1, Threshold: 6)));
                 Assert.That(CardCatalog.Feint.Trait, Is.EqualTo(
                     new Trait(TraitCondition.Reserve, TraitEffect.GuardBonus, 3, Threshold: 4)));
             });
