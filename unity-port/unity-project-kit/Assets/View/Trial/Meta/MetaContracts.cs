@@ -69,7 +69,8 @@ namespace Trial.Meta
     // js: app/main.js:265 (toHall), scenes/meta/hall.js:77
     /// <summary>
     /// mountHall's ctx: { stage, audio, settings, lineage, seed?, onDepart(lifeStart | null), onSettings(), onJournal?(),
-    /// onTitle?() }. The router passes no OnJournal (the hall's 手記 button stays hidden, as in the JS).
+    /// onTitle?() }, plus <see cref="Departure"/> for the carry-over's base (GateScene, #1052). The router passes OnJournal
+    /// (the JS's router does not): the past lives and the rules of traces are read in the journal since #1053.
     /// </summary>
     public sealed class HallCtx : MetaCtx
     {
@@ -87,11 +88,18 @@ namespace Trial.Meta
 
         public Action OnSettings;
 
-        /// <summary>Null hides the 手記 button and the J key (the router passes none).</summary>
+        /// <summary>Null hides the 手記 button and the J key.</summary>
         public Action OnJournal;
 
         /// <summary>Null hides 「タイトルへ」.</summary>
         public Action OnTitle;
+
+        /// <summary>
+        /// The carry-over's base (#1052): 出立's ctx for the life about to set out (null while one is in progress). The base
+        /// shows the pack that ctx opens the table with and, when 「降りる」 is held, sets out through its OnSetOut. Null: the
+        /// base shows the default pack and every way down opens the table (OnDepart).
+        /// </summary>
+        public Func<LifeStart, DepartureCtx> Departure;
     }
 
     // js: app/main.js:277 (toDeparture), scenes/meta/departure.js:92
@@ -125,7 +133,7 @@ namespace Trial.Meta
         /// </summary>
         public Action<DepartureChoice> OnSetOut;
 
-        /// <summary>「← 継承の間へ」.</summary>
+        /// <summary>「← 継承の間へ」 (「← 拠点へ」 under the carry-over).</summary>
         public Action OnBack;
 
         /// <summary>Null: Esc goes back instead of opening the settings, and the gear is hidden.</summary>

@@ -1,6 +1,7 @@
 // The lamp-lit room of 継承の間, built from the same backdrop types as a layer (warm: it is the player's room),
 // and the seven strata's skies on the hall's layer column. Port of scenes/meta/hall.js hallBackdropSpec and
-// skyCss. 出立 paints the same room at half strength (departure.js: hallBackdropSpec(root, 0.5)).
+// skyCss. 出立 paints the same room at half strength (departure.js: hallBackdropSpec(root, 0.5)). Under the
+// carry-over the base is the way down's scene (#1052) and paints Gate's wall instead of the room.
 //
 // The JS reads the colours off the CSS tokens with the DS values as fall-backs (--ground #10141d, --amber
 // #e8a84c, --wick #ffd89a); the tokens are those values, so they are written here as bytes, as the JS's
@@ -73,6 +74,27 @@ namespace Trial.Script
                 {
                     Count = 26, Color = Wick.WithAlpha((float)(0.22 * strength)), SizePx = 3f, SpeedX = 3f, SpeedY = -5f, Twinkle = 0.6f,
                 },
+            };
+        }
+
+        /// <summary>
+        /// The wall round the base's way down (#1052, the design canvas's 出立：降り口の前): Layer 0, named 拠点; a cool dark
+        /// from #1a1d27 through #12151e at 60% to #090b10. No glow and no motes: the light of the scene is the way down's
+        /// own, which the scene draws with the floor in front of it.
+        /// </summary>
+        public static LayerBackdrop Gate()
+        {
+            return new LayerBackdrop
+            {
+                Layer = 0,
+                Name = InheritanceText.BaseTitle,
+                Sky = new[]
+                {
+                    new SkyStop(0f, Rgba.Hex("#1a1d27")),
+                    new SkyStop(0.6f, Rgba.Hex("#12151e")),
+                    new SkyStop(1f, Rgba.Hex("#090b10")),
+                },
+                Hazes = Array.Empty<Haze>(),
             };
         }
 
