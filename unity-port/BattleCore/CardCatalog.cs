@@ -147,6 +147,17 @@ namespace BattleCore
         /// </summary>
         public static readonly IReadOnlyDictionary<string, Trait> StarterTableTraits;
 
+        /// <summary>
+        /// swordsman_cards_v4 §1 素直な札: a card with no trait whose table values carry the +2. The starter cards that
+        /// lost their trait in #1038 carry no +2 (§2.1), so having no trait is not enough. The card face, the deck
+        /// detail and the sim's plain deck all ask here, so none of them calls those nine 素直.
+        /// </summary>
+        public static bool IsPlain(CardDef def)
+        {
+            if (def == null) throw new ArgumentNullException(nameof(def));
+            return def.AllTraits.Count == 0 && !StarterTableTraits.ContainsKey(def.Id);
+        }
+
         public static CardDef ById(string id)
         {
             if (id == null) throw new ArgumentNullException(nameof(id));

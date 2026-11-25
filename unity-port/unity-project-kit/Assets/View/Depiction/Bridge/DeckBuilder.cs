@@ -330,9 +330,8 @@ namespace Depiction.Bridge
                 CoreText.Describe(def.Face, def.Attributes),
             };
             string trait = CoreText.TraitLines(def);
-            // A starter card lost its trait in #1038 without the 素直 +2 (swordsman_cards_v4 §2.1), so it is no 素直な札.
             lines.Add(trait.Length > 0 ? "特性: " + trait
-                : CardCatalog.StarterTableTraits.ContainsKey(def.Id) ? "特性: なし" : "特性: なし（素直な札）");
+                : CardCatalog.IsPlain(def) ? "特性: なし（素直な札）" : "特性: なし");
             if (!string.IsNullOrEmpty(def.Description)) lines.Add("「" + def.Description + "」");
             return lines;
         }

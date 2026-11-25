@@ -168,7 +168,7 @@ public static class Decks
     public static SimDeck Plain()
     {
         var rows = CardCatalog.All
-            .Where(c => c.AllTraits.Count == 0 && !Cards.IsStanceCard(c) && !CardCatalog.StarterTableTraits.ContainsKey(c.Id))
+            .Where(c => CardCatalog.IsPlain(c) && !Cards.IsStanceCard(c))
             .Select(c => (CardId: c.Id, Copies: Constants.CopiesMax))
             .ToList();
         while (rows.Sum(r => r.Copies) > Constants.DeckMax) rows.RemoveAt(rows.Count - 1);

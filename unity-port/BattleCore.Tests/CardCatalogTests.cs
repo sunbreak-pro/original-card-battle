@@ -38,6 +38,18 @@ namespace BattleCore.Tests
             });
         }
 
+        [Test]
+        public void IsPlain_LeavesOutTheStarterCardsWhoseTraitCameOff()
+        {
+            Assert.Multiple(() =>
+            {
+                foreach (string id in StarterTraitsTakenOff) Assert.That(CardCatalog.IsPlain(CardCatalog.ById(id)), Is.False, id);
+                Assert.That(CardCatalog.IsPlain(CardCatalog.SideSweep), Is.True);
+                Assert.That(CardCatalog.IsPlain(CardCatalog.IronBlock), Is.True);
+                Assert.That(CardCatalog.IsPlain(CardCatalog.ReachThrust), Is.False, "a card with a trait");
+            });
+        }
+
         // ---- The catalog ----
 
         [Test]
