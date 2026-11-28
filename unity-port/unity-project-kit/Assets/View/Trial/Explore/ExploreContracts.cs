@@ -138,5 +138,11 @@ namespace Trial.Explore
 
         /// <summary>ctx.onCarving(): a fresh 彫刻 was read; the lineage keeps it.</summary>
         public Action OnCarving { get; set; }
+
+        /// <summary>
+        /// The deck's count on the header's owned cards (#1074), read on every render, so a card learned on the way shows at
+        /// once. Null: the expedition's own deck (Expedition.Deck, the deck each battle is shuffled from).
+        /// </summary>
+        public Func<int> DeckCount { get; set; }
     }
 }
