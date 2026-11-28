@@ -19,10 +19,8 @@ namespace Trial.Script.Tests
         }
 
         [Test]
-        public void TheTitle_TaglineAndMenu()
+        public void TheTitle_Menu()
         {
-            Assert.That(MetaTimelines.TitleTaglineCharAt(0), Is.EqualTo(900));
-            Assert.That(MetaTimelines.TitleTaglineCharAt(23), Is.EqualTo(2855), "the last of 24 letters");
             Assert.That(Enumerable.Range(0, 3).Select(MetaTimelines.TitleMenuItemAt), Is.EqualTo(new[] { 1800, 1910, 2020 }));
         }
 

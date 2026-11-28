@@ -1,12 +1,12 @@
 // The hud module of the battle scene (docs/BATTLE_SCENE.md §6c): everything on the screen that is neither a card in hand
 // nor the arena — the number panels, the omen badges (+ plans), the stance lists, the stamina tag, the corner, the speed
-// switch, the piles + list, the played attributes, the reserve hint, the journal / end-turn buttons, the banners and the
+// switch, the piles + list, the played attributes, the journal / end-turn buttons, the banners and the
 // result card — and the panel half of FollowFigures (follow). Port of scenes/battle/hud.js (Unity: StatusBarView,
 // OmenBadgeView, StanceListView, StaminaTagView, PilesView, PileListView, BottomRightViews, CornerInfoView,
 // BattleSpeedButton, the end-turn plate, Banner, ShowResult).
 //
 // Parts: HudStatusPanel (Status.cs), HudOmenBadge (Omen.cs), HudStanceLists (Stances.cs), HudStaminaTag (Stamina.cs),
-// HudPiles (Piles.cs), HudPlayed / HudReserveHint / HudEndTurn (Bottom.cs), HudCorner / HudSpeedButton / HudJournalButton /
+// HudPiles (Piles.cs), HudPlayed / HudEndTurn (Bottom.cs), HudCorner / HudSpeedButton / HudJournalButton /
 // HudSettingsButton / HudResultCard / HudChainBanner / HudLossInk / HudChrome.PlayBanner (Chrome.cs), HudUtil / HudTip.
 // Fills env.Geom.PileMiddle / OmenBox / OmenShown / OmenBoxes / EndTurnBox / StatusBox / StatusBoxes / StanceBox /
 // StanceSlot / CoversPointer / DrawerRight. Plays 'uiClick' for its buttons.
@@ -201,7 +201,6 @@ namespace Trial.Battle
         private readonly List<EnemyView> _order = new List<EnemyView>();
         private readonly HudPiles _piles;
         private readonly HudPlayed _played;
-        private readonly HudReserveHint _hint;
         private readonly HudEndTurn _endTurn;
         private readonly HudCorner _corner;
         private readonly HudSpeedButton _speedBtn;
@@ -286,7 +285,6 @@ namespace Trial.Battle
                 OnDrawer = open => _opts.OnDrawer?.Invoke(open),
             });
             _played = HudPlayed.Create(env);
-            _hint = HudReserveHint.Create(env, _tip);
             _endTurn = HudEndTurn.Create(env, () => _opts.OnEndTurn?.Invoke());
             _corner = HudCorner.Create(env, new BattleChain(_opts.ChainIndex, _opts.ChainTotal), _tip);
             _speedBtn = HudSpeedButton.Create(env, () => _opts.OnSpeed?.Invoke(), _tip);
@@ -1028,9 +1026,6 @@ namespace Trial.Battle
         // js: scenes/battle/hud.js:575
         public IHudStamina Stamina => _stamina;
 
-        // js: scenes/battle/hud.js:579
-        public void ReserveHint(string text) => _hint.Show(text ?? "");
-
         // js: scenes/battle/hud.js:580
         public void SetEnemyTurn(bool on) => _endTurn.SetEnemyTurn(on);
 
@@ -1232,7 +1227,6 @@ namespace Trial.Battle
             _stamina.Destroy();
             _player.Destroy();
             _played.Destroy();
-            _hint.Destroy();
             _endTurn.Destroy();
             _corner.Destroy();
             _speedBtn.Destroy();

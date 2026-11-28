@@ -162,7 +162,6 @@ namespace Trial.Battle.Flow.Tests.Fakes
         }
 
         public readonly List<(string Text, BannerSide Side)> Banners = new List<(string, BannerSide)>();
-        public readonly List<string> Hints = new List<string>();
         public readonly List<int> Costs = new List<int>();
         public int Refuses;
         public int Flashes;
@@ -227,7 +226,6 @@ namespace Trial.Battle.Flow.Tests.Fakes
         public IOmenBadge OmenOf(int unit = -1) => BadgeOf(unit);
         public IReadOnlyList<int> EnemyUnits() => _enemies.Keys.ToList();
         public IHudStamina Stamina => this;
-        public void ReserveHint(string text) => Hints.Add(text ?? "");
         public void SetEnemyTurn(bool on) => EnemyTurnOn = on;
         public IHudEndTurn EndTurn => this;
 
@@ -265,7 +263,8 @@ namespace Trial.Battle.Flow.Tests.Fakes
         public void SettleEndNow(BattleOutcome outcome) { }
         public Promise RetireOmens(float ms) => _env.Clock.Wait(ms);
         public void LiftOmen(IReadOnlyList<int> units) { }
-        public void SetRestFocus(int unit) { }
+        public int RestFocus = -1;
+        public void SetRestFocus(int unit) => RestFocus = unit;
         public void SetLog(IReadOnlyList<string> lines) => Log = lines;
         public Promise FlyOmenToStances(int unit, float ms) => _env.Clock.Wait(ms);
 

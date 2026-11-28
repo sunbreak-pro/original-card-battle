@@ -566,10 +566,6 @@ namespace Trial.Battle
         // js: scenes/battle/field.js:509
         void ApplyFrame(DepictionFrame frame, bool first = false);
 
-        /// <summary>showGapTo(unit) (several enemies): the floor's one N is enemy `unit`'s while a held card frames it; −1 = the frame's own (the nearest).</summary>
-        // js: scenes/battle/field.js:552
-        void ShowGapTo(int unit);
-
         /// <summary>enemyUnits(): the enemies the field draws (standing or not), by unit.</summary>
         // js: scenes/battle/field.js:563
         IReadOnlyList<int> EnemyUnits();
@@ -755,14 +751,6 @@ namespace Trial.Battle
         /// <summary>freeStepCentre(dir): the middle of mark `dir`, or null.</summary>
         // js: scenes/battle/field.js:914
         StagePoint? FreeStepCentre(int dir);
-
-        /// <summary>recountGap(gap, playerCell, playerSize, enemyCell, ms): the gap chip — old number up and out, new in from below.</summary>
-        // js: scenes/battle/field.js:915
-        Promise RecountGap(int gap, int playerCell, int playerSize, int enemyCell, float ms);
-
-        /// <summary>setGap(gap, playerCell, playerSize, enemyCell): the gap chip at once.</summary>
-        // js: scenes/battle/field.js:916
-        void SetGap(int gap, int playerCell, int playerSize, int enemyCell);
 
         // ---- fx ----
 
@@ -1189,10 +1177,6 @@ namespace Trial.Battle
         /// <summary>stamina: { showCost, glowReserve }.</summary>
         // js: scenes/battle/hud.js:575
         IHudStamina Stamina { get; }
-
-        /// <summary>reserveHint(text) = ReserveHintView (x 1560, y 984); '' hides it.</summary>
-        // js: scenes/battle/hud.js:579
-        void ReserveHint(string text);
 
         /// <summary>setEnemyTurn(on): ShowEnemyTurn's plate half — the end-turn plate at EnemyTurnShadeLayout.EndTurnAlpha (0.4).</summary>
         // js: scenes/battle/hud.js:580

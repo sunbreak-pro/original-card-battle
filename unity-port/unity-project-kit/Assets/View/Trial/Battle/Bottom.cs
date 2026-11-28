@@ -203,34 +203,6 @@ namespace Trial.Battle
         }
     }
 
-    /// <summary>
-    /// createReserveHint(env, tip) → { show(hint), destroy }. Departs from the JS (2026-11-28 Koudai-san, #1079): the 構えの予告
-    /// is not drawn, because the hover text of the buff chips under the HP bar already lets the player work out what ending
-    /// the turn gives. Hud still makes and feeds it, so the shape stays.
-    /// </summary>
-    // js: scenes/battle/hud/bottom.js:96
-    public sealed class HudReserveHint
-    {
-        private HudReserveHint()
-        {
-        }
-
-        /// <summary>createReserveHint(env, tip): nothing is put on the screen.</summary>
-        // js: scenes/battle/hud/bottom.js:96
-        public static HudReserveHint Create(BattleViewEnv env, HudTip tip = null) => new HudReserveHint();
-
-        /// <summary>show(hint): nothing to show.</summary>
-        // js: scenes/battle/hud/bottom.js:117
-        public void Show(string hint)
-        {
-        }
-
-        // js: scenes/battle/hud/bottom.js:123
-        public void Destroy()
-        {
-        }
-    }
-
     /// <summary>createEndTurn(env, onClick) → { el, setEnemyTurn, setOff, pop, flash, refuse, box, destroy }. It is hud.endTurn too.</summary>
     // js: scenes/battle/hud/bottom.js:131
     public sealed class HudEndTurn : IHudEndTurn
