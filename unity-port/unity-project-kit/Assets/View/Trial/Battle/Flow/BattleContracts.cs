@@ -1136,8 +1136,9 @@ namespace Trial.Battle
     /// <summary>
     /// hud.js (docs/BATTLE_SCENE.md §6c): panels and chrome — status panels, omen badges, stance lists, stamina tag, corner,
     /// speed, piles + list, played, reserve hint, journal / end-turn buttons, banners, result card. Unity: StatusBarView,
-    /// OmenBadgeView, StanceListView, StaminaTagView, PilesView, PileListView, BottomRightViews, CornerInfoView,
-    /// BattleSpeedButton, the end-turn plate, Banner, ShowResult. Fills env.Geom.PileMiddle / OmenBox / OmenShown / OmenBoxes /
+    /// OmenBadgeView, StanceListView, StaminaTagView, PilesView, PileListView, BottomRightViews, the end-turn plate, Banner,
+    /// ShowResult. The trial draws the corner, the speed and the journal button in the shared header band instead
+    /// (Trial.Header's HeaderBar, #1074), where the old screen has CornerInfoView and BattleSpeedButton. Fills env.Geom.PileMiddle / OmenBox / OmenShown / OmenBoxes /
     /// EndTurnBox / StatusBox / StatusBoxes / StanceBox / StanceSlot / CoversPointer / DrawerRight. Plays 'uiClick' for its buttons.
     /// </summary>
     public interface IHud
@@ -1238,7 +1239,10 @@ namespace Trial.Battle
         // js: scenes/battle/hud.js:641
         Promise LossInk(string word, float inkMs, float wordMs);
 
-        /// <summary>speed(label, chevrons) = BattleSpeedButton.Show (tooltip BattleSpeed.Tooltip).</summary>
+        /// <summary>
+        /// speed(label, chevrons): the speed now (BattleSpeed.Label / Chevrons of the settings' step). The trial shows it as
+        /// the header band's speed word (HeaderBand.SpeedLabel) with a fixed icon and the tip BattleSpeed.Tooltip.
+        /// </summary>
         // js: scenes/battle/hud.js:642
         void Speed(string label, int chevrons);
 

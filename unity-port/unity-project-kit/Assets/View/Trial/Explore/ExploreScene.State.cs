@@ -2,11 +2,11 @@
 // the scene shares. ExploreScene is one partial class over the files that mirror ExploreScene.js's sections:
 //
 //   ExploreScene.State.cs    fields, the small shared types, dur / sfx / persist / timers, rich / put / splitRow,
-//                            RollLabel, forecastIcon, the root's classes, Tab focus (keysWithFocus, ask)    — scene core
+//                            forecastIcon, the root's classes, Tab focus (keysWithFocus, ask)               — scene core
 //   ExploreScene.cs          mount / destroy / refresh, the DOM, the clock, render, the key legend and the hint,
 //                            the scene's keys, the overlays, lifeEnd                                          — scene core
 //   ExploreScene.Map.cs      the map, the walker, steps (nodePos … leap)                                     — map
-//   ExploreScene.Band.cs     the band (drawBand, paintGauge, syncMarks, syncEndLife)                          — panels
+//   ExploreScene.Band.cs     the shared header (drawBand), syncMarks, syncEndLife                             — panels
 //   ExploreScene.Detail.cs   the node detail (drawDetail)                                                      — panels
 //   ExploreScene.Carried.cs  carried items (drawCarried, fitCarried, useConsumable)                            — panels
 //   ExploreScene.Plates.cs   cards over the map, banners, the flow after a step, the interlude               — plates
@@ -90,17 +90,11 @@ namespace Trial.Explore
         /// <summary>.ocbg-explore-legend (z 6).</summary>
         private RectTransform Legend;
 
-        /// <summary>.ocbg-explore-band (z 7; built by BuildBand).</summary>
-        private RectTransform Band;
-
         /// <summary>.ocbg-explore-overlays (z 8): the fallback overlays.</summary>
         private RectTransform OverlayLayer;
 
         /// <summary>createBackdrop(bdHost).</summary>
         private ExploreBackdrop Backdrop;
-
-        /// <summary>The band's roll labels, ticked by the clock (ExploreScene.js:323 rollers; BuildBand adds them).</summary>
-        private readonly List<RollLabel> Rollers = new List<RollLabel>();
 
         // ------------------------------------------------------------------ state (ExploreScene.js:368-398)
 
@@ -129,7 +123,7 @@ namespace Trial.Explore
 
         /// <summary>
         /// The open card over the map (ours), or null. openPlate / closePlate also toggle the carried panel's `is-held`
-        /// (ExploreScene.js:850, :874) right before they call syncMarks: SyncMarks syncs it (the carried part's SyncHeld).
+        /// (ExploreScene.js:850, :874) right before they call syncMarks: SyncHeld syncs it.
         /// </summary>
         private ExplorePlate Plate;
 
@@ -323,7 +317,7 @@ namespace Trial.Explore
             return sb.ToString();
         }
 
-        /// <summary>A copy of the style with TMP rich text on (for labels that show Rich / RollLabel markup).</summary>
+        /// <summary>A copy of the style with TMP rich text on (for labels that show Rich markup).</summary>
         internal static TextStyle RichStyle(TextStyle style)
         {
             TextStyle s = (style ?? new TextStyle()).Clone();
@@ -632,143 +626,5 @@ namespace Trial.Explore
         public string Name { get; }
         public Rgba Color { get; }
         public bool Outline { get; }
-    }
-
-    // js: scenes/explore/ExploreScene.js:112
-    /// <summary>
-    /// A label whose numbers roll to their new value when only the numbers change: 520 ms, EASE.out, rounded each
-    /// frame, and the label glows once (ocbg-explore-roll 900ms ease-out: text-shadow 0 → 0 0 12px ink 70 % → 0). No
-    /// animation on the first text or when `animate` is false. The digits are set in the number face (.ocbg-explore-num).
-    /// </summary>
-    public sealed class RollLabel
-    {
-        private readonly TMP_Text _el;
-        private readonly float _ms;
-        private string _text;
-        private string[] _parts = Array.Empty<string>();
-        private Anim _anim;
-        private CssAnimator _rolled;
-
-        private sealed class Anim
-        {
-            public long[] From;
-            public long[] To;
-            public float T0;
-        }
-
-        // js: scenes/explore/ExploreScene.js:113
-        public RollLabel(TMP_Text el, float ms = 520f)
-        {
-            _el = el;
-            _ms = ms;
-        }
-
-        public TMP_Text El => _el;
-
-        /// <summary>The text last set (null before the first).</summary>
-        public string Text => _text;
-
-        // js: scenes/explore/ExploreScene.js:121
-        public void Set(string text, float now, bool animate)
-        {
-            if (text == _text) return;
-            string old = _text;
-            _text = text;
-            string[] parts = SplitDigits(text ?? "");
-            long[] from = null;
-            if (animate && old != null)
-            {
-                string[] op = SplitDigits(old);
-                bool same = op.Length == parts.Length;
-                for (int i = 0; same && i < op.Length; i++) if (i % 2 == 0 && op[i] != parts[i]) same = false;
-                if (same) from = Numbers(op);
-            }
-            _parts = parts;
-            long[] to = Numbers(parts);
-            bool differs = false;
-            if (from != null) for (int i = 0; i < from.Length && i < to.Length; i++) if (from[i] != to[i]) differs = true;
-            if (from != null && differs)
-            {
-                _anim = new Anim { From = from, To = to, T0 = now };
-                Paint(from);
-                // classList.remove / reflow / add: the glow starts over
-                if (_rolled != null) _rolled.Stop(true);
-                if (_el) _rolled = CssAnimator.Play(_el, "ocbg-explore-roll 900ms ease-out");
-            }
-            else
-            {
-                // the spans keep the text's own digit runs (ExploreScene.js:133-139: a leading zero stays)
-                _anim = null;
-                Paint(null);
-            }
-        }
-
-        // js: scenes/explore/ExploreScene.js:150
-        /// <summary>paint(values): the digit runs show these numbers; null = the text's own runs (as set() builds them).</summary>
-        private void Paint(long[] values)
-        {
-            if (!_el) return;
-            float ls = Label.StyleOf(_el)?.LetterSpacingEm ?? 0f;
-            var sb = new StringBuilder();
-            int k = 0;
-            for (int i = 0; i < _parts.Length; i++)
-            {
-                if (i % 2 == 1)
-                {
-                    string digits = values != null && k < values.Length ? values[k].ToString(CultureInfo.InvariantCulture) : _parts[i];
-                    k++;
-                    ExploreScene.AppendNum(sb, digits, ls);
-                }
-                else if (_parts[i].Length > 0)
-                {
-                    if (_parts[i].IndexOf('<') >= 0) sb.Append("<noparse>").Append(_parts[i]).Append("</noparse>");
-                    else sb.Append(_parts[i]);
-                }
-            }
-            Label.SetText(_el, sb.ToString());
-        }
-
-        // js: scenes/explore/ExploreScene.js:152
-        public void Tick(float now)
-        {
-            if (_anim == null) return;
-            float t = Math.Min(1f, (now - _anim.T0) / _ms);
-            float e = Ease.Out(t);
-            var v = new long[_anim.From.Length];
-            for (int i = 0; i < v.Length; i++) v[i] = (long)Math.Floor(_anim.From[i] + (_anim.To[i] - _anim.From[i]) * (double)e + 0.5);
-            Paint(v);
-            if (t >= 1f) _anim = null;
-        }
-
-        /// <summary>String(text).split(/(\d+)/): text, digits, text, …, text (always odd in length).</summary>
-        private static string[] SplitDigits(string s)
-        {
-            var o = new List<string>();
-            var cur = new StringBuilder();
-            int i = 0;
-            while (i < s.Length)
-            {
-                if (s[i] >= '0' && s[i] <= '9')
-                {
-                    int j = i;
-                    while (j < s.Length && s[j] >= '0' && s[j] <= '9') j++;
-                    o.Add(cur.ToString());
-                    cur.Clear();
-                    o.Add(s.Substring(i, j - i));
-                    i = j;
-                }
-                else cur.Append(s[i++]);
-            }
-            o.Add(cur.ToString());
-            return o.ToArray();
-        }
-
-        private static long[] Numbers(string[] parts)
-        {
-            var o = new List<long>();
-            for (int i = 1; i < parts.Length; i += 2)
-                o.Add(long.TryParse(parts[i], NumberStyles.None, CultureInfo.InvariantCulture, out long v) ? v : 0);
-            return o.ToArray();
-        }
     }
 }

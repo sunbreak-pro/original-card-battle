@@ -1,7 +1,8 @@
 // 出立's one screen, 「支度の卓」 (#1051, the design canvas's 出立：支度の卓): where every box of the screen stands, the
 // small card's few words, the shelf's line art and the words the screen adds. The two steps of the JS's 出立 (デッキを組む,
 // 出立の支度) become one table: the owned cards on the left, the shelf of tools and consumables under them, the pack on the
-// right (the deck as a pile, the tool and consumable slots, one reading panel, 出立する), the collapse calendar on top.
+// right (the deck as a pile, the tool and consumable slots, one reading panel, 出立する), the shared header band on top
+// (#1074: the collapse calendar, HP and stamina, the chip back to the base).
 //
 // It lives here, engine-free, so `dotnet test` holds the layout (Trial.Bridge.Tests/DepartTableTests): nothing overlaps,
 // everything stays on the 1920 × 1080 stage, every text is 16 px or more and every text under 24 px is in the body
@@ -84,11 +85,15 @@ namespace Trial.Bridge
         /// <summary>The left and right margin of the table.</summary>
         public const float Margin = 48f;
 
-        /// <summary>The space between the header's items.</summary>
-        public const float HeaderGap = 24f;
+        /// <summary>
+        /// The shared header band over the top (#1074: 「拠点」 with 「支度の卓」 and the chip back, the calendar, HP, stamina
+        /// and the buttons). Its height is HeaderBand's; nothing of the table reaches into it.
+        /// </summary>
+        public static TableBox Band => HeaderBand.Band;
 
-        /// <summary>The header row: ← back, the title, the lead or the bonus chip; the calendar, 手記 and 設定 at the right.</summary>
-        public static readonly TableBox Header = new TableBox(Margin, 22f, StageW - 2f * Margin, 56f);
+        /// <summary>The table's band: the base's, with 「支度の卓」, the chip back, and the owned cards lit.</summary>
+        public static HeaderContent BandOf(DungeonCore.CalendarState calendar, int deckCount) =>
+            HeaderContent.ForTable(DepartGate.BandCalendar(calendar), DepartGate.StartMaxHp, DepartGate.StartMaxStamina, deckCount);
 
         // ---- left: the owned cards ----------------------------------------------------------------------------------
 
@@ -208,6 +213,22 @@ namespace Trial.Bridge
         public static readonly TableBox DeckLine = new TableBox(PileText.X, Gauge.Bottom + 10f, PileText.W, DeckLineLine * DeckLineLines);
 
         public static readonly TableBox ToolHead = new TableBox(PackContent.X, PileRow.Bottom + PackGap, PackContent.W, 26f);
+
+        /// <summary>
+        /// The survivor's bonus (what the life's limits raise) at the right end of the tool heading's row, since the header
+        /// it stood in became the shared band (#1074). Room is kept for the longest heading, 「道具 4 / 4」, and a gap.
+        /// </summary>
+        public const float BonusRoomLeft = 100f, BonusPadX = 10f, BonusDot = 10f, BonusDotGap = 8f, BonusWordsGap = 8f;
+
+        /// <summary>The widest the bonus tag may stand (its words cut with an ellipsis past it).</summary>
+        public static float BonusMaxW => ToolHead.W - BonusRoomLeft;
+
+        /// <summary>The bonus tag for its content width (the dot, the label, the line), right-aligned on the row, at most <see cref="BonusMaxW"/>.</summary>
+        public static TableBox BonusTag(float contentW)
+        {
+            float w = Math.Min(BonusMaxW, contentW + 2f * (BonusPadX + 1f));
+            return new TableBox(ToolHead.Right - w, ToolHead.Y, w, ToolHead.H);
+        }
         public static readonly TableBox ToolSlots = new TableBox(PackContent.X, ToolHead.Bottom + 8f, PackContent.W, 60f);
         public static readonly TableBox ConsumableHead = new TableBox(PackContent.X, ToolSlots.Bottom + PackGap, PackContent.W, 26f);
         public static readonly TableBox ConsumableSlots = new TableBox(PackContent.X, ConsumableHead.Bottom + 8f, PackContent.W, 60f);
@@ -347,18 +368,9 @@ namespace Trial.Bridge
 
         // ---- the words the table adds (the canvas's; every number comes from the limits or the catalogue) ---------
 
-        /// <summary>The screen's title.</summary>
-        public const string Title = "出立の支度";
-
-        /// <summary>The line beside the title.</summary>
-        public const string Lead = "卓の上の札と品を、右の荷に詰めます。";
-
         public const string CardsHeading = "持ち札";
         public const string ShelfHeading = "品の棚";
         public const string PileHeading = "束";
-
-        /// <summary>The calendar's words before and after the days left.</summary>
-        public const string CalendarBefore = "崩壊まで 残り", CalendarAfter = "日";
 
         /// <summary>
         /// The preset that opens the starter deck (#1038). The JS's 「試作デッキ」 (MetaText.Prototype) named the prototype
@@ -427,11 +439,6 @@ namespace Trial.Bridge
         /// </summary>
         public static class Css
         {
-            public const string Title = "font: 800 38px/1.2 var(--font-display); letter-spacing: .12em; white-space: nowrap;";
-            public const string Lead = "font: 400 18px/1.4 var(--font-body); white-space: nowrap;";
-            public const string CalendarWords = "font: 700 18px/1.2 var(--font-body); white-space: nowrap;";
-            public const string CalendarDays = "font: 700 34px/36px var(--font-mono); white-space: nowrap;";
-            public const string CalendarBox = "background: var(--panel); border: var(--stroke-rule) solid var(--rule); border-radius: var(--radius-panel);";
             public const string Heading = "font: 800 26px/1.2 var(--font-display); white-space: nowrap;";
             public const string ShelfHeading = "font: 800 24px/32px var(--font-display); white-space: nowrap;";
             public const string ShelfLead = "font: 400 16px/1.4 var(--font-body); white-space: nowrap;";
@@ -472,6 +479,10 @@ namespace Trial.Bridge
             public const string GaugeMin = "background: var(--ink);";
             public const string DeckLine = "font: 400 18px/26px var(--font-body);";
             public const string SlotHead = "font: 700 18px/26px var(--font-body); white-space: nowrap;";
+            public const string Bonus = "background: color-mix(in srgb, var(--wick) 10%, var(--panel)); border: var(--stroke-rule) solid var(--wick); border-radius: var(--radius-tag);";
+            public const string BonusDot = "background: var(--wick); border-radius: 50%; box-shadow: 0 0 8px var(--wick);";
+            public const string BonusLabel = "font: 700 16px/22px var(--font-body); white-space: nowrap;";
+            public const string BonusLine = "font: 400 16px/22px var(--font-body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;";
             public const string Slot = "background: transparent; border: var(--stroke-frame) dashed var(--steel); border-radius: var(--radius-panel); transition: border-color .14s, background .14s;";
             public const string SlotFull = "border-style: solid; border-color: var(--amber); background: var(--panel-solid);";
             public const string SlotFullHover = "background: color-mix(in srgb, var(--amber) 12%, var(--panel-solid));";

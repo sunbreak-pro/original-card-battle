@@ -54,9 +54,6 @@ namespace Trial.Explore
         /// <summary>explore.css:215 .ocbg-explore-legend span gap (between the keys and the label).</summary>
         public const float LegendItemGap = 6f;
 
-        /// <summary>explore.css:26 the band: 0, 0, 1920 × 96.</summary>
-        public const float BandH = 96f;
-
         public const float StageW = 1920f, StageH = 1080f;
 
         /// <summary>The node centre of a builder's map fraction (ExploreScene.js:410 nodePos).</summary>

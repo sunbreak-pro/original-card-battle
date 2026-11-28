@@ -732,6 +732,7 @@ namespace Trial.Boot
         private BattleSceneCtx BattleCtx(RecordedBattle battle, SettlingFight fight, Action onFinished)
         {
             Expedition raw = Live.Raw;
+            global::Exploration.ExplorationScreen screen = raw.Session.Screen();
             return new BattleSceneCtx
             {
                 Stage = _stage,
@@ -742,7 +743,11 @@ namespace Trial.Boot
                 // The map draws the layer's backdrop slot, and a region's layer borrows a named place's (#888): the fight
                 // takes the same slot, so its backdrop matches the map and the ambience ResumeFight picks (#1029).
                 BackdropLayer = raw.Session.State.Profile.BackdropLayer,
-                LayerTitle = raw.Session.Screen().LayerTitle,
+                LayerTitle = screen.LayerTitle,
+                // The header band (#1074) reads the calendar where the map's band reads it, so the two bands show the same
+                // days at the same moment.
+                CalendarDaysLeft = screen.DaysLeft,
+                CalendarFrozen = screen.CalendarFrozen,
                 NodeKind = BattleSceneCtx.NodeKindOf(battle.HandIn.Kind.ToString()),
                 Chain = new BattleChain(battle.Index + 1, battle.Count),
                 DisclosureOf = id => raw.DisclosureOf(id),

@@ -1,7 +1,7 @@
 // The two stance lists of the battle's hud (StanceListView, docs/BATTLE_SCENE.md §6c, battle-views §3.3): 250×52 frames
 // at x 24 (player) / 1646 (enemy) from y 470 up, ≤ 3 with the oldest folded into 「+n」, the empty frame, the new-stance
-// ring, the hover / pinned tip, and the high place in the top bar when a figure's art would come under a list. In layer
-// panels. Port of scenes/battle/hud/stances.js.
+// ring, the hover / pinned tip, and the high place under the header band when a figure's art would come under a list. In
+// layer panels. Port of scenes/battle/hud/stances.js.
 //
 // The stance lists at the two edges of the screen: a port of StanceListView (battle-visual-v1 §4.6 スタンス枠,
 // battle_core_v4 §4 v4.4, #455) in the design system's StanceSlot look. Each stance takes one 250×52 frame, stacked upward
@@ -31,14 +31,6 @@ using UnityEngine.EventSystems;
 
 namespace Trial.Battle
 {
-    /// <summary>createStanceLists's place: { highTop(), highLeft(side) } — the high place's top and left edge (the hud measures the corner and the speed switch).</summary>
-    // js: scenes/battle/hud/stances.js:51
-    public sealed class StancePlace
-    {
-        public Func<float> HighTop;
-        public Func<UnitSide, float> HighLeft;
-    }
-
     /// <summary>keepClear's rows: a standing figure's art box { x0, x1, y0, y1 } (stage px).</summary>
     // js: scenes/battle/hud.js:418
     public readonly struct ArtBox
@@ -57,7 +49,7 @@ namespace Trial.Battle
         }
     }
 
-    /// <summary>createStanceLists(env, tip, place) → { bind, boxOf, slotOf, keepClear, isHigh, elOf, destroy } (stances.js:231).</summary>
+    /// <summary>createStanceLists(env, tip) → { bind, boxOf, slotOf, keepClear, isHigh, elOf, destroy } (stances.js:231).</summary>
     // js: scenes/battle/hud/stances.js:43
     public sealed class HudStanceLists
     {
@@ -86,13 +78,15 @@ namespace Trial.Battle
         /// <summary>
         /// Review 21 (the frames at the screen's edges were drawn across the figures — a slid arena beside an open drawer, the
         /// hound's tail on the last of 8 cells, the hero beside the journal): a list that a standing figure's art would come
-        /// under moves to its high place, in the top bar beside its side's corner chrome — the player's 12 px right of the
-        /// corner information, the enemy's 12 px left of the speed switch (or the gear) — one frame there, the newest, with
-        /// 「+n」 on it for the rest (its hover lists them all). It comes back to y 470 once the figures leave the place. A look
-        /// call: Unity's StanceListView has one place, and battle-visual-v1 §4.6 none for a slid arena.
+        /// under moves to its high place, 12 px under the header band at its own edge's x (#1074: the corner chrome it stood
+        /// beside in the top bar went into the band) — one frame there, the newest, with 「+n」 on it for the rest (its hover
+        /// lists them all). It comes back to y 470 once the figures leave the place. A look call: Unity's StanceListView has
+        /// one place, and battle-visual-v1 §4.6 none for a slid arena. Its bottom (y 160) keeps clear of a tall enemy's
+        /// fixed badge top (OmenRowLayout.TallBadgeTop, y 162).
         /// </summary>
         // js: scenes/battle/hud/stances.js:40
         private const float HighGap = 12f;
+        private const float HighTop = Trial.Bridge.HeaderBand.H + HighGap;
         // js: scenes/battle/hud/stances.js:41
         private const float SwitchFadeMs = 150f;
         /// <summary>The real-time step of the high place's fade (env.real.wait(16)).</summary>
@@ -183,7 +177,6 @@ namespace Trial.Battle
 
         private readonly BattleViewEnv _env;
         private readonly HudTip _tip;
-        private readonly StancePlace _place;
         private RectTransform _host;
         private readonly Side _player = new Side();
         private readonly Side _enemy = new Side();
@@ -193,11 +186,10 @@ namespace Trial.Battle
         private int _stampNow;
 
         // js: scenes/battle/hud/stances.js:43
-        private HudStanceLists(BattleViewEnv env, HudTip tip, StancePlace place)
+        private HudStanceLists(BattleViewEnv env, HudTip tip)
         {
             _env = env;
             _tip = tip;
-            _place = place;
             if (env != null && env.Layer.Panels)
             {
                 // const host = h('div', { class: 'ocbg-battle-stances' }); layer.panels.appendChild(host);
@@ -211,9 +203,9 @@ namespace Trial.Battle
             }
         }
 
-        /// <summary>createStanceLists(env, tip, place): the host in layer.panels with a list per side.</summary>
+        /// <summary>createStanceLists(env, tip): the host in layer.panels with a list per side.</summary>
         // js: scenes/battle/hud/stances.js:43
-        public static HudStanceLists Create(BattleViewEnv env, HudTip tip, StancePlace place) => new HudStanceLists(env, tip, place);
+        public static HudStanceLists Create(BattleViewEnv env, HudTip tip) => new HudStanceLists(env, tip);
 
         private Side SideOf(UnitSide side) => side == UnitSide.Player ? _player : _enemy;
 
@@ -228,18 +220,10 @@ namespace Trial.Battle
 
         // ---- stances.js:52-139 --------------------------------------------------------------------------------------------
 
-        /// <summary>`place.highTop()`: the high place's top (20 without a place).</summary>
-        // js: scenes/battle/hud/stances.js:52
-        private float HighTop() => _place != null && _place.HighTop != null ? _place.HighTop() : 20f;
-
-        /// <summary>`place.highLeft(side)`: the high place's left edge (the hud measures the corner and the speed switch).</summary>
-        // js: scenes/battle/hud/stances.js:53
-        private float HighLeft(UnitSide side) => _place != null && _place.HighLeft != null ? _place.HighLeft(side) : StanceList.LeftOf(side);
-
         /// <summary>Where frame i of `side`'s list stands now: { left, top }.</summary>
         // js: scenes/battle/hud/stances.js:55
         private Vector2 FrameAt(UnitSide side, int i) =>
-            SideOf(side).High ? new Vector2(HighLeft(side), HighTop()) : new Vector2(StanceList.LeftOf(side), StanceList.TopOf(i));
+            new Vector2(StanceList.LeftOf(side), SideOf(side).High ? HighTop : StanceList.TopOf(i));
 
         // js: scenes/battle/hud/stances.js:64
         private void ShowTip(UnitSide side, int i, UnitFrame unit, Row row, List<Row> folded, bool pin)
@@ -464,7 +448,7 @@ namespace Trial.Battle
                 key.Append(rows[k].Name).Append('×').Append(rows[k].Count.ToString(CultureInfo.InvariantCulture)).Append('#').Append(Str(AngleOf(rows[k])));
             }
             key.Append('@').Append(Str(swatchAngle));
-            if (s.High) key.Append("@high").Append(Ocb.Num(HighLeft(side)));
+            if (s.High) key.Append("@high");
             s.Unit = unit;
             s.HasArgs = true;
             s.ArgUnit = unit;
@@ -656,7 +640,7 @@ namespace Trial.Battle
         {
             if (_hidden) return null;
             Side s = SideOf(side);
-            if (s.High) return new StageBox(HighLeft(side), HighTop(), StanceList.Width, StanceList.RowHeight);
+            if (s.High) return new StageBox(StanceList.LeftOf(side), HighTop, StanceList.Width, StanceList.RowHeight);
             int n = Math.Max(1, s.Frames.Count);
             float top = StanceList.TopOf(n - 1);
             return new StageBox(StanceList.LeftOf(side), top, StanceList.Width, StanceList.SlotTop + StanceList.RowHeight - top);

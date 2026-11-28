@@ -22,7 +22,7 @@ namespace Trial.Bridge.Tests
 
         private static IEnumerable<(string Name, TableBox Box)> Regions()
         {
-            yield return ("header", DepartTable.Header);
+            yield return ("header band", DepartTable.Band);
             yield return ("filters", DepartTable.FilterRow);
             for (int i = 0; i < DepartTable.PerPage; i++) yield return ("cell " + i, DepartTable.Cell(i));
             yield return ("page nav", DepartTable.PageNav);
@@ -47,6 +47,34 @@ namespace Trial.Bridge.Tests
             List<(string Name, TableBox Box)> all = Regions().ToList();
             foreach ((string name, TableBox box) in all) Assert.That(box.Inside(Stage), Is.True, name + " " + box);
             AssertApart(all);
+        }
+
+        [Test]
+        public void TheBand_IsTheBasesWithTheTablesTag_AndTheChipBack()
+        {
+            Assert.That(DepartTable.Band, Is.EqualTo(HeaderBand.Band));
+            HeaderContent c = DepartTable.BandOf(new DungeonCore.CalendarState(87), 20);
+            Assert.That(c.Screen, Is.EqualTo(HeaderScreen.Table));
+            Assert.That(c.Tags, Is.EqualTo(new[] { HeaderBand.TableTag }));
+            Assert.That(c.BackChip, Is.True, "the chip back to the base stands in the band");
+            Assert.That(c.OwnedCards, Is.EqualTo(HeaderButtonState.On), "the owned cards stay lit: this is their screen");
+            Assert.That((c.Hp, c.MaxHp, c.Stamina, c.MaxStamina), Is.EqualTo((50, 50, 10, 10)));
+            Assert.That((c.Calendar.DaysLeft, c.DeckCount), Is.EqualTo((87, 20)));
+            HeaderContent gate = DepartGate.BandOf(new DungeonCore.CalendarState(87), 20);
+            Assert.That((c.Calendar.DaysLeft, c.MaxHp, c.MaxStamina), Is.EqualTo((gate.Calendar.DaysLeft, gate.MaxHp, gate.MaxStamina)), "the base's values");
+        }
+
+        [Test]
+        public void TheBonusTag_StandsAtTheToolHeadingsRight_LeavingTheHeadingItsRoom()
+        {
+            TableBox small = DepartTable.BonusTag(200f);
+            Assert.That(small.Right, Is.EqualTo(DepartTable.ToolHead.Right).Within(0.01f));
+            Assert.That((small.Y, small.H), Is.EqualTo((DepartTable.ToolHead.Y, DepartTable.ToolHead.H)));
+            Assert.That(small.W, Is.EqualTo(200f + 2f * (DepartTable.BonusPadX + 1f)).Within(0.01f));
+            TableBox wide = DepartTable.BonusTag(5000f);
+            Assert.That(wide.W, Is.EqualTo(DepartTable.BonusMaxW).Within(0.01f), "a long line is cut, not run over the heading");
+            Assert.That(wide.X, Is.EqualTo(DepartTable.ToolHead.X + DepartTable.BonusRoomLeft).Within(0.01f));
+            Assert.That(wide.Inside(DepartTable.PackContent), Is.True);
         }
 
         [Test]
