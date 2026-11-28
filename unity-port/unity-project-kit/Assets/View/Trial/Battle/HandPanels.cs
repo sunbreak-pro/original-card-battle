@@ -389,11 +389,14 @@ namespace Trial.Battle
 
         // ---- guide ----
 
-        /// <summary>setGuide(text): the guide's text ('' quiet); blank while a refusal line shows.</summary>
+        /// <summary>
+        /// setGuide(text): the guide's text ('' quiet); blank while a refusal line shows. Departs from the JS (2026-11-28
+        /// Koudai-san, #1079): the everyday line is not printed (DepictionText.TrialGuide).
+        /// </summary>
         // js: scenes/battle/hand-panels.js:211
         public void SetGuide(string text)
         {
-            _guideText = text ?? "";
+            _guideText = DepictionText.TrialGuide(text);
             ShowGuideText();
         }
 

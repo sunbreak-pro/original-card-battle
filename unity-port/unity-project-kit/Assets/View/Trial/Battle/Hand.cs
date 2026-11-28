@@ -52,6 +52,11 @@ namespace Trial.Battle
         /// <summary>STANCE_CARD_SCALE — §5.11 順 1: a stance card shrinks into the stance list's slot to its ghost's width (76 of 216, field/fx.js ghost).</summary>
         // js: scenes/battle/hand.js:43
         private const float StanceCardScale = 76f / 216f;
+        /// <summary>
+        /// A held single-target card drawn onto an enemy's receiver stands this much smaller, eased in and out with the snap.
+        /// Departs from the JS's full size (2026-11-28 Koudai-san, #1079): at full size the card hid too much of the enemy.
+        /// </summary>
+        private const float OverEnemyScale = 0.88f;
         /// <summary>LAMP_SWELL — §5.9 順 1: the lamp swells to 1.4 and back over this (nominal ms, out).</summary>
         // js: scenes/battle/hand.js:45
         private const float LampSwellScale = 1.4f;
@@ -825,7 +830,8 @@ namespace Trial.Battle
             c.Pose.S = 1f;
             AppendTo(c, _env.Layer.Held);
             Play("grab");
-            // EffectId.CardGrab: the held card stands upright (out). §0.1 decision 7: its size and shadow stay.
+            // EffectId.CardGrab: the held card stands upright (out). §0.1 decision 7: its size and shadow stay (it shrinks only
+            // over an enemy, OverEnemyScale).
             float tilt = c.Pose.Rot;
             float ms = _env.Fx.Ms(EffectId.CardGrab);
             HoldState mine = _held;
@@ -852,9 +858,11 @@ namespace Trial.Battle
             float target = c.Face.Aim == CardAim.Single && held.Hot ? 1f : 0f;
             held.SnapW = snapMs > 0f ? MoveTowards(held.SnapW, target, dt / snapMs) : target;
             ScreenBox? r = ReceiverBoxOf(held.Unit);
-            float pull = r.HasValue ? L.SnapPull * Ease.Smooth(held.SnapW) : 0f;
+            float snap = r.HasValue ? Ease.Smooth(held.SnapW) : 0f;
+            float pull = L.SnapPull * snap;
             c.Pose.X = r.HasValue ? Lerp(fx, r.Value.X + r.Value.Width / 2f, pull) : fx;
             c.Pose.Y = r.HasValue ? Lerp(fy, r.Value.Y + r.Value.Height / 2f, pull) : fy;
+            c.Pose.S = Lerp(1f, OverEnemyScale, snap);
         }
 
         /// <summary>The hold's decorations go; the card stays where it was let go, for the player to fly or send home.</summary>
