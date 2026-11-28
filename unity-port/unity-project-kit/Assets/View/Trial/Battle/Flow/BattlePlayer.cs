@@ -1822,7 +1822,7 @@ namespace Trial.Battle
                         int cells = EffectPlan.CellsOf(cue);
                         await HoldBeat(EffectId.FloorMove, () => _field.MoveOnFloor(cue, cells, _switches.WaitMs(EffectId.FloorMove, cells)), () => _field.SnapOnFloor(cue), cells);
                         // The gap number is not drawn (#1079), but the beat still waits so the pause after a move stays as
-                        // BattlePacing sets it; whether to drop it is asked on #1093.
+                        // BattlePacing sets it; whether to drop it is asked on #1097.
                         await HoldBeat(EffectId.GapRecount, () => _clock.Wait(Ms(EffectId.GapRecount)), null);
                     }
                     else
