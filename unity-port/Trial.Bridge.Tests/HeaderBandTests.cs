@@ -130,6 +130,33 @@ namespace Trial.Bridge.Tests
         }
 
         [Test]
+        public void ALongNote_FitsOnlyWithTheClearanceBeforeTheButtons()
+        {
+            Assert.That(HeaderBand.ButtonsClearance, Is.EqualTo(28f), "the band's own gap between groups");
+            HeaderButtonRow buttons = HeaderBand.ButtonRow(SpeedW, OwnedCardsW, JournalW, SettingsW);
+            // a row whose right edge lands exactly on the buttons' left edge less the clearance fits; a px more does not
+            float edge = buttons.Left - HeaderBand.ButtonsClearance;
+            HeaderLeftRow probe = HeaderBand.LeftRow(300f, 150f, 110f, 100f);
+            float calendarW = 150f + (edge - probe.Right);
+            HeaderLeftRow atEdge = HeaderBand.LeftRow(300f, calendarW, 110f, 100f);
+            Assert.That(atEdge.Right, Is.EqualTo(edge).Within(1e-3f));
+            Assert.That(HeaderBand.Fits(atEdge, buttons.Left), Is.True);
+            Assert.That(HeaderBand.Fits(HeaderBand.LeftRow(300f, calendarW + 1f, 110f, 100f), buttons.Left), Is.False);
+            Assert.That(HeaderBand.Fits(probe, buttons.Left), Is.True, "a short row fits");
+            Assert.That(HeaderBand.Fits(null, buttons.Left), Is.False);
+        }
+
+        [Test]
+        public void TheShortNote_KeepsTheDays_AndDropsOnlyTheLongWords()
+        {
+            HeaderCalendar longNote = HeaderCalendar.Of(41, true, "竜王が戻るまで 12 日。暦は止まっている");
+            HeaderCalendar shortNote = longNote.Shortened();
+            Assert.That((shortNote.DaysLeft, shortNote.Frozen, shortNote.ShownNote), Is.EqualTo((41, true, HeaderBand.FrozenNote)));
+            Assert.That(longNote.ShownNote, Is.EqualTo("竜王が戻るまで 12 日。暦は止まっている"), "the calendar handed in keeps its long note");
+            Assert.That(HeaderCalendar.Of(41, false).Shortened().ShownNote, Is.EqualTo(""), "a running calendar has no note either way");
+        }
+
+        [Test]
         public void EveryTabStop_IsNamedByItsKind()
         {
             Assert.That(HeaderBand.StopOf(HeaderButtonKind.Speed), Is.EqualTo(HeaderStop.Speed));

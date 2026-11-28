@@ -294,16 +294,31 @@ namespace Trial.Header
             if (c.BackChip) _back.Node.Place(px[px.Length - 1], (HeaderBand.InnerH - HeaderBand.TagH) / 2f);
             float placeW = HeaderBand.PlaceW(HeaderBand.PlaceContentW(nameW, tagWs, backW), HeaderBand.PlaceWidth);
 
-            // the calendar: steel and its note while it stands still; none at all when the screen hands none
-            bool hasCalendar = c.HasCalendar;
-            UiNode.Of(_calendar).Visible = hasCalendar;
-            float calW = hasCalendar ? LayoutCalendar(c) : 0f;
-
             // HP and stamina
             float hpW = Figure(_hpGroup, _heart.rectTransform, HeaderBand.HeartIcon, c.HpFigure, _hp, _hpTail);
             float stW = Figure(_staminaGroup, _pip.rectTransform, HeaderBand.StaminaPip, c.StaminaFigure, _stamina, _staminaTail);
 
+            // the buttons' row first: the left side checks itself against its left edge
+            Button speed = _buttons[HeaderButtonKind.Speed];
+            HeaderButtonRow row = HeaderBand.ButtonRow(speed.State.Shown ? speed.Width : 0f, _buttons[HeaderButtonKind.OwnedCards].Width,
+                _buttons[HeaderButtonKind.Journal].Width, _buttons[HeaderButtonKind.Settings].Width);
+
+            // the calendar: steel and its note while it stands still; none at all when the screen hands none. A long note
+            // that would run under the buttons gives way to the short one; c.Calendar keeps the long one, so the band
+            // goes back to it once the row has room again.
+            bool hasCalendar = c.HasCalendar;
+            UiNode.Of(_calendar).Visible = hasCalendar;
+            float calW = hasCalendar ? LayoutCalendar(c.Calendar) : 0f;
             HeaderLeftRow left = HeaderBand.LeftRow(placeW, calW, hpW, stW, hasCalendar);
+            if (hasCalendar && !HeaderBand.Fits(left, row.Left))
+            {
+                HeaderCalendar shortened = c.Calendar.Shortened();
+                if (shortened.ShownNote != c.Calendar.ShownNote)
+                {
+                    calW = LayoutCalendar(shortened);
+                    left = HeaderBand.LeftRow(placeW, calW, hpW, stW, hasCalendar);
+                }
+            }
             Ui.Place(_place, left.PlaceX, 0f, placeW, HeaderBand.InnerH);
             Ui.Place(_divider.rectTransform, left.Divider.X, left.Divider.Y, left.Divider.W, left.Divider.H);
             if (left.HasCalendar) Ui.Place(_calendar, left.CalendarX, 0f, calW, HeaderBand.InnerH);
@@ -311,9 +326,6 @@ namespace Trial.Header
             Ui.Place(_staminaGroup, left.StaminaX, 0f, stW, HeaderBand.InnerH);
 
             // the buttons, right-aligned; the count on the owned cards' corner
-            Button speed = _buttons[HeaderButtonKind.Speed];
-            HeaderButtonRow row = HeaderBand.ButtonRow(speed.State.Shown ? speed.Width : 0f, _buttons[HeaderButtonKind.OwnedCards].Width,
-                _buttons[HeaderButtonKind.Journal].Width, _buttons[HeaderButtonKind.Settings].Width);
             foreach (HeaderButtonKind kind in Kinds)
             {
                 Button b = _buttons[kind];
@@ -338,11 +350,11 @@ namespace Trial.Header
         }
 
         /// <summary>The calendar's runs laid out in its group (the days steel while frozen, the note beside them). Its width.</summary>
-        private float LayoutCalendar(HeaderContent c)
+        private float LayoutCalendar(HeaderCalendar calendar)
         {
-            HeaderFigure days = c.Days;
-            string note = c.Calendar.ShownNote;
-            bool frozen = c.Calendar.Frozen;
+            HeaderFigure days = HeaderBand.DaysFigure(calendar.DaysLeft);
+            string note = calendar.ShownNote;
+            bool frozen = calendar.Frozen;
             if (_shownFrozen != frozen)
             {
                 _shownFrozen = frozen;

@@ -197,6 +197,20 @@ namespace Trial.Bridge
             };
         }
 
+        /// <summary>
+        /// The least room the left side keeps before the buttons' row: the band's own gap between groups, so the stamina
+        /// stands off the first button as far as the groups stand off each other.
+        /// </summary>
+        public const float ButtonsClearance = Gap;
+
+        /// <summary>
+        /// Whether a left row laid out with a frozen calendar's long note (CalendarText.Note) leaves
+        /// <see cref="ButtonsClearance"/> before the buttons' left edge. When it does not, the band shows the short note
+        /// (<see cref="HeaderCalendar.Shortened"/>) instead, so the note never runs under the buttons (#1074).
+        /// </summary>
+        public static bool Fits(HeaderLeftRow row, float buttonsLeft) =>
+            row != null && row.Right <= buttonsLeft - ButtonsClearance;
+
         // ---- the buttons ------------------------------------------------------------------------------------------
 
         /// <summary>A button: 72 tall, 76 wide at least, padding 6 12 4, the picture (28) 4 over its word (16 px on 20).</summary>
