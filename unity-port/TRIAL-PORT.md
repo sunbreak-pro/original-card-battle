@@ -43,6 +43,7 @@ in the Unity Editor at the same quality; it becomes the base form of the game.
 | `Trial.Battle` | `$KV/Battle` | Unity | battle scene: mount, driver, input, hand / field / hud views | — |
 | `Trial.Explore` | `$KV/Explore` | Unity | exploration scene | — |
 | `Trial.Meta` | `$KV/Meta` | Unity | title, hall, the base's way down, departure, ending, settings, owned cards, journal drawer | — |
+| `Trial.Header` | `$KV/Header` | Unity | `HeaderBar`, the shared header band of the base, the table, the exploration and the battle (#1074); its places, words and content are `Trial.Bridge`'s `HeaderBand` / `HeaderContent` | `Trial.Bridge.Tests` (`HeaderBandTests`, `HeaderContentTests`) |
 | `Trial.Boot` | `$KV/Boot` | Unity | `TrialBoot` (scene component) and the router (port of main.js) | — |
 
 The dotnet vessel projects are `unity-port/<assembly>/<assembly>.csproj` (they only link the kit files), the tests are
