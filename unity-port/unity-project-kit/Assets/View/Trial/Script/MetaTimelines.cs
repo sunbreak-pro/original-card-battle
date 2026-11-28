@@ -33,8 +33,8 @@ namespace Trial.Script
 
         /// <summary>
         /// A string's letters as the JS spreads it (<c>[...s]</c>): one entry per code point, a surrogate pair kept
-        /// whole. The scenes put each in a box of its own (the title's tagline, the heir's name, the ending's title
-        /// and sentence, spaces included) and time them by their count.
+        /// whole. The scenes put each in a box of its own (the heir's name, the ending's title and sentence,
+        /// spaces included) and time them by their count.
         /// </summary>
         public static IReadOnlyList<string> Chars(string s)
         {
@@ -102,10 +102,6 @@ namespace Trial.Script
         }
 
         // ---- the title (title.js:122-143) ----
-
-        /// <summary>The tagline's <paramref name="i"/>-th letter, both columns counted through (0〜23): 900 + i × 85.</summary>
-        // js: scenes/meta/title.js:135
-        public static int TitleTaglineCharAt(int i) => 900 + i * 85;
 
         /// <summary>The menu's <paramref name="i"/>-th item: 1800 + i × 110.</summary>
         // js: scenes/meta/title.js:139

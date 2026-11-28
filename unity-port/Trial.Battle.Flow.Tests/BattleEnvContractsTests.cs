@@ -77,6 +77,15 @@ namespace Trial.Battle.Flow.Tests
             "journalCovers", "journalEdge",
         };
 
+        // The JS members the port leaves out on purpose (TRIAL-PORT.md "Where this port departs from the JS"): #1079 took the
+        // gap chip and the 構えの予告 off the screen, so #1093 dropped the members that only fed them. The beat after a walk
+        // stays in the flow as a plain wait.
+        private static readonly Dictionary<Type, string[]> UnityDropped = new Dictionary<Type, string[]>
+        {
+            [typeof(IField)] = new[] { "showGapTo", "recountGap", "setGap" },
+            [typeof(IHud)] = new[] { "reserveHint" },
+        };
+
         private static string Pascal(string camel) => char.ToUpperInvariant(camel[0]) + camel.Substring(1);
 
         private static HashSet<string> MembersOf(Type t) =>
@@ -87,8 +96,20 @@ namespace Trial.Battle.Flow.Tests
         private static void AssertHolds(Type contract, IEnumerable<string> js)
         {
             HashSet<string> have = MembersOf(contract);
-            var missing = js.Select(Pascal).Where(n => !have.Contains(n)).ToList();
+            string[] dropped = UnityDropped.TryGetValue(contract, out string[] d) ? d : Array.Empty<string>();
+            var missing = js.Except(dropped).Select(Pascal).Where(n => !have.Contains(n)).ToList();
             Assert.That(missing, Is.Empty, contract.Name + " misses " + string.Join(", ", missing));
+        }
+
+        [Test]
+        public void TheDroppedMembers_StayOutOfTheContracts()
+        {
+            foreach (var pair in UnityDropped)
+            {
+                HashSet<string> have = MembersOf(pair.Key);
+                var back = pair.Value.Select(Pascal).Where(have.Contains).ToList();
+                Assert.That(back, Is.Empty, pair.Key.Name + " holds a dropped member again: " + string.Join(", ", back));
+            }
         }
 
         [Test]

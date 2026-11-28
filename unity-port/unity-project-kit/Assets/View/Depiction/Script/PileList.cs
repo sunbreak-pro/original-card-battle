@@ -7,7 +7,7 @@ namespace Depiction
 {
     public static class PileList
     {
-        /// <summary>C4 左からのドロワー（手記の鏡像）: the journal drawer takes the right 30%, this one the left 30%.</summary>
+        /// <summary>C4 左からのドロワー（手記の鏡像）: the battle's journal drawer takes the right 30% (outside battle the right half, #1089), this one the left 30%.</summary>
         public const float WidthShare = 0.30f;
 
         /// <summary>The rows' text size (battle-visual-v1 §3.1: 18 px for a panel's heading-sized line).</summary>
