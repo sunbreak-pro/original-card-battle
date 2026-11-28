@@ -268,6 +268,37 @@ namespace Trial.Script.Tests
             Assert.That(JournalBookOf.BookOf(new JournalCtx { Pages = Array.Empty<JournalPage>() }).Context, Is.EqualTo(JournalContext.Exploration));
         }
 
+        // ------------------------------------------------------------------ the drawer's width (#1089)
+
+        [Test]
+        public void TheDrawer_InBattle_KeepsTheJs576_AndItsLeftEdgeAt1344()
+        {
+            // the battle's arena, panels and hand clear a drawer edge at 1920 × (1 − 0.3) (BattleScene.JournalShare)
+            JournalBook battle = JournalBookOf.BookOf(new JournalCtx
+            {
+                Mode = JournalCtx.Battle, Pages = Array.Empty<JournalPage>(), EnemyIds = new[] { "shadow_hound" }, DisclosureOf = _ => 1,
+            });
+            Assert.That(JournalBookOf.DrawerWidthOf(battle.Context), Is.EqualTo(576));
+            Assert.That(JournalBookOf.DrawerLeftOf(battle.Context), Is.EqualTo(1344));
+            Assert.That(JournalBookOf.DrawerWidthOf(JournalContext.Battle), Is.EqualTo((int)Math.Round(JournalBookOf.StageW * 0.3)), "30 % of the stage");
+
+            var handedIn = new JournalBook(new[] { JournalTerms.Page() }, JournalContext.Battle);
+            Assert.That(JournalBookOf.DrawerWidthOf(JournalBookOf.BookOf(new JournalCtx { Book = handedIn }).Context), Is.EqualTo(576),
+                "a battle's book handed in without a mode");
+        }
+
+        [Test]
+        public void TheDrawer_OutsideBattle_TakesTheRightHalf()
+        {
+            JournalBook explore = JournalBookOf.BookOf(new JournalCtx { Mode = JournalCtx.Explore, Expedition = LifeWith(4) });
+            Assert.That(JournalBookOf.DrawerWidthOf(explore.Context), Is.EqualTo(960));
+            Assert.That(JournalBookOf.DrawerLeftOf(explore.Context), Is.EqualTo(960));
+
+            JournalBook camp = JournalBookOf.BookOf(new JournalCtx { Pages = Array.Empty<JournalPage>() });
+            Assert.That(JournalBookOf.DrawerWidthOf(camp.Context), Is.EqualTo(JournalBookOf.StageW / 2), "no mode: the camp's and the hall's");
+            Assert.That(JournalBookOf.DrawerWidthOf(JournalContext.Exploration), Is.EqualTo(JournalBookOf.DrawerW));
+        }
+
         [Test]
         public void TheTermsPage_IsAddedWhenMissing_WithTheStanceRow()
         {

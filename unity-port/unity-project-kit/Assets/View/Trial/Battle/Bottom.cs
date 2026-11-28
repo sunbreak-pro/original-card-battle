@@ -1,14 +1,14 @@
 // The lower right of the battle screen (BottomRightViews, DepictionPlayer's end-turn plate; docs/BATTLE_SCENE.md §6c,
 // battle-views §3.6): the played attributes (four 40×40 frames, count badges, the last-played underline, the 追撃 badge),
-// the 構えの予告 (+3 with its shield and tip), and the end-turn plate (ターン終了, 40 % on the enemy's turn and at the end,
-// Pop / Flash / Refuse). In layer.hud. The plate is `.ocbg-battle-endturn` (BattleHitTag.EndTurn: it counts as the arena
-// while the flow runs). Port of scenes/battle/hud/bottom.js.
+// and the end-turn plate (ターン終了, 40 % on the enemy's turn and at the end, Pop / Flash / Refuse). In layer.hud. The
+// plate is `.ocbg-battle-endturn` (BattleHitTag.EndTurn: it counts as the arena while the flow runs). Port of
+// scenes/battle/hud/bottom.js.
 //
 // - Played attributes: four 40×40 frames 6 px apart, 24 px in from the right at y 896, for 攻撃・防御・スキル・スタンス. An
 //   attribute played this turn lights its icon in the attribute's colour and carries a 20 px count badge; one not played is
 //   steel at 55 %. The attribute of the card played last is underlined. While a 追撃 waits, a fifth frame left of them reads
 //   "+5" in phosphor (it pops in 150 ms and fades in 150 ms).
-// - The 構えの予告 at x 1560, y 984, 56 tall: a Guard-coloured 1 px dashed frame, a 30 px shield and "+3".
+// - The 構えの予告 (x 1560, y 984 in the JS) is not drawn (#1079).
 // - The end-turn plate at x 1672, y 976, 224×72: amber 2 px frame over amber 16 %, its label at 24 px; 40 % while the enemy
 //   has the turn (EnemyTurnShadeLayout.EndTurnAlpha).
 // The CSS strings are hud.css's (and the DS's Ocb.*Css) verbatim, composed in cascade order.
@@ -26,15 +26,6 @@ namespace Trial.Battle
     // js: scenes/battle/hud/bottom.js
     public static class HudBottom
     {
-        /// <summary>
-        /// ReserveTip(): the hint's hover line names the rule it shows — the glossary's 構え (CardFaceText.Glossary) — and that
-        /// ending the turn now gives it: 「構え：…。いまターンを終えると付く」.
-        /// </summary>
-        // js: scenes/battle/hud/bottom.js:22
-        public static string ReserveTip() =>
-            "構え：" + (global::Depiction.Bridge.CardFaceText.Glossary.TryGetValue("構え", out string meaning) ? meaning : "undefined")
-            + "。いまターンを終えると付く";
-
         /// <summary>END_TURN_LABEL: the plate's label (the Unity prefab's Text; DS EndTurnButton). scene text</summary>
         // js: scenes/battle/hud/bottom.js:25
         public const string EndTurnLabel = "ターン終了";
@@ -212,72 +203,31 @@ namespace Trial.Battle
         }
     }
 
-    /// <summary>createReserveHint(env, tip) → { show(hint), destroy }.</summary>
+    /// <summary>
+    /// createReserveHint(env, tip) → { show(hint), destroy }. Departs from the JS (2026-11-28 Koudai-san, #1079): the 構えの予告
+    /// is not drawn, because the hover text of the buff chips under the HP bar already lets the player work out what ending
+    /// the turn gives. Hud still makes and feeds it, so the shape stays.
+    /// </summary>
     // js: scenes/battle/hud/bottom.js:96
     public sealed class HudReserveHint
     {
-        /// <summary>.ocbg-battle-hint (hud.css:133).</summary>
-        private const string HintCss =
-            "position: absolute; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 12px; "
-            + "background: var(--panel); border: var(--stroke-rule) dashed var(--guard); border-radius: var(--radius-panel);";
-        /// <summary>.ocbg-battle-hint b (hud.css:134).</summary>
-        private const string HintBCss = "font: 700 24px/1 var(--font-mono); color: var(--guard); white-space: nowrap;";
-
-        private readonly BattleViewEnv _env;
-        private readonly HudTip _tip;
-        private readonly RectTransform _el;
-        private readonly TextMeshProUGUI _text;
-
-        // js: scenes/battle/hud/bottom.js:96
-        private HudReserveHint(BattleViewEnv env, HudTip tip)
+        private HudReserveHint()
         {
-            _env = env;
-            _tip = tip;
-            _el = Ocb.El(env.Layer.Hud, "ocbg-battle-hint" + (tip != null ? " ocbg-battle-hit" : ""), HintCss);
-            Ocb.Icon(_el, "shield", ReserveHintLayout.ShieldSize, DsTokens.Guard, DsTokens.Guard, 0.2f);
-            _text = Ocb.Text(_el, "", Ocb.TextOf(HintCss + HintBCss), "b");
-            if (tip != null)
-            {
-                // the line opens above the hint, right edges aligned (the end-turn plate and the screen's edge are below and right)
-                ClickArea area = ClickArea.On(_el);
-                BattleHitTag.Mark(_el);
-                area.Enter += _ => _tip.Show(HudUtil.LineTip(HudBottom.ReserveTip()), n =>
-                {
-                    UiNode nn = UiNode.Of(n);
-                    nn.Place(ReserveHintLayout.Left + ReserveHintLayout.Width - nn.W, ReserveHintLayout.Top - nn.H - 8f);
-                }, this);
-                area.Exit += _ => _tip.Hide(this);
-            }
-            UiNode.Of(_el).Place(ReserveHintLayout.Left, ReserveHintLayout.Top, ReserveHintLayout.Width, ReserveHintLayout.Height);
-            Layout();
-            UiNode.Of(_el).Visible = false;
         }
 
-        private void Layout() => Ocb.Flow(_el, HintCss, null, ReserveHintLayout.Width, ReserveHintLayout.Height);
-
-        /// <summary>createReserveHint(env, tip): the hint at ReserveHintLayout (hidden); with a tip it is a hit and shows ReserveTip on hover.</summary>
+        /// <summary>createReserveHint(env, tip): nothing is put on the screen.</summary>
         // js: scenes/battle/hud/bottom.js:96
-        public static HudReserveHint Create(BattleViewEnv env, HudTip tip = null) => new HudReserveHint(env, tip);
+        public static HudReserveHint Create(BattleViewEnv env, HudTip tip = null) => new HudReserveHint();
 
-        /// <summary>show(hint) = ReserveHintView.Show: 「+3」 with its shield, or nothing for ''.</summary>
+        /// <summary>show(hint): nothing to show.</summary>
         // js: scenes/battle/hud/bottom.js:117
         public void Show(string hint)
         {
-            bool on = !string.IsNullOrEmpty(hint);
-            if (_el) UiNode.Of(_el).Visible = on;
-            if (on)
-            {
-                Label.SetText(_text, hint);
-                Layout();
-            }
-            else _tip?.Hide(this);
         }
 
         // js: scenes/battle/hud/bottom.js:123
         public void Destroy()
         {
-            _tip?.Hide(this);
-            if (_el) Ui.Remove(_el);
         }
     }
 

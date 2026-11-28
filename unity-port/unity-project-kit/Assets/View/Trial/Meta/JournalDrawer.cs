@@ -1,7 +1,8 @@
 // Port of scenes/meta/journal.js: 手記のドロワー (dungeon_exploration_v4.md §6.7, battle-visual-v1.md §7.5,
-// CAMP_FACILITIES_DESIGN.md §3.3) — a sheet of washi from the right, 576 px (30 % of the screen) wide, reading a
-// Journal.Script JournalBook: which tabs open where (in battle only the enemies' pages and the terms), which rows read
-// 「？」, every word. The tabs run 敵ごと / ダンジョン / メモ / 用語; in battle 「敵ごと」 is one tab per enemy being fought
+// CAMP_FACILITIES_DESIGN.md §3.3) — a sheet of washi from the right, the right half of the screen wide (960 px; in
+// battle the JS's 576 px, 30 %, as the battle's layout still clears that edge: JournalBookOf.DrawerWidthOf, #1089),
+// reading a Journal.Script JournalBook: which tabs open where (in battle only the enemies' pages and the terms), which
+// rows read 「？」, every word. The tabs run 敵ごと / ダンジョン / メモ / 用語; in battle 「敵ごと」 is one tab per enemy being fought
 // (named after it, smaller type at 5 and 6 tabs), while exploring the enemies met sit under one 「敵」 tab with a row of
 // per-enemy tabs below it. J or Esc closes it.
 //
@@ -170,11 +171,8 @@ namespace Trial.Meta
 
         // ---- the box model the declarations above give (stage px) --------------------------------------------------
 
-        // js: scenes/meta/journal.js:21 (DRAWER_W, 30% of 1920)
-        private const float DrawerW = JournalBookOf.DrawerW;
         private const float BorderL = 1f, PadT = 26f, PadX = 28f, PadB = 18f;          // .ocbg-meta-drawer
         private const float ContentX = BorderL + PadX;                                  // 29
-        private const float ContentW = DrawerW - BorderL - PadX * 2f;                   // 519
         private const float HeadGap = 12f, IconSize = 30f, CloseH = 40f, ClosePadX = 14f, CloseBorder = 1f, HintGap = 8f;
         private const float TabsTop = 20f, TabsGap = 6f, TabH = 46f, TabBorderB = 3f;
         private const float SubTop = 12f, SubGapRow = 6f, SubGapCol = 8f, SubPadY = 6f, SubPadX = 14f;
@@ -205,6 +203,12 @@ namespace Trial.Meta
         private RectTransform _tabs, _subtabs, _titleRow;
         private ScrollArea _body;
         private float _tabsY;
+
+        // js: scenes/meta/journal.js:21 (DRAWER_W). The width is JournalBookOf's for the book's context: 576 in battle,
+        // 960 elsewhere (#1089); the content box is the drawer less its left border and padding (519 / 903).
+        private readonly float _drawerW;
+        private readonly float _drawerX;
+        private readonly float _contentW;
         private global::Trial.Kit.Styler _pd, _ps;
         private Action _popKeys;
 
@@ -226,23 +230,26 @@ namespace Trial.Meta
             _perEnemy = _book.Context == global::Journal.JournalContext.Battle;   // js: journal.js:200 enemyTabs(book)
             _memoText = ctx.Memo ?? "";                                            // js: journal.js:233
             _showsMemo = ctx.OnMemo != null || ctx.Memo != null;                   // js: journal.js:238
+            _drawerW = JournalBookOf.DrawerWidthOf(_book.Context);
+            _drawerX = JournalBookOf.DrawerLeftOf(_book.Context);
+            _contentW = _drawerW - BorderL - PadX * 2f;
 
             // js: scenes/meta/journal.js:178 — the light shade closes on a click
             _shade = MetaStyle.Shade(_root, light: true, onClick: () => Close());
 
             // js: scenes/meta/journal.js:180 — the washi sheet (role dialog, aria-label 手記)
-            _drawer = MetaStyle.Washi(_root, MetaUtil.W - DrawerW, 0f, DrawerW, MetaUtil.H, DrawerCss, "ocbg-meta-washi ocbg-meta-drawer");
+            _drawer = MetaStyle.Washi(_root, _drawerX, 0f, _drawerW, MetaUtil.H, DrawerCss, "ocbg-meta-washi ocbg-meta-drawer");
             Hit.Area(_drawer.Root);   // a click on the sheet stays on it (the shade under it closes)
 
             BuildHead();
 
             // js: scenes/meta/journal.js:189-197
-            _tabs = Ui.Div(_drawer.Root, "ocbg-meta-drawer-tabs", ContentX, _tabsY, ContentW, TabH);
-            _subtabs = Ui.Div(_drawer.Root, "ocbg-meta-drawer-sub", ContentX, _tabsY + TabH + SubTop, ContentW, 0f);
+            _tabs = Ui.Div(_drawer.Root, "ocbg-meta-drawer-tabs", ContentX, _tabsY, _contentW, TabH);
+            _subtabs = Ui.Div(_drawer.Root, "ocbg-meta-drawer-sub", ContentX, _tabsY + TabH + SubTop, _contentW, 0f);
             UiNode.Of(_subtabs);
-            _titleRow = Ui.Div(_drawer.Root, "ocbg-meta-drawer-titlerow", ContentX, _tabsY + TabH + TitleTop, ContentW, 0f);
+            _titleRow = Ui.Div(_drawer.Root, "ocbg-meta-drawer-titlerow", ContentX, _tabsY + TabH + TitleTop, _contentW, 0f);
             UiNode.Of(_titleRow);
-            _body = ScrollArea.Make(_drawer.Root, "ocbg-meta-drawer-body", ContentX, _tabsY + TabH, ContentW, BodyBottom - (_tabsY + TabH));
+            _body = ScrollArea.Make(_drawer.Root, "ocbg-meta-drawer-body", ContentX, _tabsY + TabH, _contentW, BodyBottom - (_tabsY + TabH));
             _body.ShowThumb = true;
             _body.ThumbWidth = ScrollbarW;
             BoxGraphic.On(_body.Thumb, MetaStyle.ScrollbarThumbCss + BodyThumbCss);
@@ -251,7 +258,7 @@ namespace Trial.Meta
             Draw(false);
 
             // js: scenes/meta/journal.js:309 — the sheet slides in from the right (220 ms)
-            _pd = global::Trial.Kit.Styler.Of(_drawer.Node, x: DrawerW);
+            _pd = global::Trial.Kit.Styler.Of(_drawer.Node, x: _drawerW);
             _ps = global::Trial.Kit.Styler.Of(UiNode.Of(_shade.rectTransform), o: 0f);
             _clock.Tween(_pd, "x", 0f, 220f, Ease.Out);
             _clock.Tween(_ps, "o", 1f, 220f, Ease.Out);
@@ -315,7 +322,7 @@ namespace Trial.Meta
             float headH = Math.Max(Math.Max(h2H, IconSize), Math.Max(CloseH, hintH));
             _tabsY = PadT + headH + TabsTop;
 
-            RectTransform head = Ui.Div(_drawer.Root, "ocbg-meta-drawer-head", ContentX, PadT, ContentW, headH);
+            RectTransform head = Ui.Div(_drawer.Root, "ocbg-meta-drawer-head", ContentX, PadT, _contentW, headH);
 
             // h2: journal 30 washi-ink and 「手記」 (inline-flex, centred, gap 12)
             float h2TextW = TextMeasure.Width(JBook.Heading, h2);
@@ -327,7 +334,7 @@ namespace Trial.Meta
             // the close button 「閉じる（J）」 at the right (margin-left: auto)
             float closeTextW = TextMeasure.Width(JBook.CloseLabel, closeStyle);
             float closeW = closeTextW + ClosePadX * 2f + CloseBorder * 2f;
-            float closeX = ContentW - closeW;
+            float closeX = _contentW - closeW;
             string closeBase = MetaStyle.ButtonCss + CloseCss + (string.IsNullOrEmpty(hint) ? "" : HintCloseCss);
             BoxGraphic close = BoxGraphic.Make(head, closeBase, closeX, (headH - CloseH) / 2f, closeW, CloseH, "ocbg-meta-drawer-close");
             float lh = closeStyle.LineHeightPx;
@@ -349,10 +356,10 @@ namespace Trial.Meta
         private void BuildKeys()
         {
             float h = KeysBorder + KeysPadT + KeysLineH;
-            BoxGraphic.Make(_drawer.Root, KeysCss, ContentX, FooterY, ContentW, h, "ocbg-meta-drawer-keys");
+            BoxGraphic.Make(_drawer.Root, KeysCss, ContentX, FooterY, _contentW, h, "ocbg-meta-drawer-keys");
             TextStyle s = TextOf(KeysCss);
             s.WhiteSpace = WhiteSpace.NoWrap;
-            Text(_drawer.Root, MetaText.JournalKeys, s, ContentX, FooterY + KeysBorder + KeysPadT, ContentW, s.LineHeightPx, "ocbg-meta-drawer-keys-text");
+            Text(_drawer.Root, MetaText.JournalKeys, s, ContentX, FooterY + KeysBorder + KeysPadT, _contentW, s.LineHeightPx, "ocbg-meta-drawer-keys-text");
         }
 
         // ---- the closures of mountJournal ----------------------------------------------------------------------------
@@ -622,7 +629,7 @@ namespace Trial.Meta
             Ui.Clear(_tabs);
             IReadOnlyList<JournalTabEntry> entries = JournalBookOf.TabsOf(_book, _page);
             int n = Math.Max(1, entries.Count);
-            float tabW = (ContentW - TabsGap * (n - 1)) / n;
+            float tabW = (_contentW - TabsGap * (n - 1)) / n;
             bool n5 = entries.Count == 5, n6 = entries.Count >= 6;
             for (int i = 0; i < entries.Count; i++) MakeTab(entries[i], i * (tabW + TabsGap), tabW, n5, n6);
 
@@ -636,7 +643,7 @@ namespace Trial.Meta
             if (sub)
             {
                 float subH = DrawSubtabs(tabPages);
-                UiNode.Of(_subtabs).Place(ContentX, y + SubTop, ContentW, subH);
+                UiNode.Of(_subtabs).Place(ContentX, y + SubTop, _contentW, subH);
                 y += SubTop + subH;
             }
 
@@ -645,7 +652,7 @@ namespace Trial.Meta
             ClearBody();
             float rowH = DrawTitleRow(y + TitleTop);
             float bodyY = y + TitleTop + rowH;
-            Ui.Place(_body.Viewport, ContentX, bodyY, ContentW, Math.Max(0f, BodyBottom - bodyY));
+            Ui.Place(_body.Viewport, ContentX, bodyY, _contentW, Math.Max(0f, BodyBottom - bodyY));
             _body.ScrollHeight = 0f;
             _body.ScrollTop = 0f;
             _body.Refresh();
@@ -653,7 +660,7 @@ namespace Trial.Meta
 
             float client = _body.ClientHeight;
             float minHeight = Math.Max(0f, client - BodyPadT - BodyPadB);
-            float width = ContentW - BodyPadR;
+            float width = _contentW - BodyPadR;
             RectTransform list = BuildPage(width, minHeight, out float listH);
             if (BodyPadT + listH + BodyPadB > client + 0.5f)
             {
@@ -764,7 +771,7 @@ namespace Trial.Meta
             float x = 0f;
             foreach (int i in Enumerable.Range(0, items.Count))
             {
-                if (lines.Count == 0 || (x > 0f && x + items[i].W > ContentW + 0.01f))
+                if (lines.Count == 0 || (x > 0f && x + items[i].W > _contentW + 0.01f))
                 {
                     lines.Add(new List<int>());
                     x = 0f;
@@ -813,7 +820,7 @@ namespace Trial.Meta
             if (_page != null)
             {
                 if (hasDisc) discW = dotsW + DisclosureGap + TextMeasure.Width(disc, ds);
-                float h3W = Math.Max(1f, ContentW - (hasDisc ? discW + TitleGap : 0f));
+                float h3W = Math.Max(1f, _contentW - (hasDisc ? discW + TitleGap : 0f));
                 h3H = TextMeasure.Height(_page.Title, h3, h3W);
                 // baselines: the h3's first; the disclosure's is its dots' (the startmost item, synthesized at its bottom)
                 float h3Base = TextMath.CssBaselineFromTop(h3.Spec);
@@ -825,12 +832,12 @@ namespace Trial.Meta
                 Text(_titleRow, _page.Title, h3, 0f, h3Top, h3W, h3H, "h3");
             }
             float rowH = contentH + TitlePadB + TitleBorder;
-            UiNode.Of(_titleRow).Place(ContentX, y, ContentW, rowH);
-            BoxGraphic rule = BoxGraphic.Make(_titleRow, TitleRowCss, 0f, 0f, ContentW, rowH, "border");
+            UiNode.Of(_titleRow).Place(ContentX, y, _contentW, rowH);
+            BoxGraphic rule = BoxGraphic.Make(_titleRow, TitleRowCss, 0f, 0f, _contentW, rowH, "border");
             rule.transform.SetAsFirstSibling();
             if (_page != null && hasDisc)
             {
-                RectTransform d = Ui.Div(_titleRow, "ocbg-meta-disclosure", ContentW - discW, discTop, discW, discH);
+                RectTransform d = Ui.Div(_titleRow, "ocbg-meta-disclosure", _contentW - discW, discTop, discW, discH);
                 DisclosureDots(d, _page, 0f, (discH - DotSize) / 2f);
                 Text(d, disc, ds, dotsW + DisclosureGap, (discH - ds.LineHeightPx) / 2f, TextMeasure.Width(disc, ds) + 0.01f, ds.LineHeightPx, "text");
             }
@@ -861,7 +868,7 @@ namespace Trial.Meta
             FlushMemo();
             _sound.Play("journalClose");
             _clock.Tween(_ps, "o", 0f, 180f, Ease.In).Forget();
-            await _clock.Tween(_pd, "x", DrawerW, 180f, Ease.In);
+            await _clock.Tween(_pd, "x", _drawerW, 180f, Ease.In);
             if (_alive && _ctx.OnClose != null) _ctx.OnClose();
         }
 

@@ -212,9 +212,7 @@ namespace Depiction.Bridge
                 if (_state.Result != GameResult.Ongoing) return "";
                 if (ReachedTurnLimit) return "";
                 if (!WaitingForPlayer) return "";
-                return HasPlayableCard()
-                    ? "出したい札を離してください。手が済んだら「ターン終了」"
-                    : "出せる札がありません。「ターン終了」を押してください";
+                return HasPlayableCard() ? DepictionText.IdleGuide : DepictionText.NothingPlayableGuide;
             }
         }
 

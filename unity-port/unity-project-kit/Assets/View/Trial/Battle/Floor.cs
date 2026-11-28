@@ -1,25 +1,21 @@
 // The battle's floor of cells (FloorView, docs/BATTLE_SCENE.md §6b, battle-views §2.2): the tiles (FloorSpec, the layer's
 // tile fill), the reach light, the enemies' aimed cells hatched in their own directions (dense on the boundary), the move
-// frames (in front of another enemy's red frame), the aim reveal / fade / retire, the gap chip with its brackets and its
-// recount, and the wall edge's flash. In layer.field (it slides with the arena). Port of scenes/battle/field/floor.js.
+// frames (in front of another enemy's red frame), the aim reveal / fade / retire, and the wall edge's flash. In
+// layer.field (it slides with the arena). Port of scenes/battle/field/floor.js.
 //
 // The floor under the figures: a port of unity-project-kit/Assets/View/Depiction/FloorView.cs (battle-visual-v1 §4.2).
 // The line of cells; the cells the omen aims at in red stripes (6 px apart on those that meet the boundary its action
-// reads) with a red frame and an 8 px light; a violet dashed frame on the cell a moving omen takes the enemy to; the cells
-// a hovered or held card reaches in amber; and the one gap number between the player and the enemy. Every cell comes
-// from the script (DepictionFrame.Floor, CardFace.ReachCells); FloorSpec holds the arithmetic. Looks: OCB.FloorTile and
-// the DistanceChip's parts (Ocb.FloorTile; the chip's parts are built here, as the JS builds them, so the number can be
-// counted again in place).
+// reads) with a red frame and an 8 px light; a violet dashed frame on the cell a moving omen takes the enemy to; and the
+// cells a hovered or held card reaches in amber. Every cell comes from the script (DepictionFrame.Floor,
+// CardFace.ReachCells); FloorSpec holds the arithmetic. Looks: OCB.FloorTile.
 //
-// Stacking (field.css:26): the gap tag stands at z-index 20 in the field layer's stacking context (the floor's root is
-// no stacking context), over the figures field.js paints at z 2–9. In uGUI a child cannot rise over its parent's
-// siblings, so the tag is a sibling of the floor's root in layer.field with UiNode.Z = 20; the root's display (no cells)
-// and its removal take the tag with them.
+// Departs from the JS (2026-11-28 Koudai-san, #1079): the gap chip between the player and the enemy (its range icon, its
+// number and its brackets) is not drawn; the range is read from the cells. SetGap / RecountGap / SetGapHidden stay
+// because the field and the flow still call them.
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using Depiction;
-using TMPro;
 using Trial.Geometry;
 using Trial.Kit;
 using UnityEngine;
@@ -59,12 +55,6 @@ namespace Trial.Battle
         /// <summary>TOP: FloorView: the floor's top (y 560: the feet at 570 less FeetBelowTop).</summary>
         // js: scenes/battle/field/floor.js:13
         private const float Top = 560f;
-        /// <summary>TAG_TOP: §4.2 間合いの数字: the tag 3 px below the floor's top, 34 px tall.</summary>
-        // js: scenes/battle/field/floor.js:15
-        private const float TagTop = 3f;
-        /// <summary>RECOUNT_TRAVEL: battle_ui_ux_v2 §5.7 順 2: how far the old number rises out and the new one rises in from.</summary>
-        // js: scenes/battle/field/floor.js:17
-        private const float RecountTravel = 14f;
         /// <summary>AIM_ANGLE: §4.2: the stripes' direction for the enemy the frame draws (the first enemy: 45°).</summary>
         // js: scenes/battle/field/floor.js:19
         private const int AimAngle = 45;
@@ -100,31 +90,8 @@ namespace Trial.Battle
         private const string ReachLineCss = "left: 4px; right: 4px;";
         /// <summary>field.css:24 .ocbg-battle .ocbg-battle-tile .ocb-tile-move.ocbg-battle-move-over</summary>
         private const string MoveOverCss = "inset: 4px; box-shadow: 0 0 0 2px var(--panel-solid), inset 0 0 0 2px var(--panel-solid);";
-        /// <summary>field.css:26 .ocbg-battle .ocbg-battle-gap</summary>
-        private const string GapCss = "z-index: 20;";
-        /// <summary>field.css:27 .ocbg-battle .ocbg-battle-gap .ocb-dist-chip</summary>
-        private const string GapChipCss = "white-space: nowrap; box-sizing: border-box; justify-content: center;";
-        /// <summary>field.css:28 .ocbg-battle .ocbg-battle-gap-num</summary>
-        private const string GapNumCss = "display: inline-block; min-width: 18px; text-align: center;";
-        /// <summary>field.css:29 .ocbg-battle .ocbg-battle-gap-arm</summary>
-        private const string GapArmCss = "position: absolute; top: 9px; height: 17px; display: none;";
-        /// <summary>field.css:30 .ocbg-battle .ocbg-battle-gap-arm::after</summary>
-        private const string GapArmAfterCss = "content: ''; position: absolute; left: 0; right: 0; top: 8px; height: 1px; background: color-mix(in srgb, var(--ink) 55%, transparent);";
-        /// <summary>field.css:31 .ocbg-battle .ocbg-battle-gap-arm.is-left</summary>
-        private const string GapArmLeftCss = "left: 8px; right: 50%; border-left: 1px solid color-mix(in srgb, var(--ink) 55%, transparent);";
-        /// <summary>field.css:32 .ocbg-battle .ocbg-battle-gap-arm.is-right</summary>
-        private const string GapArmRightCss = "right: 8px; left: 50%; border-right: 1px solid color-mix(in srgb, var(--ink) 55%, transparent);";
         /// <summary>field.css:111 .ocbg-battle .ocbg-battle-wall-edge</summary>
         private const string WallEdgeCss = "position: absolute; border-radius: 5px; background: linear-gradient(180deg, transparent, var(--ink) 55%, var(--ink)); box-shadow: 0 0 14px 4px color-mix(in srgb, var(--ink) 70%, transparent); pointer-events: none;";
-
-        /// <summary>The chip's flex gap and its icon (bundle.css:78 gap: 6px; OCB.icon('range', 22)).</summary>
-        private const float ChipGap = 6f;
-        private const float ChipIcon = 22f;
-        /// <summary>The gap number's line box (font: 700 28px/1) and its min-width (field.css:28).</summary>
-        private const float NumLine = 28f;
-        private const float NumMinW = 18f;
-        /// <summary>.ocb-dist / .ocb-dist-chip height (bundle.css:77-78).</summary>
-        private const float DistH = 34f;
 
         private static readonly List<OcbThreat> NoThreats = new List<OcbThreat>();
         private static readonly List<int> NoCells = new List<int>();
@@ -143,26 +110,6 @@ namespace Trial.Battle
             public int Fade;
         }
 
-        /// <summary>gapState: { gap, pc, ps, ec }.</summary>
-        private struct GapState
-        {
-            public int Gap;
-            public int Pc;
-            public int Ps;
-            public int Ec;
-        }
-
-        /// <summary>gapPlace's answer: { left, width, spanW, broken, chipDx, run }.</summary>
-        private struct GapPlacement
-        {
-            public float Left;
-            public float Width;
-            public float SpanW;
-            public bool Broken;
-            public float ChipDx;
-            public float Run;
-        }
-
         /// <summary>One threat on a cell: { angle, boundary, faded }.</summary>
         private struct Threat
         {
@@ -173,15 +120,12 @@ namespace Trial.Battle
 
         /// <summary>
         /// One enemy on the floor (the JS writer's FloorEnemy): enemy `Unit` of the frame's EnemyFrame list (#589), its stripe
-        /// direction, its cells, its own N (−1 once it has fallen in the core), whether it is down, and its shown omen's cells.
+        /// direction, whether it is down, and its shown omen's cells.
         /// </summary>
         private sealed class EnemyCells
         {
             public int Unit;
             public int Hatch;
-            public int Cell;
-            public int Size = 1;
-            public int Gap = -1;
             public bool Down;
             public List<int> AimCells = NoCells;
             public List<int> DenseCells = NoCells;
@@ -201,9 +145,6 @@ namespace Trial.Battle
                 {
                     Unit = k,
                     Hatch = e.StripeDirection,
-                    Cell = e.Cell,
-                    Size = e.Size,
-                    Gap = e.Gap,
                     Down = e.Unit != null && e.Unit.Down,
                     AimCells = e.AimCells ?? NoCells,
                     DenseCells = e.DenseCells ?? NoCells,
@@ -233,15 +174,11 @@ namespace Trial.Battle
         private int _cells;
         private readonly List<TileState> _tiles = new List<TileState>();
         private List<int> _reach = new List<int>();
-        private GapState? _gapState;
-        private int _recount;
         private FloorFrame _lastFloor;
         /// <summary>The enemies the last bind drew from (after the reveal kept the others' cells), beside _lastFloor.</summary>
         private List<EnemyCells> _lastEnemies = new List<EnemyCells>();
         /// <summary>focusUnit: the enemy whose aimed cells alone stay lit (its omen badge is hovered), or null.</summary>
         private int? _focusUnit;
-        /// <summary>gapHidden: the battle is over: the gap number is put away (review fix: it measured to a fallen enemy's empty cell).</summary>
-        private bool _gapHidden;
         /// <summary>
         /// aimAlpha / aimRetired: the battle is over (review fix: on a loss with enemies standing, their aimed cells stayed red under
         /// the result card while their omen badges faded): the omens' floor half — the aimed, dense and move cells — retires with
@@ -264,37 +201,6 @@ namespace Trial.Battle
         /// frame with no enemy list asks with −1), kept from the last bind that gave one.
         /// </summary>
         private Func<int, bool> _unreadOf = _ => false;
-
-        // ---- the gap tag: DS DistanceChip's parts, so it can be counted again in place ----
-        private RectTransform _gapEl;
-        private UiNode _gapNode;
-        private RectTransform _armL;
-        private RectTransform _armR;
-        private RectTransform _armLAfter;
-        private RectTransform _armRAfter;
-        private RectTransform _chip;
-        private UiNode _chipNode;
-        private PathGraphic _icon;
-        private TextMeshProUGUI _num;
-        private UiNode _numNode;
-        private TextStyle _numStyle;
-        private string _numText = "0";
-        /// <summary>chip.style.minWidth = TagAtZero (at gap ≤ 0).</summary>
-        private bool _chipMinW;
-        /// <summary>The chip's border-box width as laid out (chip.offsetWidth).</summary>
-        private float _chipW;
-        /// <summary>The text and min-width the chip was last laid out for.</summary>
-        private string _laidText;
-        private bool _laidMinW;
-        /// <summary>gapEl.style.display: '' (true) or 'none'; the root's display goes with it.</summary>
-        private bool _gapDisplay = true;
-        private bool _rootDisplay = true;
-        /// <summary>gapEl has-brackets.</summary>
-        private bool _hasBrackets;
-        /// <summary>gapEl.style.left / width and chip.style.translate as written (toFixed(1)); null = '' (never written).</summary>
-        private float? _gapLeftCss;
-        private float? _gapWidthCss;
-        private float _chipDxCss;
         private bool _destroyed;
 
         private FieldFloor(BattleViewEnv env, global::Backdrop.Rgba? tile)
@@ -308,38 +214,11 @@ namespace Trial.Battle
             // js: scenes/battle/field/floor.js:40
             _root = Ocb.El(layer, "ocbg-battle-floor", FloorCss);
             _rootNode = UiNode.Of(_root);
-            BuildGap(layer);
         }
 
         /// <summary>createFloor(env, tile): the floor's root in layer.field; `tile` the layer's tile fill (null: the DS default).</summary>
         // js: scenes/battle/field/floor.js:38
         public static FieldFloor Create(BattleViewEnv env, global::Backdrop.Rgba? tile) => new FieldFloor(env, tile);
-
-        /// <summary>The gap tag (gapEl): .ocb-dist with its two arms and the chip (the `range` icon and the number).</summary>
-        // js: scenes/battle/field/floor.js:78
-        private void BuildGap(RectTransform layer)
-        {
-            _gapEl = Ocb.El(layer, "ocb-dist ocbg-battle-gap", Ocb.DistCss + " " + GapCss);
-            _gapNode = UiNode.Of(_gapEl);
-            _armL = Ocb.El(_gapEl, "ocbg-battle-gap-arm is-left", GapArmCss + " " + GapArmLeftCss);
-            _armLAfter = Ocb.El(_armL, "::after", GapArmAfterCss);
-            _armR = Ocb.El(_gapEl, "ocbg-battle-gap-arm is-right", GapArmCss + " " + GapArmRightCss);
-            _armRAfter = Ocb.El(_armR, "::after", GapArmAfterCss);
-            UiNode.Of(_armL).Visible = false;
-            UiNode.Of(_armR).Visible = false;
-            string chipCss = Ocb.DistChipCss + " " + GapChipCss;
-            _chip = Ocb.El(_gapEl, "ocb-dist-chip", chipCss);
-            _chipNode = UiNode.Of(_chip);
-            _icon = Ocb.Icon(_chip, "range", ChipIcon, DsTokens.Ink);
-            _numStyle = Ocb.TextOf(Ocb.DistCss + " " + chipCss + " " + GapNumCss);
-            _num = Label.Make(_chip, _numText, _numStyle, 0f, 0f, NumMinW, NumLine, "ocbg-battle-gap-num");
-            _numNode = UiNode.Of(_num.rectTransform);
-            LayoutChip();
-            // gapEl.style.top = TOP + TAG_TOP; left / width until the first placeGap: 0 and the chip's own (shrink to fit)
-            _gapNode.Place(0f, Top + TagTop, _chipW, DistH);
-            LayoutGapParts(_chipW, 0f);
-            _gapNode.Z = 20;
-        }
 
         // ---- api ---------------------------------------------------------------------------------------------
 
@@ -365,7 +244,7 @@ namespace Trial.Battle
                 el.Root.name = "ocb-tile ocbg-battle-tile";
                 el.Node.Place(FloorSpec.TileLeft(n, c), Top);
                 if (_tileFill != null && el.Box) el.Box.BackgroundColor = CssColor.Parse(_tileFill);
-                // root.insertBefore(el, gapEl): the tiles stand before anything else the root holds (the wall edges)
+                // the tiles stand before anything else the root holds (the wall edges)
                 el.Root.SetSiblingIndex(c - 1);
                 // field.css:21 (ReachLineCss): the reach bar 4 px in from the tile's padding box on both sides
                 if (el.Box && el.ReachLine != null)
@@ -413,197 +292,15 @@ namespace Trial.Battle
             }
         }
 
-        /// <summary>
-        /// gapPlace(g): the tag's place for a gap: { left, width, spanW, broken } (FloorView.SetGap with the DS chip's own width).
-        /// Several enemies (review fix, battle_ui_ux_v2 §2.2 「あいだにある空きマスの上」): when another standing enemy stands
-        /// between the player and the enemy the number is read to (a far one chosen with Tab or framed by a held card), the cells
-        /// between are not all empty, and the middle of the whole span fell under that enemy's feet, reading as its own N. The tag
-        /// then stands over the run of empty cells in the span nearest the chosen enemy (with no bracket: the span is broken).
-        /// Review 17: only the run right before the chosen enemy was looked at, so with the front enemy on that cell the tag fell
-        /// to the border between the two enemies' feet and read as the distance between them; the empty cell nearer the hero now
-        /// carries it. With no empty cell in the span at all, it stands on the chosen enemy's near edge.
-        /// </summary>
-        // js: scenes/battle/field/floor.js:143
-        private GapPlacement GapPlace(GapState g)
-        {
-            FloorSpec.GapSpan(_cells, g.Pc, g.Ps, g.Ec, out float spanFrom, out float spanTo);
-            float from = spanFrom;
-            float to = spanTo;
-            bool broken = false;
-            int first = g.Pc + g.Ps;
-            int last = g.Ec - 1;
-            if (last >= first && _lastFloor != null && _lastEnemies.Count > 1)
-            {
-                var taken = new HashSet<int>();
-                foreach (EnemyCells e in _lastEnemies)
-                {
-                    // Review fix: an enemy whose fall is still to play (HP 0, not yet Down) has already left its cells in the core —
-                    // its Gap is −1 and N is read past it (port notes) — so its cell counts as empty, as N counts it.
-                    if (e == null || e.Down || e.Gap < 0 || e.Cell == g.Ec) continue;
-                    for (int c = e.Cell; c < e.Cell + Math.Max(1, e.Size); c++) taken.Add(c);
-                }
-                bool blocked = false;
-                for (int c = first; c <= last; c++) if (taken.Contains(c)) blocked = true;
-                if (blocked)
-                {
-                    broken = true;
-                    float w = FloorSpec.CellWidth(_cells);
-                    // The empty cell of the span nearest the chosen enemy, and the run of empty cells it ends.
-                    int end = last;
-                    while (end >= first && taken.Contains(end)) end--;
-                    if (end < first)
-                    {
-                        from = to = FloorSpec.Left + (g.Ec - 1) * w;
-                    }
-                    else
-                    {
-                        int start = end;
-                        while (start - 1 >= first && !taken.Contains(start - 1)) start--;
-                        from = FloorSpec.Left + (start - 1) * w; // the left edge of cell `start`
-                        to = FloorSpec.Left + end * w;           // the right edge of cell `end`
-                    }
-                }
-            }
-            float middle = (from + to) / 2f;
-            float spanW = Math.Max(0f, to - from);
-            float width = g.Gap <= 0 ? FloorSpec.TagAtZero : Math.Max(FloorSpec.TagAtZero, spanW);
-            if (!broken) return new GapPlacement { Left = middle - width / 2f, Width = width, SpanW = spanW, Broken = false, ChipDx = 0f };
-            // Review 19 (a Tab at rest moved the N from the front enemy to the back one, and the tag stood over the same empty
-            // cells both times): the brackets run over the whole span the number counts — from the hero's cells to the chosen
-            // enemy's, past the enemy standing between — and the plate sits over the empty cells in it (chipDx from the middle).
-            float fullLeft = Math.Min(spanFrom, middle - width / 2f);
-            float fullRight = Math.Max(spanTo, middle + width / 2f);
-            return new GapPlacement
-            {
-                Left = fullLeft,
-                Width = fullRight - fullLeft,
-                SpanW = fullRight - fullLeft,
-                Broken = true,
-                ChipDx = middle - (fullLeft + fullRight) / 2f,
-                Run = spanW,
-            };
-        }
-
-        // js: scenes/battle/field/floor.js:187
-        private GapPlacement? PlaceGap(GapState? gs, bool withBrackets = true)
-        {
-            if (_cells == 0 || gs == null || _gapHidden || !_gapEl)
-            {
-                SetGapDisplay(false);
-                return null;
-            }
-            GapState g = gs.Value;
-            SetGapDisplay(true);
-            // z-index 20 (field.css:26) is the highest in layer.field: the tag stays over whatever the field put in the layer after it
-            Transform layer = _gapEl.parent;
-            if (layer && _gapEl.GetSiblingIndex() != layer.childCount - 1) _gapEl.SetAsLastSibling();
-            GapPlacement p = GapPlace(g);
-            _gapLeftCss = Round1(p.Left);
-            _gapWidthCss = Round1(p.Width);
-            _chipDxCss = p.ChipDx != 0f ? Round1(p.ChipDx) : 0f;
-            // FloorView.SetGap (review fix): at gap 0 the plate itself is TagAtZero (100) wide over the two cells' border,
-            // not only its transparent box (the DS chip kept its content width, 68).
-            _chipMinW = g.Gap <= 0;
-            SetNumText(g.Gap.ToString(CultureInfo.InvariantCulture));
-            LayoutGapParts(_gapWidthCss.Value, _chipDxCss);
-            _gapNode.X = _gapLeftCss.Value;
-            // FloorView: the brackets only when there is room for them beside the tag (over a broken span, always: they say
-            // which enemy the number is read to).
-            bool room = g.Gap > 0 && (p.Broken || p.SpanW > _chipW + 8f);
-            SetBrackets(withBrackets && room);
-            // gapEl.classList.toggle('is-broken', p.broken): a state class with no look of its own in field.css.
-            return p;
-        }
-
-        /// <summary>The number's text (num.textContent) and the chip laid out again around it.</summary>
-        private void SetNumText(string text)
-        {
-            if (!_num) return;
-            if (text != _numText)
-            {
-                _numText = text ?? "";
-                Label.SetText(_num, _numText);
-            }
-            // laid out again only when the text or the min-width changed (the recount writes the text every frame)
-            if (_laidText == _numText && _laidMinW == _chipMinW) return;
-            LayoutChip();
-        }
-
-        /// <summary>
-        /// The chip's flex row as the browser lays it out (bundle.css:78 + field.css:27-28): border 1, padding 0 10, the
-        /// `range` icon 22, gap 6, the number (inline-block, min-width 18, centred); min-width 100 at gap ≤ 0 with the row
-        /// centred (justify-content: center); both items centred on the 34 px line (align-items: center).
-        /// </summary>
-        private void LayoutChip()
-        {
-            if (!_chip) return;
-            _laidText = _numText;
-            _laidMinW = _chipMinW;
-            BoxGraphic box = _chip.GetComponent<BoxGraphic>();
-            Insets bw = box ? box.Style.BorderWidths : Insets.All(1f);
-            Insets pad = box ? box.Style.Padding : new Insets(0f, 10f, 0f, 10f);
-            float numW = Math.Max(NumMinW, Ocb.TextWidth(_numText, _numStyle));
-            float content = ChipIcon + ChipGap + numW;
-            float natural = bw.Horizontal + pad.Horizontal + content;
-            _chipW = _chipMinW ? Math.Max(natural, FloorSpec.TagAtZero) : natural;
-            float inner = _chipW - bw.Horizontal - pad.Horizontal;
-            float x0 = bw.Left + pad.Left + (inner - content) / 2f;
-            float lineH = DistH - bw.Vertical;
-            _chipNode.W = _chipW;
-            _chipNode.H = DistH;
-            if (_icon) Ui.Place(_icon.rectTransform, x0, bw.Top + (lineH - ChipIcon) / 2f);
-            _numNode.Place(x0 + ChipIcon + ChipGap, bw.Top + (lineH - NumLine) / 2f, numW, NumLine);
-        }
-
-        /// <summary>
-        /// gapEl's width with its children: the chip centred in it (.ocb-dist: flex, centred) and slid by `dx` (chip.style.translate),
-        /// the arms from 8 px in to the middle (field.css:29-32: the end tick is the arm's own 1 px border, the line its ::after at 8 px).
-        /// </summary>
-        private void LayoutGapParts(float width, float dx)
-        {
-            if (!_gapEl) return;
-            _gapNode.Y = Top + TagTop;
-            _gapNode.W = width;
-            _gapNode.H = DistH;
-            _chipNode.X = (width - _chipW) / 2f;
-            _chipNode.Y = (DistH - _chipNode.H) / 2f;
-            _chipNode.PropTranslateX = dx;
-            float half = width * 0.5f;
-            float armW = Math.Max(0f, half - 8f);
-            UiNode.Of(_armL).Place(8f, 9f, armW, 17f);
-            UiNode.Of(_armLAfter).Place(1f, 8f, Math.Max(0f, armW - 1f), 1f);
-            float armRW = Math.Max(0f, width - 8f - half);
-            UiNode.Of(_armR).Place(half, 9f, armRW, 17f);
-            UiNode.Of(_armRAfter).Place(0f, 8f, Math.Max(0f, armRW - 1f), 1f);
-        }
-
-        /// <summary>gapEl.classList.toggle('has-brackets', on): the arms show (field.css:33).</summary>
-        private void SetBrackets(bool on)
-        {
-            _hasBrackets = on;
-            if (!_gapEl) return;
-            UiNode.Of(_armL).Visible = on;
-            UiNode.Of(_armR).Visible = on;
-        }
-
-        /// <summary>gapEl.style.display = on ? '' : 'none' (the root's display goes with it: the tag lives beside the root).</summary>
-        private void SetGapDisplay(bool on)
-        {
-            _gapDisplay = on;
-            if (_gapNode) _gapNode.Visible = _rootDisplay && _gapDisplay;
-        }
-
         /// <summary>root.style.display = on ? '' : 'none'.</summary>
         private void SetRootDisplay(bool on)
         {
-            _rootDisplay = on;
             if (_rootNode) _rootNode.Visible = on;
-            if (_gapNode) _gapNode.Visible = _rootDisplay && _gapDisplay;
         }
 
         /// <summary>
-        /// bind(floor, o) = FloorView.Bind: the cells, the aimed ones (dense where they meet the boundary), the move frame, the
-        /// gap. o.Reveal: the newly aimed cells drawn left to right; cells that stop being aimed fade over 120 ms.
+        /// bind(floor, o) = FloorView.Bind: the cells, the aimed ones (dense where they meet the boundary) and the move frame.
+        /// o.Reveal: the newly aimed cells drawn left to right; cells that stop being aimed fade over 120 ms.
         /// </summary>
         // js: scenes/battle/field/floor.js:215
         public void Bind(FloorFrame floor, FloorBindOpts o = null)
@@ -740,9 +437,6 @@ namespace Trial.Battle
                 })).Forget();
             }
             ApplyReach();
-            _recount++;
-            _gapState = new GapState { Gap = floor.Gap, Pc = floor.PlayerCell, Ps = Math.Max(1, floor.PlayerSize), Ec = floor.EnemyCell };
-            PlaceGap(_gapState);
         }
 
         /// <summary>
@@ -823,8 +517,7 @@ namespace Trial.Battle
         }
 
         /// <summary>
-        /// focusAim(unit) (§2.2.2, two or more enemies): only enemy `unit`'s aimed cells stay lit; −1 lights them all. The gap
-        /// number is left as it is.
+        /// focusAim(unit) (§2.2.2, two or more enemies): only enemy `unit`'s aimed cells stay lit; −1 lights them all.
         /// </summary>
         // js: scenes/battle/field/floor.js:314
         public void FocusAim(int unit)
@@ -833,9 +526,7 @@ namespace Trial.Battle
             if (u == _focusUnit) return;
             _focusUnit = u;
             if (_lastFloor == null || _cells == 0) return;
-            GapState? keep = _gapState;
             BindCells(_lastFloor, _lastEnemies, null);
-            if (keep != null) { _gapState = keep; PlaceGap(_gapState); }
         }
 
         /// <summary>showReach(cells): the amber reach light on these cells (150 ms in, out).</summary>
@@ -854,70 +545,24 @@ namespace Trial.Battle
             ApplyReach();
         }
 
-        /// <summary>setGap(gap, playerCell, playerSize, enemyCell): the gap chip at once (enemyCell ≤ 0 keeps the last).</summary>
+        /// <summary>
+        /// setGap(gap, playerCell, playerSize, enemyCell): nothing to draw — the gap chip is not drawn (#1079); FieldView still
+        /// calls it while a held card frames an enemy.
+        /// </summary>
         // js: scenes/battle/field/floor.js:334
         public void SetGap(int gap, int playerCell, int playerSize, int enemyCell)
         {
-            if (_cells == 0) return;
-            _recount++;
-            _gapState = new GapState
-            {
-                Gap = gap,
-                Pc = playerCell,
-                Ps = Math.Max(1, playerSize),
-                Ec = enemyCell > 0 ? enemyCell : _gapState.HasValue ? _gapState.Value.Ec : 1,
-            };
-            ResetNum();
-            PlaceGap(_gapState);
-        }
-
-        /// <summary>num.style.transform = ''; num.style.opacity = ''.</summary>
-        private void ResetNum()
-        {
-            if (!_numNode) return;
-            _numNode.TranslateY = 0f;
-            _numNode.Opacity = 1f;
         }
 
         /// <summary>
-        /// recountGap(…, ms) = FloorView.RecountGap (§5.7 順 2): the old number rises out of the tag, the new one rises in from
-        /// below, and the tag slides to the middle of the new empty cells, all in `ms`. The brackets wait for the end.
+        /// recountGap(…, ms) (§5.7 順 2): with no gap chip there is no number to count again (#1079), but the flow still holds
+        /// the beat after a walk, so the wait stays and the battle keeps the pace BattlePacing set.
         /// </summary>
         // js: scenes/battle/field/floor.js:348
         public Promise RecountGap(int gap, int playerCell, int playerSize, int enemyCell, float ms)
         {
             if (_clock == null) return Promise.Resolved();
-            if (_cells == 0 || _gapState == null) return _clock.Wait(ms);
-            string before = _numText;
-            float fromLeft = _gapLeftCss ?? 0f;
-            float fromWidth = _gapWidthCss.HasValue && _gapWidthCss.Value != 0f ? _gapWidthCss.Value : FloorSpec.TagAtZero;
-            float fromDx = _chipDxCss;
-            _gapState = new GapState { Gap = gap, Pc = playerCell, Ps = Math.Max(1, playerSize), Ec = enemyCell > 0 ? enemyCell : _gapState.Value.Ec };
-            GapPlacement to = GapPlace(_gapState.Value);
-            string after = gap.ToString(CultureInfo.InvariantCulture);
-            int mine = ++_recount;
-            if (!(ms > 0f)) { PlaceGap(_gapState); return Promise.Resolved(); }
-            SetBrackets(false);
-            return _clock.Run(ms, Ease.Out, t =>
-            {
-                if (mine != _recount || !_gapEl) return;
-                _gapLeftCss = Round1(fromLeft + (to.Left - fromLeft) * t);
-                _gapWidthCss = Round1(fromWidth + (to.Width - fromWidth) * t);
-                float dx = fromDx + (to.ChipDx - fromDx) * t;
-                _chipDxCss = Math.Abs(dx) > 0.05f ? Round1(dx) : 0f;
-                bool leaving = t < 0.5f;
-                float half = leaving ? t * 2f : (t - 0.5f) * 2f;
-                SetNumText(leaving ? before : after);
-                LayoutGapParts(_gapWidthCss.Value, _chipDxCss);
-                _gapNode.X = _gapLeftCss.Value;
-                _numNode.TranslateY = Round1(leaving ? -RecountTravel * half : RecountTravel * (1f - half));
-                _numNode.Opacity = Round3(leaving ? 1f - half : half);
-            }).Then(() =>
-            {
-                if (mine != _recount || !_gapEl) return;
-                ResetNum();
-                PlaceGap(_gapState);
-            });
+            return _clock.Wait(ms);
         }
 
         /// <summary>retireAim(ms): the battle is over — the aimed / dense / move cells fade (in) and stay clear.</summary>
@@ -957,7 +602,7 @@ namespace Trial.Battle
         /// <summary>
         /// retireUnit(unit, solo) (§5.15 順 5): enemy `unit` falls — its cells go now (`solo`: the battle's one enemy, whose frame
         /// may or may not carry its enemy list), with its omen badge (§5.8's 120 ms fade for cells it alone marked), instead of
-        /// with the next frame a second later; the gap number is left as it is.
+        /// with the next frame a second later.
         /// </summary>
         // js: scenes/battle/field/floor.js:399
         public void RetireUnit(int unit, bool solo)
@@ -968,19 +613,13 @@ namespace Trial.Battle
             if (solo || !known) _soloRetired = true;
             if (_retiredUnits.Count + (_soloRetired ? 1 : 0) == before) return;
             if (_lastFloor == null || _cells == 0) return;
-            GapState? keep = _gapState;
             BindCells(_lastFloor, _lastEnemies, null);
-            if (keep != null) { _gapState = keep; PlaceGap(_gapState); }
         }
 
-        /// <summary>setGapHidden(on): the battle is over — the gap number goes; it measured from the hero to an enemy that is no more.</summary>
+        /// <summary>setGapHidden(on): nothing to hide — the gap chip is not drawn (#1079); FieldView still calls it on every frame.</summary>
         // js: scenes/battle/field/floor.js:411
         public void SetGapHidden(bool on)
         {
-            if (on == _gapHidden) return;
-            _gapHidden = on;
-            if (_gapState != null) PlaceGap(_gapState);
-            else SetGapDisplay(!on);
         }
 
         /// <summary>
@@ -1011,15 +650,13 @@ namespace Trial.Battle
             return new StageBox(FloorSpec.TileLeft(_cells, cell), Top, FloorSpec.TileWidth(_cells), FloorSpec.Height);
         }
 
-        /// <summary>destroy(): root.remove() (the gap tag, which stands beside the root, with it).</summary>
+        /// <summary>destroy(): root.remove().</summary>
         // js: scenes/battle/field/floor.js:446
         public void Destroy()
         {
             _destroyed = true;
             if (_root) Ui.Remove(_root);
-            if (_gapEl) Ui.Remove(_gapEl);
             _root = null;
-            _gapEl = null;
         }
 
         // ---- helpers ---------------------------------------------------------------------------------------
@@ -1035,9 +672,6 @@ namespace Trial.Battle
         {
             Unit = e.Unit,
             Hatch = e.Hatch,
-            Cell = e.Cell,
-            Size = e.Size,
-            Gap = e.Gap,
             Down = e.Down,
             AimCells = aim,
             DenseCells = dense,

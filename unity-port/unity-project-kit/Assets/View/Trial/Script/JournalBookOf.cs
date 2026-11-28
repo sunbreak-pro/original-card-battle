@@ -130,9 +130,27 @@ namespace Trial.Script
         public static readonly IReadOnlyList<JournalTab> TabOrder = new System.Collections.ObjectModel.ReadOnlyCollection<JournalTab>(
             new[] { JournalTab.Enemy, JournalTab.Dungeon, JournalTab.Memo, JournalTab.Terms });
 
-        /// <summary>The drawer's width: 30% of 1920.</summary>
+        /// <summary>The stage the drawer stands on (1920 × 1080); the drawer stands at its right edge.</summary>
+        public const int StageW = 1920;
+
+        /// <summary>
+        /// The drawer's width outside battle: half of the stage. Departs from the JS's 576 (30 %): 2026-11-28 Koudai-san
+        /// asked for the sheet to reach further left, to the right half of the screen (#1089).
+        /// </summary>
+        public const int DrawerW = StageW / 2;
+
+        /// <summary>
+        /// The drawer's width in battle: the JS's 30 % of 1920. The battle's arena, panels and hand keep clear of a drawer
+        /// edge at 1344 (BattleScene.JournalShare); moving them is a change of the battle screen of its own (#1089).
+        /// </summary>
         // js: scenes/meta/journal.js:21
-        public const int DrawerW = 576;
+        public const int BattleDrawerW = 576;
+
+        /// <summary>The drawer's width for a book read in `context` (in battle the JS's 576, elsewhere the right half).</summary>
+        public static int DrawerWidthOf(JournalContext context) => context == JournalContext.Battle ? BattleDrawerW : DrawerW;
+
+        /// <summary>The drawer's left edge on the stage for a book read in `context`.</summary>
+        public static int DrawerLeftOf(JournalContext context) => StageW - DrawerWidthOf(context);
 
         /// <summary>An enemy page's id: the drawer finds an enemy's page by it (EnemyPages.PageId: enemy-&lt;id&gt;).</summary>
         // js: bridge/journal/EnemyPages.js:249
