@@ -1,8 +1,8 @@
 // Port of scenes/battle/layout.js: the stage-px constants of the battle screen that no ported layout script holds.
 // In Unity they lived in the prefab or in a View's code; here they come from the design system's OCB.LAYOUT /
 // layout.md (the copy of battle-visual-v1 §4) and from DepictionPlayer / DepictionFx. Everything a ported script does
-// hold (HandSpec, FloorSpec, StatusPanelLayout, CornerLayout, PileLayout, PlayedLayout, ReserveHintLayout,
-// RefusalLineLayout, EnemyTurnShadeLayout, StanceList, FigureFrame) is read from that script instead.
+// hold (HandSpec, FloorSpec, StatusPanelLayout, CornerLayout, PileLayout, PlayedLayout, RefusalLineLayout,
+// EnemyTurnShadeLayout, StanceList, FigureFrame) is read from that script instead.
 //
 // Names convert mechanically (FEET_Y → L.FeetY, OMEN.overHead → L.Omen.OverHead); the JS name stands in each comment
 // for grep. Engine-free; the View rules boundary holds (no `using BattleCore;`, no rule-class call).

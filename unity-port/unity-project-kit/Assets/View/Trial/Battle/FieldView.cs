@@ -258,7 +258,6 @@ namespace Trial.Battle
         private int _sizeEnemy = 1;
         private bool _multi;
         private DepictionFrame _lastFrame;
-        private int? _gapUnit;
 
         private readonly List<Fig> _standing = new List<Fig>();
         private readonly List<Fig> _all = new List<Fig>();
@@ -914,7 +913,6 @@ namespace Trial.Battle
             FloorFrame fl = frame.Floor;
             _lastFrame = frame;
             _floor.Bind(fl, new FloorBindOpts { Enemies = frame.Enemies, Unread = UnreadOf(frame) });
-            if (_gapUnit != null) ShowGapTo(_gapUnit.Value);
             _sizePlayer = fl != null ? Math.Max(1, fl.PlayerSize != 0 ? fl.PlayerSize : 1) : 1;
             _sizeEnemy = fl != null ? Math.Max(1, fl.EnemySize != 0 ? fl.EnemySize : 1) : 1;
             Fig p = _hero;
@@ -948,29 +946,8 @@ namespace Trial.Battle
                 }
             }
             if (first) SetStanceGlow(UnitSide.Player, StanceGlow.IsOn(frame.Player));
-            // Review fix: once the battle is decided the gap number goes (it measured to the fallen enemy's empty cell).
-            _floor.SetGapHidden(frame.Outcome != BattleOutcome.Ongoing);
             SetEnemyTurnShade(frame.EnemyTurn);
             Render();
-        }
-
-        /// <summary>
-        /// battle-visual-v1 §4.2 間合いの数字 with several enemies (port notes, "The one N"): while a held card frames enemy
-        /// `unit`, the floor's one number is that enemy's N (EnemyFrame.Gap) over the empty cells up to its Cell; −1 puts the
-        /// frame's own back (Floor.Gap, the nearest standing enemy). With one enemy nothing changes.
-        /// </summary>
-        // js: scenes/battle/field.js:552
-        public void ShowGapTo(int unit)
-        {
-            _gapUnit = unit >= 0 ? unit : (int?)null;
-            DepictionFrame fr = _lastFrame;
-            if (fr == null || fr.Floor == null || !_floor.Shown || !_multi) return;
-            FloorFrame fl = fr.Floor;
-            EnemyFrame u = null;
-            if (_gapUnit != null && fr.Enemies != null && _gapUnit.Value < fr.Enemies.Count) u = fr.Enemies[_gapUnit.Value];
-            int playerSize = Math.Max(1, fl.PlayerSize != 0 ? fl.PlayerSize : 1);
-            if (u != null && !u.Unit.Down && u.Gap >= 0) _floor.SetGap(u.Gap, fl.PlayerCell, playerSize, u.Cell);
-            else _floor.SetGap(fl.Gap, fl.PlayerCell, playerSize, fl.EnemyCell);
         }
 
         /// <summary>The enemies the field draws (standing or not), by unit.</summary>
@@ -1005,7 +982,6 @@ namespace Trial.Battle
                 Reveal = new FloorReveal { Unit = unit, Ms = now ? 0f : (float?)null },
                 Unread = UnreadOf(frame),
             });
-            if (_gapUnit != null) ShowGapTo(_gapUnit.Value);
             return Promise.Resolved();
         }
 
@@ -1522,13 +1498,6 @@ namespace Trial.Battle
 
         // js: scenes/battle/field.js:914
         public StagePoint? FreeStepCentre(int dir) => _freeStep.MarkCentre(dir);
-
-        // js: scenes/battle/field.js:915
-        public Promise RecountGap(int gap, int playerCell, int playerSize, int enemyCell, float ms) =>
-            _floor.RecountGap(gap, playerCell, playerSize, enemyCell, ms);
-
-        // js: scenes/battle/field.js:916
-        public void SetGap(int gap, int playerCell, int playerSize, int enemyCell) => _floor.SetGap(gap, playerCell, playerSize, enemyCell);
 
         // ---- the api: fx (DepictionFx) ----------------------------------------------------------------------------
 

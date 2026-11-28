@@ -459,17 +459,17 @@ namespace Trial.Battle.Flow.Tests
         // ---- several enemies: the Tab at rest, the target a release names, the preview (§3.4, review 19 / fix) ----
 
         [Test]
-        public void WithTwoEnemies_TabAtRestMovesTheFloorsN_AReleaseNamesItsEnemy_AndThePreviewIsTheWick()
+        public void WithTwoEnemies_TabAtRestMovesTheRestFocus_AReleaseNamesItsEnemy_AndThePreviewIsTheWick()
         {
             var rig = new Rig(Rig.Launch(BattlePlayerFlowTests.Pair[0], BattlePlayerFlowTests.PairSeed, BattlePlayerFlowTests.PairCells,
                 BattlePlayerFlowTests.Pair.Skip(1).ToList()));
             rig.Start();
             Assert.That(rig.RunUntil(() => rig.Player.State == BattlePlayerState.Idle), Is.True);
-            Assert.That(rig.Player.RestingUnit, Is.EqualTo(-1), "at rest the floor's N is the nearest enemy's");
+            Assert.That(rig.Player.RestingUnit, Is.EqualTo(-1), "at rest no enemy wears the focus");
             Assert.That(rig.Player.CycleGapFocus(1), Is.True);
             int first = rig.Player.RestingUnit;
             Assert.That(first, Is.AnyOf(0, 1));
-            Assert.That(rig.Field.GapsShown.Last(), Is.EqualTo(first), "the floor's N moved to the Tab's enemy");
+            Assert.That(rig.Hud.RestFocus, Is.EqualTo(first), "the rest focus moved to the Tab's enemy");
             Assert.That(rig.Player.CycleGapFocus(1), Is.True);
             Assert.That(rig.Player.RestingUnit, Is.EqualTo(1 - first), "and on to the other one");
             Assert.That(rig.Player.CycleGapFocus(-1), Is.True);

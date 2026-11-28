@@ -37,7 +37,6 @@ namespace Trial.Battle.Flow.Tests.Fakes
         /// <summary>Every ghost flown (a played card to its pile, the discard pile onto the draw pile) with its scene time.</summary>
         public readonly List<(GhostKind Kind, float At)> Ghosts = new List<(GhostKind, float)>();
         public readonly List<(UnitSide Side, int Dir)> WallHits = new List<(UnitSide, int)>();
-        public readonly List<int> GapsShown = new List<int>();
         public int EnemyMotions;
         public bool ShadeOn;
         public bool? LowHp;
@@ -75,7 +74,6 @@ namespace Trial.Battle.Flow.Tests.Fakes
                     if (frame.Enemies[k].Unit.Down) _down.Add((UnitSide.Enemy, k));
         }
 
-        public void ShowGapTo(int unit) => GapsShown.Add(unit);
         public IReadOnlyList<int> EnemyUnits() => Array.Empty<int>();
         public void SetExtras(IReadOnlyList<object> list) { }
         public Promise DrawAim(DepictionFrame frame, int unit, bool now = false) => now ? Promise.Resolved() : Wait(30);
@@ -222,8 +220,6 @@ namespace Trial.Battle.Flow.Tests.Fakes
         public int? FreeStepFocus { get; private set; }
         public IReadOnlyList<int> FreeStepDirs() => _freeDirs.ToList();
         public StagePoint? FreeStepCentre(int dir) => _freeDirs.Contains(dir) ? new StagePoint(560 + 160 * dir, 540) : (StagePoint?)null;
-        public Promise RecountGap(int gap, int playerCell, int playerSize, int enemyCell, float ms) => Wait(ms);
-        public void SetGap(int gap, int playerCell, int playerSize, int enemyCell) { }
         public Promise Strike(UnitSide side, StrikeOpts o) => Wait(o.Ms);
 
         public Promise WallHit(UnitSide side, int dir, float ms, int unit = -1)
