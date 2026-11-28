@@ -174,6 +174,12 @@ namespace Trial.Battle
             public GradientGraphic Glow;
             public GradientGraphic Foot;
             public PathGraphic ArtSvg, FlashSvg, GlowBodySvg;
+            /// <summary>The standing picture worn in place of ArtSvg (#772; null while the figure wears its silhouette).</summary>
+            public UnityEngine.UI.RawImage Picture;
+            /// <summary>The flash overlay of a picture: a fill cut to the picture's shape (null while the figure wears its silhouette).</summary>
+            public BoxGraphic FlashFill;
+            /// <summary>The art id whose picture was looked up for the figure (FieldArt.PictureIdOf).</summary>
+            public string ArtId = "";
             /// <summary>The front edge's drop-shadow group under the art (null while it has none).</summary>
             public PathLayer EdgeLayer;
             public FigureArtDef Def;
@@ -393,16 +399,20 @@ namespace Trial.Battle
         /// <summary>
         /// FigureView.ShowArt / StandTall: the DS silhouette for the art id, `height` px tall (FigureFrame.HeightFor), with its
         /// edge light (§4.3: amber 28 % for the player, violet 35 % for every enemy, elites and bosses included) and the foot
-        /// light under it (2 × the body, 60 tall).
+        /// light under it (2 × the body, 60 tall). A figure whose `artId` has an idle picture on FigureArtShelf wears the
+        /// picture instead (#772), soles on the feet line (ArtStand), without the edge light or the body light; its box,
+        /// feet and body width stay the silhouette's, so the floor, the hooks and the drawer slide do not move.
         /// </summary>
         // js: scenes/battle/field.js:190
-        private void Dress(Fig f, string kind, float height, string rim)
+        private void Dress(Fig f, string kind, string artId, float height, string rim)
         {
-            if (f.Kind == kind && f.Height == height && f.Rim == rim) return;
+            artId = artId ?? "";
+            if (f.Kind == kind && f.ArtId == artId && f.Height == height && f.Rim == rim) return;
             FigureArtDef def = FieldArt.FigureDef(kind);
             bool foe = f.Side != UnitSide.Player;
             float k = height / def.H;
             f.Kind = kind;
+            f.ArtId = artId;
             f.Height = height;
             f.Rim = rim;
             f.Def = def;
@@ -421,18 +431,26 @@ namespace Trial.Battle
             f.GlowBodyNode.Place(0f, 0f, svgW, height);
             f.FlashNode.Place(0f, 0f, svgW, height);
             Ui.Clear(f.Art);
-            f.EdgeLayer = null;
-            f.ArtSvg = FieldArt.DrawFigure(f.Art, def, rim.Length > 0
-                ? new DrawFigureOpts { ScaleTo = height, Rim = rim, Foe = foe }
-                : new DrawFigureOpts { ScaleTo = height, Foe = foe }).GetComponent<PathGraphic>();
             Ui.Clear(f.FlashEl);
-            f.FlashSvg = FieldArt.DrawFigure(f.FlashEl, def, new DrawFigureOpts { ScaleTo = height, Fill = "currentColor", Rim = "transparent", Foe = foe })
-                .GetComponent<PathGraphic>();
-            if (f.FlashSvg) f.FlashSvg.Tint = f.FlashColor;
             Ui.Clear(f.GlowBody);
-            f.GlowBodySvg = FieldArt.DrawFigure(f.GlowBody, def, new DrawFigureOpts { ScaleTo = height, Rim = "transparent", Foe = foe, Light = BodyLight })
-                .GetComponent<PathGraphic>();
-            if (f.GlowBodySvg) f.GlowBodySvg.ScreenBlend = true;
+            f.EdgeLayer = null;
+            f.ArtSvg = f.FlashSvg = f.GlowBodySvg = null;
+            f.Picture = null;
+            f.FlashFill = null;
+            Sprite picture = FigureArtShelf.IdleOf(artId);
+            if (picture) DressPicture(f, picture, height);
+            if (!f.Picture)
+            {
+                f.ArtSvg = FieldArt.DrawFigure(f.Art, def, rim.Length > 0
+                    ? new DrawFigureOpts { ScaleTo = height, Rim = rim, Foe = foe }
+                    : new DrawFigureOpts { ScaleTo = height, Foe = foe }).GetComponent<PathGraphic>();
+                f.FlashSvg = FieldArt.DrawFigure(f.FlashEl, def, new DrawFigureOpts { ScaleTo = height, Fill = "currentColor", Rim = "transparent", Foe = foe })
+                    .GetComponent<PathGraphic>();
+                f.GlowBodySvg = FieldArt.DrawFigure(f.GlowBody, def, new DrawFigureOpts { ScaleTo = height, Rim = "transparent", Foe = foe, Light = BodyLight })
+                    .GetComponent<PathGraphic>();
+                if (f.GlowBodySvg) f.GlowBodySvg.ScreenBlend = true;
+            }
+            TintFlash(f);
             f.Halo.gameObject.SetActive(false);
             // §4.3 足元の灯り: a radial light in an ellipse under the feet, behind the body.
             if (f.Foot) Ui.Remove(f.Foot);
@@ -445,6 +463,34 @@ namespace Trial.Battle
             // StanceGlow's rect: anchors (−0.2, −0.02)〜(1.2, 1.04) of the frame, the frame as wide as the body.
             Ui.Place(f.Glow.rectTransform, R1(f.Cx - 0.7f * f.Width), R1(-0.04f * height), R1(1.4f * f.Width), R1(1.06f * height));
             f.ResetDrawn();
+        }
+
+        /// <summary>
+        /// The standing picture over the figure's box (ArtStand's rect, feet on f.Cx) and its flash overlay: a fill under a
+        /// mask cut to the picture's alpha (FigureView.FlashFill). Leaves f.Picture null when the picture cannot be laid.
+        /// </summary>
+        private static void DressPicture(Fig f, Sprite picture, float height)
+        {
+            Rect pr = picture.rect;
+            ArtRect r = ArtStand.Place(f.ArtId, pr.width, pr.height, height, f.Cx);
+            if (!(r.W > 0f) || !(r.H > 0f)) return;
+            f.Picture = ArtImage.Lay(f.Art, picture, r.X, r.Y, r.W, r.H, 0f, 0f, 1f, 1f, "ocbg-battle-picture");
+            if (!f.Picture) return;
+            ArtFilter.On(f.Picture);
+            // A tint would barely show on a painted picture (the colour multiplies the paint), so the flash is a plain fill
+            // in the picture's shape, as the silhouette's flash is the silhouette in one colour.
+            UnityEngine.UI.RawImage cut = ArtImage.Lay(f.FlashEl, picture, r.X, r.Y, r.W, r.H, 0f, 0f, 1f, 1f, "ocbg-battle-flash-cut");
+            if (!cut) return;
+            var mask = cut.gameObject.AddComponent<UnityEngine.UI.Mask>();
+            mask.showMaskGraphic = false;
+            f.FlashFill = BoxGraphic.Make(cut.rectTransform, "background: #ffffff", 0f, 0f, r.W, r.H, "ocbg-battle-flash-fill");
+        }
+
+        /// <summary>flashEl.style.color: the flash overlay in f.FlashColor, a silhouette's or a picture's.</summary>
+        private static void TintFlash(Fig f)
+        {
+            if (f.FlashSvg) f.FlashSvg.Tint = f.FlashColor;
+            if (f.FlashFill) f.FlashFill.Tint = f.FlashColor;
         }
 
         /// <summary>setStyle(f, el, key, prop, value): writes only what changed since the last write.</summary>
@@ -870,7 +916,8 @@ namespace Trial.Battle
             _sizePlayer = fl != null ? Math.Max(1, fl.PlayerSize != 0 ? fl.PlayerSize : 1) : 1;
             _sizeEnemy = fl != null ? Math.Max(1, fl.EnemySize != 0 ? fl.EnemySize : 1) : 1;
             Fig p = _hero;
-            Dress(p, FieldArt.SilhouetteOf(UnitSide.Player, frame.Player != null ? frame.Player.ArtId : null, _sizePlayer),
+            string playerArt = frame.Player != null ? frame.Player.ArtId : null;
+            Dress(p, FieldArt.SilhouetteOf(UnitSide.Player, playerArt, _sizePlayer), FieldArt.PictureIdOf(UnitSide.Player, playerArt),
                 FigureFrame.HeightFor(_sizePlayer), "");
             SetDown(UnitSide.Player, frame.Player != null && frame.Player.Down);
             // ApplyFloor: the player stands on its cells now; each enemy's home is its cells (the next return or snap moves it).
@@ -886,7 +933,8 @@ namespace Trial.Battle
                 Fig f = FoeFig(e.Unit);
                 f.Size = e.Size;
                 // §4.3 大型の敵 (#843): an enemy with a height of its own stands that tall, feet on y 570.
-                Dress(f, FieldArt.SilhouetteOf(UnitSide.Enemy, e.U.ArtId, e.Size), FigureFrame.HeightOf(e.U.ArtId, e.Size), "");
+                Dress(f, FieldArt.SilhouetteOf(UnitSide.Enemy, e.U.ArtId, e.Size), FieldArt.PictureIdOf(UnitSide.Enemy, e.U.ArtId),
+                    FigureFrame.HeightOf(e.U.ArtId, e.Size), "");
                 SetDown(UnitSide.Enemy, e.U.Down, e.Unit);
                 f.HomeX = fl != null && _floor.Shown && e.Cell > 0 ? StandX(f, e.Cell, e.Size) : NoFloorXEnemy;
                 if (first)
@@ -1241,7 +1289,7 @@ namespace Trial.Battle
             if (f == null || f.Falling) return Promise.Resolved();
             // flashEl.style.color = tok(shapeToken(role))
             f.FlashColor = CssColor.Parse(FieldArt.Tok(FieldArt.ShapeToken(role)));
-            if (f.FlashSvg) f.FlashSvg.Tint = f.FlashColor;
+            TintFlash(f);
             f.FlashA = 1f;
             return Own(f, Ch.Flash, ms, Ease.Out, t => { f.FlashA = 1f - t; }).Then((Action<bool>)(still => { if (still) f.FlashA = 0f; }));
         }
