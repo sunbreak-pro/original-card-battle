@@ -112,6 +112,13 @@ namespace Trial.Battle
         // js: scenes/battle/hand-marks.js:53
         private const float OtherHooks = 0.6f;
 
+        /// <summary>
+        /// The hooks round an enemy the card reaches and the frame of its prediction tag. Departs from the JS's wick (2026-11-28
+        /// Koudai-san, #1079: the yellow frame was hard to see). Crimson, not the reach red the floor's aimed cells keep to
+        /// themselves (battle-visual-v1 §2.1, §5.2).
+        /// </summary>
+        private static readonly Rgba EnemyMark = DsTokens.Crimson;
+
         /// <summary>hand.css: .ocbg-battle-pred.is-other { filter: grayscale(0.85) brightness(0.62); }</summary>
         private static readonly ColorFilter OtherTagFilter = ColorFilter.Parse("grayscale(0.85) brightness(0.62)");
 
@@ -238,6 +245,7 @@ namespace Trial.Battle
                 RecoveryCutMark(fr.Tag.Root);
                 Ocb.Flow(fr.Tag.Root, Ocb.PredCss);
             }
+            if (fr.Side == UnitSide.Enemy && fr.Tag.Box) fr.Tag.Box.SetBorderColor(EnemyMark);
         }
 
         /// <summary>The face's trait is 重撃 (CoreText.TraitLine's effect word on the lamp line) and its lamp is lit on enemy `unit`.</summary>
@@ -283,6 +291,11 @@ namespace Trial.Battle
             });
             // .ocbg-battle-hooks (left 0, top 0; placed by its transform), .is-steel when it does not reach.
             fr.El.Root.name = fr.Reaches ? "ocb-frame ocbg-battle-hooks" : "ocb-frame ocbg-battle-hooks is-steel";
+            if (fr.Reaches && fr.Side == UnitSide.Enemy && fr.El.Stroke != null && fr.El.Svg)
+            {
+                fr.El.Stroke.WithStroke(EnemyMark, HookW, Cap.Square);
+                fr.El.Svg.LayersChanged();
+            }
             fr.Focus = false;
             // TargetMarkView.BuildParts / Show(reaches): the light, only on a frame the card reaches (steel: none).
             fr.Light = null;

@@ -993,6 +993,19 @@ namespace Depiction
         public const string PlanTag = "予定";
         public const string PlanChangedTag = "予定変更";
 
+        /// <summary>The guide line while the player waits: with a card to play, and with none (battle_ui_ux_v2 §3.5).</summary>
+        public const string IdleGuide = "出したい札を離してください。手が済んだら「ターン終了」";
+        public const string NothingPlayableGuide = "出せる札がありません。「ターン終了」を押してください";
+
+        /// <summary>
+        /// The guide line the trial's battle prints: the source's line less <see cref="IdleGuide"/>. Koudai-san dropped the
+        /// everyday line on 2026-11-28 (#1079); the line that says no card can be played stays, as do the trial's own lines.
+        /// </summary>
+        public static string TrialGuide(string guide)
+        {
+            return guide == null || guide == IdleGuide ? "" : guide;
+        }
+
         public static string OutcomeText(BattleOutcome outcome)
         {
             return outcome == BattleOutcome.Won ? Won : outcome == BattleOutcome.Lost ? Lost : "";
