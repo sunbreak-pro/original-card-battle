@@ -1229,6 +1229,8 @@ namespace Trial.Battle
 
         /// <summary>The speed the settings hold now, in the band's speed button (its word is HeaderBand.SpeedLabel's).</summary>
         // js: scenes/battle/hud.js:642
+        // label is BattleSpeed.Label alone (「×1.25」) and the band's word is 「速さ ×1.25」, so the step is read from the same
+        // settings the player read it from and HeaderBand composes the word; chevrons have no place on the band's fixed icon.
         public void Speed(string label, int chevrons) => _header.SetSpeed(HeaderBand.SpeedLabel(SpeedStepNow()));
 
         /// <summary>The battle's own switches (the speed, the settings) take a press or not: off once it is over.</summary>
@@ -1500,6 +1502,7 @@ namespace Trial.Battle
         private readonly HudStatusPanel _panel;
         private readonly HeaderBar _header;
         private int _maxHp;
+        private int? _shownHp, _shownMaxHp;
 
         internal HudPlayerPanel(HudStatusPanel panel, HeaderBar header)
         {
@@ -1511,7 +1514,16 @@ namespace Trial.Battle
         internal void Bound(UnitFrame unit)
         {
             _maxHp = unit.HpMax;
-            _header.SetHp(unit.Hp, _maxHp);
+            ShowHp(unit.Hp);
+        }
+
+        /// <summary>The band's HP, only when it changed: every band setter lays the whole left row out again.</summary>
+        private void ShowHp(int hp)
+        {
+            if (_shownHp == hp && _shownMaxHp == _maxHp) return;
+            _shownHp = hp;
+            _shownMaxHp = _maxHp;
+            _header.SetHp(hp, _maxHp);
         }
 
         public int Hp => _panel.Hp;
@@ -1524,12 +1536,12 @@ namespace Trial.Battle
         public void SetHp(int hp)
         {
             _panel.SetHp(hp);
-            _header.SetHp(hp, _maxHp);
+            ShowHp(hp);
         }
 
         public Promise AnimateHp(int hp, float ms)
         {
-            _header.SetHp(hp, _maxHp);
+            ShowHp(hp);
             return _panel.AnimateHp(hp, ms);
         }
 
@@ -1539,7 +1551,7 @@ namespace Trial.Battle
         public void SetHpKeepingTrail(int hp)
         {
             _panel.SetHpKeepingTrail(hp);
-            _header.SetHp(hp, _maxHp);
+            ShowHp(hp);
         }
 
         public void ShowHpLoss(int n) => _panel.ShowHpLoss(n);
