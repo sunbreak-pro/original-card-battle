@@ -8,6 +8,7 @@
         "Trial.Audio",
         "Trial.Script",
         "Trial.Bridge",
+        "Trial.Header",
         "BattleCore",
         "DungeonCore",
         "DungeonContent",

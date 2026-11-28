@@ -1,8 +1,9 @@
-// The base as one scene, 「降り口の前」 (#1052, the design canvas's 出立：降り口の前): the way down stands in the middle
-// with the first layer's light behind it and the explorer before it, the collapse calendar over it, the explorer's name
-// and how far they have been on the left, the seven layers on the right with where the last descent ended, and at the
-// foot the three things to make ready (the deck, the tools, the consumables: each opens 「支度の卓」, #1051) and 「降りる」,
-// held to set out. The list of past descents and the rules of traces are in the journal since #1053.
+// The base as one scene, 「降り口の前」 (#1052, the design canvas's 出立：降り口の前): the shared header band on top (the
+// collapse calendar, HP and stamina at full, the owned cards, the journal and the settings: #1074), the way down in the
+// middle with the first layer's light behind it and the explorer before it, the explorer's name and how far they have
+// been on the left, the seven layers on the right with where the last descent ended, and at the foot the three things to
+// make ready (the deck, the tools, the consumables: each opens 「支度の卓」, #1051) and 「降りる」, held to set out. The
+// list of past descents and the rules of traces are in the journal since #1053.
 //
 // It lives here, engine-free, so `dotnet test` holds the layout and the words (Trial.Bridge.Tests/DepartGateTests):
 // nothing overlaps, everything stays on the 1920 × 1080 stage, every text is 16 px or more and every text under 24 px is
@@ -59,10 +60,11 @@ namespace Trial.Bridge
 
         public const float Margin = 48f;
 
-        /// <summary>The header row: 拠点 and the lead on the left; 手記, 設定 and タイトルへ on the right.</summary>
-        public static readonly TableBox Header = new TableBox(Margin, 22f, StageW - 2f * Margin, 60f);
-
-        public const float HeaderGap = 24f, CornerGap = 12f, CornerH = 56f;
+        /// <summary>
+        /// The shared header band over the top (#1074: the place, the calendar, HP, stamina and the buttons). Its height is
+        /// HeaderBand's; nothing of the base reaches into it.
+        /// </summary>
+        public static TableBox Band => HeaderBand.Band;
 
         // ---- the middle: the way down, its light on the floor, the explorer before it --------------------------------
 
@@ -104,22 +106,6 @@ namespace Trial.Bridge
 
         /// <summary>The explorer's foot light (an ellipse under the feet).</summary>
         public static readonly TableBox ExplorerFoot = new TableBox(Explorer.X, Explorer.Y + 314f, Explorer.W, 24f);
-
-        // ---- over the way down: the calendar -----------------------------------------------------------------------
-
-        /// <summary>「崩壊まで 残り」, the days left and 「日」 on one baseline, centred over the way down.</summary>
-        public static readonly TableBox CalendarRow = new TableBox(720f, 106f, 600f, 56f);
-
-        /// <summary>The bar of the 100 days: the share left filled, a tick every ten days.</summary>
-        public static readonly TableBox CalendarBar = new TableBox(760f, 172f, 520f, 14f);
-
-        public const int CalendarTickDays = 10;
-
-        /// <summary>The line that the calendar stands still while a king is down, right of the bar.</summary>
-        public static readonly TableBox FrozenNote = new TableBox(CalendarBar.Right + 16f, CalendarBar.Y + (CalendarBar.H - 22f) / 2f, 380f, 22f);
-
-        /// <summary>The bar's filled width for the days left (0 to the bar's width).</summary>
-        public static float CalendarFill(int daysLeft) => CalendarBar.W * Math.Max(0, Math.Min(DungeonCore.Calendar.TotalDays, daysLeft)) / DungeonCore.Calendar.TotalDays;
 
         // ---- left: the explorer and how far they have been ----------------------------------------------------------
 
@@ -288,10 +274,32 @@ namespace Trial.Bridge
             return rows;
         }
 
-        // ---- the words the base adds (the canvas's; the rest are InheritanceCore's and the table's) ------------------
+        // ---- what the header band shows at the base and the table ---------------------------------------------------
 
-        /// <summary>The line beside the title.</summary>
-        public const string Lead = "降り口の前で支度を整え、そのまま降ります。";
+        /// <summary>
+        /// The HP a descent sets out with: RunStart's maximum, which no tool and no carry-over raises before the descent
+        /// (a heal or a consumable moves it only on the way down).
+        /// </summary>
+        public const int StartMaxHp = global::Exploration.RunStart.DefaultMaxHp;
+
+        /// <summary>The stamina a descent sets out with: the base maximum (only a consumable on the way down moves it).</summary>
+        public const int StartMaxStamina = StaminaRules.BaseMaxStamina;
+
+        /// <summary>The words beside the days while a king is down (seven_layers_v4.md §2.2), as the base printed them by its bar.</summary>
+        public const string CalendarFrozenNote = "王が倒れていて、暦は止まっている";
+
+        /// <summary>The lineage's calendar as the band shows it: the days left, and the note while it stands still.</summary>
+        public static HeaderCalendar BandCalendar(CalendarState calendar)
+        {
+            CalendarState cal = calendar ?? CalendarState.Fresh;
+            return HeaderCalendar.Of(cal.DaysLeft, cal.IsFrozen, CalendarFrozenNote);
+        }
+
+        /// <summary>The base's band: the calendar, HP and stamina at full, the deck's count on the owned cards.</summary>
+        public static HeaderContent BandOf(CalendarState calendar, int deckCount) =>
+            HeaderContent.ForBase(BandCalendar(calendar), StartMaxHp, StartMaxStamina, deckCount);
+
+        // ---- the words the base adds (the canvas's; the rest are InheritanceCore's and the table's) ------------------
 
         /// <summary>The heading over the seven layers.</summary>
         public const string LayersHeading = "この下";
@@ -349,15 +357,6 @@ namespace Trial.Bridge
         /// </summary>
         public static class Css
         {
-            public const string Title = "font: 800 44px/60px var(--font-display); letter-spacing: .24em; white-space: nowrap;";
-            public const string Lead = "font: 400 18px/1.4 var(--font-body); white-space: nowrap;";
-            public const string CalendarWords = "font: 800 24px/32px var(--font-display); letter-spacing: .12em; white-space: nowrap;";
-            public const string CalendarDays = "font: 700 56px/56px var(--font-mono); white-space: nowrap;";
-            public const string CalendarBar = "background: #06090c; border: 1px solid rgba(157,166,186,.5); border-radius: 3px;";
-            public const string CalendarFill = "background: var(--ink-muted);";
-            public const string CalendarFillFrozen = "background: var(--steel);";
-            public const string CalendarTick = "background: rgba(6,9,12,.9);";
-            public const string FrozenNote = "font: 400 16px/22px var(--font-body); white-space: nowrap;";
             public const string WhoLabel = "font: 700 18px/26px var(--font-body); white-space: nowrap;";
             public const string Name = "font: 800 64px/72px var(--font-display); letter-spacing: .14em; white-space: nowrap;";
             public const string RecordRule = "background: rgba(157,166,186,.4);";
