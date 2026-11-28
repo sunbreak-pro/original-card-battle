@@ -1,0 +1,401 @@
+<title>試遊版 画面と部品の一覧</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Shippori+Mincho:wght@600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: one column of screens; each screen is a captured frame on the left with numbered boxes, and its parts as a
+   checklist on the right. The frame keeps the game's 16:9 stage so box positions read in stage px. */
+:root {
+  --ground: #f3f4f1;
+  --panel: #ffffff;
+  --ink: #1a1f2b;
+  --ink-soft: #586173;
+  --line: #d6d9d2;
+  --stage: #12151f;
+  --amber: #a8650a;
+  --amber-bg: #fbeed3;
+  --ok: #1d6b47;
+  --ok-bg: #dff1e6;
+  --off: #a3301f;
+  --off-bg: #fbe3dd;
+  --focus: #2b5fc7;
+  --font-body: "Noto Sans JP", "Hiragino Sans", "Yu Gothic UI", Meiryo, sans-serif;
+  --font-head: "Shippori Mincho", "Yu Mincho", "Hiragino Mincho ProN", serif;
+  --font-mono: "JetBrains Mono", Consolas, "Courier New", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #10131b; --panel: #181c27; --ink: #e8eaf0; --ink-soft: #9aa3b5; --line: #2c3243; --stage: #07090e;
+    --amber: #e9b04f; --amber-bg: #3a2c12; --ok: #6fd3a0; --ok-bg: #153527; --off: #f09482; --off-bg: #3f1d17;
+    --focus: #8ab0ff; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #10131b; --panel: #181c27; --ink: #e8eaf0; --ink-soft: #9aa3b5; --line: #2c3243; --stage: #07090e;
+  --amber: #e9b04f; --amber-bg: #3a2c12; --ok: #6fd3a0; --ok-bg: #153527; --off: #f09482; --off-bg: #3f1d17;
+  --focus: #8ab0ff; color-scheme: dark;
+}
+body {
+  background: var(--ground); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.75;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 80px;
+}
+.wrap { max-width: 1360px; margin-inline: auto; display: grid; gap: 28px; }
+h1 { font-family: var(--font-head); font-size: 30px; line-height: 1.35; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--font-head); font-size: 23px; line-height: 1.4; margin: 0; text-wrap: balance; }
+p { margin: 0; }
+.lede { color: var(--ink-soft); max-width: 46em; }
+.head { display: grid; gap: 12px; }
+.asof { font-size: 13px; color: var(--ink-soft); }
+.how { display: grid; gap: 6px; padding: 16px 20px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; max-width: 52em; }
+.how ol { margin: 0; padding-left: 1.4em; display: grid; gap: 4px; }
+
+.bar {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--ground);
+  display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; padding-block: 10px; border-bottom: 1px solid var(--line);
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--ground); }
+.counts { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 14px; font-variant-numeric: tabular-nums; }
+.counts b { font-family: var(--font-mono); font-size: 16px; font-weight: 500; }
+.filters { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
+.chip {
+  font: inherit; font-size: 14px; padding: 4px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel);
+  color: var(--ink); cursor: pointer;
+}
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.status { font-size: 13px; color: var(--ink-soft); flex-basis: 100%; }
+.status[data-kind="warn"] { color: var(--off); }
+
+.toc { display: flex; flex-wrap: wrap; gap: 6px 8px; }
+.toc a { font-size: 14px; color: var(--ink); text-decoration: none; padding: 3px 12px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); }
+.toc a .n { font-family: var(--font-mono); color: var(--ink-soft); margin-left: 6px; font-size: 13px; }
+.toc a.has-off { border-color: var(--off); }
+
+.screen { display: grid; gap: 14px; padding-top: 22px; border-top: 2px solid var(--ink); scroll-margin-top: 96px; }
+.screen-head { display: grid; gap: 4px; }
+.screen-head .route { font-size: 14px; color: var(--ink-soft); }
+.screen-body { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+@media (max-width: 980px) { .screen-body { grid-template-columns: minmax(0, 1fr); } }
+
+.shots { display: grid; gap: 10px; min-width: 0; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 104px); }
+@media (max-width: 980px) { .shots { position: static; } }
+.screen-body.solo { grid-template-columns: minmax(0, 1fr); }
+.screen-body.solo .frame { aspect-ratio: auto; min-height: 120px; }
+.screen-body.solo .frame .none { position: static; padding: 28px 20px; line-height: 1.9; }
+.shot-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.shot-tabs .chip { font-size: 13px; padding: 3px 12px; border-radius: 4px; }
+.frame { position: relative; background: var(--stage); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; aspect-ratio: 16 / 9; max-width: 100%; }
+.frame img { display: block; width: 100%; height: 100%; object-fit: contain; cursor: zoom-in; }
+.frame .none { position: absolute; inset: 0; display: grid; place-items: center; color: #b8bfd0; font-size: 14px; padding: 16px; text-align: center; }
+.box { position: absolute; border: 2px solid #ffcf66; border-radius: 2px; pointer-events: none; box-shadow: 0 0 0 1px rgba(0, 0, 0, .65); opacity: .0; transition: opacity .12s; }
+.frame.show-all .box, .box.on { opacity: 1; }
+.box b { position: absolute; left: -2px; top: -22px; background: #ffcf66; color: #1a1300; font: 500 13px/20px var(--font-mono); padding: 0 6px; border-radius: 2px; }
+.box.low b { top: auto; bottom: -22px; }
+.cap { font-size: 13px; color: var(--ink-soft); }
+.shot-tools { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.linkish { font: inherit; font-size: 13px; background: none; border: none; color: var(--focus); cursor: pointer; padding: 0; text-decoration: underline; }
+
+.parts { display: grid; gap: 10px; min-width: 0; }
+.part { display: grid; gap: 8px; padding: 12px 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; }
+.part[data-verdict="ok"] { border-color: var(--ok); }
+.part[data-verdict="off"] { border-color: var(--off); background: var(--off-bg); }
+.part-top { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.part-no { font: 500 13px var(--font-mono); background: var(--amber-bg); color: var(--amber); padding: 0 7px; border-radius: 2px; }
+.part-name { font-weight: 700; }
+.part-desc { font-size: 14px; color: var(--ink-soft); }
+.part-meta { font: 500 13px/1.5 var(--font-mono); color: var(--ink-soft); overflow-wrap: anywhere; }
+.tag { font-size: 13px; padding: 0 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--ink-soft); white-space: nowrap; }
+.verdict { display: flex; gap: 6px; flex-wrap: wrap; }
+.vbtn { font: inherit; font-size: 14px; padding: 4px 14px; border-radius: 4px; border: 1px solid var(--line); background: var(--ground); color: var(--ink); cursor: pointer; }
+.vbtn[data-v="ok"][aria-pressed="true"] { background: var(--ok-bg); border-color: var(--ok); color: var(--ok); font-weight: 700; }
+.vbtn[data-v="off"][aria-pressed="true"] { background: var(--off); border-color: var(--off); color: #fff; font-weight: 700; }
+.vbtn:disabled, textarea:disabled { opacity: .55; cursor: default; }
+textarea {
+  font: inherit; font-size: 14px; line-height: 1.6; width: 100%; min-height: 2.6em; resize: vertical; box-sizing: border-box;
+  padding: 6px 10px; border: 1px solid var(--line); border-radius: 4px; background: var(--ground); color: var(--ink);
+}
+.saved { font-size: 13px; color: var(--ink-soft); min-height: 1.4em; }
+button:focus-visible, a:focus-visible, textarea:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.screen.hide, .part.hide { display: none; }
+
+.zoom { position: fixed; inset: 0; z-index: 20; background: rgba(5, 7, 12, .93); display: grid; place-items: center; padding: 16px; cursor: zoom-out; }
+.zoom img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.empty { padding: 20px; border: 1px dashed var(--line); border-radius: 6px; color: var(--ink-soft); }
+@media (prefers-reduced-motion: reduce) { .box { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header class="head">
+    <h1>試遊版の画面と部品の一覧</h1>
+    <p class="lede">Unity の試遊版を実際に動かして撮った画面です。画面ごとに、部品へ番号を付けて並べました。イメージと違う部品に印を付けて、どこが違うかを一言書いてください。</p>
+    <p class="asof" data-asof>読み込み中です。</p>
+    <div class="how">
+      <strong>使い方</strong>
+      <ol>
+        <li>部品の行にカーソルを置くと、左の画面でその部品が枠で囲まれます。</li>
+        <li>「イメージどおり」か「違う」を押します。もう一度押すと、印が消えます。</li>
+        <li>違うときは、下の欄に、どう違うかを書きます。書いた内容は自動で保存されます。</li>
+      </ol>
+    </div>
+  </header>
+
+  <div class="bar">
+    <div class="counts" id="counts" aria-live="polite"></div>
+    <div class="filters" role="group" aria-label="表示する部品">
+      <button class="chip" type="button" id="f-all" data-f="all" aria-pressed="true">すべて</button>
+      <button class="chip" type="button" id="f-todo" data-f="todo" aria-pressed="false">まだ見ていない</button>
+      <button class="chip" type="button" id="f-off" data-f="off" aria-pressed="false">違う</button>
+    </div>
+    <p class="status" id="status" data-load-error hidden></p>
+  </div>
+
+  <nav class="toc" id="toc" aria-label="画面の一覧"></nav>
+  <main id="screens"><p class="empty">画面の一覧を読み込んでいます。</p></main>
+</div>
+
+<div class="zoom" id="zoom" hidden><img id="zoom-img" alt=""></div>
+
+<script>
+(function () {
+  "use strict";
+  var catalog = null, marks = {}, db = null, canWrite = true, filter = "all";
+  var saveTimers = {}, saving = {};
+  var $ = function (id) { return document.getElementById(id); };
+
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+  function status(text, kind) {
+    var s = $("status");
+    if (!text) { s.hidden = true; return; }
+    s.hidden = false; s.textContent = text; s.dataset.kind = kind || "";
+  }
+
+  function allParts() {
+    var out = [];
+    catalog.screens.forEach(function (s) { s.parts.forEach(function (p) { out.push({ screen: s, part: p }); }); });
+    return out;
+  }
+  function verdictOf(id) { return (marks[id] && marks[id].verdict) || ""; }
+
+  function renderCounts() {
+    var parts = allParts(), ok = 0, off = 0;
+    parts.forEach(function (x) { var v = verdictOf(x.part.id); if (v === "ok") ok++; else if (v === "off") off++; });
+    var box = $("counts"); box.textContent = "";
+    [["画面", catalog.screens.length], ["部品", parts.length], ["イメージどおり", ok], ["違う", off], ["まだ見ていない", parts.length - ok - off]]
+      .forEach(function (c) {
+        var s = el("span"); s.append(c[0] + " "); s.append(el("b", "", String(c[1]))); box.append(s);
+      });
+    catalog.screens.forEach(function (s) {
+      var a = document.querySelector('.toc a[data-s="' + s.id + '"]');
+      if (!a) return;
+      var n = s.parts.filter(function (p) { return verdictOf(p.id) === "off"; }).length;
+      a.classList.toggle("has-off", n > 0);
+    });
+  }
+
+  function applyFilter() {
+    document.querySelectorAll(".part").forEach(function (row) {
+      var v = row.dataset.verdict || "";
+      var show = filter === "all" || (filter === "todo" && v === "") || (filter === "off" && v === "off");
+      row.classList.toggle("hide", !show);
+    });
+    document.querySelectorAll(".screen").forEach(function (sec) {
+      sec.classList.toggle("hide", filter !== "all" && !sec.querySelector(".part:not(.hide)"));
+    });
+  }
+
+  function paintPart(row, id) {
+    var m = marks[id] || {}, v = m.verdict || "";
+    row.dataset.verdict = v;
+    row.querySelectorAll(".vbtn").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.v === v)); });
+    var ta = row.querySelector("textarea");
+    if (document.activeElement !== ta && !saveTimers[id]) ta.value = m.note || "";
+  }
+  function paintAll() {
+    document.querySelectorAll(".part").forEach(function (row) { paintPart(row, row.dataset.id); });
+    renderCounts(); applyFilter();
+  }
+
+  function save(id, row) {
+    if (!db) return;
+    if (saving[id]) { saveTimers[id] = setTimeout(function () { saveTimers[id] = 0; save(id, row); }, 400); return; }
+    var m = marks[id] || {};
+    var body = { verdict: m.verdict || "", note: m.note || "", updatedAt: new Date().toISOString() };
+    var note = row.querySelector(".saved");
+    saving[id] = true; note.textContent = "保存しています。";
+    db.doc("marks/" + id).set(body).then(function () {
+      note.textContent = "保存しました。";
+    }).catch(function (e) {
+      if (e && e.code === "invalid_argument") { canWrite = false; lock(); note.textContent = "この表示では書き込めません。"; }
+      else note.textContent = "保存できませんでした。もう一度押してください。";
+    }).then(function () { saving[id] = false; });
+  }
+  function lock() {
+    document.querySelectorAll(".vbtn, .part textarea").forEach(function (c) { c.disabled = true; });
+  }
+
+  // One frame per screen: the tabs under it swap the capture, and a part row swaps to the capture its box is on.
+  function viewerFor(screen) {
+    var wrap = el("div", "shots");
+    var frame = el("div", "frame");
+    var cap = el("span", "cap", "");
+    var tabs = el("div", "shot-tabs");
+    var current = null;
+    function show(key) {
+      if (current === key) return;
+      current = key;
+      var shot = screen.shots.filter(function (s) { return s.key === key; })[0] || screen.shots[0];
+      frame.textContent = "";
+      if (shot.file) {
+        var img = el("img"); img.src = shot.file; img.alt = screen.name + "（" + shot.label + "）";
+        img.addEventListener("click", function () { $("zoom-img").src = shot.file; $("zoom").hidden = false; });
+        img.addEventListener("error", function () { img.remove(); frame.append(el("div", "none", "画面の絵を読み込めませんでした。")); });
+        frame.append(img);
+      } else {
+        frame.append(el("div", "none", shot.label || "この画面はまだ撮れていません。"));
+      }
+      screen.parts.forEach(function (p, i) {
+        (p.boxes || []).forEach(function (b) {
+          if (b.shot !== shot.key) return;
+          var box = el("div", "box" + (b.y < 30 ? " low" : ""));
+          box.dataset.part = p.id;
+          box.style.left = (b.x / 19.2) + "%"; box.style.top = (b.y / 10.8) + "%";
+          box.style.width = (b.w / 19.2) + "%"; box.style.height = (b.h / 10.8) + "%";
+          box.append(el("b", "", String(i + 1)));
+          frame.append(box);
+        });
+      });
+      cap.textContent = shot.file ? shot.label : "";
+      tabs.querySelectorAll("button").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.key === shot.key)); });
+    }
+    wrap.append(frame);
+    var tools = el("div", "shot-tools");
+    tools.append(cap);
+    if (screen.parts.some(function (p) { return (p.boxes || []).length; })) {
+      var t = el("button", "linkish", "枠をすべて出す"); t.type = "button";
+      t.addEventListener("click", function () {
+        var on = frame.classList.toggle("show-all"); t.textContent = on ? "枠を消す" : "枠をすべて出す";
+      });
+      tools.append(t);
+    }
+    wrap.append(tools);
+    if (screen.shots.length > 1) {
+      screen.shots.forEach(function (s, i) {
+        var b = el("button", "chip", s.label); b.type = "button"; b.dataset.key = s.key; b.id = "shot-" + screen.id + "-" + i;
+        b.addEventListener("click", function () { show(s.key); });
+        tabs.append(b);
+      });
+      wrap.append(tabs);
+    }
+    show(screen.shots[0].key);
+    return { node: wrap, show: show, frame: frame, current: function () { return current; } };
+  }
+
+  function partRow(screen, p, i, section, viewer) {
+    var row = el("div", "part"); row.dataset.id = p.id;
+    var top = el("div", "part-top");
+    top.append(el("span", "part-no", String(i + 1)), el("span", "part-name", p.name));
+    if (p.shared) top.append(el("span", "tag", p.shared));
+    row.append(top);
+    if (p.desc) row.append(el("p", "part-desc", p.desc));
+    if (p.file) row.append(el("p", "part-meta", p.file));
+    var vd = el("div", "verdict");
+    [["ok", "イメージどおり"], ["off", "違う"]].forEach(function (v) {
+      var b = el("button", "vbtn", v[1]); b.type = "button"; b.dataset.v = v[0]; b.id = "v-" + p.id + "-" + v[0];
+      b.setAttribute("aria-pressed", "false");
+      b.addEventListener("click", function () {
+        var m = marks[p.id] || (marks[p.id] = {});
+        m.verdict = m.verdict === v[0] ? "" : v[0];
+        paintPart(row, p.id); renderCounts(); save(p.id, row);
+      });
+      vd.append(b);
+    });
+    row.append(vd);
+    var ta = el("textarea"); ta.id = "n-" + p.id; ta.rows = 1; ta.placeholder = "どう違うか、どうしたいか";
+    ta.setAttribute("aria-label", p.name + " へのひとこと");
+    ta.addEventListener("input", function () {
+      var m = marks[p.id] || (marks[p.id] = {}); m.note = ta.value;
+      clearTimeout(saveTimers[p.id]);
+      saveTimers[p.id] = setTimeout(function () { saveTimers[p.id] = 0; save(p.id, row); }, 900);
+    });
+    row.append(ta, el("p", "saved", ""));
+    var light = function (on) {
+      var boxes = p.boxes || [];
+      if (on && boxes.length && !boxes.some(function (b) { return b.shot === viewer.current(); })) viewer.show(boxes[0].shot);
+      section.querySelectorAll('.box[data-part="' + p.id + '"]').forEach(function (b) { b.classList.toggle("on", on); });
+    };
+    row.addEventListener("mouseenter", function () { light(true); });
+    row.addEventListener("mouseleave", function () { light(false); });
+    row.addEventListener("focusin", function () { light(true); });
+    row.addEventListener("focusout", function () { light(false); });
+    return row;
+  }
+
+  function render() {
+    var main = $("screens"), toc = $("toc");
+    main.textContent = ""; toc.textContent = "";
+    document.querySelector("[data-asof]").textContent = catalog.asOf;
+    catalog.screens.forEach(function (s) {
+      var a = el("a", "", s.name); a.href = "#" + s.id; a.dataset.s = s.id;
+      a.append(el("span", "n", String(s.parts.length)));
+      toc.append(a);
+
+      var sec = el("section", "screen"); sec.id = s.id;
+      var head = el("div", "screen-head");
+      head.append(el("h2", "", s.name));
+      if (s.route) head.append(el("p", "route", "行き方: " + s.route));
+      if (s.note) head.append(el("p", "route", s.note));
+      sec.append(head);
+      var body = el("div", "screen-body");
+      var viewer = viewerFor(s);
+      var parts = el("div", "parts");
+      s.parts.forEach(function (p, i) { parts.append(partRow(s, p, i, sec, viewer)); });
+      if (!s.parts.length) body.classList.add("solo");
+      body.append(viewer.node, parts);
+      sec.append(body);
+      main.append(sec);
+    });
+    paintAll();
+    if (!canWrite) lock();
+  }
+
+  document.querySelectorAll(".chip").forEach(function (c) {
+    c.addEventListener("click", function () {
+      filter = c.dataset.f;
+      document.querySelectorAll(".chip").forEach(function (o) { o.setAttribute("aria-pressed", String(o === c)); });
+      applyFilter();
+    });
+  });
+  $("zoom").addEventListener("click", function () { $("zoom").hidden = true; });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") $("zoom").hidden = true; });
+
+  function connect() {
+    if (!window.claude || !window.claude.use) { canWrite = false; status("この表示では、印を保存できません。claude.ai で開くと保存できます。", "warn"); lock(); return; }
+    window.claude.use("db").then(function (d) {
+      if (!d) { canWrite = false; status("印を保存する場所につながりませんでした。見ることはできます。", "warn"); lock(); return; }
+      db = d;
+      var slow = setTimeout(function () { status("印を読み込めていません。表示が古いかもしれません。", "warn"); }, 10000);
+      db.collection("marks").onSnapshot(function (snap) {
+        if (!snap.metadata.fromCache) { clearTimeout(slow); status(""); }
+        var next = {};
+        snap.docs.forEach(function (doc) { var b = doc.data() || {}; next[doc.id] = { verdict: String(b.verdict || ""), note: String(b.note || "") }; });
+        Object.keys(marks).forEach(function (id) { if (saveTimers[id] || saving[id]) next[id] = marks[id]; });
+        marks = next;
+        if (catalog) paintAll();
+      }, function () { clearTimeout(slow); status("印を読み込めませんでした。開き直してください。", "warn"); });
+    });
+  }
+
+  fetch("catalog.json").then(function (r) { if (!r.ok) throw new Error(String(r.status)); return r.json(); })
+    .then(function (c) { catalog = c; render(); connect(); })
+    .catch(function () {
+      $("screens").textContent = "";
+      $("screens").append(el("p", "empty", "画面の一覧を読み込めませんでした。"));
+      document.querySelector("[data-asof]").textContent = "";
+      status("画面の一覧（catalog.json）を読み込めませんでした。", "warn");
+    });
+})();
+</script>
