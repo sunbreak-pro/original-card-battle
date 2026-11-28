@@ -1,18 +1,22 @@
 // The hud module of the battle scene (docs/BATTLE_SCENE.md §6c): everything on the screen that is neither a card in hand
-// nor the arena — the number panels, the omen badges (+ plans), the stance lists, the stamina tag, the corner, the speed
-// switch, the piles + list, the played attributes, the journal / end-turn buttons, the banners and the
-// result card — and the panel half of FollowFigures (follow). Port of scenes/battle/hud.js (Unity: StatusBarView,
-// OmenBadgeView, StanceListView, StaminaTagView, PilesView, PileListView, BottomRightViews, CornerInfoView,
-// BattleSpeedButton, the end-turn plate, Banner, ShowResult).
+// nor the arena — the header band, the number panels, the omen badges (+ plans), the stance lists, the stamina tag, the
+// piles + list, the played attributes, the end-turn plate, the banners and the result card — and the panel half of
+// FollowFigures (follow). Port of scenes/battle/hud.js (Unity: StatusBarView, OmenBadgeView, StanceListView,
+// StaminaTagView, PilesView, PileListView, BottomRightViews, the end-turn plate, Banner, ShowResult).
 //
-// Parts: HudStatusPanel (Status.cs), HudOmenBadge (Omen.cs), HudStanceLists (Stances.cs), HudStaminaTag (Stamina.cs),
-// HudPiles (Piles.cs), HudPlayed / HudEndTurn (Bottom.cs), HudCorner / HudSpeedButton / HudJournalButton /
-// HudSettingsButton / HudResultCard / HudChainBanner / HudLossInk / HudChrome.PlayBanner (Chrome.cs), HudUtil / HudTip.
+// The shared header band (#1074, Trial.Header's HeaderBar) takes the place of the JS's corner tag, speed switch, journal
+// button and gear: the layer and the turn (and the fight of a run of fights) on the left, then the calendar, the hero's HP
+// and stamina; the speed, the owned cards, the journal and the settings on the right. What it shows comes from the frame,
+// the panels' own calls and the app (HudHeader); its words and boxes are Trial.Bridge's HeaderContent / HeaderBand.
+//
+// Parts: HeaderBar (Trial.Header), HudStatusPanel (Status.cs), HudOmenBadge (Omen.cs), HudStanceLists (Stances.cs),
+// HudStaminaTag (Stamina.cs), HudPiles (Piles.cs), HudPlayed / HudEndTurn (Bottom.cs), HudResultCard / HudChainBanner /
+// HudLossInk / HudChrome.PlayBanner (Chrome.cs), HudUtil / HudTip.
 // Fills env.Geom.PileMiddle / OmenBox / OmenShown / OmenBoxes / EndTurnBox / StatusBox / StatusBoxes / StanceBox /
 // StanceSlot / CoversPointer / DrawerRight. Plays 'uiClick' for its buttons.
 //
 // It computes no rule. Every number and word comes from the frame and the cues the player hands over and from the ported
-// texts; every box from the ported layout scripts (StatusPanelLayout, StanceList, CornerLayout, FloorSpec, FigureFrame) or
+// texts; every box from the ported layout scripts (StatusPanelLayout, StanceList, FloorSpec, FigureFrame, HeaderBand) or
 // L. Every length runs on env.Clock with the nominal ms handed in.
 //
 // Several enemies (scene addition; Unity draws Enemies[0] only): when the frame carries more than one enemy
@@ -28,13 +32,30 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using Depiction;
+using Trial.Bridge;
 using Trial.Geometry;
+using Trial.Header;
 using Trial.Kit;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace Trial.Battle
 {
+    /// <summary>
+    /// What the battle's header band shows that the frame does not carry (#1074): the app's, through BattleSceneCtx.
+    /// </summary>
+    public sealed class HudHeader
+    {
+        /// <summary>The place's name (ExplorationScreen.LayerTitle); empty: 「第 n 層」 of the scene's layer.</summary>
+        public string LayerTitle = "";
+
+        /// <summary>The collapse calendar; null when the app hands none, and the band then leaves the calendar out.</summary>
+        public HeaderCalendar Calendar;
+
+        /// <summary>The deck's count on the owned cards' corner.</summary>
+        public int DeckCount;
+    }
+
     // js: scenes/battle/hud.js:105 (createHud)
     public sealed class Hud : IHud
     {
@@ -60,8 +81,6 @@ namespace Trial.Battle
         /// open, the panels keep this far right of its edge (DS README 余白 24).
         /// </summary>
         private const float DrawerClear = 24f; // js: scenes/battle/hud.js:57
-        /// <summary>STANCE_HIGH_GAP — review 21: a stance list's high place stands this far from the corner chrome beside it.</summary>
-        private const float StanceHighGap = 12f; // js: scenes/battle/hud.js:59
         /// <summary>FALLEN_GAP / FALLEN_SLIDE — a fallen enemy's grey panel keeps this far off its neighbours, sliding at most this far.</summary>
         private const float FallenGap = 4f; // js: scenes/battle/hud.js:90
         private const float FallenSlide = 24f; // js: scenes/battle/hud.js:91
@@ -202,10 +221,8 @@ namespace Trial.Battle
         private readonly HudPiles _piles;
         private readonly HudPlayed _played;
         private readonly HudEndTurn _endTurn;
-        private readonly HudCorner _corner;
-        private readonly HudSpeedButton _speedBtn;
-        private readonly HudJournalButton _journalBtn;
-        private readonly HudSettingsButton _settingsBtn;
+        private readonly HeaderBar _header;
+        private readonly HudPlayerPanel _playerFacade;
         private readonly HudResultCard _result;
         private readonly HudLossInk _lossInk;
         private readonly HudChainBanner _chainBanner;
@@ -218,8 +235,14 @@ namespace Trial.Battle
         /// <summary>A walking figure's panel: the offset it had from its figure as the walk began, closing as it walks (follow).</summary>
         private readonly Dictionary<HudStatusPanel, float> _carriedOff = new Dictionary<HudStatusPanel, float>();
 
-        /// <summary>Review 21: the corner tag's right edge (the player's stance list's high place stands 12 px right of it).</summary>
-        private float _cornerRight = 24f + 232f; // js: scenes/battle/hud.js:112
+        /// <summary>The header's turn and fight tags as last shown (they change once a turn).</summary>
+        private string _tagKey;
+        /// <summary>The journal's button is lit: the journal is open (JournalEdge stands).</summary>
+        private bool _journalLit;
+        /// <summary>The battle is over: the journal's button stays off, as the end-turn plate does.</summary>
+        private bool _ended;
+        /// <summary>The speed and the settings take a press (SetSpeedVisible): off once the battle is over.</summary>
+        private bool _switchesOn = true;
         private int _primary;
         private bool _multi;
         private float _dtReal = 16f;
@@ -246,30 +269,56 @@ namespace Trial.Battle
         private int _hoverUnit = -1;
 
         // js: scenes/battle/hud.js:105
-        private Hud(BattleViewEnv env, HudOpts opts)
+        private Hud(BattleViewEnv env, HudOpts opts, HudHeader header)
         {
             _env = env;
             _opts = opts ?? new HudOpts();
+            HudHeader h = header ?? new HudHeader();
             _tip = HudUtil.CreateTip(env);
 
-            // ---- the parts, bottom → top inside their layers ----
-            // Review 21: the stance lists' high place (stances.js keepClear) — in the top bar, beside each side's corner chrome.
-            // js: scenes/battle/hud.js:113
-            _stances = HudStanceLists.Create(env, _tip, new StancePlace
+            // ---- the header band: the layer and the turn, the calendar, the hero's HP and stamina, the battle's switches ----
+            // Its empty parts let the pointer through to what stands under them (#1074); its bubbles open over the battle.
+            _header = HeaderBar.Create(env.Layer.Hud,
+                HeaderContent.ForBattle(string.IsNullOrEmpty(h.LayerTitle) ? HudChrome.LayerWord(env.LayerNo) : h.LayerTitle,
+                    0, _opts.ChainIndex, _opts.ChainTotal, h.Calendar, 0, 0, 0, 0, h.DeckCount, SpeedStepNow(),
+                    canOpenSettings: _opts.SettingsInBattle),
+                new HeaderActions
+                {
+                    OnSpeed = () => _opts.OnSpeed?.Invoke(),
+                    OnJournal = () => _opts.OnJournal?.Invoke(),
+                    OnSettings = () =>
+                    {
+                        _env.Audio.Play("uiClick");
+                        _opts.OnSettings?.Invoke();
+                    },
+                },
+                tipLayer: env.Layer.Over, blockPointer: false);
+            foreach (RectTransform rt in _header.PointerTargets) BattleHitTag.Mark(rt);
+            // HeaderBar has no switch to leave the calendar out: until the app hands one (#1074's last unit, Main.cs), its
+            // group is hidden rather than reading 「残り 0 日」, which would say the collapse has come.
+            if (h.Calendar == null && _header.Root)
             {
-                HighTop = () => CornerLayout.CornerInfoTop,
-                HighLeft = side => side == UnitSide.Player
-                    ? _cornerRight + StanceHighGap
-                    : (_settingsBtn != null ? HudChrome.SettingsBox.X : CornerLayout.SpeedButton.X) - StanceHighGap - StanceList.Width,
-            });
+                var calendar = _header.Root.Find("calendar") as RectTransform;
+                if (calendar) UiNode.Of(calendar).Visible = false;
+            }
+
+            // ---- the parts, bottom → top inside their layers ----
+            // Review 21: the stance lists' high place (stances.js keepClear) — under the header band.
+            // js: scenes/battle/hud.js:113
+            _stances = HudStanceLists.Create(env, _tip);
             _stamina = HudStaminaTag.Create(env);
             _player = HudStatusPanel.Create(env, UnitSide.Player, new StatusPanelDeps
             {
                 Tip = _tip,
-                OnStamina = (s, max) => _stamina.SetStamina(s, max),
+                OnStamina = (s, max) =>
+                {
+                    _stamina.SetStamina(s, max);
+                    _header.SetStamina(s, max);
+                },
                 OnPip = (index, ms) => _stamina.LightPip(index),
                 OnStaminaPop = ms => _stamina.PopNumber(ms),
             });
+            _playerFacade = new HudPlayerPanel(_player, _header);
             EnemyViewOf(0);
 
             _piles = HudPiles.Create(env, new PilesOpts
@@ -286,23 +335,19 @@ namespace Trial.Battle
             });
             _played = HudPlayed.Create(env);
             _endTurn = HudEndTurn.Create(env, () => _opts.OnEndTurn?.Invoke());
-            _corner = HudCorner.Create(env, new BattleChain(_opts.ChainIndex, _opts.ChainTotal), _tip);
-            _speedBtn = HudSpeedButton.Create(env, () => _opts.OnSpeed?.Invoke(), _tip);
-            _journalBtn = HudJournalButton.Create(env, () => _opts.OnJournal?.Invoke(), _tip);
-            // battle-visual-v1 §4.1 (review 19, a repeat finding: 「設定・セーブの画面は戦闘中に開けない」 — the speed switch is the one
-            // setting in a battle): no gear, unless the app asks for one (opts.settingsInBattle; the brief's 「Esc / gear」).
-            _settingsBtn = _opts.SettingsInBattle ? HudSettingsButton.Create(env, () => _opts.OnSettings?.Invoke(), _tip) : null;
             _result = HudResultCard.Create(env);
             _lossInk = HudLossInk.Create(env);
             _chainBanner = HudChainBanner.Create(env);
-            {
-                BattleSpeedStep step = BattleClock.StepOfSpeed(env.Settings.Speed);
-                _speedBtn.Show(BattleSpeed.Label(step), BattleSpeed.Chevrons(step));
-            }
 
             // ---- follow the figures: the frame's real time ----
             // js: scenes/battle/hud.js:268 (clock.onFrame((dtScene, real) => { dtReal = real || 16; }))
-            _offFrame = env.Clock.OnFrame((dtScene, real) => { _dtReal = real > 0f ? real : 16f; });
+            // The journal opens and closes by its button, J and its own close, all outside the hud, so whether it stands is
+            // read here; the frame walk runs while the journal holds the scene clock, too.
+            _offFrame = env.Clock.OnFrame((dtScene, real) =>
+            {
+                _dtReal = real > 0f ? real : 16f;
+                SyncJournalButton();
+            });
 
             // ---- the end of the battle: the field settles under the result card (review fix) ----
             // js: scenes/battle/hud.js:465
@@ -312,9 +357,49 @@ namespace Trial.Battle
             RegisterGeom();
         }
 
-        /// <summary>createHud(env, opts).</summary>
+        /// <summary>createHud(env, opts), with what the header band shows from the app.</summary>
         // js: scenes/battle/hud.js:105
-        public static Hud Create(BattleViewEnv env, HudOpts opts) => new Hud(env, opts);
+        public static Hud Create(BattleViewEnv env, HudOpts opts, HudHeader header = null) => new Hud(env, opts, header);
+
+        // ---- the header band ---------------------------------------------------------------------------------------
+
+        private BattleSpeedStep SpeedStepNow() => BattleClock.StepOfSpeed(_env.Settings.Speed);
+
+        /// <summary>The turn (the frame's) and the fight of a run of fights: the app's, else the frame's, as the JS corner read them.</summary>
+        private void ShowTurn(CornerFrame corner)
+        {
+            CornerFrame c = corner ?? new CornerFrame();
+            bool app = _opts.ChainTotal != 0;
+            int index = app ? _opts.ChainIndex : c.ChainIndex;
+            int total = app ? _opts.ChainTotal : c.ChainTotal;
+            string key = c.Turn + ":" + index + "/" + total;
+            if (key == _tagKey) return;
+            _tagKey = key;
+            _header.SetTags(HeaderBand.BattleTags(c.Turn, index, total));
+        }
+
+        private void SyncJournalButton()
+        {
+            bool open = _env.Geom.JournalEdge?.Invoke() != null;
+            if (open == _journalLit) return;
+            _journalLit = open;
+            ShowJournalButton();
+        }
+
+        private void ShowJournalButton() =>
+            _header.SetButton(HeaderButtonKind.Journal,
+                _journalLit ? HeaderButtonState.On : _ended ? HeaderButtonState.Off : HeaderButtonState.Ready);
+
+        /// <summary>
+        /// The speed and the settings as the battle allows them, off once it is over. They stay standing, dimmed, so the
+        /// buttons beside them keep their places under the result card.
+        /// </summary>
+        private void ShowSwitches()
+        {
+            _header.SetButton(HeaderButtonKind.Speed, _switchesOn ? HeaderButtonState.Ready : HeaderButtonState.Off);
+            _header.SetButton(HeaderButtonKind.Settings,
+                _switchesOn && _opts.SettingsInBattle ? HeaderButtonState.Ready : HeaderButtonState.Off);
+        }
 
         // ---- row helpers (hud.js:62-103) ---------------------------------------------------------------------------
 
@@ -482,15 +567,13 @@ namespace Trial.Battle
         {
             if (frame == null) return;
             DepictionFrame f = frame;
-            _corner.Bind(f.Corner);
-            // js: if (corner.el && corner.el.offsetWidth) cornerRight = corner.el.offsetLeft + corner.el.offsetWidth;
-            // offsetLeft / offsetWidth are whole px (the tag stands at the whole x 24, so the sum rounds as each part does).
-            RectTransform cornerEl = _corner.El;
-            if (cornerEl && cornerEl.gameObject.activeInHierarchy && OffsetPx(cornerEl.rect.width) != 0f) _cornerRight = OffsetPx(_corner.Right);
+            ShowTurn(f.Corner);
             // StaminaTagView: the divider and the dashed dots before the bind below shows the stamina.
             _stamina.SetDivider(f.StanceDivider);
             _stamina.SetNextRecovery(f.Player != null ? f.Player.NextRecovery : 0);
             _player.Bind(f.Player);
+            // The bind's stamina reaches the band through the panel's OnStamina; its HP, and the max the events' calls keep, here.
+            if (f.Player != null) _playerFacade.Bound(f.Player);
             List<EnemyEntry> list = EnemiesOf(f);
             _multi = list.Count > 1;
             int focus = f.Enemies != null && f.Enemy != null ? f.Enemies.FindIndex(x => x != null && x.Unit == f.Enemy) : -1;
@@ -909,7 +992,9 @@ namespace Trial.Battle
         private Promise SettleEndOf(float ms, BattleOutcome outcome)
         {
             _endTurn.SetOff(true);
-            _journalBtn.SetOff(true);
+            // The journal's button goes off with the plate (a click there moves the result on, as anywhere on the screen).
+            _ended = true;
+            ShowJournalButton();
             _tip?.Hide();
             UiNode scrim = _scrim ? UiNode.Of(_scrim) : null;
             if (scrim) scrim.Visible = true;
@@ -975,15 +1060,12 @@ namespace Trial.Battle
         /// <summary>Number.prototype.toFixed(digits) read back as a number (the style string the JS writes).</summary>
         private static float Fixed(float x, int digits) => (float)Math.Round((double)x, digits, MidpointRounding.AwayFromZero);
 
-        /// <summary>An element's offsetLeft / offsetWidth: the layout px snapped to whole px (Math.round's half up).</summary>
-        private static float OffsetPx(float x) => (float)Math.Floor(x + 0.5);
-
         // ---- api ---------------------------------------------------------------------------------------------------------
 
         // js: scenes/battle/hud.js:550
         public IStatusPanel Status(UnitSide side, int unit = -1)
         {
-            if (side == UnitSide.Player) return _player;
+            if (side == UnitSide.Player) return _playerFacade;
             if (unit >= 0 && _enemies.TryGetValue(unit, out EnemyView v)) return v.Status;
             return PrimaryView().Status;
         }
@@ -1149,15 +1231,16 @@ namespace Trial.Battle
         // js: scenes/battle/hud.js:641
         public Promise LossInk(string word, float inkMs, float wordMs) => _lossInk.Show(word, inkMs, wordMs);
 
+        /// <summary>The speed the settings hold now, in the band's speed button (its word is HeaderBand.SpeedLabel's).</summary>
         // js: scenes/battle/hud.js:642
-        public void Speed(string label, int chevrons) => _speedBtn.Show(label, chevrons);
+        public void Speed(string label, int chevrons) => _header.SetSpeed(HeaderBand.SpeedLabel(SpeedStepNow()));
 
-        /// <summary>The speed switch (and the settings gear beside it) shown or not: the battle's own switches, gone once it is over.</summary>
+        /// <summary>The battle's own switches (the speed, the settings) take a press or not: off once it is over.</summary>
         // js: scenes/battle/hud.js:644
         public void SetSpeedVisible(bool on)
         {
-            _speedBtn.SetVisible(on);
-            _settingsBtn?.SetVisible(on);
+            _switchesOn = on;
+            ShowSwitches();
         }
 
         /// <summary>Esc (review 21): closes a chip's or a stance's detail pinned by a right click; returns whether one was open.</summary>
@@ -1228,10 +1311,7 @@ namespace Trial.Battle
             _player.Destroy();
             _played.Destroy();
             _endTurn.Destroy();
-            _corner.Destroy();
-            _speedBtn.Destroy();
-            _journalBtn.Destroy();
-            _settingsBtn?.Destroy();
+            _header.Destroy();
             _result.Destroy();
             _lossInk.Destroy();
             _chainBanner.Destroy();
@@ -1413,5 +1493,67 @@ namespace Trial.Battle
             _buildTintField = null;
             _buildTintLooked = false;
         }
+    }
+
+    /// <summary>
+    /// hud.status(Player): the hero's number panel, whose HP the header band shows too (#1074). The player's calls set the
+    /// number as they land (the bar's slide is the panel's own); the stamina reaches the band through the panel's OnStamina.
+    /// </summary>
+    internal sealed class HudPlayerPanel : IStatusPanel
+    {
+        private readonly HudStatusPanel _panel;
+        private readonly HeaderBar _header;
+        private int _maxHp;
+
+        internal HudPlayerPanel(HudStatusPanel panel, HeaderBar header)
+        {
+            _panel = panel;
+            _header = header;
+        }
+
+        /// <summary>The frame bound the panel: its HP and its max, which the events' HP calls keep.</summary>
+        internal void Bound(UnitFrame unit)
+        {
+            _maxHp = unit.HpMax;
+            _header.SetHp(unit.Hp, _maxHp);
+        }
+
+        public int Hp => _panel.Hp;
+        public bool Shown => _panel.Shown;
+        public PanelBox Box() => _panel.Box();
+        public void SetGuard(int n) => _panel.SetGuard(n);
+        public Promise PopGuard(int n, float ms = 260f) => _panel.PopGuard(n, ms);
+        public Promise CrackGuard(float ms) => _panel.CrackGuard(ms);
+
+        public void SetHp(int hp)
+        {
+            _panel.SetHp(hp);
+            _header.SetHp(hp, _maxHp);
+        }
+
+        public Promise AnimateHp(int hp, float ms)
+        {
+            _header.SetHp(hp, _maxHp);
+            return _panel.AnimateHp(hp, ms);
+        }
+
+        public Promise AnimateTrail(float ms) => _panel.AnimateTrail(ms);
+        public void SnapTrail() => _panel.SnapTrail();
+
+        public void SetHpKeepingTrail(int hp)
+        {
+            _panel.SetHpKeepingTrail(hp);
+            _header.SetHp(hp, _maxHp);
+        }
+
+        public void ShowHpLoss(int n) => _panel.ShowHpLoss(n);
+        public void SetStatus(string label, int stacks) => _panel.SetStatus(label, stacks);
+        public Promise PlayStatus(string label, int stacks, EffectId beat, float ms) => _panel.PlayStatus(label, stacks, beat, ms);
+        public void SetStamina(int stamina, int max) => _panel.SetStamina(stamina, max);
+        public Promise LightPips(int stamina, int max, float perPipMs) => _panel.LightPips(stamina, max, perPipMs);
+        public Promise PopPips(float ms) => _panel.PopPips(ms);
+        public Promise GreyOut(float ms) => _panel.GreyOut(ms);
+        public void SetDown(bool on) => _panel.SetDown(on);
+        public void SetFocus(bool on) => _panel.SetFocus(on);
     }
 }
