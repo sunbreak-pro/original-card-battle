@@ -1,6 +1,6 @@
 // Port of scenes/meta/title.js: the title — the lair at its deepest (layer 7's backdrop values from the bridge: the
-// violet spring, the miasma rising slowly), one heir standing at its edge, the line from concept-v3 §1 written top to
-// bottom on the right, and はじめから / つづきから / 設定. The router mounts it; it only calls back.
+// violet spring, the miasma rising slowly), one heir standing at its edge, and はじめから / つづきから / 設定. The router
+// mounts it; it only calls back.
 //
 // The menu's rules (which items open, where the cursor starts, how ↑↓ skip the shut ones, what a choice asks for) are
 // Trial.Script.TitleMenu; the texts are MetaText; the times are MetaTimelines. This file keeps the looks (meta.css's
@@ -9,6 +9,9 @@
 // Deviation (meta-a.md §1.3): the JS's leave() makes fresh stylers for the figure and the name, so a leave during the
 // entrance runs two tweens on one element; here the leave tweens the entrance's own stylers, so its tween replaces the
 // entrance's on the same keys (the look of a leave after the entrance is the same).
+//
+// Departs from the JS (2026-11-25 Koudai-san found it unneeded, #1089): the line from concept-v3 §1 written top to bottom on the right
+// (title.js:32-44, meta.css:47-50) is left out, so its box, its letters and their entrance and leave tweens are gone.
 using System;
 using System.Collections.Generic;
 using TMPro;
@@ -41,18 +44,6 @@ namespace Trial.Meta
 
         /// <summary>meta.css:46 .ocbg-meta-title-rule.</summary>
         public const string RuleCss = "position: absolute; display: block; background: linear-gradient(90deg, var(--amber), color-mix(in srgb, var(--amber) 0%, transparent));";
-
-        /// <summary>meta.css:47 .ocbg-meta-title-tagline.</summary>
-        public const string TaglineCss = "display: flex; flex-direction: row-reverse; justify-content: flex-start; gap: 40px;";
-
-        /// <summary>meta.css:48 .ocbg-meta-title-col.</summary>
-        public const string ColCss = "writing-mode: vertical-rl; font: 400 46px/1 var(--font-display); letter-spacing: .22em; color: var(--ink); text-shadow: 0 0 18px color-mix(in srgb, var(--violet) 40%, transparent);";
-
-        /// <summary>meta.css:49 .ocbg-meta-title-col:last-child.</summary>
-        public const string ColLastCss = "margin-top: 96px;";
-
-        /// <summary>meta.css:50 .ocbg-meta-title-col span.</summary>
-        public const string ColSpanCss = "display: inline-block;";
 
         /// <summary>meta.css:51 .ocbg-meta-title-menu.</summary>
         public const string MenuCss = "display: flex; flex-direction: column; gap: var(--space-12);";
@@ -95,12 +86,6 @@ namespace Trial.Meta
         // js: scenes/meta/title.js:24-25 O.FootLight(200, false) at (-30, 196) of the frame
         private const float FootW = 200f, FootX = -30f, FootY = 196f;
 
-        // js: scenes/meta/title.js:33 the tagline's box
-        private const float TaglineX = 1440f, TaglineY = 104f, TaglineW = 280f, TaglineH = 880f;
-
-        /// <summary>meta.css:47 gap: 40px between the columns; :49 margin-top: 96px on the last.</summary>
-        private const float ColumnGap = 40f, LastColumnTop = 96f;
-
         // js: scenes/meta/title.js:47-48, :66, :81
         private const float NameX = 152f, NameY = 236f;
         private const float RuleX = 152f, RuleY = 300f, RuleW = 360f, RuleH = 2f;
@@ -136,8 +121,6 @@ namespace Trial.Meta
         private readonly RectTransform _figureWrap;
         private readonly GradientGraphic _foot;
         private readonly RectTransform _ground;
-        private readonly RectTransform _tagline;
-        private readonly VerticalText _taglineText;
         private readonly TextMeshProUGUI _name;
         private readonly RectTransform _rule;
         private readonly RectTransform _menu;
@@ -170,15 +153,6 @@ namespace Trial.Meta
             _foot = Ocb.FootLight(_figureWrap, FootW, false);
             Ui.Place(_foot.rectTransform, FootX, FootY);
             Ocb.Figure(_figureWrap, "swordsman");
-
-            // ---- the line, written top to bottom on the right (title.js:32-44) ----
-            _tagline = Ui.Div(_root, "ocbg-meta-title-tagline", TaglineX, TaglineY, TaglineW, TaglineH);
-            UiNode.Of(_tagline);
-            IReadOnlyList<string> lines = MetaText.TaglineLines;
-            var tops = new List<float>();
-            for (int i = 0; i < lines.Count; i++) tops.Add(i == lines.Count - 1 ? LastColumnTop : 0f);
-            _taglineText = VerticalText.Make(_tagline, lines, MetaStyle.Text(ColCss + ColSpanCss), TaglineW, ColumnGap, tops, "ocbg-meta-title-col");
-            foreach (TextMeshProUGUI ch in _taglineText.Chars) TextGlow.For(ch);   // text-shadow 0 0 18px violet 40%
 
             // ---- name and menu on the left (title.js:46-50) ----
             _name = Label.Make(_root, MetaText.GameName, MetaStyle.Text(NameCss), NameX, NameY, null, null, "ocbg-meta-title-name");
@@ -214,11 +188,6 @@ namespace Trial.Meta
             UiNode.Of(_rule).SetOrigin(0f, 0.5f);   // rule.style.transformOrigin = '0 50%'
             Styler pr0 = Styler.Of(_rule, o: 0f, s: 0.4f);
             _clock.Tween(pr0, new[] { ("o", 1f), ("s", 1f) }, 1100f, Ease.Out, 1000f);
-            for (int i = 0; i < _taglineText.Cells.Count; i++)
-            {
-                Styler p = Styler.Of(_taglineText.Cells[i], o: 0f, y: -10f);
-                _clock.Tween(p, new[] { ("o", 1f), ("y", 0f) }, 700f, Ease.Out, MetaTimelines.TitleTaglineCharAt(i));
-            }
             var menuIn = new List<Promise>();
             for (int i = 0; i < _rows.Count; i++)
             {
@@ -398,11 +367,10 @@ namespace Trial.Meta
             _items.Busy = true;
             if (enter) _sound.Play("titleEnter");
             _sound.Play("uiConfirm");
-            Styler pm = Styler.Of(_menu), pt = Styler.Of(_tagline);
+            Styler pm = Styler.Of(_menu);
             Styler pf = _pf0, pn = _pn0;   // the entrance's channels (see the head of the file)
             _clock.Tween(pm, new[] { ("o", 0f), ("x", -24f) }, 360f, Ease.In).Forget();
             _clock.Tween(pn, "o", 0f, 420f, Ease.In).Forget();
-            _clock.Tween(pt, "o", 0f, 700f, Ease.In).Forget();
             _clock.Tween(pf, new[] { ("o", 0f), ("y", 26f), ("s", 0.92f) }, 900f, Ease.In).Forget();
             await _clock.Tween(_fade, "o", 1f, 900f, Ease.InOut, 200f);
             cb?.Invoke();
