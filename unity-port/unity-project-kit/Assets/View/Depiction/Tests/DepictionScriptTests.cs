@@ -242,6 +242,18 @@ namespace Depiction.Tests
             }
         }
 
+        [Test]
+        public void TrialGuideDropsOnlyTheEverydayLine()
+        {
+            Assert.That(DepictionText.TrialGuide(DepictionText.IdleGuide), Is.Empty, "#1079: the everyday line is not printed");
+            Assert.That(DepictionText.TrialGuide(DepictionText.NothingPlayableGuide), Is.EqualTo(DepictionText.NothingPlayableGuide),
+                "the line that says no card can be played stays");
+            Assert.That(DepictionText.TrialGuide("手記を閉じるとプレイできます（Esc）"), Is.EqualTo("手記を閉じるとプレイできます（Esc）"),
+                "the trial's own lines stay");
+            Assert.That(DepictionText.TrialGuide(null), Is.Empty);
+            Assert.That(DepictionText.TrialGuide(""), Is.Empty);
+        }
+
         private static void Play(DepictionRunner runner, string cardId, DropZone zone, int expectedOrder)
         {
             PlayVerdict verdict = runner.TryPlay(cardId, zone, out DepictionEvent played);
