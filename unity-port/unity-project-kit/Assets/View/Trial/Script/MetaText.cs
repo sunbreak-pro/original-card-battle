@@ -3,9 +3,10 @@
 // (InheritanceText, HallView, EndingView), DeckBuilder, DepartureBuilder, CardFaceText / CoreText,
 // JournalBook / JournalTerms, BattleSpeed, ItemCatalogue. Fixed labels stay within 10 characters.
 //
-// Port of scenes/meta/text.js (the whole file, in its order). The JS arrow functions are methods here;
-// the frozen arrays are read-only lists. Every string is byte-identical to the JS (full-width spaces and
-// punctuation included); numbers print as a JS template prints an integer.
+// Port of scenes/meta/text.js (the whole file, in its order), less the title's vertical tagline, which the title no
+// longer writes (#1089). The JS arrow functions are methods here; the frozen arrays are read-only lists. Every
+// string is byte-identical to the JS (full-width spaces and punctuation included); numbers print as a JS template
+// prints an integer.
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -18,9 +19,6 @@ namespace Trial.Script
     {
         // ---- title (concept-v3.md §1: 短縮形) ----
         public const string GameName = "Original Card Battle";
-
-        public static IReadOnlyList<string> TaglineLines { get; } =
-            new ReadOnlyCollection<string>(new[] { "死ぬたびに人は変わる。", "だが、技と記憶は次の生へ。" });
 
         public const string NewGame = "はじめから";
         public const string Continue = "つづきから";

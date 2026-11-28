@@ -544,7 +544,6 @@ namespace Trial.Battle
         private int _heldUnit = -1;
         private CardFace _hoveredFace;
         private CardFace _reachFor;
-        private string _frameStanceHint = "";
         private bool _finishedCalled;
         private Action _resultSkip;
         /// <summary>When (real ms) the result card had risen (null before), and the last press that asked to skip it.</summary>
@@ -561,7 +560,7 @@ namespace Trial.Battle
         /// <summary>A refused card is sliding home: an end-turn asked for meanwhile waits for it (review fix).</summary>
         private bool _returningCard;
         private bool _endTurnQueued;
-        /// <summary>Tab while nothing is held (§3.4, two or more enemies): the enemy the floor's one N is read to.</summary>
+        /// <summary>Tab while nothing is held (§3.4, two or more enemies): the enemy that wears the rest focus.</summary>
         private int? _restingGapUnit;
         /// <summary>俊敏's free cell (§3.8): while the choice waits, its ways; else null.</summary>
         private FreeStepChoice _freeStep;
@@ -588,8 +587,6 @@ namespace Trial.Battle
         private HeldAction _carried;
         /// <summary>The card the player's event plays (its face: a push's way, a move's length), or null.</summary>
         private CardFace _eventFace;
-        /// <summary>The shade and the plate's 40 % are up (the enemy's turn): the 構えの予告 stays off.</summary>
-        private bool _enemyTurnShown;
         /// <summary>The pile list's log.</summary>
         private readonly List<string> _log = new List<string>();
         /// <summary>What the battle played, for the result screen (§2.5): cards by CardKind, traits fired.</summary>
@@ -650,7 +647,6 @@ namespace Trial.Battle
                     _heldUnit = unit >= 0 ? unit : -1;
                     // §4.7 / §5.2: the stamina it would pay turns to rings, and "▸ n" shows (on the enemy it frames).
                     ShowHeldCost();
-                    ShowReserveHint();
                     ShowHpLoss();
                     UpdateFloorReach();
                     LiftOmenForHeld();
@@ -660,7 +656,6 @@ namespace Trial.Battle
                     _heldFace = null;
                     _heldUnit = -1;
                     _hud.Stamina.ShowCost(0);
-                    ShowReserveHint();
                     ShowHpLoss();
                     UpdateFloorReach();
                     LiftOmenForHeld();
@@ -671,7 +666,6 @@ namespace Trial.Battle
                 {
                     if (unit >= 0) _heldUnit = unit;
                     ShowHeldCost();
-                    ShowReserveHint();
                     ShowHpLoss();
                     LiftOmenForHeld();
                 },
@@ -1248,8 +1242,6 @@ namespace Trial.Battle
             if (!_hand.SameHand(frame.Hand)) _hand.Build(frame.Hand);
             else _hand.Bind(frame.Hand);
             _hand.Layout();
-            _frameStanceHint = frame.StanceHint ?? "";
-            ShowReserveHint();
             ShowHpLoss();
             ShowLowHp(frame.Player != null ? frame.Player.Hp : 0);
         }
@@ -1305,16 +1297,6 @@ namespace Trial.Battle
             _hud.Stamina.ShowCost(u >= 0 ? _heldFace.CostFor(u) : _heldFace.Cost);
         }
 
-        /// <summary>§4.9 / §5.3: while a card is held, the 構えの予告 reads as it would once the card is paid for.</summary>
-        // js: scenes/battle/player.js:734
-        private void ShowReserveHint()
-        {
-            int u = HeldSlot();
-            string afterPay = _heldFace == null ? null : u >= 0 ? _heldFace.StanceHintAfterPayFor(u) : _heldFace.StanceHintAfterPay;
-            // battle-visual-v1 §4.9 「敵の番には出しません」 (review 19).
-            _hud.ReserveHint(_enemyTurnShown ? "" : afterPay ?? _frameStanceHint);
-        }
-
         /// <summary>
         /// §4.5 HP の減る分: the wick stripes on an enemy's HP bar while a card is held (CardFace.HpLossFor(k)); with several, a
         /// card aimed at one enemy wicks the enemy it is framed on only, one aimed at nobody wicks each by its own.
@@ -1327,7 +1309,7 @@ namespace Trial.Battle
             bool aimed = _heldFace != null && _heldFace.Aim == CardAim.Single;
             int framed = aimed ? _hand.FramedUnit() : -1;
             if (aimed && framed < 0) framed = _heldFace.TargetUnit >= 0 ? _heldFace.TargetUnit : 0;
-            // Several enemies: the floor's one N is the framed enemy's while the card is up, else the Tab's, else the nearest.
+            // Several enemies: a Tab's enemy that has fallen gives the rest focus up.
             if (_restingGapUnit != null)
             {
                 bool stands = false;
@@ -1335,7 +1317,6 @@ namespace Trial.Battle
                     if (k == _restingGapUnit.Value && !list[k].Down) { stands = true; break; }
                 if (!stands) _restingGapUnit = null;
             }
-            _field.ShowGapTo(list.Count > 1 ? (aimed ? framed : _restingGapUnit ?? -1) : -1);
             // Review 19: the enemy a Tab at rest chose wears the battle's focus, the amber edge, while nothing is held.
             _hud.SetRestFocus(list.Count > 1 && _heldFace == null && _restingGapUnit != null ? _restingGapUnit.Value : -1);
             if (list.Count <= 1)
@@ -1370,17 +1351,12 @@ namespace Trial.Battle
             else _field.HideReach();
         }
 
-        /// <summary>ShowEnemyTurn: the shade below y 790 and the end-turn plate at 40%; the 構えの予告 is off meanwhile (§4.9).</summary>
+        /// <summary>ShowEnemyTurn: the shade below y 790 and the end-turn plate at 40%.</summary>
         // js: scenes/battle/player.js:790
         private void ShowEnemyTurn(bool on)
         {
             _field.SetEnemyTurnShade(on);
             _hud.SetEnemyTurn(on);
-            if (on != _enemyTurnShown)
-            {
-                _enemyTurnShown = on;
-                ShowReserveHint();
-            }
         }
 
         // ---- the panels and the badge follow the figures (FollowFigures / FollowPanels) --------------
@@ -1842,13 +1818,12 @@ namespace Trial.Battle
                     }
                     if (EffectPlan.MovesOnFloor(cue))
                     {
-                        // §5.7 順 1〜2 (#586): the walk, 160 a cell, then the gap number counted again on arrival.
+                        // §5.7 順 1〜2 (#586): the walk, 160 a cell, then the recount's beat on arrival.
                         int cells = EffectPlan.CellsOf(cue);
                         await HoldBeat(EffectId.FloorMove, () => _field.MoveOnFloor(cue, cells, _switches.WaitMs(EffectId.FloorMove, cells)), () => _field.SnapOnFloor(cue), cells);
-                        var to = RecountTo(ev, cue);
-                        await HoldBeat(EffectId.GapRecount,
-                            () => _field.RecountGap(to.Gap, cue.PlayerCellAfter, PlayerSize(), to.Cell, Ms(EffectId.GapRecount)),
-                            () => _field.SetGap(to.Gap, cue.PlayerCellAfter, PlayerSize(), to.Cell));
+                        // The gap number is not drawn (#1079), but the beat still waits so the pause after a move stays as
+                        // BattlePacing sets it; whether to drop it is asked on #1093.
+                        await HoldBeat(EffectId.GapRecount, () => _clock.Wait(Ms(EffectId.GapRecount)), null);
                     }
                     else
                     {
@@ -1871,8 +1846,6 @@ namespace Trial.Battle
                         // Unity (2026-11-02, BattlePacing): the badge's pop takes what the slower beat leaves after the button's (JS 260).
                         await S.PopGuard(cue.GuardAfter, Math.Max(260f, Ms(EffectId.StanceCue) - BattlePacing.StanceCuePopMs));
                     }, () => S.SetGuard(cue.GuardAfter));
-                    // battle-visual-v1 §4.9 (review 19): the 構えの予告 has been granted — it goes now, not after the banner.
-                    if (T == UnitSide.Player) _hud.ReserveHint("");
                     break;
 
                 case CueKind.DiscardHand:
@@ -2075,24 +2048,6 @@ namespace Trial.Battle
         }
 
         /// <summary>
-        /// §5.7 順 2's recount counts to the enemy the floor's N is read to (review 19): the Tab's enemy's gap and cell from the
-        /// event's frame when this is the event's last move; else the cue's own.
-        /// </summary>
-        // js: scenes/battle/player.js:1353
-        private (int Gap, int Cell) RecountTo(DepictionEvent ev, Cue cue)
-        {
-            var own = (cue.GapAfter, cue.EnemyCellAfter);
-            if (_restingGapUnit == null || !MultiNow() || ev == null || ev.After == null) return own;
-            int i = ev.Cues.IndexOf(cue);
-            for (int j = i + 1; j < ev.Cues.Count; j++)
-                if (ev.Cues[j].Kind == CueKind.RangeSwitch && EffectPlan.MovesOnFloor(ev.Cues[j])) return own;
-            IReadOnlyList<EnemyFrame> list = EnemyShares(ev.After);
-            int at = _restingGapUnit.Value;
-            EnemyFrame uf = at >= 0 && at < list.Count ? list[at] : null;
-            return uf != null && !uf.Unit.Down && uf.Gap >= 0 && uf.Cell > 0 ? (uf.Gap, uf.Cell) : own;
-        }
-
-        /// <summary>
         /// 押し出し stands on the side that is moved and rides with it (§5.7 順 6): a push the player gave moves an enemy
         /// (Cue.Unit with its UnitCellAfter): then it is that enemy's.
         /// </summary>
@@ -2244,13 +2199,6 @@ namespace Trial.Battle
             if (side == UnitSide.Player && hp < S.Hp) PulseLowHp(hp);
             await HoldBeat(EffectId.HpDrain, () => S.AnimateHp(hp, Ms(EffectId.HpDrain)), () => S.SetHpKeepingTrail(hp), 1,
                 () => Effect(EffectId.HpTrail, () => S.AnimateTrail(Ms(EffectId.HpTrail)), () => S.SnapTrail()));
-        }
-
-        // js: scenes/battle/player.js:1491
-        private int PlayerSize()
-        {
-            DepictionFrame f = FrameNow;
-            return f != null && f.Floor != null ? Math.Max(1, f.Floor.PlayerSize) : 1;
         }
 
         /// <summary>§3.14 山札切れ (#455): the discard pile slides onto the draw pile in the middle of the draw.</summary>
@@ -3191,7 +3139,7 @@ namespace Trial.Battle
         public bool Returning => _returningCard;
 
         /// <summary>
-        /// Tab with nothing held (§3.4, two or more enemies): the floor's one N moves to the next standing enemy, left to
+        /// Tab with nothing held (§3.4, two or more enemies): the rest focus moves to the next standing enemy, left to
         /// right (`dir` −1 goes back). Returns whether it moved.
         /// </summary>
         // js: scenes/battle/player.js:2227
@@ -3223,7 +3171,7 @@ namespace Trial.Battle
             return true;
         }
 
-        /// <summary>The enemy a Tab at rest moved the floor's N to (§1.4 / §3.4), while it stands; −1 for none.</summary>
+        /// <summary>The enemy a Tab at rest moved the rest focus to (§1.4 / §3.4), while it stands; −1 for none.</summary>
         // js: scenes/battle/player.js:2243
         public int RestingUnit
         {

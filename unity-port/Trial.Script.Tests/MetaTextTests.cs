@@ -25,6 +25,10 @@ namespace Trial.Script.Tests
             ["StanceTermText"] = "置くと戦闘のあいだ効き続ける札の属性（水の構え・鉄壁の構え など）。上の「構え」の規則とは別",
         };
 
+        // The JS lists the C# leaves out on purpose (TRIAL-PORT.md, same section). JsMetaText is generated from the JS, so
+        // the list stays there. #1089: the title no longer writes the vertical tagline, so nothing would read it.
+        private static readonly HashSet<string> UnityDroppedLists = new HashSet<string> { "TaglineLines" };
+
         [Test]
         public void EveryStringMember_IsTheJs()
         {
@@ -57,9 +61,21 @@ namespace Trial.Script.Tests
             foreach (var pair in JsMetaText.Lists)
             {
                 PropertyInfo property = typeof(MetaText).GetProperty(pair.Key, BindingFlags.Public | BindingFlags.Static);
+                if (UnityDroppedLists.Contains(pair.Key))
+                {
+                    Assert.That(property, Is.Null, pair.Key + " is dropped in the C#");
+                    continue;
+                }
                 Assert.That(property, Is.Not.Null, pair.Key);
                 Assert.That((IReadOnlyList<string>)property.GetValue(null), Is.EqualTo(pair.Value), pair.Key);
             }
+        }
+
+        [Test]
+        public void EveryDroppedList_IsStillInTheJs()
+        {
+            // When text.js drops it too and JsMetaText is regenerated, the entry is no longer a departure: remove it.
+            foreach (string name in UnityDroppedLists) Assert.That(JsMetaText.Lists.ContainsKey(name), Is.True, name);
         }
 
         [Test]
@@ -94,13 +110,6 @@ namespace Trial.Script.Tests
             Assert.That(MetaText.SaveQuitOf(null), Is.EqualTo(MetaText.SaveQuit));
             Assert.That(MetaText.SaveNoteOf(null), Is.EqualTo(MetaText.SaveNote));
             Assert.That(MetaText.SaveQuitOf("lineage"), Is.EqualTo(MetaText.SaveToTitle));
-        }
-
-        [Test]
-        public void TheTagline_IsTwentyFourLetters()
-        {
-            // title.js times the letters of both columns through one count (the last starts at 2855 ms)
-            Assert.That(MetaText.TaglineLines.Select(l => MetaTimelines.Chars(l).Count), Is.EqualTo(new[] { 11, 13 }));
         }
 
         [Test]

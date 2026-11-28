@@ -10,8 +10,7 @@
 // CardFace.ReachCells); FloorSpec holds the arithmetic. Looks: OCB.FloorTile.
 //
 // Departs from the JS (2026-11-28 Koudai-san, #1079): the gap chip between the player and the enemy (its range icon, its
-// number and its brackets) is not drawn; the range is read from the cells. SetGap / RecountGap / SetGapHidden stay
-// because the field and the flow still call them.
+// number and its brackets) is not drawn; the range is read from the cells.
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -545,26 +544,6 @@ namespace Trial.Battle
             ApplyReach();
         }
 
-        /// <summary>
-        /// setGap(gap, playerCell, playerSize, enemyCell): nothing to draw — the gap chip is not drawn (#1079); FieldView still
-        /// calls it while a held card frames an enemy.
-        /// </summary>
-        // js: scenes/battle/field/floor.js:334
-        public void SetGap(int gap, int playerCell, int playerSize, int enemyCell)
-        {
-        }
-
-        /// <summary>
-        /// recountGap(…, ms) (§5.7 順 2): with no gap chip there is no number to count again (#1079), but the flow still holds
-        /// the beat after a walk, so the wait stays and the battle keeps the pace BattlePacing set.
-        /// </summary>
-        // js: scenes/battle/field/floor.js:348
-        public Promise RecountGap(int gap, int playerCell, int playerSize, int enemyCell, float ms)
-        {
-            if (_clock == null) return Promise.Resolved();
-            return _clock.Wait(ms);
-        }
-
         /// <summary>retireAim(ms): the battle is over — the aimed / dense / move cells fade (in) and stay clear.</summary>
         // js: scenes/battle/field/floor.js:378
         public Promise RetireAim(float ms)
@@ -614,12 +593,6 @@ namespace Trial.Battle
             if (_retiredUnits.Count + (_soloRetired ? 1 : 0) == before) return;
             if (_lastFloor == null || _cells == 0) return;
             BindCells(_lastFloor, _lastEnemies, null);
-        }
-
-        /// <summary>setGapHidden(on): nothing to hide — the gap chip is not drawn (#1079); FieldView still calls it on every frame.</summary>
-        // js: scenes/battle/field/floor.js:411
-        public void SetGapHidden(bool on)
-        {
         }
 
         /// <summary>

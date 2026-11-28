@@ -9,9 +9,9 @@
 // dashed slot. No number is written (B9: the piles read by their thickness). A click on a pile opens its list; the same
 // pile again closes it.
 //
-// The list: a drawer from the left (the journal drawer's mirror image) taking 30 % of the screen (PileList.WidthShare), with
-// a tab per pile and one row per kind of card, "突き 2 / 3" (PileCard: how many the pile holds / how many the deck holds), in
-// the order given. The rows follow every frame. The CSS strings are hud.css's (and the DS's Ocb.*Css) verbatim.
+// The list: a drawer from the left taking 30 % of the screen (PileList.WidthShare), the mirror image of the battle's journal
+// drawer (outside battle the journal takes the right half, #1089), with a tab per pile and one row per kind of card,
+// "突き 2 / 3" (PileCard: how many the pile holds / how many the deck holds), in the order given. The rows follow every frame. The CSS strings are hud.css's (and the DS's Ocb.*Css) verbatim.
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -39,7 +39,7 @@ namespace Trial.Battle
     public sealed class HudPiles
     {
         /// <summary>
-        /// KIND_BAND — DS PileDrawer (案 A, the 576 px drawer this list is; review 19 — the rows were bare text): each 40 px row
+        /// KIND_BAND — DS PileDrawer (案 A, the 576 px pile drawer this list is; review 19 — the rows were bare text): each 40 px row
         /// carries a 6×24 band in its card's attribute colour at its left, so the list scans by attribute. A name the catalogue
         /// lacks gets the steel band.
         /// </summary>
