@@ -85,24 +85,24 @@
 
 単位 1 を先に通し、2・3・4 を別々の worktree で並列に回し、最後に 5 でつなぎます。単位 4 は、片付け（#1093）が main に入り、それをこのブランチに取り込んでから始めます。
 
-1. [ ] 単位 1: 純 C# の値・並び・文と、描く部品
+1. [x] 単位 1: 純 C# の値・並び・文と、描く部品
    - `Trial/Bridge/Header*.cs` に、配置（高さ 96、余白 24、項目の間 28、ボタンの高さ 72 など）と、帯に出す中身の型（画面の種別、現在地、現在地の札、暦の日数と止まっているか、HP、スタミナ、束の枚数、ボタンごとの有効と点灯、速さの文）を置く
    - 4 つの画面の種別が、同じ配置の値を読むことをテストで固定する。帯の高さと、探索の地図の上端（`StrataLayout.StageTop`）が同じであることも固定する
    - 現在地の幅を固定する切り替えを持つ（既定は詰めた形）
    - `Trial/Header/` に、帯を描く部品を作る。開き先はデリゲート（手記・所持カード・設定・速さ・支度の卓から戻る）で受ける。ボタンの下に出す吹き出しは、帯の下端より下に出す
    - 新しいアセンブリを、`dotnet test` と `npm run unity:check` が読む形で登録する（`TRIAL-PORT.md` のアセンブリの表に従う）
-2. [ ] 単位 2: 拠点と支度の卓への取り付け
+2. [x] 単位 2: 拠点と支度の卓への取り付け
    - 拠点: 見出しと説明、手記・設定・タイトルへのチップ、暦を外し、ヘッダーに替える。「タイトルへ」の経路（`LeaveToTitle`、`OnTitle`）は、設定の画面に同じ働きがあることを確かめてから外す
    - 支度の卓: 見出し（戻る・題・説明）、暦、手記と設定を外し、ヘッダーに替える。束の枚数は、卓で増減するたびに更新する
    - `DepartGate`・`DepartTable` の配置から、ヘッダーに移った領域を外し、テストを直す
-3. [ ] 単位 3: 探索への取り付け
+3. [x] 単位 3: 探索への取り付け
    - 今の帯（層・暦・体・訓練の刻み・最大スタミナ・3 つのボタン）を、ヘッダーに替える。`SyncMarks` の中の、札の持ち上げの同期は残す
    - 所持カードは、`Screen.CanOpenCards` が偽のあいだ押せない見た目にする
-4. [ ] 単位 4: 戦闘への取り付け（#1093 を取り込んだあと）
+4. [x] 単位 4: 戦闘への取り付け（#1093 を取り込んだあと）
    - 左上の表示・速さ・手記・歯車を、ヘッダーに替える。ターン数と連戦は、現在地の札に出す
    - 構えの「上段」の置き場を、帯の下（y 108）へ動かす。大きい敵の予兆の札と重ならないことを確かめる
    - HP とスタミナは、戦闘のフレームの値を流す。左下のスタミナの板と、足元の HP の板は、そのまま残す（#1080・#1082 が扱う）
-5. [ ] 単位 5: つなぎ込みと文書
+5. [x] 単位 5: つなぎ込みと文書
    - `Boot/Main.cs` で、束の枚数・暦の日数・開き先を各画面に渡す
    - `battle-visual-v1.md` にヘッダーの配置と値の節を足し、版を上げる。`TRIAL-PORT.md` の「Where this port departs from the JS」と、アセンブリの表を直す。`.claude/CLAUDE.md` の試遊版の節に 1〜2 文を足す
 6. [ ] 全体確認 8 本と、別の目での確認
@@ -125,12 +125,12 @@
 
 ## Verification
 
-- [ ] `dotnet test unity-port/UnityCorePort.slnx -p:UseSharedCompilation=false --disable-build-servers` が通る
+- [x] `dotnet test unity-port/UnityCorePort.slnx -p:UseSharedCompilation=false --disable-build-servers` が通る
 - [ ] `npm run unity:check -- --allow-leftovers --allow-unbuilt` が exit 0
-- [ ] `npm run build`、`npm run lint`、`npm run test:run -- --maxWorkers=4`、`npm run sources -- --check`、`npm run md:tables -- --check`、`npm run issues:test` が exit 0
-- [ ] ヘッダーの文字が 16 px 以上で、琥珀はプレイヤーの側（スタミナと束の枚数）だけに使っている
-- [ ] 4 つの画面が同じ配置の値を読むことを、テストが確かめている
-- [ ] `battle-visual-v1.md` にヘッダーの配置と値が入り、`TRIAL-PORT.md` に JS と変えた点が入っている
+- [x] `npm run build`、`npm run lint`、`npm run test:run -- --maxWorkers=4`、`npm run sources -- --check`、`npm run md:tables -- --check`、`npm run issues:test` が exit 0
+- [x] ヘッダーの文字が 16 px 以上で、琥珀はプレイヤーの側（スタミナと束の枚数）だけに使っている
+- [x] 4 つの画面が同じ配置の値を読むことを、テストが確かめている
+- [x] `battle-visual-v1.md` にヘッダーの配置と値が入り、`TRIAL-PORT.md` に JS と変えた点が入っている
 - [ ] 別の目での確認で、直さないと通せない指摘が 0 件
 - [ ] こうだいさんが Unity で見る点: 4 つの画面で同じ場所に同じものがあるか / 暦の残り日数がひと目で読めるか / HP とスタミナが戦闘中でも目に入るか / 札・手記・設定を迷わず押せるか / 戦闘でヘッダーが敵の姿や予兆のじゃまになっていないか / 画面ごとに暦・HP・スタミナの位置がずれるのが気になるか
 
