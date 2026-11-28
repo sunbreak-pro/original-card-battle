@@ -86,12 +86,16 @@ namespace Trial.Meta
         /// </summary>
         public Action<LifeStart> OnDepart;
 
+        /// <summary>The settings (Esc). Null: the carry-over's base dims the band's 設定 and Esc opens nothing.</summary>
         public Action OnSettings;
 
-        /// <summary>Null hides the 手記 button and the J key.</summary>
+        /// <summary>Null hides the 手記 button and the J key (the carry-over's base dims the band's 手記).</summary>
         public Action OnJournal;
 
-        /// <summary>Null hides 「タイトルへ」.</summary>
+        /// <summary>
+        /// 継承の間's 「タイトルへ」 (HallScene); null hides it. The carry-over's base (GateScene) does not read it: its way
+        /// back to the title is the settings' 「保存してタイトルへ」 (#1074).
+        /// </summary>
         public Action OnTitle;
 
         /// <summary>
@@ -133,13 +137,13 @@ namespace Trial.Meta
         /// </summary>
         public Action<DepartureChoice> OnSetOut;
 
-        /// <summary>「← 継承の間へ」 (「← 拠点へ」 under the carry-over).</summary>
+        /// <summary>The header band's 「拠点へ戻る」 chip (#1074), and Esc while there is no <see cref="OnSettings"/>.</summary>
         public Action OnBack;
 
-        /// <summary>Null: Esc goes back instead of opening the settings, and the gear is hidden.</summary>
+        /// <summary>Null: Esc goes back instead of opening the settings, and the band's 設定 is dimmed.</summary>
         public Action OnSettings;
 
-        /// <summary>Null hides the 手記 button and the J key.</summary>
+        /// <summary>Null: the J key opens nothing and the band's 手記 is dimmed.</summary>
         public Action OnJournal;
     }
 

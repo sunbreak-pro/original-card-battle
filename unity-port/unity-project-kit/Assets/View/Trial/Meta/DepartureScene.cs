@@ -2,9 +2,11 @@
 // steps (デッキを組む, departure.js:200-507; 出立の支度, departure.js:509-658) laid on one table. The owned cards are on
 // the left as small cards, the shelf of tools and consumables under them, and the pack on the right: the deck as a pile
 // with its count and gauge, the tool and consumable slots, one reading panel for the card or thing under the pointer,
-// the preset decks and 出立する. The collapse calendar stands in the header. The JS's talent is gone since #1045 and the
-// attribute breakdown of the canvas's pack is left out (2026-11-25 Koudai-san; the detail view is #1054).
-// This file holds the screen, its header, the cards, the pack, the reading panel, the leave, the keys and the draft;
+// the preset decks and 出立する. The shared header band stands on top (#1074): 「拠点」 with 「支度の卓」 and the chip back,
+// the collapse calendar, HP and stamina at full, and the deck's count, kept as the deck changes. The JS's talent is
+// gone since #1045 and the attribute breakdown of the canvas's pack is left out (2026-11-25 Koudai-san; the detail
+// view is #1054).
+// This file holds the screen, its band, the cards, the pack, the reading panel, the leave, the keys and the draft;
 // the shelf and the slots are DepartureSuppliesView.cs. DepartureSupplies.js is Trial.Bridge.DepartureCarry, cardFace.js
 // is MetaCardFace, and every box's place and size is Trial.Bridge.DepartTable (held under dotnet test).
 //
@@ -24,6 +26,7 @@ using InheritanceCore;
 using TMPro;
 using Trial.Bridge;
 using Trial.Geometry;
+using Trial.Header;
 using Trial.Kit;
 using Trial.Script;
 using UnityEngine;
@@ -35,32 +38,6 @@ namespace Trial.Meta
 {
     public sealed class DepartureScene : IScene
     {
-        // ---- meta.css: 出立, verbatim (the parts the table keeps) -------------------------------------------------------
-
-        /// <summary>meta.css:152 .ocbg-meta-back.</summary>
-        internal const string BackCss = "display: inline-flex; align-items: center; gap: var(--space-8); padding: 0 18px; background: var(--panel); border: var(--stroke-rule) solid var(--rule); border-radius: var(--radius-panel); font: 700 18px/1 var(--font-body); letter-spacing: .06em; transition: border-color .14s;";
-
-        /// <summary>meta.css:153 .ocbg-meta-back:hover.</summary>
-        internal const string BackHoverCss = "border-color: var(--ink);";
-
-        /// <summary>meta.css:423 .ocbg-meta-back.</summary>
-        internal const string BackNoWrapCss = "white-space: nowrap;";
-
-        /// <summary>meta.css:424 .ocbg-meta-back:hover.</summary>
-        internal const string BackHoverLiftCss = "transform: translateX(-2px);";
-
-        /// <summary>meta.css:425 .ocbg-meta-back.</summary>
-        internal const string BackTransitionCss = "transition: border-color .14s, transform .14s;";
-
-        /// <summary>meta.css:444 .ocbg-meta-bonus.</summary>
-        internal const string BonusCss = "display: inline-flex; align-items: center; gap: 10px; padding: 7px 16px; border: var(--stroke-rule) solid var(--wick); border-radius: var(--radius-panel); background: color-mix(in srgb, var(--wick) 10%, var(--panel)); color: var(--ink); font: 400 18px/1.2 var(--font-body); white-space: nowrap;";
-
-        /// <summary>meta.css:445 .ocbg-meta-bonus b.</summary>
-        internal const string BonusBCss = "font: 700 18px/1.2 var(--font-body); letter-spacing: .04em;";
-
-        /// <summary>meta.css:446 .ocbg-meta-bonus-dot.</summary>
-        internal const string BonusDotCss = "width: 10px; height: 10px; flex: none; border-radius: 50%; background: var(--wick); box-shadow: 0 0 8px var(--wick);";
-
         // ---- departure.js: constants ------------------------------------------------------------------------------
 
         // js: scenes/meta/departure.js:40 — the attribute's icon and its role colour (battle-visual-v1 §2.2), keyed by BattleAttribute.
@@ -222,9 +199,8 @@ namespace Trial.Meta
         private string _hoverItemKind;
         private BattleCore.CardDef _hoverCard;
 
-        // the header
-        private DepButton _backBtn;
-        private MetaButton _settingsBtn, _journalBtn;
+        // the header band
+        private HeaderBar _header;
 
         // the cards
         private RectTransform _filters;
@@ -328,8 +304,6 @@ namespace Trial.Meta
 
         internal DepartureCtx Ctx => _ctx;
 
-        /// <summary>「継承の間へ」, or 「拠点へ」 under the carry-over (#1025), whose hall is titled 拠点.</summary>
-        private string HallLabel => _ctx.LifeStart?.Carryover != null ? InheritanceText.ToBaseButton : InheritanceText.ToHallButton;
         internal MetaSound Sound => _sound;
         internal SceneClock Clock => _clock;
         internal DeckBuilder Deck => _deck;
@@ -369,103 +343,50 @@ namespace Trial.Meta
         // js: scenes/meta/departure.js:160
         private bool IsOwned(string id) => _owned == null || _owned.Contains(id);
 
-        // js: scenes/meta/departure.js:165
+        // ================================================================================ the header band
+
         /// <summary>
-        /// bonusChip(line): what the life's limits raise (the bridges' RaisedLine under DepartureBuilder.BonusLabel), sized
-        /// to its content at (0, 0) of parent; nothing on a life without the survivor's bonus.
+        /// The shared band (#1074): 「拠点へ戻る」 goes back as Esc does without the settings; the owned cards stay lit (this is
+        /// their screen); the journal and the settings open as J and Esc do, and stand dimmed when the router gives no way
+        /// to them. The survivor's bonus, which stood beside the old title, moves to the tool heading's row (DrawBonus).
         /// </summary>
-        internal static RectTransform BonusChip(RectTransform parent, string line)
-        {
-            if (string.IsNullOrEmpty(line)) return null;
-            RectTransform chip = Ui.Div(parent, "ocbg-meta-bonus");
-            UiNode.Of(chip);
-            BoxGraphic.On(chip, BonusCss);
-            BoxGraphic dot = BoxGraphic.Make(chip, BonusDotCss, 0f, 0f, 10f, 10f, "ocbg-meta-bonus-dot");
-            Ocb.NoShrink(dot);
-            Label.Make(chip, DepartureBuilder.BonusLabel, MetaStyle.Text(BonusCss + BonusBCss), "b");
-            Label.Make(chip, line, MetaStyle.Text(BonusCss), "span");
-            Ocb.Flow(chip, BonusCss);
-            return chip;
-        }
-
-        // ================================================================================ the header
-
         private void BuildHeader()
         {
-            TableBox head = DepartTable.Header;
-
-            // ← 継承の間へ (拠点へ under the carry-over)
-            _backBtn = new DepButton(_root, "ocbg-meta-back", BackCss + BackNoWrapCss + BackTransitionCss)
-                .OnHover(BackHoverCss + BackHoverLiftCss)
-                .Done();
-            _backBtn.OnClick = Back;
-            MetaUtil.Icon(_backBtn.Root, "back", 22f, DsTokens.Ink);
-            Label.Make(_backBtn.Root, HallLabel, MetaStyle.Text(BackCss + BackNoWrapCss), "span");
-            Ocb.Flow(_backBtn.Root, BackCss, null, null, head.H);
-            float backW = _backBtn.Node.W;
-
-            // the title, then the survivor's bonus (what the limits raise) or the lead
-            TextStyle titleS = MetaStyle.Text(TableCss.Title);
-            float titleW = TextMeasure.Width(DepartTable.Title, titleS);
-            string raised = string.Join("、", new[] { _deck.RaisedLine, _supplies.RaisedLine }.Where(l => !string.IsNullOrEmpty(l)));
-            RectTransform bonus = BonusChip(_root, raised);
-            TextStyle leadS = MetaStyle.Text(TableCss.Lead);
-            float tailW = bonus != null ? UiNode.Of(bonus).W : TextMeasure.Width(DepartTable.Lead, leadS);
-            float[] left = DepartTable.RowFrom(head.X, DepartTable.HeaderGap, backW, titleW, tailW);
-            _backBtn.Node.Place(left[0], head.Y);
-            Label.Make(_root, DepartTable.Title, titleS, left[1], head.Y + (head.H - titleS.LineHeightPx) / 2f, null, null, "ocbg-meta-dep-title");
-            if (bonus != null) UiNode.Of(bonus).Place(left[2], head.Y + (head.H - UiNode.Of(bonus).H) / 2f);
-            else Label.Make(_root, DepartTable.Lead, leadS, left[2], head.Y + (head.H - leadS.LineHeightPx) / 2f, null, null, "lead");
-
-            // the right end: the calendar, then the journal (J) and 設定 (Esc) when the router gives them
-            // (CAMP_FACILITIES_DESIGN.md §3.3 / §3.5); 設定 stands at the right edge, as in 継承の間.
-            RectTransform calendar = BuildCalendar(out float calW);
-            var widths = new List<float> { calW };
-            if (_ctx.OnJournal != null) widths.Add(56f);
-            if (_ctx.OnSettings != null) widths.Add(120f);
-            float[] right = DepartTable.RowTo(head.Right, 16f, widths.ToArray());
-            UiNode.Of(calendar).Place(right[0], head.Y);
-            int at = 1;
-            if (_ctx.OnJournal != null)
+            _header = HeaderBar.Create(_root, DepartTable.BandOf(_lifeStart?.Lineage?.Calendar, _deck.Total), new HeaderActions
             {
-                _journalBtn = MetaButton.ChipIcon(_root, "journal", 30f, right[at++], head.Y, 56f, head.H, DsTokens.Ink);
-                TitleTip.On(_journalBtn.Box, global::Journal.JournalBook.Heading);
-                _journalBtn.Click += () => { if (!_busy) _ctx.OnJournal?.Invoke(); };
-            }
-            if (_ctx.OnSettings != null)
-            {
-                _settingsBtn = MetaButton.Chip(_root, MetaText.Settings, "Esc", right[at], head.Y, 120f, head.H);
-                _settingsBtn.Click += OpenSettings;
-            }
+                OnBack = Back,
+                OnJournal = OpenJournal,
+                OnSettings = OpenSettings,
+            });
+            if (_ctx.OnJournal == null) _header.SetButton(HeaderButtonKind.Journal, HeaderButtonState.Off);
+            if (_ctx.OnSettings == null) _header.SetButton(HeaderButtonKind.Settings, HeaderButtonState.Off);
+            DrawBonus();
         }
 
+        // js: scenes/meta/departure.js:165
         /// <summary>
-        /// The collapse calendar (#1051): the hourglass, 「崩壊まで 残り」, the days left (the lineage's calendar) and 「日」 in a
-        /// panel 56 tall. While a king is down the calendar stands still and the days turn steel, as in 継承の間.
+        /// bonusChip(line): what the life's limits raise (the bridges' RaisedLine under DepartureBuilder.BonusLabel), as a tag
+        /// at the right end of the tool heading's row (DepartTable.BonusTag); nothing on a life without the survivor's
+        /// bonus. A line cut by the tag's width reads whole on hover.
         /// </summary>
-        private RectTransform BuildCalendar(out float width)
+        private void DrawBonus()
         {
-            DungeonCore.CalendarState cal = _lifeStart?.Lineage?.Calendar ?? DungeonCore.CalendarState.Fresh;
-            const float pad = 18f, gap = 12f, icon = 26f;
-            float h = DepartTable.Header.H;
-            TextStyle words = MetaStyle.Text(TableCss.CalendarWords), days = MetaStyle.Text(TableCss.CalendarDays);
-            string n = cal.DaysLeft.ToString(CultureInfo.InvariantCulture);
-            float wBefore = TextMeasure.Width(DepartTable.CalendarBefore, words), wDays = TextMeasure.Width(n, days), wAfter = TextMeasure.Width(DepartTable.CalendarAfter, words);
-            float[] xs = DepartTable.RowFrom(pad, gap, icon, wBefore, wDays, wAfter);
-            width = xs[3] + wAfter + pad;
-            RectTransform box = Ui.Div(_root, "ocbg-meta-dep-calendar", 0f, 0f, width, h);
-            UiNode.Of(box);
-            BoxGraphic.On(box, TableCss.CalendarBox);
-            PathGraphic hg = MetaUtil.Icon(box, "hourglass", icon, cal.IsFrozen ? DsTokens.Steel : DsTokens.Ink);
-            Ui.Place(hg.rectTransform, xs[0], (h - icon) / 2f);
-            // the three on one baseline
-            float bw = TextMath.CssBaselineFromTop(words.Spec), bd = TextMath.CssBaselineFromTop(days.Spec);
-            float dTop = (h - days.LineHeightPx) / 2f, baseline = dTop + bd;
-            Label.Make(box, DepartTable.CalendarBefore, words, xs[1], baseline - bw, null, null, "before");
-            TextMeshProUGUI d = Label.Make(box, n, days, xs[2], dTop, null, null, "days");
-            if (cal.IsFrozen) Label.SetColor(d, DsTokens.Steel);
-            Label.Make(box, DepartTable.CalendarAfter, words, xs[3], baseline - bw, null, null, "after");
-            return box;
+            string line = string.Join("、", new[] { _deck.RaisedLine, _supplies.RaisedLine }.Where(l => !string.IsNullOrEmpty(l)));
+            if (line.Length == 0) return;
+            TextStyle labelS = MetaStyle.Text(TableCss.BonusLabel), lineS = MetaStyle.Text(TableCss.BonusLine);
+            string label = DepartureBuilder.BonusLabel;
+            float labelW = TextMeasure.Width(label, labelS), lineW = TextMeasure.Width(line, lineS);
+            float lead = DepartTable.BonusDot + DepartTable.BonusDotGap + labelW + DepartTable.BonusWordsGap;
+            TableBox tag = DepartTable.BonusTag(lead + lineW);
+            BoxGraphic box = BoxGraphic.Make(_root, TableCss.Bonus, tag.X, tag.Y, tag.W, tag.H, "ocbg-meta-bonus");
+            float x = 1f + DepartTable.BonusPadX;
+            BoxGraphic.Make(box.rectTransform, TableCss.BonusDot, x, (tag.H - DepartTable.BonusDot) / 2f, DepartTable.BonusDot, DepartTable.BonusDot, "dot");
+            x += DepartTable.BonusDot + DepartTable.BonusDotGap;
+            Label.Make(box.rectTransform, label, labelS, x, (tag.H - labelS.LineHeightPx) / 2f, null, null, "b");
+            x += labelW + DepartTable.BonusWordsGap;
+            float shownW = Math.Max(0f, tag.W - 1f - DepartTable.BonusPadX - x);
+            Label.Make(box.rectTransform, line, lineS, x, (tag.H - lineS.LineHeightPx) / 2f, shownW, null, "span");
+            if (shownW < lineW) TitleTip.On(box, label + "　" + line);
         }
 
         // ================================================================================ the cards (departure.js:200-507)
@@ -1062,6 +983,7 @@ namespace Trial.Meta
         {
             RefreshCells();
             _total.To(_deck.Total).Forget();
+            _header?.SetDeckCount(_deck.Total);
             TableBox gauge = DepartTable.Gauge;
             float pct = Math.Min(100f, 100f * _deck.Total / _deckCap);
             bool ok = _deck.IsValid;
@@ -1133,6 +1055,12 @@ namespace Trial.Meta
             _ctx.OnSettings();
         }
 
+        private void OpenJournal()
+        {
+            if (_busy || _ctx.OnJournal == null) return;
+            _ctx.OnJournal();
+        }
+
         // js: scenes/meta/departure.js:729
         private async Promise Leave(Action cb)
         {
@@ -1186,7 +1114,7 @@ namespace Trial.Meta
                 if (!e.Repeat) { if (_ctx.OnSettings != null) OpenSettings(); else Back(); }
                 return true;
             }
-            if ((e.Key == "j" || e.Key == "J") && _ctx.OnJournal != null) { if (!e.Repeat) _ctx.OnJournal(); return true; }
+            if ((e.Key == "j" || e.Key == "J") && _ctx.OnJournal != null) { if (!e.Repeat) OpenJournal(); return true; }
             if (e.Key == "Enter" && KeyboardFocus()) return false;
             if (e.Key == "PageUp") { Turn(-1); return true; }
             if (e.Key == "PageDown") { Turn(1); return true; }
@@ -1215,7 +1143,7 @@ namespace Trial.Meta
 
         /// <summary>
         /// The Tab order, the table read left to right: the filters, each card's face − ＋, the page turns, the shelf, the
-        /// slots, the presets, 出立する, then ←, 手記 and 設定. A disabled button and a removed one are skipped
+        /// slots, the presets, 出立する, then the band's 「拠点へ戻る」, 手記 and 設定. A disabled button and a removed one are skipped
         /// (Focusable.IsFocusable); buttons drawn again replace the old.
         /// </summary>
         internal void SyncFocus()
@@ -1246,9 +1174,8 @@ namespace Trial.Meta
             }
             foreach (MetaButton b in _presets) Push(FocusOf(b));
             Push(FocusOf(_setOutBtn));
-            if (_backBtn != null) Push(_backBtn.Focusable);
-            Push(FocusOf(_journalBtn));
-            Push(FocusOf(_settingsBtn));
+            if (_header != null)
+                foreach (Focusable f in _header.Focusables) Push(f);
 
             var keep = new HashSet<Focusable>(want);
             foreach (Focusable f in _scope.Items.ToArray()) if (!keep.Contains(f)) _scope.Remove(f);

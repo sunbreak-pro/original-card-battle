@@ -1,9 +1,11 @@
-// The base under the carry-over as one scene, 「降り口の前」 (#1052, the design canvas's 出立：降り口の前): the way down in
-// the middle with the first layer's light through it and the explorer before it, the collapse calendar over it, the
-// explorer's name and how far they have been on the left, the seven layers on the right with where the last descent
-// ended, and at the foot the deck, the tools and the consumables (each opens 「支度の卓」, DepartureScene) and 「降りる」,
-// held for DepartGate.HoldMs to set out with the pack as it stands. The list of past descents and the rules of traces
-// are read in the journal (#1053), which the 手記 button and J open.
+// The base under the carry-over as one scene, 「降り口の前」 (#1052, the design canvas's 出立：降り口の前): the shared header
+// band on top (#1074: 「拠点」, the collapse calendar, HP and stamina at full, and the owned cards, which open 「支度の卓」,
+// the journal and the settings), the way down in the middle with the first layer's light through it and the explorer
+// before it, the explorer's name and how far they have been on the left, the seven layers on the right with where the
+// last descent ended, and at the foot the deck, the tools and the consumables (each opens 「支度の卓」, DepartureScene) and
+// 「降りる」, held for DepartGate.HoldMs to set out with the pack as it stands. The list of past descents and the rules of
+// traces are read in the journal (#1053), which the band's 手記 and J open. Back to the title is the settings'
+// 「保存してタイトルへ」 (the router opens them with the lineage's save), so the base has no way of its own.
 //
 // Every box's place and size, the words and the record are Trial.Bridge.DepartGate (held under dotnet test); the pack is
 // Trial.Bridge.DeparturePack, opened as the table opens it, so the table's draft comes back here and the choice is the
@@ -14,9 +16,9 @@ using System.Globalization;
 using System.Linq;
 using Depiction.Bridge;
 using InheritanceCore;
-using TMPro;
 using Trial.Bridge;
 using Trial.Geometry;
+using Trial.Header;
 using Trial.Kit;
 using Trial.Script;
 using UnityEngine;
@@ -68,19 +70,16 @@ namespace Trial.Meta
             _backdrop.Alpha = 0f;
 
             DrawWayDown();
-            List<RectTransform> header = DrawHeader();
-            RectTransform calendar = DrawCalendar();
             List<RectTransform> left = DrawRecord();
             List<RectTransform> layers = DrawLayers();
             List<RectTransform> foot = DrawFoot();
+            DrawHeader();
 
             // ---- arrival: the curtain opens, the wall comes up, the parts rise in ----
             _fade = Styler.Of(MetaStyle.Fade(_root), o: 1f);
             _sound.Play("hallArrive", 80);
             _clock.Tween(_fade, "o", 0f, 700f, Ease.Out);
             _clock.Tween(_backdrop, "v", 1f, 1200f, Ease.Out, 150f);
-            MetaUtil.RiseIn(_clock, header, delay: 250f, step: 60f, dy: 10f);
-            MetaUtil.RiseIn(_clock, new[] { calendar }, delay: 320f, dy: 10f);
             MetaUtil.RiseIn(_clock, left, delay: 380f, step: 70f);
             MetaUtil.RiseIn(_clock, layers, delay: 440f, step: 50f, dy: 10f);
             MetaUtil.RiseIn(_clock, foot, delay: 620f, step: 70f);
@@ -139,98 +138,23 @@ namespace Trial.Meta
             figNode.Place(e.X + (e.W - figNode.W) / 2f, f.Y + f.H / 2f - figNode.H);
         }
 
-        // ================================================================================ the header
+        // ================================================================================ the header band
 
-        private List<RectTransform> DrawHeader()
+        /// <summary>
+        /// The shared band (#1074): the owned cards open the table as the foot's boxes do; the journal and the settings open
+        /// as J and Esc do, and stand dimmed when the router gives no way to them.
+        /// </summary>
+        private void DrawHeader()
         {
-            TableBox head = DepartGate.Header;
-            var parts = new List<RectTransform>();
-            TextStyle titleS = MetaStyle.Text(GateCss.Title), leadS = MetaStyle.Text(GateCss.Lead);
-            float titleW = TextMeasure.Width(_view.Title, titleS);
-            TextMeshProUGUI title = Label.Make(_root, _view.Title, titleS, head.X, head.Y + (head.H - titleS.LineHeightPx) / 2f, null, null, "ocbg-meta-gate-title");
-            parts.Add(title.rectTransform);
-            parts.Add(Label.Make(_root, DepartGate.Lead, leadS, head.X + titleW + DepartGate.HeaderGap, head.Y + (head.H - leadS.LineHeightPx) / 2f, null, null, "lead").rectTransform);
-
-            // the corner, left to right: 手記 (J), 設定 (Esc), タイトルへ — each only when the router gives it
-            var corner = new List<MetaButton>();
-            if (_ctx.OnJournal != null)
+            HeaderBar header = HeaderBar.Create(_root, DepartGate.BandOf(_lineage.Calendar, _pack.Deck.Total), new HeaderActions
             {
-                MetaButton book = MetaButton.Make(_root, MetaButtonKind.Chip, global::Journal.JournalBook.Heading, "J", "journal", 24f, DsTokens.Ink);
-                book.Click += OpenJournal;
-                corner.Add(book);
-            }
-            if (_ctx.OnSettings != null)
-            {
-                MetaButton gear = MetaButton.Make(_root, MetaButtonKind.Chip, MetaText.Settings, "Esc");
-                gear.Click += OpenSettings;
-                corner.Add(gear);
-            }
-            if (_ctx.OnTitle != null)
-            {
-                MetaButton toTitle = MetaButton.Make(_root, MetaButtonKind.Chip, MetaText.BackToTitle, null, "back", 20f, DsTokens.Ink);
-                toTitle.Root.name = "ocbg-meta-chip-btn ocbg-meta-hall-totitle";
-                toTitle.Click += () => LeaveToTitle().Forget();
-                corner.Add(toTitle);
-            }
-            float right = head.Right, y = head.Y + (head.H - DepartGate.CornerH) / 2f;
-            for (int i = corner.Count - 1; i >= 0; i--)
-            {
-                MetaButton b = corner[i];
-                b.SetBox(0f, y, null, DepartGate.CornerH);
-                float w = b.Node.W;
-                right -= w;
-                b.SetBox(right, y, w, DepartGate.CornerH);
-                right -= DepartGate.CornerGap;
-            }
-            // the corner fades in as 継承の間's does (an inline style, so the buttons' own hover rules keep working)
-            foreach (MetaButton b in corner)
-            {
-                MetaButton btn = b;
-                _clock.Tween(btn.Styler(o: 0f), "o", 1f, 500f, Ease.Out, 600f).Then(() => btn.ClearTransform());
-            }
-            return parts;
+                OnOwnedCards = OpenTable,
+                OnJournal = OpenJournal,
+                OnSettings = OpenSettings,
+            });
+            if (_ctx.OnJournal == null) header.SetButton(HeaderButtonKind.Journal, HeaderButtonState.Off);
+            if (_ctx.OnSettings == null) header.SetButton(HeaderButtonKind.Settings, HeaderButtonState.Off);
         }
-
-        // ================================================================================ over the way down: the calendar
-
-        private RectTransform DrawCalendar()
-        {
-            DungeonCore.CalendarState cal = _lineage.Calendar ?? DungeonCore.CalendarState.Fresh;
-            TableBox row = DepartGate.CalendarRow;
-            RectTransform box = Ui.Div(_root, "ocbg-meta-gate-calendar", 0f, 0f, MetaUtil.W, MetaUtil.H);
-            UiNode.Of(box);
-            TextStyle words = MetaStyle.Text(GateCss.CalendarWords), days = MetaStyle.Text(GateCss.CalendarDays);
-            string n = cal.DaysLeft.ToString(CultureInfo.InvariantCulture);
-            const float gap = 12f;
-            float wBefore = TextMeasure.Width(DepartTable.CalendarBefore, words), wDays = TextMeasure.Width(n, days), wAfter = TextMeasure.Width(DepartTable.CalendarAfter, words);
-            float total = wBefore + gap + wDays + gap + wAfter;
-            float[] xs = DepartTable.RowFrom(row.X + (row.W - total) / 2f, gap, wBefore, wDays, wAfter);
-            // the three on one baseline
-            float bw = TextMath.CssBaselineFromTop(words.Spec), bd = TextMath.CssBaselineFromTop(days.Spec);
-            float dTop = row.Y + (row.H - days.LineHeightPx) / 2f, baseline = dTop + bd;
-            Label.Make(box, DepartTable.CalendarBefore, words, xs[0], baseline - bw, null, null, "before");
-            TextMeshProUGUI d = Label.Make(box, n, days, xs[1], dTop, null, null, "days");
-            Label.Make(box, DepartTable.CalendarAfter, words, xs[2], baseline - bw, null, null, "after");
-
-            // the 100 days: the share left filled (steel while a king is down), a tick every ten days
-            TableBox bar = DepartGate.CalendarBar;
-            BoxGraphic.Make(box, GateCss.CalendarBar, bar.X, bar.Y, bar.W, bar.H, "bar");
-            float fill = DepartGate.CalendarFill(cal.DaysLeft);
-            if (fill > 0f) BoxGraphic.Make(box, cal.IsFrozen ? GateCss.CalendarFillFrozen : GateCss.CalendarFill, bar.X + 1f, bar.Y + 1f, Math.Max(0f, fill - 2f), bar.H - 2f, "fill");
-            int ticks = DungeonCore.Calendar.TotalDays / DepartGate.CalendarTickDays;
-            for (int i = 1; i < ticks; i++)
-                BoxGraphic.Make(box, GateCss.CalendarTick, bar.X + bar.W * i / ticks - 1f, bar.Y + 1f, 2f, bar.H - 2f, "tick");
-            if (cal.IsFrozen)
-            {
-                Label.SetColor(d, DsTokens.Steel);
-                TableBox note = DepartGate.FrozenNote;
-                Label.Make(box, CalendarFrozenNote, MetaStyle.Text(GateCss.FrozenNote), note.X, note.Y, null, null, "frozen");
-            }
-            return box;
-        }
-
-        /// <summary>The words beside the bar while a king is down (seven_layers_v4.md §2.2), as 継承の間 prints them.</summary>
-        private const string CalendarFrozenNote = "王が倒れていて、暦は止まっている";
 
         // ================================================================================ left: who goes down, how far they have been
 
@@ -506,7 +430,7 @@ namespace Trial.Meta
             else _ctx.OnDepart?.Invoke(_start);
         }
 
-        /// <summary>A box of the foot: the table opens on the same pack (the router mounts 出立 with this life).</summary>
+        /// <summary>A box of the foot, or the band's owned cards: the table opens on the same pack (the router mounts 出立 with this life).</summary>
         private void OpenTable()
         {
             if (_busy) return;
@@ -522,19 +446,6 @@ namespace Trial.Meta
             Styler fade = Styler.Of(curtain, o: 0f);
             await _clock.Tween(fade, "o", 1f, 520f, Ease.In);
             if (_alive) then();
-        }
-
-        // js: scenes/meta/hall.js:389
-        /// <summary>leaveToTitle(): uiCancel, the light down to .35, the curtain closes, then onTitle().</summary>
-        private async Promise LeaveToTitle()
-        {
-            if (_busy || _ctx.OnTitle == null) return;
-            _busy = true;
-            _holding = false;
-            _sound.Play("uiCancel");
-            _clock.Tween(_backdrop, "v", 0.35f, 600f, Ease.InOut).Forget();
-            await _clock.Tween(_fade, "o", 1f, 500f, Ease.In, 100f);
-            if (_alive) _ctx.OnTitle();
         }
 
         private void OpenSettings()

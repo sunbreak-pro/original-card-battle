@@ -1,6 +1,7 @@
-// The base as one scene, 「降り口の前」 (#1052): the regions stay on the stage and apart, the foot's boxes hold their
-// slots, the hold to set out fills in its length, the record and the seven layers read the lineage, and every text the
-// base adds is 16 px or more and in the body colour under 24 px.
+// The base as one scene, 「降り口の前」 (#1052): the regions stay on the stage, apart and under the shared header band
+// (#1074), the band shows the calendar and the strength a descent sets out with, the foot's boxes hold their slots, the
+// hold to set out fills in its length, the record and the seven layers read the lineage, and every text the base adds
+// is 16 px or more and in the body colour under 24 px.
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -17,9 +18,7 @@ namespace Trial.Bridge.Tests
 
         private static IEnumerable<(string Name, TableBox Box)> Regions()
         {
-            yield return ("header", DepartGate.Header);
-            yield return ("calendar", DepartGate.CalendarRow);
-            yield return ("calendar bar", DepartGate.CalendarBar);
+            yield return ("header band", DepartGate.Band);
             yield return ("way down", DepartGate.ArchOuter);
             yield return ("explorer", DepartGate.Explorer);
             yield return ("who", DepartGate.WhoLabel);
@@ -48,9 +47,7 @@ namespace Trial.Bridge.Tests
             List<(string Name, TableBox Box)> all = Regions().ToList();
             foreach ((string name, TableBox box) in all) Assert.That(box.Inside(Stage), Is.True, name + " " + box);
             AssertApart(all);
-            Assert.That(DepartGate.FrozenNote.Inside(Stage), Is.True);
-            Assert.That(DepartGate.FrozenNote.Right, Is.LessThanOrEqualTo(DepartGate.LayersX), "the frozen line stops short of the layers");
-            Assert.That(DepartGate.FrozenNote.Overlaps(DepartGate.ArchOuter), Is.False);
+            Assert.That(DepartGate.Band, Is.EqualTo(HeaderBand.Band), "the band's height is HeaderBand's, not the base's own");
         }
 
         [Test]
@@ -68,8 +65,7 @@ namespace Trial.Bridge.Tests
                 Assert.That(new TableBox(x, DepartGate.Arch.H - bottom - h, w, h).Inside(arch), Is.True, "a band of rock " + bottom);
                 Assert.That(a, Is.InRange(0f, 1f));
             }
-            Assert.That(DepartGate.CalendarRow.X + DepartGate.CalendarRow.W / 2f, Is.EqualTo(DepartGate.Arch.X + DepartGate.Arch.W / 2f).Within(0.01f), "the calendar stands over the way down");
-            Assert.That(DepartGate.CalendarBar.Bottom, Is.LessThan(DepartGate.ArchOuter.Y));
+            Assert.That(DepartGate.Band.Bottom, Is.LessThan(DepartGate.ArchOuter.Y), "the way down stands under the band");
         }
 
         [Test]
@@ -119,12 +115,29 @@ namespace Trial.Bridge.Tests
         }
 
         [Test]
-        public void TheCalendarBar_FillsTheDaysLeft()
+        public void TheBand_ShowsTheCalendar_AndTheStrengthADescentSetsOutWith()
         {
-            Assert.That(DepartGate.CalendarFill(100), Is.EqualTo(DepartGate.CalendarBar.W));
-            Assert.That(DepartGate.CalendarFill(87), Is.EqualTo(DepartGate.CalendarBar.W * 0.87f).Within(0.01f));
-            Assert.That(DepartGate.CalendarFill(0), Is.Zero);
-            Assert.That(DepartGate.CalendarFill(130), Is.EqualTo(DepartGate.CalendarBar.W), "a king's return days do not run past the bar");
+            HeaderContent c = DepartGate.BandOf(new CalendarState(87), 22);
+            Assert.That(c.Screen, Is.EqualTo(HeaderScreen.Base));
+            Assert.That(c.PlaceName, Is.EqualTo(HeaderBand.BaseName));
+            Assert.That((c.Calendar.DaysLeft, c.Calendar.Frozen, c.Calendar.ShownNote), Is.EqualTo((87, false, "")));
+            Assert.That((c.Hp, c.MaxHp), Is.EqualTo((50, 50)), "a descent sets out at full HP");
+            Assert.That((c.Stamina, c.MaxStamina), Is.EqualTo((10, 10)), "and at full stamina");
+            Assert.That((DepartGate.StartMaxHp, DepartGate.StartMaxStamina), Is.EqualTo((global::Exploration.RunStart.DefaultMaxHp, StaminaRules.BaseMaxStamina)));
+            Assert.That(c.DeckCount, Is.EqualTo(22));
+            Assert.That(c.OwnedCards, Is.EqualTo(HeaderButtonState.Ready), "the owned cards open the table");
+            Assert.That(c.BackChip, Is.False);
+
+            Assert.That(DepartGate.BandCalendar(null).DaysLeft, Is.EqualTo(CalendarState.Fresh.DaysLeft), "no calendar reads as fresh");
+        }
+
+        [Test]
+        public void TheBand_SaysTheCalendarStandsStill_WhileAKingIsDown()
+        {
+            var frozen = new CalendarState(41, new Dictionary<Region, int> { [Region.Dragon] = 12 });
+            Assert.That(frozen.IsFrozen, Is.True);
+            HeaderCalendar cal = DepartGate.BandCalendar(frozen);
+            Assert.That((cal.DaysLeft, cal.Frozen, cal.ShownNote), Is.EqualTo((41, true, DepartGate.CalendarFrozenNote)));
         }
 
         private static Lineage WithLives(params (int Layer, LifeEnding Ending)[] lives)
