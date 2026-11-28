@@ -2,10 +2,11 @@
 // ExplorationScreenBuilder's view-model and forwards the player's input to the ported ExplorationSession / Expedition.
 // It computes no rule and no number: every value and line comes from the bridge (or the scene-text table,
 // ExploreText). What it adds is presentation: the place's backdrop under its veil, the map drawn
-// on it, a walker that travels each step, number roll-ups, the cards over the map, the battle hand-off and the reward
+// on it, a walker that travels each step, the cards over the map, the battle hand-off and the reward
 // pick, the trace pick, the interlude, and keyboard support. Trial mode (docs/EXTENSIONS.md 「探索の持ち物とイベント」)
 // adds the tools with their notes, consumable slots that act (標の石 aims on the map), the swap card, the event cards and
-// their result, and 写しの帳's survey pick. The band shows the collapse calendar (dungeon_exploration_v4 §6.2, #888).
+// their result, and 写しの帳's survey pick. The shared header (#1074) shows the collapse calendar
+// (dungeon_exploration_v4 §6.2, #888).
 //
 // ExploreScene.Mount(host, ctx) → IScene { Destroy(), Refresh() }: see ExploreContracts.cs for the ctx. The router
 // destroys this scene to show a battle and mounts a fresh one afterwards (main.js:390, 398); a scene mounted while the
@@ -144,8 +145,7 @@ namespace Trial.Explore
             UiNode.Of(Legend).Z = ExploreStyle.ZLegend;
             UiNode.Of(Legend).PointerEvents = PointerEvents.None;
 
-            Band = Ui.Div(Root, "ocbg-explore-band");
-            UiNode.Of(Band).Z = ExploreStyle.ZBand;
+            BuildHeader();
 
             OverlayLayer = Layer("ocbg-explore-overlays", ExploreStyle.ZOverlays);
             UiNode.Of(OverlayLayer).PointerEvents = PointerEvents.None;
@@ -158,7 +158,6 @@ namespace Trial.Explore
             BuildBanner();
             BuildDetail();
             BuildCarried();
-            BuildBand();
 
             // The root's classes that reach the core's layers (the parts register their own in their Build methods).
             // explore.css:68 / :70 / :370: the map fades and dims; :370 the detail fades with the interlude.
@@ -186,8 +185,6 @@ namespace Trial.Explore
         {
             if (InBattle || !Alive) return;
             Backdrop?.Frame(now);
-            foreach (RollLabel r in Rollers.ToArray()) r.Tick(now);
-            FollowRolledBoxes();
             WalkerAnim?.Invoke(now);
         }
 
@@ -424,12 +421,11 @@ namespace Trial.Explore
         // ------------------------------------------------------------------ render
 
         // js: scenes/explore/ExploreScene.js:794
-        /// <summary>render({ enter, animate }): the screen again from the session (numbers roll unless animate is false).</summary>
-        private void Render(bool enter = false, bool? animate = null)
+        /// <summary>render({ enter }): the screen again from the session.</summary>
+        private void Render(bool enter = false)
         {
             if (!Alive) return;
             float now = Now;
-            bool anim = !FirstRender && animate != false;
             Screen = Session.Screen();
             ExplorationState state = Session.State;
             int layer = state.Profile.Layer;
@@ -453,7 +449,7 @@ namespace Trial.Explore
             }
             LastLayer = layer;
 
-            DrawBand(now, anim);
+            DrawHeader();
             UpdateMap(Screen);
             if (WalkerAnim == null && !mapChanged) PlaceWalkerOnCurrent();
             DrawCarried(); // first: it may take height from the detail panel (FitCarried)
