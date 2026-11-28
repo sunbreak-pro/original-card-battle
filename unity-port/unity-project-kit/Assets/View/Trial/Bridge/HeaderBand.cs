@@ -229,8 +229,10 @@ namespace Trial.Bridge
         public const float SeparatorW = 1f, SeparatorH = 48f, SeparatorMargin = 8f;
 
         /// <summary>
-        /// The buttons right-aligned to the band's padding, 8 apart: the speed (when its width is over 0) and the
-        /// separator, the owned cards, the journal, the settings.
+        /// The buttons right-aligned to the band's padding, 8 apart: the speed and the separator, the owned cards, the
+        /// journal, the settings. A button whose width is 0 does not stand, and the rest close up. The separator goes with
+        /// the speed: it parts the battle's own switch from the buttons every screen shares, so without the owned cards
+        /// (the battle, #1074) it stands between the speed and the journal.
         /// </summary>
         public static HeaderButtonRow ButtonRow(float speedW, float ownedCardsW, float journalW, float settingsW)
         {
@@ -242,12 +244,15 @@ namespace Trial.Bridge
                 widths.Add(speedW);
                 widths.Add(SeparatorMargin + SeparatorW + SeparatorMargin);
             }
-            kinds.Add(HeaderButtonKind.OwnedCards);
-            widths.Add(ownedCardsW);
-            kinds.Add(HeaderButtonKind.Journal);
-            widths.Add(journalW);
-            kinds.Add(HeaderButtonKind.Settings);
-            widths.Add(settingsW);
+            foreach ((HeaderButtonKind kind, float w) in new[]
+            {
+                (HeaderButtonKind.OwnedCards, ownedCardsW), (HeaderButtonKind.Journal, journalW), (HeaderButtonKind.Settings, settingsW),
+            })
+            {
+                if (w <= 0f) continue;
+                kinds.Add(kind);
+                widths.Add(w);
+            }
             float[] xs = DepartTable.RowTo(StageW - PadX, ButtonGap, widths.ToArray());
             var row = new HeaderButtonRow { Left = xs[0] };
             int at = 0;

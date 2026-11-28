@@ -63,21 +63,19 @@ namespace Trial.Bridge.Tests
         }
 
         [Test]
-        public void TheBattle_ShowsTheCountButTakesNoPressOnTheOwnedCards()
+        public void TheBattle_ShowsNoOwnedCards()
         {
-            HeaderContent c = HeaderContent.ForBattle("第 1 層　燦光の樹海", 3, 2, 3, Running, 31, 50, 5, 10, 20, BattleSpeedStep.Fast);
+            HeaderContent c = HeaderContent.ForBattle("第 1 層　燦光の樹海", 3, 2, 3, Running, 31, 50, 5, 10, BattleSpeedStep.Fast);
             Assert.That(c.Screen, Is.EqualTo(HeaderScreen.Battle));
             Assert.That(c.Tags, Is.EqualTo(new[] { "ターン 3", "連戦 2 / 3" }));
-            Assert.That(c.OwnedCards.Shown, Is.True);
-            Assert.That(c.OwnedCards.Enabled, Is.False);
+            Assert.That(c.OwnedCards, Is.EqualTo(HeaderButtonState.Hidden), "Koudai-san, 2026-11-28: not in battle, nor its count");
             Assert.That(c.OwnedCards.Pressable, Is.False);
-            Assert.That(c.DeckBadge, Is.EqualTo("20"));
             Assert.That(c.Speed, Is.EqualTo(HeaderButtonState.Ready));
             Assert.That(c.SpeedText, Is.EqualTo("速さ ×1.5"));
             Assert.That(c.Settings.Pressable, Is.True);
             Assert.That(c.Journal.Pressable, Is.True);
 
-            HeaderContent noSettings = HeaderContent.ForBattle("第 1 層　燦光の樹海", 1, 1, 1, Running, 50, 50, 10, 10, 20, BattleSpeedStep.Normal, canOpenSettings: false);
+            HeaderContent noSettings = HeaderContent.ForBattle("第 1 層　燦光の樹海", 1, 1, 1, Running, 50, 50, 10, 10, BattleSpeedStep.Normal, canOpenSettings: false);
             Assert.That(noSettings.Settings, Is.EqualTo(HeaderButtonState.Off), "it stays in its place, dimmed");
             Assert.That(noSettings.Tags, Is.EqualTo(new[] { "ターン 1" }));
         }
@@ -89,7 +87,7 @@ namespace Trial.Bridge.Tests
             Assert.That(HeaderContent.OwnedCardsState(HeaderScreen.Table, false), Is.EqualTo(HeaderButtonState.On));
             Assert.That(HeaderContent.OwnedCardsState(HeaderScreen.Explore, true), Is.EqualTo(HeaderButtonState.Ready));
             Assert.That(HeaderContent.OwnedCardsState(HeaderScreen.Explore, false), Is.EqualTo(HeaderButtonState.Off));
-            Assert.That(HeaderContent.OwnedCardsState(HeaderScreen.Battle, true), Is.EqualTo(HeaderButtonState.Off));
+            Assert.That(HeaderContent.OwnedCardsState(HeaderScreen.Battle, true), Is.EqualTo(HeaderButtonState.Hidden));
         }
 
         [Test]
@@ -100,7 +98,7 @@ namespace Trial.Bridge.Tests
                 HeaderContent.ForBase(Running, 50, 10, 20),
                 HeaderContent.ForTable(Running, 50, 10, 20),
                 HeaderContent.ForExplore("第 2 層　■■の秘跡", Running, 30, 50, 6, 10, 22, true),
-                HeaderContent.ForBattle("第 2 層　■■の秘跡", 1, 1, 1, Running, 30, 50, 6, 10, 22, BattleSpeedStep.Normal),
+                HeaderContent.ForBattle("第 2 層　■■の秘跡", 1, 1, 1, Running, 30, 50, 6, 10, BattleSpeedStep.Normal),
             };
             foreach (HeaderContent c in all)
             {
@@ -138,7 +136,7 @@ namespace Trial.Bridge.Tests
             Assert.That(HeaderContent.ForBase(null, 50, 10, 20).HasCalendar, Is.False);
             Assert.That(HeaderContent.ForTable(null, 50, 10, 20).HasCalendar, Is.False);
             Assert.That(HeaderContent.ForExplore("第 1 層", null, 38, 50, 8, 10, 20, true).HasCalendar, Is.False);
-            Assert.That(HeaderContent.ForBattle("第 1 層", 1, 1, 1, null, 38, 50, 8, 10, 20, BattleSpeedStep.Normal).HasCalendar, Is.False);
+            Assert.That(HeaderContent.ForBattle("第 1 層", 1, 1, 1, null, 38, 50, 8, 10, BattleSpeedStep.Normal).HasCalendar, Is.False);
             Assert.That(HeaderContent.ForBase(Running, 50, 10, 20).HasCalendar, Is.True);
         }
 
@@ -146,13 +144,13 @@ namespace Trial.Bridge.Tests
         public void TheBattle_TakesTheShortNote_WhileTheCalendarStandsStill()
         {
             HeaderCalendar frozen = HeaderCalendar.Of(41, true, "竜王が戻るまで 12 日。暦は止まっている");
-            HeaderContent battle = HeaderContent.ForBattle("第 7 層　爛れた世界樹の間（寄生の領域）", 3, 2, 3, frozen, 120, 120, 12, 12, 30, BattleSpeedStep.Normal);
+            HeaderContent battle = HeaderContent.ForBattle("第 7 層　爛れた世界樹の間（寄生の領域）", 3, 2, 3, frozen, 120, 120, 12, 12, BattleSpeedStep.Normal);
             Assert.That(battle.Calendar.ShownNote, Is.EqualTo(HeaderBand.FrozenNote), "the turn tags and the speed leave no room for the long note");
             Assert.That((battle.Calendar.DaysLeft, battle.Calendar.Frozen), Is.EqualTo((41, true)));
             Assert.That(frozen.ShownNote, Is.EqualTo("竜王が戻るまで 12 日。暦は止まっている"), "the calendar handed in stays as it was");
             Assert.That(HeaderContent.ForExplore("第 1 層", frozen, 38, 50, 8, 10, 20, true).Calendar.ShownNote, Is.EqualTo(frozen.ShownNote),
                 "the exploration keeps the long note");
-            Assert.That(HeaderContent.ForBattle("第 1 層", 1, 1, 1, Running, 38, 50, 8, 10, 20, BattleSpeedStep.Normal).Calendar.ShownNote, Is.EqualTo(""));
+            Assert.That(HeaderContent.ForBattle("第 1 層", 1, 1, 1, Running, 38, 50, 8, 10, BattleSpeedStep.Normal).Calendar.ShownNote, Is.EqualTo(""));
         }
     }
 }

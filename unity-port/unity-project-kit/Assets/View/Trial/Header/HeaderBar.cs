@@ -300,8 +300,8 @@ namespace Trial.Header
 
             // the buttons' row first: the left side checks itself against its left edge
             Button speed = _buttons[HeaderButtonKind.Speed];
-            HeaderButtonRow row = HeaderBand.ButtonRow(speed.State.Shown ? speed.Width : 0f, _buttons[HeaderButtonKind.OwnedCards].Width,
-                _buttons[HeaderButtonKind.Journal].Width, _buttons[HeaderButtonKind.Settings].Width);
+            HeaderButtonRow row = HeaderBand.ButtonRow(StandingWidth(HeaderButtonKind.Speed), StandingWidth(HeaderButtonKind.OwnedCards),
+                StandingWidth(HeaderButtonKind.Journal), StandingWidth(HeaderButtonKind.Settings));
 
             // the calendar: steel and its note while it stands still; none at all when the screen hands none. A long note
             // that would run under the buttons gives way to the short one; c.Calendar keeps the long one, so the band
@@ -339,7 +339,9 @@ namespace Trial.Header
                 Ui.Place(_separator.rectTransform, s.X, s.Y, s.W, s.H);
             }
             Button owned = _buttons[HeaderButtonKind.OwnedCards];
-            UiNode.Of(_badge).Visible = owned.State.Shown;
+            bool counted = owned.State.Shown && row.Has(HeaderButtonKind.OwnedCards);
+            UiNode.Of(_badge).Visible = counted;
+            if (!counted) return;
             string count = c.DeckBadge;
             Label.SetText(_badgeText, count);
             float countW = Ocb.TextWidth(count, _badgeS);
@@ -347,6 +349,13 @@ namespace Trial.Header
             Ui.Place(_badge, badge.X, badge.Y, badge.W, badge.H);
             Ui.Place(_badgeText.rectTransform, (badge.W - countW) / 2f, (badge.H - _badgeS.LineHeightPx) / 2f);
             _badge.SetAsLastSibling();
+        }
+
+        /// <summary>A button's width in the row, 0 when it does not stand (the row closes up over it).</summary>
+        private float StandingWidth(HeaderButtonKind kind)
+        {
+            Button b = _buttons[kind];
+            return b.State.Shown ? b.Width : 0f;
         }
 
         /// <summary>The calendar's runs laid out in its group (the days steel while frozen, the note beside them). Its width.</summary>

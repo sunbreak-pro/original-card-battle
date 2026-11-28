@@ -744,11 +744,10 @@ namespace Trial.Boot
                 // takes the same slot, so its backdrop matches the map and the ambience ResumeFight picks (#1029).
                 BackdropLayer = raw.Session.State.Profile.BackdropLayer,
                 LayerTitle = screen.LayerTitle,
-                // The header band (#1074) reads the calendar and the deck where the map's band reads them, so the two bands
-                // show the same numbers at the same moment: the screen's days, and the deck the fight is shuffled from.
+                // The header band (#1074) reads the calendar where the map's band reads it, so the two bands show the same
+                // days at the same moment.
                 CalendarDaysLeft = screen.DaysLeft,
                 CalendarFrozen = screen.CalendarFrozen,
-                DeckCount = raw.Deck.Count,
                 NodeKind = BattleSceneCtx.NodeKindOf(battle.HandIn.Kind.ToString()),
                 Chain = new BattleChain(battle.Index + 1, battle.Count),
                 DisclosureOf = id => raw.DisclosureOf(id),

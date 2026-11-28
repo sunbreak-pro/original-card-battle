@@ -29,24 +29,24 @@ namespace Trial.Bridge.Tests
                 case HeaderScreen.Base: return HeaderContent.ForBase(cal, 50, 10, 20);
                 case HeaderScreen.Table: return HeaderContent.ForTable(cal, 50, 10, 20);
                 case HeaderScreen.Explore: return HeaderContent.ForExplore("第 1 層　燦光の樹海", cal, 38, 50, 8, 10, 20, true);
-                default: return HeaderContent.ForBattle("第 1 層　燦光の樹海", 3, 1, 1, cal, 31, 50, 5, 10, 20, BattleSpeedStep.Normal);
+                default: return HeaderContent.ForBattle("第 1 層　燦光の樹海", 3, 1, 1, cal, 31, 50, 5, 10, BattleSpeedStep.Normal);
             }
         }
 
         private static HeaderButtonRow RowOf(HeaderContent c) =>
-            HeaderBand.ButtonRow(c.Speed.Shown ? SpeedW : 0f, OwnedCardsW, JournalW, SettingsW);
+            HeaderBand.ButtonRow(c.Speed.Shown ? SpeedW : 0f, c.OwnedCards.Shown ? OwnedCardsW : 0f, JournalW, SettingsW);
 
         [Test]
         public void EveryScreen_StandsItsButtonsInOneOrder_WithItsOwnStates()
         {
-            HeaderButtonState hidden = HeaderButtonState.Hidden, ready = HeaderButtonState.Ready, off = HeaderButtonState.Off, on = HeaderButtonState.On;
+            HeaderButtonState hidden = HeaderButtonState.Hidden, ready = HeaderButtonState.Ready, on = HeaderButtonState.On;
             var expected = new Dictionary<HeaderScreen, HeaderButtonState[]>
             {
                 // speed, owned cards, journal, settings
                 [HeaderScreen.Base] = new[] { hidden, ready, ready, ready },
                 [HeaderScreen.Table] = new[] { hidden, on, ready, ready },
                 [HeaderScreen.Explore] = new[] { hidden, ready, ready, ready },
-                [HeaderScreen.Battle] = new[] { ready, off, ready, ready },
+                [HeaderScreen.Battle] = new[] { ready, hidden, ready, ready },
             };
             HeaderButtonKind[] kinds = { HeaderButtonKind.Speed, HeaderButtonKind.OwnedCards, HeaderButtonKind.Journal, HeaderButtonKind.Settings };
             foreach (HeaderScreen s in Screens)
@@ -56,7 +56,10 @@ namespace Trial.Bridge.Tests
                 Assert.That(kinds.Select(c.StateOf).ToArray(), Is.EqualTo(expected[s]), s + ": each button's state");
                 HeaderButtonRow row = RowOf(c);
                 HeaderButtonKind[] leftToRight = kinds.Where(k => c.StateOf(k).Shown && row.Has(k)).OrderBy(k => row.Box(k).X).ToArray();
-                HeaderButtonKind[] want = s == HeaderScreen.Battle ? kinds : kinds.Skip(1).ToArray();
+                // the battle has the speed and no owned cards (Koudai-san, 2026-11-28); the other screens the reverse
+                HeaderButtonKind[] want = s == HeaderScreen.Battle
+                    ? new[] { HeaderButtonKind.Speed, HeaderButtonKind.Journal, HeaderButtonKind.Settings }
+                    : kinds.Skip(1).ToArray();
                 Assert.That(leftToRight, Is.EqualTo(want), s + ": the buttons stand in one order");
             }
             Assert.That(HeaderBand.PlaceWidth, Is.EqualTo(HeaderPlaceWidth.Packed), "packed to the left by default");
@@ -77,9 +80,11 @@ namespace Trial.Bridge.Tests
                 HeaderButtonRow row = RowOf(ContentOf(s));
                 Assert.That(row.Box(HeaderButtonKind.Settings).Right, Is.EqualTo(1920f - 24f), s + ": the settings end at the padding");
                 Assert.That(row.Box(HeaderButtonKind.Journal).X, Is.EqualTo(1896f - SettingsW - 8f - JournalW), s.ToString());
-                Assert.That(row.Box(HeaderButtonKind.OwnedCards).X, Is.EqualTo(1896f - SettingsW - 8f - JournalW - 8f - OwnedCardsW), s.ToString());
+                if (s == HeaderScreen.Battle) Assert.That(row.Has(HeaderButtonKind.OwnedCards), Is.False, "no owned cards in battle");
+                else Assert.That(row.Box(HeaderButtonKind.OwnedCards).X, Is.EqualTo(1896f - SettingsW - 8f - JournalW - 8f - OwnedCardsW), s.ToString());
                 foreach (HeaderButtonKind k in new[] { HeaderButtonKind.OwnedCards, HeaderButtonKind.Journal, HeaderButtonKind.Settings })
                 {
+                    if (!row.Has(k)) continue;
                     TableBox b = row.Box(k);
                     Assert.That(b.Y, Is.EqualTo(11.5f), s + " " + k + ": centred in the 95 px content box");
                     Assert.That(b.H, Is.EqualTo(72f));
@@ -93,11 +98,12 @@ namespace Trial.Bridge.Tests
         public void TheBattlesSpeed_StandsLeftOfASeparator()
         {
             HeaderButtonRow row = RowOf(ContentOf(HeaderScreen.Battle));
-            TableBox speed = row.Box(HeaderButtonKind.Speed), owned = row.Box(HeaderButtonKind.OwnedCards);
+            TableBox speed = row.Box(HeaderButtonKind.Speed), journal = row.Box(HeaderButtonKind.Journal);
             Assert.That(row.Separator.HasValue, Is.True);
             TableBox sep = row.Separator.Value;
             Assert.That(sep.X - speed.Right, Is.EqualTo(8f + 8f), "the gap and the separator's margin");
-            Assert.That(owned.X - sep.Right, Is.EqualTo(8f + 8f));
+            Assert.That(journal.X - sep.Right, Is.EqualTo(8f + 8f), "without the owned cards the journal follows the separator");
+            Assert.That(speed.X, Is.EqualTo(1896f - SettingsW - 8f - JournalW - 8f - 8f - 1f - 8f - 8f - SpeedW), "the row closes up");
             Assert.That(sep.H, Is.EqualTo(48f));
             Assert.That(sep.Y + sep.H / 2f, Is.EqualTo(95f / 2f));
             Assert.That(row.Left, Is.EqualTo(speed.X));
@@ -139,6 +145,16 @@ namespace Trial.Bridge.Tests
             Assert.That(without.HpX, Is.EqualTo(without.Divider.Right + 28f), "no slot and no gap is left where the calendar stood");
             Assert.That(without.StaminaX, Is.EqualTo(without.HpX + 110f + 28f));
             Assert.That(without.Right, Is.EqualTo(with.Right - 150f - 28f));
+        }
+
+        [Test]
+        public void AButtonOfNoWidth_DoesNotStand_AndTheRestCloseUp()
+        {
+            HeaderButtonRow row = HeaderBand.ButtonRow(0f, 0f, JournalW, SettingsW);
+            Assert.That(row.Has(HeaderButtonKind.OwnedCards), Is.False);
+            Assert.That(row.Separator.HasValue, Is.False);
+            Assert.That(row.Left, Is.EqualTo(row.Box(HeaderButtonKind.Journal).X));
+            Assert.That(row.Box(HeaderButtonKind.Journal).X, Is.EqualTo(1896f - SettingsW - 8f - JournalW));
         }
 
         [Test]
@@ -287,7 +303,8 @@ namespace Trial.Bridge.Tests
         public void TheOwnedCardsBubble_NamesTheCKey_OnTheExplorationOnly()
         {
             Assert.That(HeaderBand.TipOf(HeaderScreen.Explore, HeaderButtonKind.OwnedCards), Is.EqualTo("所持カード（C）"), "C opens them on the map");
-            foreach (HeaderScreen s in new[] { HeaderScreen.Base, HeaderScreen.Table, HeaderScreen.Battle })
+            Assert.That(ContentOf(HeaderScreen.Battle).OwnedCards.Shown, Is.False, "the battle has no owned cards to name");
+            foreach (HeaderScreen s in new[] { HeaderScreen.Base, HeaderScreen.Table })
             {
                 string tip = HeaderBand.TipOf(s, HeaderButtonKind.OwnedCards);
                 Assert.That(tip, Is.EqualTo("所持カード"), s + ": no C key here");

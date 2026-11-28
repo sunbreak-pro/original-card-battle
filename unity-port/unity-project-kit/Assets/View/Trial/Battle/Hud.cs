@@ -6,8 +6,9 @@
 //
 // The shared header band (#1074, Trial.Header's HeaderBar) takes the place of the JS's corner tag, speed switch, journal
 // button and gear: the layer and the turn (and the fight of a run of fights) on the left, then the calendar, the hero's HP
-// and stamina; the speed, the owned cards, the journal and the settings on the right. What it shows comes from the frame,
-// the panels' own calls and the app (HudHeader); its words and boxes are Trial.Bridge's HeaderContent / HeaderBand.
+// and stamina; the speed, the journal and the settings on the right (no owned cards in battle). What it shows comes from
+// the frame, the panels' own calls and the app (HudHeader); its words and boxes are Trial.Bridge's HeaderContent /
+// HeaderBand.
 //
 // Parts: HeaderBar (Trial.Header), HudStatusPanel (Status.cs), HudOmenBadge (Omen.cs), HudStanceLists (Stances.cs),
 // HudStaminaTag (Stamina.cs), HudPiles (Piles.cs), HudPlayed / HudEndTurn (Bottom.cs), HudResultCard / HudChainBanner /
@@ -54,9 +55,6 @@ namespace Trial.Battle
         /// calendar out rather than read 「残り 0 日」, which would say the collapse has come.
         /// </summary>
         public HeaderCalendar Calendar;
-
-        /// <summary>The deck's count on the owned cards' corner.</summary>
-        public int DeckCount;
     }
 
     // js: scenes/battle/hud.js:105 (createHud)
@@ -283,7 +281,7 @@ namespace Trial.Battle
             // Its empty parts let the pointer through to what stands under them (#1074); its bubbles open over the battle.
             _header = HeaderBar.Create(env.Layer.Hud,
                 HeaderContent.ForBattle(string.IsNullOrEmpty(h.LayerTitle) ? HudChrome.LayerWord(env.LayerNo) : h.LayerTitle,
-                    0, _opts.ChainIndex, _opts.ChainTotal, h.Calendar, 0, 0, 0, 0, h.DeckCount, SpeedStepNow(),
+                    0, _opts.ChainIndex, _opts.ChainTotal, h.Calendar, 0, 0, 0, 0, SpeedStepNow(),
                     canOpenSettings: _opts.SettingsInBattle),
                 new HeaderActions
                 {

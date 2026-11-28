@@ -247,14 +247,14 @@ namespace Trial.Bridge
 
         /// <summary>
         /// The battle: the layer's title with the turn (and the fight of a run of fights from the second fight count up),
-        /// the speed on the left of the buttons. The owned cards show the deck's count but take no press (#1074 leaves
-        /// what they open in battle open). The settings take a press only where the battle allows them. A frozen
-        /// calendar always takes the short note (<see cref="HeaderCalendar.Shortened"/>).
+        /// the speed on the left of the buttons. The owned cards do not stand, nor their count (Koudai-san, 2026-11-28,
+        /// #1074): the speed, the journal and the settings close up. The settings take a press only where the battle allows
+        /// them. A frozen calendar always takes the short note (<see cref="HeaderCalendar.Shortened"/>).
         /// </summary>
         public static HeaderContent ForBattle(string layerTitle, int turn, int fightIndex, int fightCount, HeaderCalendar calendar,
-            int hp, int maxHp, int stamina, int maxStamina, int deckCount, BattleSpeedStep speed, bool canOpenSettings = true)
+            int hp, int maxHp, int stamina, int maxStamina, BattleSpeedStep speed, bool canOpenSettings = true)
         {
-            HeaderContent c = Body(HeaderScreen.Battle, layerTitle, HeaderPlaceArt.Layer, calendar?.Shortened(), hp, maxHp, stamina, maxStamina, deckCount);
+            HeaderContent c = Body(HeaderScreen.Battle, layerTitle, HeaderPlaceArt.Layer, calendar?.Shortened(), hp, maxHp, stamina, maxStamina, 0);
             c.Tags = HeaderBand.BattleTags(turn, fightIndex, fightCount);
             c.Speed = HeaderButtonState.Ready;
             c.SpeedText = HeaderBand.SpeedLabel(speed);
@@ -265,7 +265,7 @@ namespace Trial.Bridge
 
         /// <summary>
         /// The owned cards' button on a screen: the base opens the table; the table is that screen, so it stays lit; the
-        /// exploration opens them while <paramref name="canOpen"/>; the battle never.
+        /// exploration opens them while <paramref name="canOpen"/>; the battle does not show them.
         /// </summary>
         public static HeaderButtonState OwnedCardsState(HeaderScreen screen, bool canOpen)
         {
@@ -274,7 +274,7 @@ namespace Trial.Bridge
                 case HeaderScreen.Base: return HeaderButtonState.Ready;
                 case HeaderScreen.Table: return HeaderButtonState.On;
                 case HeaderScreen.Explore: return canOpen ? HeaderButtonState.Ready : HeaderButtonState.Off;
-                case HeaderScreen.Battle: return HeaderButtonState.Off;
+                case HeaderScreen.Battle: return HeaderButtonState.Hidden;
                 default: throw new ArgumentOutOfRangeException(nameof(screen), screen, "No such header screen.");
             }
         }
