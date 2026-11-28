@@ -1,6 +1,6 @@
-// The shared header band (#1074): the four screens read one set of values, the band is as tall as the exploration map's
-// top, the buttons stand in one place on every screen, the count and the bubbles sit where the canvas puts them, every
-// text is 16 px or more, and amber stays on the stamina and the deck's count.
+// The shared header band (#1074): the four screens stand their buttons in one order, the band is as tall as the
+// exploration map's top, the buttons stand in one place on every screen, the count and the bubbles sit where the canvas
+// puts them, every text is 16 px or more, and amber stays on the stamina and the deck's count.
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -37,17 +37,29 @@ namespace Trial.Bridge.Tests
             HeaderBand.ButtonRow(c.Speed.Shown ? SpeedW : 0f, OwnedCardsW, JournalW, SettingsW);
 
         [Test]
-        public void EveryScreen_ReadsTheSameValues()
+        public void EveryScreen_StandsItsButtonsInOneOrder_WithItsOwnStates()
         {
-            HeaderBandMetrics first = HeaderBand.MetricsOf(HeaderScreen.Base);
+            HeaderButtonState hidden = HeaderButtonState.Hidden, ready = HeaderButtonState.Ready, off = HeaderButtonState.Off, on = HeaderButtonState.On;
+            var expected = new Dictionary<HeaderScreen, HeaderButtonState[]>
+            {
+                // speed, owned cards, journal, settings
+                [HeaderScreen.Base] = new[] { hidden, ready, ready, ready },
+                [HeaderScreen.Table] = new[] { hidden, on, ready, ready },
+                [HeaderScreen.Explore] = new[] { hidden, ready, ready, ready },
+                [HeaderScreen.Battle] = new[] { ready, off, ready, ready },
+            };
+            HeaderButtonKind[] kinds = { HeaderButtonKind.Speed, HeaderButtonKind.OwnedCards, HeaderButtonKind.Journal, HeaderButtonKind.Settings };
             foreach (HeaderScreen s in Screens)
             {
-                HeaderBandMetrics m = HeaderBand.MetricsOf(s);
-                Assert.That(m, Is.SameAs(first), s.ToString());
-                Assert.That(m.Band, Is.EqualTo(new TableBox(0f, 0f, 1920f, 96f)), s.ToString());
-                Assert.That(m.PlaceWidth, Is.EqualTo(HeaderPlaceWidth.Packed), s + ": packed to the left by default");
+                HeaderContent c = ContentOf(s);
+                Assert.That(c.Screen, Is.EqualTo(s));
+                Assert.That(kinds.Select(c.StateOf).ToArray(), Is.EqualTo(expected[s]), s + ": each button's state");
+                HeaderButtonRow row = RowOf(c);
+                HeaderButtonKind[] leftToRight = kinds.Where(k => c.StateOf(k).Shown && row.Has(k)).OrderBy(k => row.Box(k).X).ToArray();
+                HeaderButtonKind[] want = s == HeaderScreen.Battle ? kinds : kinds.Skip(1).ToArray();
+                Assert.That(leftToRight, Is.EqualTo(want), s + ": the buttons stand in one order");
             }
-            Assert.That(() => HeaderBand.MetricsOf((HeaderScreen)99), Throws.InstanceOf<System.ArgumentOutOfRangeException>());
+            Assert.That(HeaderBand.PlaceWidth, Is.EqualTo(HeaderPlaceWidth.Packed), "packed to the left by default");
         }
 
         [Test]
@@ -268,10 +280,24 @@ namespace Trial.Bridge.Tests
             Assert.That(HeaderBand.WordOf(HeaderButtonKind.Journal), Is.EqualTo("手記"));
             Assert.That(HeaderBand.WordOf(HeaderButtonKind.Settings), Is.EqualTo("設定"));
             Assert.That(HeaderBand.WordOf(HeaderButtonKind.Speed, "速さ ×1.5"), Is.EqualTo("速さ ×1.5"));
-            Assert.That(HeaderBand.TipOf(HeaderButtonKind.Journal), Is.EqualTo("手記（J）"));
-            Assert.That(HeaderBand.TipOf(HeaderButtonKind.OwnedCards), Is.EqualTo("所持カード（C）"));
-            Assert.That(HeaderBand.TipOf(HeaderButtonKind.Settings), Is.EqualTo("設定（Esc）"));
-            Assert.That(HeaderBand.TipOf(HeaderButtonKind.Speed), Is.EqualTo(BattleSpeed.Tooltip));
+            Assert.That(HeaderBand.TipOf(HeaderScreen.Battle, HeaderButtonKind.Speed), Is.EqualTo(BattleSpeed.Tooltip));
+        }
+
+        [Test]
+        public void TheOwnedCardsBubble_NamesTheCKey_OnTheExplorationOnly()
+        {
+            Assert.That(HeaderBand.TipOf(HeaderScreen.Explore, HeaderButtonKind.OwnedCards), Is.EqualTo("所持カード（C）"), "C opens them on the map");
+            foreach (HeaderScreen s in new[] { HeaderScreen.Base, HeaderScreen.Table, HeaderScreen.Battle })
+            {
+                string tip = HeaderBand.TipOf(s, HeaderButtonKind.OwnedCards);
+                Assert.That(tip, Is.EqualTo("所持カード"), s + ": no C key here");
+                Assert.That(tip, Does.Not.Contain("C"), s.ToString());
+            }
+            foreach (HeaderScreen s in Screens)
+            {
+                Assert.That(HeaderBand.TipOf(s, HeaderButtonKind.Journal), Is.EqualTo("手記（J）"), s + ": J opens the journal everywhere");
+                Assert.That(HeaderBand.TipOf(s, HeaderButtonKind.Settings), Is.EqualTo("設定（Esc）"), s + ": Esc opens the settings everywhere");
+            }
         }
 
         [Test]

@@ -480,7 +480,7 @@ namespace Trial.Header
                 {
                     _hovered = on;
                     Restyle();
-                    if (on && State.Shown && State.Enabled) _bar.ShowTip(this, _at, HeaderBand.TipOf(_kind));
+                    if (on && State.Shown && State.Enabled) _bar.ShowTip(this, _at, HeaderBand.TipOf(_bar._content.Screen, _kind));
                     else _bar.HideTip(this);
                 };
                 _icon = Icon(Root, kind.ToString(), HeaderBand.Icons.Of(kind), false, HeaderBand.ButtonIcon, DsTokens.Ink);

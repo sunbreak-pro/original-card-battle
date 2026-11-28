@@ -129,7 +129,7 @@
 - [ ] `npm run unity:check -- --allow-leftovers --allow-unbuilt` が exit 0
 - [x] `npm run build`、`npm run lint`、`npm run test:run -- --maxWorkers=4`、`npm run sources -- --check`、`npm run md:tables -- --check`、`npm run issues:test` が exit 0
 - [x] ヘッダーの文字が 16 px 以上で、琥珀はプレイヤーの側（スタミナと束の枚数）だけに使っている
-- [x] 4 つの画面が同じ配置の値を読むことを、テストが確かめている
+- [x] 4 つの画面のボタンが同じ順に並び、画面ごとの状態が決まりどおりであることを、テスト（`HeaderBandTests.EveryScreen_StandsItsButtonsInOneOrder_WithItsOwnStates`）が確かめている。所持カードの吹き出しが探索だけで C キーを書くことも、テスト（`TheOwnedCardsBubble_NamesTheCKey_OnTheExplorationOnly`）が確かめている
 - [x] `battle-visual-v1.md` にヘッダーの配置と値が入り、`TRIAL-PORT.md` に JS と変えた点が入っている
 - [ ] 別の目での確認で、直さないと通せない指摘が 0 件
 - [ ] こうだいさんが Unity で見る点: 4 つの画面で同じ場所に同じものがあるか / 暦の残り日数がひと目で読めるか / HP とスタミナが戦闘中でも目に入るか / 札・手記・設定を迷わず押せるか / 戦闘でヘッダーが敵の姿や予兆のじゃまになっていないか / 画面ごとに暦・HP・スタミナの位置がずれるのが気になるか

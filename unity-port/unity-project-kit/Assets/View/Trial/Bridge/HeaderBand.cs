@@ -4,7 +4,7 @@
 // calendar, HP and stamina packed one after another; on the right the buttons (the battle's speed and a separator,
 // the owned cards with the deck's count, the journal, the settings).
 //
-// It lives here, engine-free, so the four screens read one set of values and `dotnet test` holds them
+// It lives here, engine-free, so the four screens read the same constants and `dotnet test` holds them
 // (Trial.Bridge.Tests/HeaderBandTests): the band is as tall as the exploration map's top (StrataLayout.StageTop), every
 // text is 16 px or more, amber stays on the stamina and the deck's count, and a button's bubble opens below the band.
 // The widths of the texts are the screen's to measure; every x derived from them is computed here.
@@ -94,13 +94,6 @@ namespace Trial.Bridge
         /// A wider place still takes its own width.
         /// </summary>
         public const float FixedPlaceW = 640f;
-
-        /// <summary>The values every screen reads: one set for all four (the screen only picks what the band says).</summary>
-        public static HeaderBandMetrics MetricsOf(HeaderScreen screen)
-        {
-            if (!Enum.IsDefined(typeof(HeaderScreen), screen)) throw new ArgumentOutOfRangeException(nameof(screen), screen, "No such header screen.");
-            return HeaderBandMetrics.Shared;
-        }
 
         // ---- the place: its picture, its name, its tags and the chip back ---------------------------------------
 
@@ -318,13 +311,18 @@ namespace Trial.Bridge
         public const string SettingsWord = "設定";
         public const string SpeedWord = "速さ";
 
-        /// <summary>What each button's bubble says: what it opens and its key, as the exploration's band named them.</summary>
-        public static string TipOf(HeaderButtonKind kind)
+        /// <summary>
+        /// What each button's bubble says on a screen: what it opens and its key, as the exploration's band named them. J and
+        /// Esc open the journal and the settings on all four screens; C opens the owned cards on the exploration only (the
+        /// base, the table and the battle have no C key), so elsewhere the bubble names no key.
+        /// </summary>
+        public static string TipOf(HeaderScreen screen, HeaderButtonKind kind)
         {
             switch (kind)
             {
                 case HeaderButtonKind.Speed: return BattleSpeed.Tooltip;
-                case HeaderButtonKind.OwnedCards: return global::Exploration.ExplorationText.CardsButton;
+                case HeaderButtonKind.OwnedCards:
+                    return screen == HeaderScreen.Explore ? global::Exploration.ExplorationText.CardsButton : OwnedCardsWord;
                 case HeaderButtonKind.Journal: return global::Exploration.ExplorationText.JournalButton;
                 case HeaderButtonKind.Settings: return global::Exploration.ExplorationText.SettingsButton;
                 default: throw new ArgumentOutOfRangeException(nameof(kind), kind, "No such header button.");
@@ -466,21 +464,5 @@ namespace Trial.Bridge
             public const string Tip = "background: var(--panel-solid); border: 1px solid var(--steel); border-radius: var(--radius-panel); box-shadow: var(--shadow-tip);";
             public const string TipText = "font: 400 16px/22px var(--font-body); white-space: nowrap;";
         }
-    }
-
-    /// <summary>The band's values as one object, so a test can see that every screen reads the same one.</summary>
-    public sealed class HeaderBandMetrics
-    {
-        internal static readonly HeaderBandMetrics Shared = new HeaderBandMetrics();
-
-        private HeaderBandMetrics() { }
-
-        public TableBox Band => HeaderBand.Band;
-        public float PadX => HeaderBand.PadX;
-        public float Gap => HeaderBand.Gap;
-        public float ButtonH => HeaderBand.ButtonH;
-        public float ButtonY => HeaderBand.ButtonY;
-        public float ButtonGap => HeaderBand.ButtonGap;
-        public HeaderPlaceWidth PlaceWidth => HeaderBand.PlaceWidth;
     }
 }
