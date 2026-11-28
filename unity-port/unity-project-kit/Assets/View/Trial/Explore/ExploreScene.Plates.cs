@@ -40,8 +40,8 @@ namespace Trial.Explore
             ExplorePlate p = Plate;
             Plate = null;
             PlateClassSet.Clear();
-            // carried.classList.remove('is-held') then syncMarks(): SyncMarks syncs the slots' held look (SyncHeld)
-            SyncMarks();
+            // carried.classList.remove('is-held') then syncMarks(): what is left of syncMarks is the slots' held look
+            SyncHeld();
             SyncEndLife();
             p.Pop?.Invoke();
             RectTransform el = p.El, dim = p.Dim;
@@ -94,8 +94,8 @@ namespace Trial.Explore
                 Pop = o.Keys != null ? KeysWithFocus(o.Keys) : null,
             };
             // carried.classList.toggle('is-held', kind !== 'screen') then syncMarks(): the slots wait under this card (W-8);
-            // SyncMarks syncs their held look (SyncHeld)
-            SyncMarks();
+            // what is left of syncMarks is their held look
+            SyncHeld();
             SyncEndLife();
             DetailKey = "";
             DrawDetail();
@@ -717,7 +717,7 @@ namespace Trial.Explore
         private void OpenConfirm(ScreenCard card)
         {
             ConfirmOpen = true;
-            SyncMarks();
+            SyncHeld();
             SyncEndLife();
             Sfx("uiClick");
             bool lethal = card.Kind != CardKind.ConfirmEndLife;

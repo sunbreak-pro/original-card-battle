@@ -123,7 +123,7 @@ namespace Trial.Explore
 
         /// <summary>
         /// The open card over the map (ours), or null. openPlate / closePlate also toggle the carried panel's `is-held`
-        /// (ExploreScene.js:850, :874) right before they call syncMarks: SyncMarks syncs it (the carried part's SyncHeld).
+        /// (ExploreScene.js:850, :874) right before they call syncMarks: SyncHeld syncs it.
         /// </summary>
         private ExplorePlate Plate;
 

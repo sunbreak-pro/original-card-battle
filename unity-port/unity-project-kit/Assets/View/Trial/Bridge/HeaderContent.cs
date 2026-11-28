@@ -48,6 +48,24 @@ namespace Trial.Bridge
         Settings,
     }
 
+    /// <summary>
+    /// What a Tab stop of the band is: the table's chip back, then the buttons left to right. A screen that names the
+    /// stops (the exploration's key legend) reads this instead of the stops' order.
+    /// </summary>
+    public enum HeaderStop
+    {
+        /// <summary>The table's chip back to the base.</summary>
+        Back,
+
+        Speed,
+
+        OwnedCards,
+
+        Journal,
+
+        Settings,
+    }
+
     /// <summary>Whether a button stands, takes a press, and is lit (the screen it opens is the one showing).</summary>
     public readonly struct HeaderButtonState : IEquatable<HeaderButtonState>
     {
@@ -106,6 +124,13 @@ namespace Trial.Bridge
 
         /// <summary>What shows beside the days: the note while frozen, else "".</summary>
         public string ShownNote => Frozen ? Note ?? "" : "";
+
+        /// <summary>
+        /// The same days with <see cref="HeaderBand.FrozenNote"/> beside them. The battle's band takes it: with the turn
+        /// tags and the speed it has no room for CalendarText.Note's 「竜王が戻るまで 41 日。暦は止まっている」, which
+        /// runs under the buttons on the longest layer title (#1074).
+        /// </summary>
+        public HeaderCalendar Shortened() => Of(DaysLeft, Frozen);
     }
 
     /// <summary>
@@ -149,7 +174,10 @@ namespace Trial.Bridge
         /// <summary>The chip back to the base, right of the tags (the table only).</summary>
         public bool BackChip;
 
-        public HeaderCalendar Calendar = HeaderCalendar.Of(0, false);
+        /// <summary>Null: the band leaves the calendar out and packs HP and stamina against the rule.</summary>
+        public HeaderCalendar Calendar;
+
+        public bool HasCalendar => Calendar != null;
 
         public int Hp, MaxHp, Stamina, MaxStamina;
 
@@ -185,6 +213,7 @@ namespace Trial.Bridge
             }
         }
 
+        /// <summary>The days as the band prints them (only read while <see cref="HasCalendar"/>).</summary>
         public HeaderFigure Days => HeaderBand.DaysFigure(Calendar?.DaysLeft ?? 0);
 
         public HeaderFigure HpFigure => HeaderBand.OutOf(Hp, MaxHp);
@@ -219,12 +248,13 @@ namespace Trial.Bridge
         /// <summary>
         /// The battle: the layer's title with the turn (and the fight of a run of fights from the second fight count up),
         /// the speed on the left of the buttons. The owned cards show the deck's count but take no press (#1074 leaves
-        /// what they open in battle open). The settings take a press only where the battle allows them.
+        /// what they open in battle open). The settings take a press only where the battle allows them. A frozen
+        /// calendar always takes the short note (<see cref="HeaderCalendar.Shortened"/>).
         /// </summary>
         public static HeaderContent ForBattle(string layerTitle, int turn, int fightIndex, int fightCount, HeaderCalendar calendar,
             int hp, int maxHp, int stamina, int maxStamina, int deckCount, BattleSpeedStep speed, bool canOpenSettings = true)
         {
-            HeaderContent c = Body(HeaderScreen.Battle, layerTitle, HeaderPlaceArt.Layer, calendar, hp, maxHp, stamina, maxStamina, deckCount);
+            HeaderContent c = Body(HeaderScreen.Battle, layerTitle, HeaderPlaceArt.Layer, calendar?.Shortened(), hp, maxHp, stamina, maxStamina, deckCount);
             c.Tags = HeaderBand.BattleTags(turn, fightIndex, fightCount);
             c.Speed = HeaderButtonState.Ready;
             c.SpeedText = HeaderBand.SpeedLabel(speed);
@@ -267,7 +297,7 @@ namespace Trial.Bridge
                 Screen = screen,
                 PlaceName = place ?? "",
                 PlaceArt = art,
-                Calendar = calendar ?? HeaderCalendar.Of(0, false),
+                Calendar = calendar,
                 Hp = hp,
                 MaxHp = maxHp,
                 Stamina = stamina,

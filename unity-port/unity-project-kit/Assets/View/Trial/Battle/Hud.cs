@@ -49,7 +49,10 @@ namespace Trial.Battle
         /// <summary>The place's name (ExplorationScreen.LayerTitle); empty: 「第 n 層」 of the scene's layer.</summary>
         public string LayerTitle = "";
 
-        /// <summary>The collapse calendar; null when the app hands none, and the band then leaves the calendar out.</summary>
+        /// <summary>
+        /// The collapse calendar; null when the app hands none (a fight outside an exploration), and the band leaves the
+        /// calendar out rather than read 「残り 0 日」, which would say the collapse has come.
+        /// </summary>
         public HeaderCalendar Calendar;
 
         /// <summary>The deck's count on the owned cards' corner.</summary>
@@ -294,13 +297,6 @@ namespace Trial.Battle
                 },
                 tipLayer: env.Layer.Over, blockPointer: false);
             foreach (RectTransform rt in _header.PointerTargets) BattleHitTag.Mark(rt);
-            // HeaderBar has no switch to leave the calendar out: until the app hands one (#1074's last unit, Main.cs), its
-            // group is hidden rather than reading 「残り 0 日」, which would say the collapse has come.
-            if (h.Calendar == null && _header.Root)
-            {
-                var calendar = _header.Root.Find("calendar") as RectTransform;
-                if (calendar) UiNode.Of(calendar).Visible = false;
-            }
 
             // ---- the parts, bottom → top inside their layers ----
             // Review 21: the stance lists' high place (stances.js keepClear) — under the header band.

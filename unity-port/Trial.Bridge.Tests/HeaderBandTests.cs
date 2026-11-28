@@ -117,6 +117,35 @@ namespace Trial.Bridge.Tests
         }
 
         [Test]
+        public void WithoutACalendar_HpFollowsTheRule()
+        {
+            HeaderLeftRow with = HeaderBand.LeftRow(300f, 150f, 110f, 100f);
+            HeaderLeftRow without = HeaderBand.LeftRow(300f, 150f, 110f, 100f, withCalendar: false);
+            Assert.That(with.HasCalendar, Is.True);
+            Assert.That(without.HasCalendar, Is.False);
+            Assert.That(without.Divider.X, Is.EqualTo(with.Divider.X));
+            Assert.That(without.HpX, Is.EqualTo(without.Divider.Right + 28f), "no slot and no gap is left where the calendar stood");
+            Assert.That(without.StaminaX, Is.EqualTo(without.HpX + 110f + 28f));
+            Assert.That(without.Right, Is.EqualTo(with.Right - 150f - 28f));
+        }
+
+        [Test]
+        public void EveryTabStop_IsNamedByItsKind()
+        {
+            Assert.That(HeaderBand.StopOf(HeaderButtonKind.Speed), Is.EqualTo(HeaderStop.Speed));
+            Assert.That(HeaderBand.StopOf(HeaderButtonKind.OwnedCards), Is.EqualTo(HeaderStop.OwnedCards));
+            Assert.That(HeaderBand.StopOf(HeaderButtonKind.Journal), Is.EqualTo(HeaderStop.Journal));
+            Assert.That(HeaderBand.StopOf(HeaderButtonKind.Settings), Is.EqualTo(HeaderStop.Settings));
+            Assert.That(HeaderBand.StopWord(HeaderStop.Back), Is.EqualTo("拠点へ戻る"));
+            Assert.That(HeaderBand.StopWord(HeaderStop.Speed), Is.EqualTo("速さ"));
+            Assert.That(HeaderBand.StopWord(HeaderStop.OwnedCards), Is.EqualTo("所持カード"));
+            Assert.That(HeaderBand.StopWord(HeaderStop.Journal), Is.EqualTo("手記"));
+            Assert.That(HeaderBand.StopWord(HeaderStop.Settings), Is.EqualTo("設定"));
+            foreach (HeaderButtonKind kind in System.Enum.GetValues(typeof(HeaderButtonKind)))
+                Assert.That(HeaderBand.StopWord(HeaderBand.StopOf(kind)), Is.EqualTo(HeaderBand.WordOf(kind)), kind.ToString());
+        }
+
+        [Test]
         public void TheFixedPlace_KeepsTheCalendarInOnePlace()
         {
             float narrow = HeaderBand.PlaceW(180f, HeaderPlaceWidth.Fixed), wide = HeaderBand.PlaceW(520f, HeaderPlaceWidth.Fixed);

@@ -42,15 +42,6 @@ namespace Trial.Explore
         };
 
         /// <summary>
-        /// The words the key legend names for Enter on the header's Tab stops, in HeaderBar.Focusables' order (the chip
-        /// back, the speed, the owned cards, the journal, the settings): the bar keeps no label of its own for them.
-        /// </summary>
-        private static readonly string[] HeaderStopWords =
-        {
-            HeaderBand.BackWord, HeaderBand.SpeedWord, HeaderBand.OwnedCardsWord, HeaderBand.JournalWord, HeaderBand.SettingsWord,
-        };
-
-        /// <summary>
         /// The header, built once from the screen as it stands (Mount): its buttons open what the JS band's did
         /// (ExploreScene.js:2270-2278), and its Tab stops join the scene's scope in hierarchy order.
         /// </summary>
@@ -63,21 +54,21 @@ namespace Trial.Explore
                 OnSettings = () => OpenOverlay(ExploreOverlayKind.Settings).Forget(),
             });
             UiNode.Of(TopHeader.Root).Z = ExploreStyle.ZBand;
-            IReadOnlyList<Focusable> stops = TopHeader.Focusables;
-            for (int i = 0; i < stops.Count; i++)
+            // the key legend names what Enter presses on each stop: the bar keeps no label of its own for them
+            foreach (HeaderTabStop stop in TopHeader.Stops)
             {
-                string word = i < HeaderStopWords.Length ? HeaderStopWords[i] : null;
-                InsertFocus(stops[i], word != null ? () => word : (Func<string>)null);
+                string word = HeaderBand.StopWord(stop.Kind);
+                InsertFocus(stop.Focus, () => word);
             }
         }
 
-        /// <summary>What the header shows for a screen (the bridge decides each button's state and every word).</summary>
+        /// <summary>
+        /// What the header shows for a screen (the bridge decides each button's state and every word). The deck's count is
+        /// the deck each battle is shuffled from, counted in copies as the table counts it, so the count goes on from where the table left it.
+        /// </summary>
         private HeaderContent HeaderOf(ExplorationScreen s) => HeaderContent.ForExplore(s.LayerTitle,
             HeaderCalendar.Of(s.DaysLeft, s.CalendarFrozen, s.CalendarNote), s.Hp, s.MaxHp, s.Stamina, s.MaxStamina,
-            HeaderDeckCount(), s.CanOpenCards, s.CanOpenSettings);
-
-        /// <summary>The deck's count: the router's when it hands one in, else the deck the next battle is shuffled from.</summary>
-        private int HeaderDeckCount() => Ctx.DeckCount != null ? Ctx.DeckCount() : Expedition.Deck.Count;
+            Expedition.Deck.Count, s.CanOpenCards, s.CanOpenSettings);
 
         // js: scenes/explore/ExploreScene.js:752
         /// <summary>drawBand(): the header again from Screen, through the setters of what changed.</summary>
@@ -95,18 +86,13 @@ namespace Trial.Explore
                 HeaderButtonState state = want.StateOf(kind);
                 if (!state.Equals(shown.StateOf(kind))) TopHeader.SetButton(kind, state);
             }
-            SyncMarks();
+            // js: scenes/explore/ExploreScene.js:897 syncMarks(): what is left of it is the carried slots' held look (the
+            // JS also enabled the 訓練の刻み button here; the header has none)
+            SyncHeld();
         }
 
         private static bool SameCalendar(HeaderCalendar a, HeaderCalendar b) =>
-            a != null && b != null && a.DaysLeft == b.DaysLeft && a.Frozen == b.Frozen && a.ShownNote == b.ShownNote;
-
-        // js: scenes/explore/ExploreScene.js:897
-        /// <summary>
-        /// syncMarks(): the carried panel's is-held follows the plate at the moments openPlate and closePlate call this,
-        /// and render keeps it. The JS also enabled the 訓練の刻み button here; the header has none.
-        /// </summary>
-        private void SyncMarks() => SyncHeld();
+            ReferenceEquals(a, b) || a != null && b != null && a.DaysLeft == b.DaysLeft && a.Frozen == b.Frozen && a.ShownNote == b.ShownNote;
 
         // js: scenes/explore/ExploreScene.js:903
         /// <summary>
@@ -136,15 +122,14 @@ namespace Trial.Explore
             return s;
         }
 
-        /// <summary>One CSS line box: its height and its baseline below its top.</summary>
+        /// <summary>One CSS line box: its height.</summary>
         private readonly struct PanelLine
         {
-            public readonly float H, Base;
+            public readonly float H;
 
-            public PanelLine(float h, float baseline)
+            public PanelLine(float h)
             {
                 H = h;
-                Base = baseline;
             }
         }
 
@@ -168,7 +153,7 @@ namespace Trial.Explore
                 a = Math.Max(a, ma);
                 d = Math.Max(d, md);
             }
-            return new PanelLine(a + d, a);
+            return new PanelLine(a + d);
         }
 
         private static void BlinkFace(Family family, int weight, float size, float lineHeight, out float ascent, out float descent)

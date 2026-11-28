@@ -571,7 +571,7 @@ namespace Trial.Explore
 
         /// <summary>
         /// carried.classList.toggle('is-held', kind !== 'screen') (openPlate) / remove (closePlate): the slots wait under a
-        /// card that waits on the player (W-8). Called from SyncMarks, which openPlate and closePlate call at that moment.
+        /// card that waits on the player (W-8). Called where the JS calls syncMarks (openPlate, closePlate, openConfirm, drawBand).
         /// </summary>
         private void SyncHeld()
         {

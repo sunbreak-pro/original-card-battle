@@ -4,7 +4,7 @@
 //   BattleScene.MountBattleScene(host, ctx) → BattleSceneHandle { Destroy, Refresh, Pause }
 //   ctx = BattleSceneCtx { Stage, Audio, Settings, Source, Layer (1..7), NodeKind, Chain { Index, Total }, DisclosureOf,
 //         OpenJournal(host, opts) → IOverlay, SettingsInBattle, OnSettings, OnFinished, OnSettingsChange, OnError, Auto,
-//         and for the header band CalendarDaysLeft, CalendarFrozen, CalendarNote, DeckCount }
+//         and for the header band CalendarDaysLeft, CalendarFrozen, DeckCount }
 //
 // The scene computes no rule: BattlePlayer plays ctx.Source's frames / events / cues and sends input back to ctx.Source
 // (docs/BATTLE_SCENE.md). This file builds the root, the layers, the shared env, the three view modules (hand / field /
@@ -54,10 +54,11 @@ namespace Trial.Battle
         /// none handed, and the band leaves the calendar out.
         /// </summary>
         public int? CalendarDaysLeft;
-        /// <summary>Unity addition (#1074): the calendar stands still (ExplorationScreen.CalendarFrozen); its days turn steel.</summary>
+        /// <summary>
+        /// Unity addition (#1074): the calendar stands still (ExplorationScreen.CalendarFrozen); its days turn steel, with
+        /// the short note HeaderContent.ForBattle gives the battle's band.
+        /// </summary>
         public bool CalendarFrozen;
-        /// <summary>Unity addition (#1074): the short note beside a frozen calendar's days ("": HeaderBand.FrozenNote).</summary>
-        public string CalendarNote = "";
         /// <summary>Unity addition (#1074): the deck's count on the header band's owned cards (the cards the run carries).</summary>
         public int DeckCount;
         /// <summary>ctx.disclosureOf(enemyId) → the journal's 開示度.</summary>
@@ -228,7 +229,7 @@ namespace Trial.Battle
             }, new HudHeader
             {
                 LayerTitle = ctx.LayerTitle ?? "",
-                Calendar = ctx.CalendarDaysLeft.HasValue ? HeaderCalendar.Of(ctx.CalendarDaysLeft.Value, ctx.CalendarFrozen, ctx.CalendarNote) : null,
+                Calendar = ctx.CalendarDaysLeft.HasValue ? HeaderCalendar.Of(ctx.CalendarDaysLeft.Value, ctx.CalendarFrozen) : null,
                 DeckCount = ctx.DeckCount,
             });
             // js: scenes/battle/BattleScene.js:173

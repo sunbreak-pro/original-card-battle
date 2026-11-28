@@ -130,7 +130,29 @@ namespace Trial.Bridge.Tests
             Assert.That(HeaderCalendar.Of(41, true, "竜王が戻るまで 41 日").ShownNote, Is.EqualTo("竜王が戻るまで 41 日"));
             Assert.That(HeaderCalendar.Of(41, false, "竜王が戻るまで 41 日").ShownNote, Is.EqualTo(""), "a running calendar shows no note");
             Assert.That(HeaderContent.ForBase(frozen, 50, 10, 20).Calendar.Frozen, Is.True);
-            Assert.That(HeaderContent.ForBase(null, 50, 10, 20).Days.Number, Is.EqualTo("0"));
+        }
+
+        [Test]
+        public void NoCalendar_LeavesTheCalendarOut_OnEveryScreen()
+        {
+            Assert.That(HeaderContent.ForBase(null, 50, 10, 20).HasCalendar, Is.False);
+            Assert.That(HeaderContent.ForTable(null, 50, 10, 20).HasCalendar, Is.False);
+            Assert.That(HeaderContent.ForExplore("第 1 層", null, 38, 50, 8, 10, 20, true).HasCalendar, Is.False);
+            Assert.That(HeaderContent.ForBattle("第 1 層", 1, 1, 1, null, 38, 50, 8, 10, 20, BattleSpeedStep.Normal).HasCalendar, Is.False);
+            Assert.That(HeaderContent.ForBase(Running, 50, 10, 20).HasCalendar, Is.True);
+        }
+
+        [Test]
+        public void TheBattle_TakesTheShortNote_WhileTheCalendarStandsStill()
+        {
+            HeaderCalendar frozen = HeaderCalendar.Of(41, true, "竜王が戻るまで 12 日。暦は止まっている");
+            HeaderContent battle = HeaderContent.ForBattle("第 7 層　爛れた世界樹の間（寄生の領域）", 3, 2, 3, frozen, 120, 120, 12, 12, 30, BattleSpeedStep.Normal);
+            Assert.That(battle.Calendar.ShownNote, Is.EqualTo(HeaderBand.FrozenNote), "the turn tags and the speed leave no room for the long note");
+            Assert.That((battle.Calendar.DaysLeft, battle.Calendar.Frozen), Is.EqualTo((41, true)));
+            Assert.That(frozen.ShownNote, Is.EqualTo("竜王が戻るまで 12 日。暦は止まっている"), "the calendar handed in stays as it was");
+            Assert.That(HeaderContent.ForExplore("第 1 層", frozen, 38, 50, 8, 10, 20, true).Calendar.ShownNote, Is.EqualTo(frozen.ShownNote),
+                "the exploration keeps the long note");
+            Assert.That(HeaderContent.ForBattle("第 1 層", 1, 1, 1, Running, 38, 50, 8, 10, 20, BattleSpeedStep.Normal).Calendar.ShownNote, Is.EqualTo(""));
         }
     }
 }

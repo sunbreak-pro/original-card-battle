@@ -137,7 +137,10 @@ namespace Trial.Bridge.Tests
             var frozen = new CalendarState(41, new Dictionary<Region, int> { [Region.Dragon] = 12 });
             Assert.That(frozen.IsFrozen, Is.True);
             HeaderCalendar cal = DepartGate.BandCalendar(frozen);
-            Assert.That((cal.DaysLeft, cal.Frozen, cal.ShownNote), Is.EqualTo((41, true, DepartGate.CalendarFrozenNote)));
+            Assert.That((cal.DaysLeft, cal.Frozen, cal.ShownNote), Is.EqualTo((41, true, "竜王が戻るまで 12 日。暦は止まっている")),
+                "the base says what the map says (CalendarText.Note)");
+            Assert.That(cal.ShownNote, Is.EqualTo(global::Exploration.CalendarText.Note(frozen)));
+            Assert.That(DepartTable.BandOf(frozen, 20).Calendar.ShownNote, Is.EqualTo(cal.ShownNote), "and so does the table");
         }
 
         private static Lineage WithLives(params (int Layer, LifeEnding Ending)[] lives)

@@ -285,14 +285,15 @@ namespace Trial.Bridge
         /// <summary>The stamina a descent sets out with: the base maximum (only a consumable on the way down moves it).</summary>
         public const int StartMaxStamina = StaminaRules.BaseMaxStamina;
 
-        /// <summary>The words beside the days while a king is down (seven_layers_v4.md §2.2), as the base printed them by its bar.</summary>
-        public const string CalendarFrozenNote = "王が倒れていて、暦は止まっている";
-
-        /// <summary>The lineage's calendar as the band shows it: the days left, and the note while it stands still.</summary>
+        /// <summary>
+        /// The lineage's calendar as the band shows it: the days left, and while a king is down the exploration's note
+        /// (CalendarText.Note: 「竜王が戻るまで 41 日。暦は止まっている」), so the base, the table and the map say the same
+        /// and tell how long the calendar stands still (#1074).
+        /// </summary>
         public static HeaderCalendar BandCalendar(CalendarState calendar)
         {
             CalendarState cal = calendar ?? CalendarState.Fresh;
-            return HeaderCalendar.Of(cal.DaysLeft, cal.IsFrozen, CalendarFrozenNote);
+            return HeaderCalendar.Of(cal.DaysLeft, cal.IsFrozen, global::Exploration.CalendarText.Note(cal));
         }
 
         /// <summary>The base's band: the calendar, HP and stamina at full, the deck's count on the owned cards.</summary>

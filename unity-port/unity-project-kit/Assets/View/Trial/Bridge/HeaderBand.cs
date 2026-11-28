@@ -49,7 +49,14 @@ namespace Trial.Bridge
     {
         public float PlaceX, PlaceW;
         public TableBox Divider;
-        public float CalendarX, HpX, StaminaX;
+
+        /// <summary>False: the row holds no calendar, and HP stands where it would have.</summary>
+        public bool HasCalendar;
+
+        /// <summary>Only meaningful while <see cref="HasCalendar"/>.</summary>
+        public float CalendarX;
+
+        public float HpX, StaminaX;
 
         /// <summary>The right edge of the stamina group: the buttons should start after it.</summary>
         public float Right;
@@ -167,19 +174,26 @@ namespace Trial.Bridge
             return xs[4] + noteW;
         }
 
-        /// <summary>The left side: the place from the band's padding, then the rule, the calendar, HP and stamina, 28 apart.</summary>
-        public static HeaderLeftRow LeftRow(float placeW, float calendarW, float hpW, float staminaW)
+        /// <summary>
+        /// The left side: the place from the band's padding, then the rule, the calendar, HP and stamina, 28 apart.
+        /// Without <paramref name="withCalendar"/> the calendar takes no slot (and no gap): HP follows the rule.
+        /// </summary>
+        public static HeaderLeftRow LeftRow(float placeW, float calendarW, float hpW, float staminaW, bool withCalendar = true)
         {
-            float[] xs = DepartTable.RowFrom(PadX, Gap, placeW, DividerW, calendarW, hpW, staminaW);
+            float[] xs = withCalendar
+                ? DepartTable.RowFrom(PadX, Gap, placeW, DividerW, calendarW, hpW, staminaW)
+                : DepartTable.RowFrom(PadX, Gap, placeW, DividerW, hpW, staminaW);
+            int hp = withCalendar ? 3 : 2;
             return new HeaderLeftRow
             {
                 PlaceX = xs[0],
                 PlaceW = placeW,
                 Divider = new TableBox(xs[1], (InnerH - DividerH) / 2f, DividerW, DividerH),
-                CalendarX = xs[2],
-                HpX = xs[3],
-                StaminaX = xs[4],
-                Right = xs[4] + staminaW,
+                HasCalendar = withCalendar,
+                CalendarX = withCalendar ? xs[2] : xs[hp],
+                HpX = xs[hp],
+                StaminaX = xs[hp + 1],
+                Right = xs[hp + 1] + staminaW,
             };
         }
 
@@ -313,6 +327,33 @@ namespace Trial.Bridge
                 case HeaderButtonKind.Journal: return JournalWord;
                 case HeaderButtonKind.Settings: return SettingsWord;
                 default: throw new ArgumentOutOfRangeException(nameof(kind), kind, "No such header button.");
+            }
+        }
+
+        /// <summary>The Tab stop a button is.</summary>
+        public static HeaderStop StopOf(HeaderButtonKind kind)
+        {
+            switch (kind)
+            {
+                case HeaderButtonKind.Speed: return HeaderStop.Speed;
+                case HeaderButtonKind.OwnedCards: return HeaderStop.OwnedCards;
+                case HeaderButtonKind.Journal: return HeaderStop.Journal;
+                case HeaderButtonKind.Settings: return HeaderStop.Settings;
+                default: throw new ArgumentOutOfRangeException(nameof(kind), kind, "No such header button.");
+            }
+        }
+
+        /// <summary>What a key legend calls a Tab stop (the speed by its plain word: its label changes with the step).</summary>
+        public static string StopWord(HeaderStop stop)
+        {
+            switch (stop)
+            {
+                case HeaderStop.Back: return BackWord;
+                case HeaderStop.Speed: return SpeedWord;
+                case HeaderStop.OwnedCards: return OwnedCardsWord;
+                case HeaderStop.Journal: return JournalWord;
+                case HeaderStop.Settings: return SettingsWord;
+                default: throw new ArgumentOutOfRangeException(nameof(stop), stop, "No such header stop.");
             }
         }
 

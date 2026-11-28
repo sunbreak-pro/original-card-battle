@@ -36,6 +36,19 @@ namespace Trial.Header
         }
     }
 
+    /// <summary>One Tab stop of the band and what it is.</summary>
+    public readonly struct HeaderTabStop
+    {
+        public HeaderTabStop(HeaderStop kind, Focusable focus)
+        {
+            Kind = kind;
+            Focus = focus;
+        }
+
+        public HeaderStop Kind { get; }
+        public Focusable Focus { get; }
+    }
+
     public sealed class HeaderBar
     {
         private static readonly HeaderButtonKind[] Kinds =
@@ -145,13 +158,24 @@ namespace Trial.Header
         /// <summary>What the band shows now. Change it through the setters, which redraw.</summary>
         public HeaderContent Content => _content;
 
-        /// <summary>The band's Tab stops in order: the chip back, the speed, the owned cards, the journal, the settings.</summary>
+        /// <summary>The band's Tab stops in order (the chip back, the speed, the owned cards, the journal, the settings), each with its kind.</summary>
+        public IReadOnlyList<HeaderTabStop> Stops
+        {
+            get
+            {
+                var list = new List<HeaderTabStop> { new HeaderTabStop(HeaderStop.Back, _back.Focus) };
+                foreach (HeaderButtonKind kind in Kinds) list.Add(new HeaderTabStop(HeaderBand.StopOf(kind), _buttons[kind].Focus));
+                return list;
+            }
+        }
+
+        /// <summary>The band's Tab stops in <see cref="Stops"/>' order, for a screen that needs no kinds.</summary>
         public IReadOnlyList<Focusable> Focusables
         {
             get
             {
-                var list = new List<Focusable> { _back.Focus };
-                foreach (HeaderButtonKind kind in Kinds) list.Add(_buttons[kind].Focus);
+                var list = new List<Focusable>();
+                foreach (HeaderTabStop stop in Stops) list.Add(stop.Focus);
                 return list;
             }
         }
@@ -195,9 +219,10 @@ namespace Trial.Header
             Layout();
         }
 
+        /// <summary>Null leaves the calendar out: HP and stamina close up against the rule.</summary>
         public void SetCalendar(HeaderCalendar calendar)
         {
-            _content.Calendar = calendar ?? HeaderCalendar.Of(0, false);
+            _content.Calendar = calendar;
             Layout();
         }
 
@@ -269,38 +294,19 @@ namespace Trial.Header
             if (c.BackChip) _back.Node.Place(px[px.Length - 1], (HeaderBand.InnerH - HeaderBand.TagH) / 2f);
             float placeW = HeaderBand.PlaceW(HeaderBand.PlaceContentW(nameW, tagWs, backW), HeaderBand.PlaceWidth);
 
-            // the calendar: steel and its note while it stands still
-            HeaderFigure days = c.Days;
-            string note = c.Calendar?.ShownNote ?? "";
-            bool frozen = c.Calendar != null && c.Calendar.Frozen;
-            if (_shownFrozen != frozen)
-            {
-                _shownFrozen = frozen;
-                Label.SetColor(_days, frozen ? DsTokens.Steel : DsTokens.Ink);
-                _calendarIcon.IconColor = frozen ? DsTokens.Steel : DsTokens.Ink;
-            }
-            Label.SetText(_days, days.Number);
-            Label.SetText(_note, note);
-            float leadW = Ocb.TextWidth(days.Lead, _wordsS), daysW = Ocb.TextWidth(days.Number, _daysS), tailW = Ocb.TextWidth(days.Tail, _wordsS);
-            float noteW = note.Length > 0 ? Ocb.TextWidth(note, _noteS) : 0f;
-            float[] cx = HeaderBand.FigureXs(HeaderBand.CalendarIcon, days, leadW, daysW, tailW, noteW);
-            float calW = HeaderBand.FigureW(HeaderBand.CalendarIcon, days, leadW, daysW, tailW, noteW);
-            float calBase = Baseline(_wordsS, _daysS, _noteS);
-            Ui.Place(_calendarIcon.rectTransform, cx[0], (HeaderBand.InnerH - HeaderBand.CalendarIcon) / 2f);
-            PlaceRun(_daysLead, _wordsS, cx[1], calBase);
-            PlaceRun(_days, _daysS, cx[2], calBase);
-            PlaceRun(_daysTail, _wordsS, cx[3], calBase);
-            PlaceRun(_note, _noteS, cx[4], calBase);
-            UiNode.Of(_note).Visible = note.Length > 0;
+            // the calendar: steel and its note while it stands still; none at all when the screen hands none
+            bool hasCalendar = c.HasCalendar;
+            UiNode.Of(_calendar).Visible = hasCalendar;
+            float calW = hasCalendar ? LayoutCalendar(c) : 0f;
 
             // HP and stamina
             float hpW = Figure(_hpGroup, _heart.rectTransform, HeaderBand.HeartIcon, c.HpFigure, _hp, _hpTail);
             float stW = Figure(_staminaGroup, _pip.rectTransform, HeaderBand.StaminaPip, c.StaminaFigure, _stamina, _staminaTail);
 
-            HeaderLeftRow left = HeaderBand.LeftRow(placeW, calW, hpW, stW);
+            HeaderLeftRow left = HeaderBand.LeftRow(placeW, calW, hpW, stW, hasCalendar);
             Ui.Place(_place, left.PlaceX, 0f, placeW, HeaderBand.InnerH);
             Ui.Place(_divider.rectTransform, left.Divider.X, left.Divider.Y, left.Divider.W, left.Divider.H);
-            Ui.Place(_calendar, left.CalendarX, 0f, calW, HeaderBand.InnerH);
+            if (left.HasCalendar) Ui.Place(_calendar, left.CalendarX, 0f, calW, HeaderBand.InnerH);
             Ui.Place(_hpGroup, left.HpX, 0f, hpW, HeaderBand.InnerH);
             Ui.Place(_staminaGroup, left.StaminaX, 0f, stW, HeaderBand.InnerH);
 
@@ -329,6 +335,33 @@ namespace Trial.Header
             Ui.Place(_badge, badge.X, badge.Y, badge.W, badge.H);
             Ui.Place(_badgeText.rectTransform, (badge.W - countW) / 2f, (badge.H - _badgeS.LineHeightPx) / 2f);
             _badge.SetAsLastSibling();
+        }
+
+        /// <summary>The calendar's runs laid out in its group (the days steel while frozen, the note beside them). Its width.</summary>
+        private float LayoutCalendar(HeaderContent c)
+        {
+            HeaderFigure days = c.Days;
+            string note = c.Calendar.ShownNote;
+            bool frozen = c.Calendar.Frozen;
+            if (_shownFrozen != frozen)
+            {
+                _shownFrozen = frozen;
+                Label.SetColor(_days, frozen ? DsTokens.Steel : DsTokens.Ink);
+                _calendarIcon.IconColor = frozen ? DsTokens.Steel : DsTokens.Ink;
+            }
+            Label.SetText(_days, days.Number);
+            Label.SetText(_note, note);
+            float leadW = Ocb.TextWidth(days.Lead, _wordsS), daysW = Ocb.TextWidth(days.Number, _daysS), tailW = Ocb.TextWidth(days.Tail, _wordsS);
+            float noteW = note.Length > 0 ? Ocb.TextWidth(note, _noteS) : 0f;
+            float[] cx = HeaderBand.FigureXs(HeaderBand.CalendarIcon, days, leadW, daysW, tailW, noteW);
+            float calBase = Baseline(_wordsS, _daysS, _noteS);
+            Ui.Place(_calendarIcon.rectTransform, cx[0], (HeaderBand.InnerH - HeaderBand.CalendarIcon) / 2f);
+            PlaceRun(_daysLead, _wordsS, cx[1], calBase);
+            PlaceRun(_days, _daysS, cx[2], calBase);
+            PlaceRun(_daysTail, _wordsS, cx[3], calBase);
+            PlaceRun(_note, _noteS, cx[4], calBase);
+            UiNode.Of(_note).Visible = note.Length > 0;
+            return HeaderBand.FigureW(HeaderBand.CalendarIcon, days, leadW, daysW, tailW, noteW);
         }
 
         /// <summary>A number figure (HP, stamina) laid out in its group: the picture, the number, the tail. Its width.</summary>
